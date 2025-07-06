@@ -1,54 +1,32 @@
+// updateUserLocation.ts
+
 /**
- * updateUserLocation.ts
+ * Convex mutation for updating a user's real-time location.
+ * Ensures each user has at most one location record by removing any existing one.
  * 
- * Convex mutation to update or insert a user's current location.
- * Ensures only one location record exists per user by removing the old one (if any)
- * and inserting the latest location details including role and timestamp.
- * 
- * Used for real-time location updates of passengers, drivers, or users with both roles.
+ * updateUserLocationHandler is added for easier unit testing.
+ * updateUserLocation is used in the production runtime.
  * 
  * @author Moyahabo Hamese
  */
 
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { updateUserLocationHandler } from "./updateUserLocationHandler";
 
 /**
- * Updates the location of a user (driver, passenger, or both).
- * Ensures existing location is removed to prevent duplication,
- * and a new entry is inserted with the latest coordinates and timestamp.
- * 
- * @param userId - ID of the user from the `taxiTap_users` table
- * @param latitude - User's current latitude
- * @param longitude - User's current longitude
- * @param role - Role of the user (passenger, driver, or both)
+ * Convex mutation for updating a user's location.
  */
 export const updateUserLocation = mutation({
   args: {
-    userId: v.id("taxiTap_users"),
-    latitude: v.number(),
-    longitude: v.number(),
-    role: v.union(v.literal("passenger"), v.literal("driver"), v.literal("both")),
+    userId: v.id("taxiTap_users"), // ID of the user (foreign key to `taxiTap_users`)
+    latitude: v.number(),          // Latitude coordinate
+    longitude: v.number(),         // Longitude coordinate
+    role: v.union(                 // Role of the user (restricted literal values)
+      v.literal("passenger"), 
+      v.literal("driver"), 
+      v.literal("both")
+    ),
   },
-  handler: async (ctx, { userId, latitude, longitude, role }) => {
-    // Check if a location record already exists for the user
-    const existing = await ctx.db
-      .query("locations")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
-
-    // If it exists, remove the old location record
-    if (existing) {
-      await ctx.db.delete(existing._id);
-    }
-
-    // Insert the new location with current coordinates, role, and timestamp
-    await ctx.db.insert("locations", {
-      userId,
-      latitude,
-      longitude,
-      role,
-      updatedAt: new Date().toISOString(),
-    });
-  },
+  handler: updateUserLocationHandler,
 });
