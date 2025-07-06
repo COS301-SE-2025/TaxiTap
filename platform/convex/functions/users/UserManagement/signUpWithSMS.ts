@@ -106,6 +106,19 @@ export const signUpSMSHandler = async (
       });
     }
 
+    const locationRole =
+      args.accountType === "driver" || args.accountType === "both"
+        ? "driver"
+        : "passenger";
+
+    await ctx.db.insert("locations", {
+      userId,
+      role: locationRole,
+      latitude: 0,
+      longitude: 0,
+      updatedAt: ""
+    });
+
     return { success: true, userId };
   } catch (e) {
     const exists = await ctx.db
