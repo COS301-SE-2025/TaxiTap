@@ -1,0 +1,102 @@
+name: Platform CI
+
+on:
+  push:
+    paths:
+      - '.github/workflows/platform.yml'
+  pull_request:
+    paths:
+      - 'platform/**'
+  workflow_dispatch:
+
+jobs:
+  # === FRONTEND JOB ===
+  frontend-test:
+    name: Frontend - Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: platform/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('platform/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Prettier
+        run: npm run format
+
+      - name: Run tests
+        run: npm run test:frontend -- -u
+
+  # === BACKEND JOB ===
+  backend-typecheck:
+    name: Backend - Convex Typecheck & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Convex types
+        run: npx convex codegen
+
+      - name: Run backend tests
+        run: npm run test:backend
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+  # === DEPLOY JOB (only on main) ===
+  deploy:
+    name: Deploy to Convex (main only)
+    if: github.ref == 'refs/heads/main'
+    needs: [frontend-test, backend-typecheck]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Convex
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex deploy

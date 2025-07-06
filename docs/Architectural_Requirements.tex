@@ -1,0 +1,159 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float} % Enables [H] positioning for figures
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+
+\title{Taxi Tap\\Architectural Requirements Document}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{3.6 Architectural Requirements Document}
+
+\subsection{3.6.1 Architectural Design Strategy}
+\textbf{Strategy Chosen:} \textit{Decomposition via Feature-Driven Development (FDD)}
+
+Taxi Tap is built using a modular, feature-based decomposition strategy. Each functional system (e.g., User System, Vehicle System, Trip System) is designed, tested, and deployed independently. This strategy allows for:
+
+\begin{itemize}
+  \item Clear modularity and separation of concerns
+  \item Parallel development and testing per feature
+  \item Easy onboarding and maintainability
+  \item Reduced risk when scaling or introducing new features
+\end{itemize}
+
+This approach accelerates development while ensuring traceability, maintainability, and scalability.
+
+\subsection{3.6.2 Architectural Strategies}
+\textbf{Chosen Style:} \textit{Microkernel Architecture (Plug-in Style)}
+
+Each feature system in Taxi Tap functions as a plug-in module extending a core backend. This microkernel architecture suits our use case because:
+
+\begin{itemize}
+  \item Features can evolve and scale independently
+  \item Systems are decoupled but unified by shared infrastructure
+  \item Testing and deployment can occur at the system level
+  \item Perfect fit for the Convex + Expo stack
+\end{itemize}
+
+\subsection{3.6.3 Architectural Quality Requirements}
+The quality attributes for Taxi Tap are prioritized and defined as follows:
+
+\begin{enumerate}
+  \item \textbf{Scalability:} System must handle at least \textbf{100 concurrent ride requests} with a backend response time of under \textbf{100ms}.
+  \item \textbf{Security:} All backend functions must enforce \textbf{role-based access control} (driver/passenger/admin).
+  \item \textbf{Testability:} Each feature system must achieve \textbf{90\%+ test coverage} across unit and integration tests.
+  \item \textbf{Availability:} Maintain at least \textbf{99.5\% uptime} under expected usage, with graceful degradation.
+  \item \textbf{Maintainability:} All features must follow the FDD folder structure and be independently swappable.
+\end{enumerate}
+
+\subsection{3.6.4 Architectural Design and Pattern}
+\textbf{Overview:} Taxi Tap is structured using a feature-driven, microkernel-inspired architecture. The diagram below illustrates this architecture.
+
+\vspace{1em}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{architecture.jpg}
+  \caption{Taxi Tap Feature-Driven Architecture Diagram}
+  \label{fig:architecture}
+\end{figure}
+\vspace{1em}
+
+\textbf{Components:}
+
+\begin{itemize}
+  \item \textbf{Expo Frontend:} Mobile-first interface using React Native
+  \item \textbf{Convex Backend:} Serverless backend with modular mutations and schema
+  \item \textbf{Convex Database:} Strongly-typed database used by each module
+  \item \textbf{Feature Modules:} Each with its own schema, adapter, hook, and UI screen
+\end{itemize}
+
+This design provides modularity, scalability, and testability with minimal DevOps complexity.
+
+\subsection{3.6.5 Architectural Constraints}
+\begin{itemize}
+  \item \textbf{Client Constraints:} Must remain within the AWS Free Tier; performance must be maintained under low-cost infrastructure.
+  \item \textbf{Deployment Constraints:} Fully serverless; no Docker/Kubernetes; must deploy via CI/CD with minimal setup.
+  \item \textbf{Security Constraints:} Only verified users may access trip, payment, or GPS functionality.
+  \item \textbf{Latency Constraints:} Real-time location updates must occur under \textbf{5 second}.
+  \item \textbf{Scalability Constraints:} Design must accommodate scaling to 1,000+ users without architectural changes.
+\end{itemize}
+
+\subsection{3.6.6 Technology Choices}
+
+\subsubsection*{Backend Platform}
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Option} & \textbf{Pros} & \textbf{Cons} \\
+\hline
+Convex & Fully serverless, fast dev, native React support & New ecosystem, TypeScript only \\
+\hline
+Firebase & Realtime syncing, easy integration & Poor test tooling, security rule complexity \\
+\hline
+AWS Lambda & Highly scalable, mature & Complex CI/CD, requires DevOps setup \\
+\hline
+\textbf{Chosen:} Convex & \multicolumn{2}{l|}{Perfect fit for modular, testable architecture. Free tier-friendly.} \\
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+\subsubsection*{Frontend Platform}
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Option} & \textbf{Pros} & \textbf{Cons} \\
+\hline
+Expo (React Native) & Fast prototyping, hot reload, cross-platform & Slightly heavier bundles \\
+\hline
+Flutter & Beautiful UI, good performance & Slower iteration, Dart-only \\
+\hline
+Native iOS/Android & Highest performance & High dev effort, no code sharing \\
+\hline
+\textbf{Chosen:} Expo & \multicolumn{2}{l|}{Fastest mobile-first path with TypeScript and Convex integration.} \\
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+\subsubsection*{Database}
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Option} & \textbf{Pros} & \textbf{Cons} \\
+\hline
+Convex DB & Type-safe, built for Convex, no config & Smaller community \\
+\hline
+Firestore & Realtime, battle-tested & Complex security model \\
+\hline
+Supabase & Postgres-based, open source & Overhead for micro-systems \\
+\hline
+\textbf{Chosen:} Convex DB & \multicolumn{2}{l|}{Natively integrated with our serverless logic.} \\
+\hline
+\end{tabular}
+
+\vspace{1em}
+
+\subsubsection*{Payment Processor}
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Option} & \textbf{Pros} & \textbf{Cons} \\
+\hline
+Yoco & Local SA support, fast onboarding, easy to integrate & Limited advanced payment flows \\
+\hline
+Paystack & Clean APIs, good reliability & Limited card support in SA \\
+\hline
+Stripe & Powerful API, subscriptions & International fees, SA limitations \\
+\hline
+\textbf{Chosen:} Yoco & \multicolumn{2}{l|}{Best fit for local payments in South Africa. Simple, effective, mobile-friendly.} \\
+\hline
+\end{tabular}
+
+\end{document}
