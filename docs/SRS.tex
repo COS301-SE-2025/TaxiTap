@@ -1,0 +1,3169 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{booktabs}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+
+\title{Software Requirements Specification\\Taxi Tap by Git It Done}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+Taxi Tap is a mobile platform designed to revolutionize South Africa’s minibus taxi industry by digitizing route information, eliminating the need for constant hooting, and creating a semi-structured booking system while preserving the flexibility that makes taxis an essential mode of transport. The system connects passengers and taxi operators through a location-aware mobile application that facilitates taxi requests, communicates passenger locations, manages payments, and provides real-time vehicle tracking – all without fundamentally changing the existing system's multi-passenger, flexible route nature.
+
+\section{User Characteristics}
+
+The users of the Taxi Tap system are expected to fit into the following groups:
+
+\subsection{Driver User Characteristics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{5cm}|p{10cm}|}
+\hline
+\textbf{Attribute} & \textbf{Description} \\
+\hline
+Familiarity with Mobile Technology & Varies widely; some drivers may be tech-comfortable, while others may struggle with apps. \\
+\hline
+Access to Reliable Internet and Data & Often limited or inconsistent; drivers operate in areas with poor signal or expensive data costs. \\
+\hline
+Preferred Language and Communication Style & Preference for local languages (e.g. Zulu, Xhosa, Sesotho). \\
+\hline
+Attention Capacity While Driving & App must require minimal taps and distractions to ensure safe usage while driving. \\
+\hline
+Trust and Skepticism Toward New Technology & Some skepticism exists due to concerns about surveillance, manipulation, or job security. \\
+\hline
+Goals and Incentives for Using the App & Seeking more passengers, quicker pickups, and less idle time, while maintaining their routine. \\
+\hline
+\end{tabular}
+\caption{Driver User Characteristics and Considerations}
+\label{tab:driver-characteristics}
+\end{table}
+
+\subsection{Passenger User Characteristics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{5cm}|p{10cm}|}
+\hline
+\textbf{Attribute} & \textbf{Description} \\
+\hline
+Digital Literacy & Ranges from students and workers (tech-savvy) to commuters with limited app experience. \\
+\hline
+Access to Reliable Internet and Data & Frequently encounters low or no connectivity, especially in transit. \\
+\hline
+Reasons for Using the Platform & Seeks reliable transport, less waiting, and a safer way to locate and use taxis. \\
+\hline
+Preferred Language and Communication Style & May prefer local languages (e.g. Zulu, Xhosa, Sesotho). \\
+\hline
+App Usage Context (Where \& When) & Often uses the app in crowded, noisy, or busy settings like taxi ranks. \\
+\hline
+Concerns Around Trust and Safety & Wants to be sure drivers are legitimate and that their location and personal data are protected. \\
+\hline
+Platform Interaction Needs & Needs to discover taxis, request rides, track driver arrival, and receive ride notifications. \\
+\hline
+\end{tabular}
+\caption{Commuter User Characteristics and Considerations}
+\label{tab:commuter-characteristics}
+\end{table}
+
+\section{User Stories}
+
+\subsection{Passenger User Stories}
+
+\begin{longtable}{|p{4cm}|p{6cm}|p{5cm}|}
+\hline
+\textbf{User Story} & \textbf{Acceptance Criteria} & \textbf{Definition of Done} \\
+\hline
+Account Registration \& Login & As a passenger, I want to sign up and log in to my account, so that I can securely access and use the Taxi Tap app. & Given that I am on the app’s welcome screen, When I choose “Sign Up” or “Log In” and enter valid details, then I should be authenticated and taken to the home screen. \\
+& & Based on my input criteria, I am taken to the home page of Taxi Tap. \\
+\hline
+View Available Taxis and Routes & As a passenger, I want to view available taxis and their routes on a map, so that I can choose one that matches my travel needs. & Given I am logged in, When I open the home screen, then I should see nearby taxis on a map with route or destination labels. \\
+& & The map displays icons of nearby taxis, including route or destination tags, when available. \\
+\hline
+Set Pickup and Destination & As a passenger, I want to share my location and set a destination, so that drivers can find me and pick me up efficiently. & Given that I have granted location access, when I enter or select a pickup and destination point, then the app should confirm my trip details and show nearby taxis. \\
+& & Pickup and destination are confirmed and displayed; nearby taxis are suggested based on the selected route. \\
+\hline
+Book a Seat and Get Confirmation & As a passenger, I want to book a seat on a taxi and receive confirmation, so that I’m guaranteed a spot before the taxi arrives. & Given I’ve selected a taxi, When I tap “Book Seat” and confirm, Then I should receive a booking confirmation and a ride status update. \\
+& & A booking confirmation message appears with the selected taxi details and current ride status. \\
+\hline
+Track Assigned Taxi in Real-Time & As a passenger, I want to track my assigned taxi in real time, so that I know when and where to expect pickup. & Given my booking is confirmed, When I open the tracking screen, then I should see the taxi’s live location and estimated time of arrival. \\
+& & The assigned taxi is visible on the map with a live location marker and updated ETA. \\
+\hline
+Receiving Alerts When Taxi is Nearby & As a passenger, I want to receive alerts when the taxi is nearby, so that I can be ready at the pickup location. & Given the assigned taxi is approaching, When it is within 500 meters, then I should receive a push notification that it’s nearby. \\
+& & A push alert is triggered and received once the taxi enters the defined proximity radius. \\
+\hline
+See Available Seats & As a passenger, I want to see how many seats are available, so that I can decide whether to book a seat or wait. & Given I view a taxi on the map or booking screen, When I open its details, then I should see the number of available seats. \\
+& & The number of available seats is clearly shown for each listed or selected taxi. \\
+\hline
+Rate Completed Trip & As a passenger, I want to rate my trip after completion, so that I can provide feedback to help improve the service. & Given my ride has ended, When I open the app, then I should be prompted to leave a 1–5 star rating and optional comments. \\
+& & The rating form appears automatically after the ride ends, and feedback is successfully submitted to the system. \\
+\hline
+Use App Offline or on Low Bandwidth & As a passenger, I want to use the app offline or on low bandwidth, so that I can still interact with core features in areas with poor connectivity. & Given I have limited internet access, When I open the app, then I should still be able to view saved routes, taxis, and queue a ride request that sends once reconnected. \\
+& & The app functions with cached map data and stores ride requests locally, syncing once connectivity is restored. \\
+\hline
+Indicate Drop-Off Point Mid-Trip & As a passenger, I should be able to indicate where I want to be dropped off during the trip. & Given that I’m in a running taxi, when I choose a stop or drop-off location mid-trip, then the driver should receive an update of my chosen point. \\
+& & The app allows drop-off selection, sends update to driver, and displays new estimated drop-off. \\
+\hline
+View All Available Stops & As a passenger, I should be able to see all the available stops that are there during my trip. & Given I’m on a selected route, when I view route details, then I should see a list or map of all possible stops. \\
+& & A stop list or map view is shown, detailing all available stops along the route. \\
+\hline
+See Estimated Time to Destination & As a passenger, I should be able to see how long it will take to reach my destination or drop-off spot. & Given I’ve set a destination, when I view trip details, then I should see the estimated time remaining. \\
+& & ETA is shown dynamically on screen and is updated with real-time traffic and route changes. \\
+\hline
+\caption{Commuter user stories}
+\label{tab:commuter-user-stories}
+\end{longtable}
+
+\subsection{Driver User Stories}
+
+\begin{longtable}{|p{4cm}|p{6cm}|p{5cm}|}
+\hline
+\textbf{User Story} & \textbf{Acceptance Criteria} & \textbf{Definition of Done} \\
+\hline
+Account Registration \& Login & As a driver, I want to sign up and log in to my account, so that I can securely access and use the Taxi Tap app. & Given that I am on the app’s welcome screen, when I choose “Sign Up” or “Log In” and enter valid details, then I should be authenticated and taken to the home screen. \\
+& & Based on my input criteria, I am taken to the home page of Taxi Tap \\
+\hline
+Announce Route \& Destination & As a driver, I want to input the route I will be taking and the destination, so that passengers can see if I’m heading in their direction. & Given that I’m logged in, when I set my starting point and destination, then the route is visible to nearby passengers. \\
+& & The route is stored and displayed to the eligible passenger's interface. \\
+\hline
+Go Online/Offline & As a driver, I want to go online or offline as needed, so that I can control when I am available to receive ride requests. & Given that I’m on the driver dashboard, when I tap “Go Online” or “Go Offline”, then my status is updated accordingly and affects request visibility. \\
+& & The driver's online/offline status is reflected, and the passenger can no longer see the taxi on the map. \\
+\hline
+Receive Ride Requests & As a driver, I want to receive ride requests from nearby passengers, so that I can choose which pickups to accept. & Given that I am online and have an active route, when a passenger requests a ride, then I receive a notification with request details. \\
+& & Ride requests from matching passengers are delivered in real-time to the driver’s interface. \\
+\hline
+Accept or Decline Requests & As a driver, I want to accept or decline a ride request, so that I can manage my route and taxi capacity efficiently. & Given I have received a ride request, when I tap “Accept” or “Decline”, then the system updates the request status and notifies the passenger. \\
+& & Accepted rides appear on the active list; declined requests are logged and cleared. \\
+\hline
+View Passenger Pickup Details & As a driver, I want to see the passenger’s pickup point and basic information, so that I know where to stop and who I’m picking up. & Given that I’ve accepted a booking, when I view the trip summary, then I should see the passenger’s location and name or contact info. \\
+& & Pickup details are accurately displayed on the driver's map and trip screen. \\
+\hline
+View Map \& Navigation & As a driver, I want to see a map with passenger pickup and route directions, so that I can navigate efficiently. & Given that I have one or more assigned pickups, When I open the map view, then I should see my location and passenger's location. \\
+& & Live maps with GPS and routing is functional and accurate within the app. \\
+\hline
+Update Seat Availability & As a driver, I want to update how many seats are available in my taxi, so that passengers can decide whether to book or wait. & Given that I’ve started a trip or gone online, when I adjust seat count manually, Then, passengers see the updated availability. \\
+& & Seat count updates in real time and is reflected in the passenger’s booking screen. \\
+\hline
+Receive Alerts for New Requests or Updates & As a driver, I want to receive real-time notifications, so that I don’t miss ride requests or updates while driving. & Given that I am online, when a new request or important event occurs, then I receive a push notification with the relevant details. \\
+& & Push and in-app alerts trigger correctly and lead to actionable pages. \\
+\hline
+Work Offline (Partial Functionality) & As a driver, I want to continue using key features even when I’m offline, so that I can operate in areas with poor connectivity. & Given that I am offline or have poor signal, when I open the app, then I should be able to see cached routes and queue ride requests. \\
+& & The app stores critical data locally and syncs changes once reconnected. \\
+\hline
+Indicate Taxi Association & As a driver, I should be able to indicate which taxi association I am a part of. & Given I am registering or editing my profile, when I select or input my association, then it should be linked to my driver profile. \\
+& & Association name is stored and reflected in the driver's profile and backend database. \\
+\hline
+Receive Route from Association & As a driver, I should be assigned a route by my taxi association. & Given I belong to a taxi association, when I log in or go online, then the assigned route from the association should appear. \\
+& & System pulls assigned route from the association records and displays it on the app. \\
+\hline
+Receive Drop-Off Notification & As a driver, I should be notified when a passenger wants to get dropped off. & Given I am currently driving and have active passengers, when a passenger selects a drop-off point, then I receive an alert with the details. \\
+& & Notification appears in real-time and updates route on the driver’s screen. \\
+\hline
+\caption{Driver user stories}
+\label{tab:driver-user-stories}
+\end{longtable}
+
+\section{Service Contracts}
+
+\subsection*{Location}
+
+\begin{enumerate}    
+  \item \textbf{getNearbyTaxis}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  passengerLat: number,
+  passengerLng: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "passengerLat": -25.746111,
+  "passengerLng": 28.188056
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  _id: string,
+  role: string,
+  latitude: number,
+  longitude: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+[
+  {
+    "_id": "qwerty123",
+    "role": "driver",
+    "latitude": -25.7471,
+    "longitude": 28.2293
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item This function receives the passenger's current location, finds all drivers in the system, calculates how far each driver is from the passenger, and returns only those drivers who are nearby (less than 5 km away).
+      \end{itemize}
+    \end{itemize}
+
+    \item \textbf{updateLocation}
+    \begin{itemize}
+        \item Mutation (Write operation)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    userId: string,
+    latitude: number,
+    longitude: number
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "userId": "user_abc123",
+    "latitude": -25.748333,
+    "longitude": 28.1875
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+null
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item This function updates the existing location record for a specific user by modifying their latitude, longitude, and updated timestamp. If no existing location record is found for the user, it throws an error.
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{createLocation}
+    \begin{itemize}
+        \item Mutation (Write operation)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    userId: string,
+    latitude: number,
+    longitude: number,
+    role: "driver" | "passenger" | "both"
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "userId": "user_abc123",
+    "latitude": -25.748333,
+    "longitude": 28.1875,
+    "role": "driver"
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+null
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Checks whether a location record already exists for the specified user.
+            \item If no existing location is found, inserts a new location record with the provided latitude, longitude, role, and current timestamp.
+            \item If a location already exists, no changes are made.
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\subsection*{Routes}
+
+\begin{enumerate}
+  \item \textbf{findBestMatchingRoutes}
+  \begin{itemize}
+    \item Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number,
+  maxStartDistance?: number,
+  maxEndDistance?: number,
+  maxResults?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "startLat": -25.75,
+  "startLon": 28.19,
+  "endLat": -25.76,
+  "endLon": 28.21
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: boolean,
+  matchingRoutes: Array<{
+    routeId: string,
+    routeName: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    startProximity: number,
+    endProximity: number,
+    totalScore: number,
+    closestStartStop: {...} | null,
+    closestEndStop: {...} | null,
+    hasDirectRoute: boolean,
+    isRecommended: boolean,
+    totalStops: number,
+    isActive: boolean
+  }>,
+  totalRoutesChecked: number,
+  routesWithinRange: number,
+  searchCriteria: {...},
+  message: string
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Evaluates all active routes.
+      \item Finds closest stops to start and end locations.
+      \item Scores routes based on proximity and directionality.
+      \item Returns sorted and filtered list of best-matching routes.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{getRouteWithStopsDetails}
+  \begin{itemize}
+    \item Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  routeId: string,
+  userLat?: number,
+  userLon?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "routeId": "route123",
+  "userLat": -25.75,
+  "userLon": 28.19
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: boolean,
+  route: {
+    routeId: string,
+    name: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    isActive: boolean,
+    totalStops: number,
+    stops: Array<{
+      id: string,
+      name: string,
+      coordinates: [number, number],
+      order: number,
+      distanceFromUser?: number
+    }>
+  } | null,
+  message: string
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Returns full route details including all stops.
+      \item Includes distance to each stop from user location if provided.
+      \item Uses enriched stop data if available.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{findNearbyStops}
+  \begin{itemize}
+    \item Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  lat: number,
+  lon: number,
+  radiusKm?: number,
+  maxResults?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "lat": -25.75,
+  "lon": 28.19,
+  "radiusKm": 2.5
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: boolean,
+  nearbyStops: Array<{
+    stop: {
+      id: string,
+      name: string,
+      coordinates: [number, number],
+      order: number
+    },
+    route: {
+      routeId: string,
+      name: string,
+      taxiAssociation: string,
+      fare: number
+    },
+    distance: number
+  }>,
+  searchLocation: {
+    latitude: number,
+    longitude: number
+  },
+  radiusKm: number,
+  totalFound: number,
+  message: string
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Finds and returns all stops within a specified radius of the user.
+      \item Returns details about both the stop and its associated route.
+      \item Results are sorted by proximity.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{findAvailableTaxisForJourney}
+  \begin{itemize}
+    \item Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  originLat: number,
+  originLng: number,
+  destinationLat: number,
+  destinationLng: number,
+  maxOriginDistance?: number,
+  maxDestinationDistance?: number,
+  maxTaxiDistance?: number,
+  maxResults?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "originLat": -25.75,
+  "originLng": 28.19,
+  "destinationLat": -25.76,
+  "destinationLng": 28.21
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: boolean,
+  availableTaxis: Array<{
+    driverId: string,
+    userId: string,
+    name: string,
+    phoneNumber: string,
+    vehicleRegistration: string,
+    vehicleModel: string,
+    vehicleColor: string,
+    vehicleYear: number | null,
+    isAvailable: boolean,
+    numberOfRidesCompleted: number,
+    averageRating: number,
+    taxiAssociation: string,
+    currentLocation: {
+      latitude: number,
+      longitude: number,
+      lastUpdated: string
+    },
+    distanceToOrigin: number,
+    routeInfo: {
+      routeId: string,
+      routeName: string,
+      taxiAssociation: string,
+      fare: number,
+      estimatedDuration: number,
+      startProximity: number,
+      endProximity: number,
+      totalScore: number,
+      closestStartStop: {...} | null,
+      closestEndStop: {...} | null
+    }
+  }>,
+  matchingRoutes: Array<{
+    routeId: string,
+    routeName: string,
+    taxiAssociation: string,
+    fare: number,
+    availableDrivers: number,
+    startProximity: number,
+    endProximity: number,
+    totalScore: number
+  }>,
+  totalTaxisFound: number,
+  totalRoutesChecked: number,
+  validRoutesFound: number,
+  searchCriteria: {
+    origin: { latitude: number, longitude: number },
+    destination: { latitude: number, longitude: number },
+    maxOriginDistance: number,
+    maxDestinationDistance: number,
+    maxTaxiDistance: number,
+    maxResults: number
+  },
+  message: string
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Identifies valid taxi routes that pass near both origin and destination.
+      \item Scores routes based on proximity and directness.
+      \item Gathers nearby drivers assigned to valid routes.
+      \item Returns sorted list of available taxis and matching routes.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{getNearbyTaxisForRouteRequest}
+  \begin{itemize}
+    \item Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  passengerLat: number,
+  passengerLng: number,
+  passengerEndLat: number,
+  passengerEndLng: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "passengerLat": -25.7461,
+  "passengerLng": 28.1880,
+  "passengerEndLat": -25.7499,
+  "passengerEndLng": 28.2091
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+Array<{
+  userId: string,
+  latitude: number,
+  longitude: number,
+  role: "driver",
+  updatedAt: string,
+  _id: string,
+  name: string,
+  phoneNumber: string,
+  vehicleRegistration: string,
+  vehicleModel: string,
+  vehicleColor: string,
+  vehicleYear: number | null,
+  isAvailable: boolean,
+  numberOfRidesCompleted: number,
+  averageRating: number,
+  taxiAssociation: string,
+  distanceToOrigin: number,
+  routeInfo: {
+    routeId: string,
+    routeName: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    startProximity: number,
+    endProximity: number,
+    totalScore: number,
+    closestStartStop: {...} | null,
+    closestEndStop: {...} | null
+  }
+}>
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Wrapper for \texttt{findAvailableTaxisForJourney} with fixed proximity thresholds.
+      \item Transforms results for backward compatibility with older client format.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{\_findAvailableTaxisForJourney}
+  \begin{itemize}
+    \item Internal Query (Read-only)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  originLat: number,
+  originLng: number,
+  destinationLat: number,
+  destinationLng: number,
+  maxOriginDistance?: number,
+  maxDestinationDistance?: number,
+  maxTaxiDistance?: number,
+  maxResults?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "originLat": -25.7501,
+  "originLng": 28.1888,
+  "destinationLat": -25.7623,
+  "destinationLng": 28.2010
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: boolean,
+  availableTaxis: Array<AvailableTaxi>,
+  matchingRoutes: Array<{
+    routeId: string,
+    routeName: string,
+    taxiAssociation: string,
+    fare: number,
+    availableDrivers: number,
+    startProximity: number,
+    endProximity: number,
+    totalScore: number
+  }>,
+  totalTaxisFound: number,
+  totalRoutesChecked: number,
+  validRoutesFound: number,
+  searchCriteria: {
+    origin: { latitude: number, longitude: number },
+    destination: { latitude: number, longitude: number },
+    maxOriginDistance: number,
+    maxDestinationDistance: number,
+    maxTaxiDistance: number,
+    maxResults: number
+  },
+  message: string
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Internally filters and scores routes based on distance and directionality between origin and destination.
+      \item Finds and filters nearby available drivers assigned to those routes.
+      \item Aggregates full driver, location, and vehicle metadata.
+    \end{itemize}
+  \end{itemize}
+
+  \item \textbf{getEnrichedStopName}
+    \begin{itemize}
+      \item Action (Write operation)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  lat: number,
+  lon: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "lat": -25.7479,
+  "lon": 28.2293
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+string
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+"Centurion Mall"
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Receives latitude and longitude coordinates, performs reverse geocoding using an internal API call, and returns a readable stop name. If reverse geocoding fails, it returns \texttt{"Unnamed Stop"}.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getEnrichedStopsForRoute}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  routeId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "routeId": "route-123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    id: string,
+    name: string,
+    order: number
+  }
+]
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+[
+  {
+    "id": "stop-1",
+    "name": "Centurion",
+    "order": 1
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves enriched stops for a given route from the database, filters out stops with meaningless names, and returns only valid stop data.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{displayRoutes}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    routeId: string,
+    start: string,
+    destination: string,
+    startCoords: { latitude: number, longitude: number } | null,
+    destinationCoords: { latitude: number, longitude: number } | null,
+    stops: [],
+    fare: number,
+    estimatedDuration: number,
+    taxiAssociation: string,
+    hasStops: boolean
+  }
+]
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+[
+  {
+    "routeId": "route-1",
+    "start": "Pretoria",
+    "destination": "Johannesburg",
+    "startCoords": { "latitude": -25.7479, "longitude": 28.2293 },
+    "destinationCoords": { "latitude": -26.2041, "longitude": 28.0473 },
+    "stops": [],
+    "fare": 45,
+    "estimatedDuration": 3600,
+    "taxiAssociation": "PUTCO",
+    "hasStops": false
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Reads all route data, processes coordinates, extracts start and destination points, calculates fare based on duration, and formats route information for display.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{displayRoutesPaginated}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  page?: number,
+  limit?: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "page": 1,
+  "limit": 10
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  routes: [...],
+  pagination: {
+    currentPage: number,
+    totalPages: number,
+    totalRoutes: number,
+    hasNextPage: boolean,
+    hasPrevPage: boolean,
+    limit: number
+  }
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "routes": [...],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "totalRoutes": 25,
+    "hasNextPage": true,
+    "hasPrevPage": false,
+    "limit": 10
+  }
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Extends \texttt{displayRoutes} with pagination support. Returns paginated list of routes with metadata describing current page, total pages, and availability of next/previous pages.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{assignRandomRouteToDriver}
+    \begin{itemize}
+      \item Mutation (Write operation)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string,  // Convex document ID (taxiTap_users)
+  taxiAssociation: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user-123",
+  "taxiAssociation": "PUTCO"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string,
+  assignedRoute: {
+    _id: string,
+    routeId: string,
+    name: string,
+    geometry: object,
+    taxiAssociation: string,
+    estimatedDuration: number,
+    isActive: boolean
+  }
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "success": true,
+  "message": "Route assigned successfully",
+  "assignedRoute": {
+    "_id": "route-456",
+    "routeId": "route-456",
+    "name": "Pretoria - Johannesburg",
+    "geometry": { ... },
+    "taxiAssociation": "PUTCO",
+    "estimatedDuration": 3600,
+    "isActive": true
+  }
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item This function assigns a random active route (belonging to the driver's taxi association) to a driver. If no active routes are available, or if the driver does not exist, the function throws an error. Upon successful assignment, it updates the driver's assigned route, association, and timestamp.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getRouteStopsWithEnrichment}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  routeId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "routeId": "route-123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  stops: array,
+  isEnriched: boolean,
+  updatedAt: string | null
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "stops": [...],
+  "isEnriched": true,
+  "updatedAt": "2024-06-15T10:00:00Z"
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Attempts to retrieve enriched route stops from the database. If enrichment is unavailable, it falls back to original route stops.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getAllRoutesWithEnrichmentStatus}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    _id: string,
+    routeId: string,
+    name: string,
+    geometry: object,
+    taxiAssociation: string,
+    estimatedDuration: number,
+    isActive: boolean,
+    hasEnrichedStops: boolean
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Returns all routes and indicates if enriched stops exist for each route.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getAllAvailableRoutesForPassenger}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    routeId: string,
+    routeName: string,
+    start: string,
+    destination: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    stops: array,
+    totalStops: number
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Returns a sorted list of all active routes available for passengers, including parsed start and destination names.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getRoutesByTaxiAssociationForPassenger}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  taxiAssociation: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "taxiAssociation": "PUTCO"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    routeId: string,
+    routeName: string,
+    start: string,
+    destination: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    stops: array,
+    totalStops: number
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Returns all active routes for a specific taxi association, allowing passengers to filter by association.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getRouteDetailsWithDrivers}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  routeId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "routeId": "route-123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  route: {
+    routeId: string,
+    routeName: string,
+    start: string,
+    destination: string,
+    taxiAssociation: string,
+    fare: number,
+    estimatedDuration: number,
+    stops: array,
+    geometry: object,
+    totalStops: number,
+    isActive: boolean
+  } | null,
+  activeDrivers: [
+    {
+      driverId: string,
+      driverName: string,
+      averageRating: number,
+      totalRides: number,
+      isActive: boolean
+    }
+  ],
+  message: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Returns complete route details along with all currently active drivers assigned to that route.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getDriverAssignedRoute}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user-123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  _id: string,
+  routeId: string,
+  name: string,
+  geometry: object,
+  taxiAssociation: string,
+  estimatedDuration: number,
+  isActive: boolean,
+  stops: array
+} | null
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves the assigned route for a specific driver, or null if the driver has no route assignment.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getAllTaxiAssociations}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  string
+]
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+[
+  "PUTCO",
+  "JMPD",
+  "Gautrain"
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Returns a sorted list of all unique taxi associations present in the system.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getCachedStop (InternalQuery)}
+    \begin{itemize}
+      \item Internal Query (Read-only, internal use)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  key: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "key": "-25.74790,28.22930"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  id: string,
+  name: string,
+  lastUsed: number
+} | null
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Looks up if the reverse geocoded stop name for given coordinates is already cached in the database. If not found, returns null.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{cacheStop (InternalMutation)}
+    \begin{itemize}
+      \item Internal Mutation (Write-only, internal use)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  key: string,
+  name: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "key": "-25.74790,28.22930",
+  "name": "Menlyn Mall"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+(void)
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Caches the reverse geocoded stop name for future queries to avoid unnecessary API calls.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getReadableStopName (Action)}
+    \begin{itemize}
+      \item Action (Performs side effects, external API calls)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  lat: number,
+  lon: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "lat": -25.74790,
+  "lon": 28.22930
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+string
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+"Menlyn Mall"
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item This action first checks if the location name is already cached.
+        \item If not cached, it queries the OpenStreetMap Nominatim API to get a human-readable location name.
+        \item After successful retrieval, it caches the result for future efficiency.
+        \item If any error occurs during API call, returns \texttt{"Unnamed Stop"} as fallback.
+      \end{itemize}
+    \end{itemize}
+
+\end{enumerate}
+
+\subsection*{Taxis}
+
+\begin{enumerate}
+
+  \item \textbf{getAvailableTaxis (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+[
+  {
+    licensePlate: string,
+    image: string | null,
+    seats: number,
+    model: string,
+    driverName: string,
+    userId: string
+  }
+]
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+[
+  {
+    "licensePlate": "ABC123",
+    "image": null,
+    "seats": 4,
+    "model": "Toyota Avanza",
+    "driverName": "John Doe",
+    "userId": "user123"
+  }
+]
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves all taxis that are marked as available in the system.
+        \item For each available taxi, retrieves the corresponding driver and user information.
+        \item Returns a list of available taxis enriched with driver names and related user IDs.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{getTaxiForDriver (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  _id: string,
+  driverId: string,
+  licensePlate: string,
+  model: string,
+  capacity: number,
+  image: string | null
+} | null
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "_id": "taxi456",
+  "driverId": "driver789",
+  "licensePlate": "XYZ789",
+  "model": "Toyota Quantum",
+  "capacity": 14,
+  "image": "https://example.com/taxi.jpg"
+}
+      \end{verbatim}
+
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Given a driver's user ID, this query retrieves the taxi assigned to that driver.
+        \item If no driver profile is found for the given user ID, it returns \texttt{null}.
+        \item If a driver exists but no taxi is assigned, it also returns \texttt{null}.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{updateTaxiSeatAvailability}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  action: "decrease" | "increase"
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideId": "ride_abc123",
+  "action": "decrease"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  success: true,
+  updatedSeats: number,
+  previousSeats: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "success": true,
+  "updatedSeats": 3,
+  "previousSeats": 4
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Finds the taxi associated with the driver of the given ride.
+      \item Increments or decrements the `capacity` (seats available) based on the action.
+      \item Ensures the value does not drop below zero when decreasing.
+      \item Updates the `updatedAt` timestamp for the taxi record.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{updateTaxiInfo (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string,
+  licensePlate?: string,
+  model?: string,
+  color?: string,
+  year?: number,
+  image?: string,
+  capacity?: number,
+  isAvailable?: boolean
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123",
+  "licensePlate": "XYZ789",
+  "model": "Toyota Quantum",
+  "color": "White",
+  "year": 2019,
+  "capacity": 14,
+  "isAvailable": true
+}
+      \end{verbatim}
+
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  taxiId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "success": true,
+  "taxiId": "taxi456"
+}
+      \end{verbatim}
+
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Updates the taxi information for the driver identified by the given \texttt{userId}.
+        \item Only fields provided in the request will be updated; all others remain unchanged.
+        \item Throws an error if no driver profile or taxi is found for the user.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{viewTaxiInfo (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  passengerId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "passengerId": "passenger123"
+}
+      \end{verbatim}
+
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  taxi: {
+    _id: string,
+    licensePlate: string,
+    model: string,
+    color?: string,
+    year?: number,
+    image?: string,
+    capacity: number,
+    isAvailable: boolean,
+    updatedAt?: number
+  },
+  driver: {
+    name?: string,
+    phoneNumber?: string,
+    rating?: number
+  },
+  rideId: string,
+  status: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "taxi": {
+    "_id": "taxi789",
+    "licensePlate": "XYZ123",
+    "model": "Toyota Quantum",
+    "capacity": 14,
+    "isAvailable": true
+  },
+  "driver": {
+    "name": "John Doe",
+    "phoneNumber": "+27123456789",
+    "rating": 4.8
+  },
+  "rideId": "ride456",
+  "status": "in_progress"
+}
+      \end{verbatim}
+
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves the taxi and driver information related to the passenger's most recent or active ride reservation.
+        \item Throws an error if no active reservation or assigned driver is found.
+        \item Useful for passengers to view taxi details after reserving a seat.
+      \end{itemize}
+    \end{itemize}
+
+\end{enumerate}
+
+\subsection*{User}
+
+\begin{enumerate}
+
+  \item \textbf{getUserById (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  _id: string,
+  name: string,
+  email: string,
+  age?: number,
+  phoneNumber: string,
+  isVerified: boolean,
+  isActive: boolean,
+  accountType: string,
+  currentActiveRole?: string,
+  lastRoleSwitchAt?: string,
+  profilePicture?: string,
+  dateOfBirth?: string,
+  gender?: string,
+  emergencyContact?: string,
+  createdAt: string,
+  updatedAt: string,
+  lastLoginAt?: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves a user by their Convex document ID.
+        \item Throws an error if the user is not found.
+        \item Excludes sensitive fields like passwords.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getUserByPhone (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  phoneNumber: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "phoneNumber": "+27123456789"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  _id: string,
+  name: string,
+  email: string,
+  age?: number,
+  phoneNumber: string,
+  isVerified: boolean,
+  isActive: boolean,
+  accountType: string,
+  currentActiveRole?: string,
+  lastRoleSwitchAt?: string,
+  profilePicture?: string,
+  dateOfBirth?: string,
+  gender?: string,
+  emergencyContact?: string,
+  createdAt: string,
+  updatedAt: string,
+  lastLoginAt?: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves a user by their phone number.
+        \item Throws an error if no user with the given phone number exists.
+        \item Useful for login or phone-based lookup.
+      \end{itemize}
+    \end{itemize}
+
+  \item \textbf{getUserWithProfiles (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  user: {
+    _id: string,
+    name: string,
+    email: string,
+    age?: number,
+    phoneNumber: string,
+    isVerified: boolean,
+    isActive: boolean,
+    accountType: string,
+    currentActiveRole?: string,
+    lastRoleSwitchAt?: string,
+    profilePicture?: string,
+    dateOfBirth?: string,
+    gender?: string,
+    emergencyContact?: string,
+    createdAt: string,
+    updatedAt: string,
+    lastLoginAt?: string
+  },
+  driverProfile: object | null,
+  passengerProfile: object | null
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Retrieves user data along with associated driver and passenger profiles (if any).
+        \item Returns `null` for profiles if they do not exist.
+        \item Throws an error if the user is not found.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{loginSMS (Query)}
+    \begin{itemize}
+      \item Query (Read-only)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  phoneNumber: string,
+  password: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "phoneNumber": "+27123456789",
+  "password": "user_password_here"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  id: string,
+  phoneNumber: string,
+  name: string,
+  accountType: string,
+  currentActiveRole: string,
+  isVerified: boolean
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Authenticates user by verifying the provided password against a securely stored salted hash using PBKDF2 with SHA-256.
+        \item Checks if the user account is active.
+        \item Confirms that the user's current active role matches their account type or is "both".
+        \item Throws errors for:
+          \begin{itemize}
+            \item User not found,
+            \item Invalid password,
+            \item Deactivated account,
+            \item Missing active role,
+            \item Role mismatch between active role and account permissions.
+          \end{itemize}
+        \item Returns user identification and status information for a successful login.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{signUpSMS (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  phoneNumber: string,
+  name: string,
+  password: string,
+  accountType: "passenger" | "driver" | "both",
+  email?: string,
+  age?: number
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "phoneNumber": "+27123456789",
+  "name": "John Doe",
+  "password": "securePassword123",
+  "accountType": "driver",
+  "email": "john@example.com",
+  "age": 30
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  userId: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Creates a new user with the specified account type and details.
+        \item Hashes the password securely using PBKDF2 with a random salt and SHA-256.
+        \item Prevents duplicate phone numbers and throws an error if the phone number already exists.
+        \item Initializes location record with default coordinates (latitude: 0, longitude: 0) and role based on accountType.
+        \item Creates associated driver and/or passenger profiles depending on the account type.
+        \item Sets default values for user status flags (`isVerified`, `isActive`) and timestamps.
+        \item Handles potential race conditions on phone number uniqueness.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{switchActiveRole (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string,
+  newRole: "passenger" | "driver"
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123",
+  "newRole": "driver"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string,
+  newRole: "passenger" | "driver"
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Allows a user with both passenger and driver roles to switch their active role.
+        \item Throws an error if the user does not exist or does not have both account types.
+        \item Prevents switching to the same active role the user already has.
+        \item Checks for active rides (accepted or in progress) in the current role before allowing a switch.
+          \begin{itemize}
+            \item If switching to "passenger", ensures no active driver rides exist.
+            \item If switching to "driver", ensures no active passenger rides exist.
+          \end{itemize}
+        \item Updates the user's current active role and timestamps on successful switch.
+      \end{itemize}
+    \end{itemize}
+
+ \item \textbf{switchBothToDriver (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+          \item Switches a user with account type \texttt{both} to \texttt{driver} only.
+          \item Throws an error if the user does not exist or is not currently \texttt{both}.
+          \item Prevents switching if the user has any active rides as a passenger (statuses: \texttt{requested}, \texttt{accepted}, \texttt{in\_progress}).
+          \item Updates the user's account type to \texttt{driver} and sets the active role to \texttt{driver}.
+          \item Updates \texttt{roleSwitchAt} and updated timestamps.
+        \end{itemize}
+    \end{itemize}
+
+\item \textbf{switchBothToPassenger (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+          \item Switches a user with account type \texttt{both} to \texttt{passenger} only.
+          \item Throws an error if the user does not exist or is not currently \texttt{both}.
+          \item Prevents switching if the user has any active rides as a driver (statuses: \texttt{accepted}, \texttt{in\_progress}).
+          \item Updates the user's account type to \texttt{passenger} and sets the active role to \texttt{passenger}.
+          \item Updates \texttt{roleSwitchAt} and updated timestamps.
+        \end{itemize}
+    \end{itemize}
+
+\item \textbf{switchDriverToBoth (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Upgrades a user from "driver" to "both" (driver and passenger).
+        \item Throws an error if the user does not exist or is not currently a driver.
+        \item Sets the account type to "both" and the current active role to "driver".
+        \item Updates role switch and updated timestamps.
+        \item Creates a passenger profile with default values if one does not already exist.
+      \end{itemize}
+    \end{itemize}
+
+\item \textbf{switchPassengerToBoth (Mutation)}
+    \begin{itemize}
+      \item Mutation (Modifies data)
+      \item \textbf{Request:}
+      \begin{verbatim}
+{
+  userId: string
+}
+      \end{verbatim}
+      Example:
+      \begin{verbatim}
+{
+  "userId": "user123"
+}
+      \end{verbatim}
+      \item \textbf{Response:}
+      \begin{verbatim}
+{
+  success: boolean,
+  message: string
+}
+      \end{verbatim}
+      \item \textbf{Effect:}
+      \begin{itemize}
+        \item Upgrades a user from "passenger" to "both" (passenger and driver).
+        \item Throws an error if the user does not exist or is not currently a passenger.
+        \item Sets the account type to "both" and the current active role to "passenger".
+        \item Updates role switch and updated timestamps.
+        \item Creates a driver profile with default values if one does not already exist.
+      \end{itemize}
+    \end{itemize}
+
+\end{enumerate}
+
+\subsection*{Notifications}
+
+\item \textbf{deactivatePushToken}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  token: string
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "token": "abc123def456"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: string,
+  isActive: boolean,
+  updatedAt: number
+} \text{ or } null
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "_id": "pushToken_xyz789",
+  "isActive": false,
+  "updatedAt": 1687804800000
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Searches the \texttt{pushTokens} collection for a document matching the provided token.
+      \item If found, updates the document to set \texttt{isActive} to \texttt{false} and \texttt{updatedAt} to the current timestamp.
+      \item If no matching token is found, returns \texttt{null}.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{getNotifications}
+  \begin{itemize}
+    \item Query (Read operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">,
+  limit?: number,
+  unreadOnly?: boolean
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123",
+  "limit": 10,
+  "unreadOnly": true
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+[
+  {
+    _id: string,
+    userId: string,
+    message: string,
+    isRead: boolean,
+    createdAt: number,
+    // ...other notification fields
+  },
+  ...
+]
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+[
+  {
+    "_id": "notif_001",
+    "userId": "user_abc123",
+    "message": "Your ride is arriving soon",
+    "isRead": false,
+    "createdAt": 1687804800000
+  },
+  {
+    "_id": "notif_002",
+    "userId": "user_abc123",
+    "message": "New promotional offer available",
+    "isRead": true,
+    "createdAt": 1687804700000
+  }
+]
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Retrieves notifications for the specified user from the database.
+      \item Can optionally filter to only unread notifications if \texttt{unreadOnly} is true.
+      \item Can optionally limit the number of notifications returned.
+      \item Notifications are ordered descending by creation time (most recent first).
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{getUnreadCount}
+  \begin{itemize}
+    \item Query (Read operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+number
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+5
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Counts and returns the number of unread notifications for the specified user.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{getNotificationSettings}
+  \begin{itemize}
+    \item Query (Read operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  rideUpdates: boolean,
+  promotionalOffers: boolean,
+  systemAlerts: boolean,
+  emergencyNotifications: boolean,
+  routeUpdates: boolean,
+  paymentNotifications: boolean,
+  ratingReminders: boolean,
+  soundEnabled: boolean,
+  vibrationEnabled: boolean,
+  quietHoursStart: string,
+  quietHoursEnd: string
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideUpdates": true,
+  "promotionalOffers": true,
+  "systemAlerts": true,
+  "emergencyNotifications": true,
+  "routeUpdates": true,
+  "paymentNotifications": true,
+  "ratingReminders": true,
+  "soundEnabled": true,
+  "vibrationEnabled": true,
+  "quietHoursStart": "22:00",
+  "quietHoursEnd": "07:00"
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Retrieves the user's notification settings from the database.
+      \item If no custom settings exist, returns a default notification preference object.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{markAllAsRead}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+<number of notifications marked as read>
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+5
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Queries all unread notifications for the given user.
+      \item Updates each to mark them as read by setting:
+        \begin{itemize}
+          \item \texttt{isRead} to \texttt{true}
+          \item \texttt{readAt} to the current timestamp
+        \end{itemize}
+      \item Returns the count of notifications that were marked as read.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{markAsRead}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  notificationId: Id<"notifications">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "notificationId": "notif_456xyz"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: "notif_456xyz",
+  isRead: true,
+  readAt: <timestamp>,
+  ... // other fields unchanged
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Locates the notification with the given ID.
+      \item Updates the following fields:
+        \begin{itemize}
+          \item \texttt{isRead} $\rightarrow$ \texttt{true}
+          \item \texttt{readAt} $\rightarrow$ current timestamp
+        \end{itemize}
+      \item Returns the updated notification document.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{registerPushToken}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">,
+  token: string,
+  platform: "ios" | "android"
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  userId: "user_abc123",
+  token: "fcmToken1234567890",
+  platform: "android"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: "pushToken_789xyz",
+  userId: "user_abc123",
+  token: "fcmToken1234567890",
+  platform: "android",
+  isActive: true,
+  createdAt: <timestamp>,
+  updatedAt: <timestamp>,
+  lastUsedAt: <timestamp>
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item If the token already exists:
+        \begin{itemize}
+          \item Updates the `userId`, `isActive`, `updatedAt`, and `lastUsedAt` fields.
+        \end{itemize}
+      \item If the token does not exist:
+        \begin{itemize}
+          \item Inserts a new push token document.
+        \end{itemize}
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{sendRideNotification}
+  \begin{itemize}
+    \item Internal Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  type: string,
+  passengerId?: Id<"taxiTap_users">,
+  driverId?: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  rideId: "ride_12345",
+  type: "ride_completed",
+  driverId: "user_driver123"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+undefined
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Depending on the notification type, constructs and sends one or more ride-related notifications to passengers and/or drivers using:
+      \begin{verbatim}
+internal.functions.notifications.sendNotifications.sendNotificationInternal
+      \end{verbatim}
+      \item Notification types supported:
+        \begin{itemize}
+          \item \texttt{"ride_requested"}: Sent to driver
+          \item \texttt{"ride_accepted"}: Sent to passenger
+          \item \texttt{"driver_arrived"}: Sent to passenger
+          \item \texttt{"ride_started"}: Sent to passenger
+          \item \texttt{"ride_completed"}: Sent to both passenger and driver
+          \item \texttt{"ride_cancelled"}: Sent to the other party (driver or passenger)
+        \end{itemize}
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{sendRideNotification}
+  \begin{itemize}
+    \item Internal Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  type: string,
+  passengerId?: Id<"taxiTap_users">,
+  driverId?: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideId": "ride_abc123",
+  "type": "ride_requested",
+  "passengerId": "user_xyz789",
+  "driverId": "user_def456"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+void (no direct response)
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Looks up the ride by the given \texttt{rideId}.
+      \item Depending on the \texttt{type} of notification, prepares one or more notification objects targeting the passenger and/or driver.
+      \item Notifications include type, title, message, priority, and metadata with relevant ride and user information.
+      \item Sends notifications internally by calling \texttt{sendNotificationInternal} mutation for each prepared notification.
+      \item If the ride is not found, no notifications are sent.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{sendNotification}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">,
+  type: string,
+  title: string,
+  message: string,
+  priority: string,
+  metadata?: any,
+  scheduledFor?: number,
+  expiresAt?: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123",
+  "type": "ride_request",
+  "title": "New Ride Request",
+  "message": "You have a new ride request.",
+  "priority": "high",
+  "metadata": { "rideId": "ride_xyz789" },
+  "scheduledFor": 1687804800000,
+  "expiresAt": 1687891200000
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: string,
+  notificationId: string,
+  userId: string,
+  type: string,
+  title: string,
+  message: string,
+  isRead: boolean,
+  isPush: boolean,
+  priority: string,
+  metadata?: any,
+  scheduledFor?: number,
+  expiresAt?: number,
+  createdAt: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "_id": "notif_doc123",
+  "notificationId": "notif_1687804800000_ab12cd34e",
+  "userId": "user_abc123",
+  "type": "ride_request",
+  "title": "New Ride Request",
+  "message": "You have a new ride request.",
+  "isRead": false,
+  "isPush": true,
+  "priority": "high",
+  "metadata": { "rideId": "ride_xyz789" },
+  "scheduledFor": 1687804800000,
+  "expiresAt": 1687891200000,
+  "createdAt": 1687804800000
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Inserts a new notification document into the \texttt{notifications} collection.
+      \item Automatically generates a unique \texttt{notificationId}.
+      \item Sets \texttt{isRead} to false by default and \texttt{isPush} to false initially.
+      \item Queries active push tokens for the user; if any exist, updates the notification to mark \texttt{isPush} as true.
+      \item Returns the created notification document.
+    \end{itemize}
+  \end{itemize}
+
+\item \textbf{sendNotificationInternal}
+  \begin{itemize}
+    \item Internal Mutation (Write operation)
+    \item \textbf{Request:}
+    Same as \texttt{sendNotification}.
+    \item \textbf{Response:}
+    Same as \texttt{sendNotification}.
+    \item \textbf{Effect:}
+    Same as \texttt{sendNotification}, but intended for system-generated notifications.
+  \end{itemize}
+
+\item \textbf{updateNotificationSettings}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  userId: Id<"taxiTap_users">,
+  settings: {
+    rideUpdates?: boolean,
+    promotionalOffers?: boolean,
+    systemAlerts?: boolean,
+    emergencyNotifications?: boolean,
+    routeUpdates?: boolean,
+    paymentNotifications?: boolean,
+    ratingReminders?: boolean,
+    soundEnabled?: boolean,
+    vibrationEnabled?: boolean,
+    quietHoursStart?: string,
+    quietHoursEnd?: string
+  }
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "userId": "user_abc123",
+  "settings": {
+    "rideUpdates": false,
+    "promotionalOffers": true,
+    "quietHoursStart": "23:00",
+    "quietHoursEnd": "06:00"
+  }
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: string,
+  userId: string,
+  rideUpdates: boolean,
+  promotionalOffers: boolean,
+  systemAlerts: boolean,
+  emergencyNotifications: boolean,
+  routeUpdates: boolean,
+  paymentNotifications: boolean,
+  ratingReminders: boolean,
+  soundEnabled: boolean,
+  vibrationEnabled: boolean,
+  quietHoursStart: string,
+  quietHoursEnd: string,
+  createdAt: number,
+  updatedAt: number
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "_id": "notifSettings_123xyz",
+  "userId": "user_abc123",
+  "rideUpdates": false,
+  "promotionalOffers": true,
+  "systemAlerts": true,
+  "emergencyNotifications": true,
+  "routeUpdates": true,
+  "paymentNotifications": true,
+  "ratingReminders": true,
+  "soundEnabled": true,
+  "vibrationEnabled": true,
+  "quietHoursStart": "23:00",
+  "quietHoursEnd": "06:00",
+  "createdAt": 1687804800000,
+  "updatedAt": 1687891200000
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Checks if notification settings for the user already exist.
+      \item If existing, updates only the provided settings fields and the \texttt{updatedAt} timestamp.
+      \item If not, creates a new settings document with provided values or defaults.
+      \item Defaults are mostly \texttt{true} for booleans, and \texttt{"22:00"} / \texttt{"07:00"} for quiet hours.
+    \end{itemize}
+  \end{itemize}
+
+\subsection*{Rides}
+
+\begin{enumerate}
+    \item \textbf{acceptRide}
+    \begin{itemize}
+        \item Mutation (Write operation)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    rideId: string,
+    driverId: string
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "rideId": "ride_xyz123",
+    "driverId": "driver_abc789"
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+{
+    _id: string,
+    message: string
+}
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Finds the ride by rideId.
+            \item Throws an error if ride not found or if the ride status is not "requested".
+            \item Updates the ride's status to "accepted" and assigns the driverId.
+            \item Sets the acceptedAt timestamp.
+            \item Sends a notification to the passenger that the ride has been accepted.
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{cancelRide}
+    \begin{itemize}
+        \item Mutation (Write operation — external access)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    rideId: string,
+    userId: string
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "rideId": "ride_abc123",
+    "userId": "user_xyz789"
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+{
+    _id: string,    // Updated ride document ID
+    message: string // Success confirmation message
+}
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Finds the ride by \texttt{rideId} and verifies that \texttt{userId} matches either the passenger or driver of the ride.
+            \item Updates the ride status to \texttt{"cancelled"} and records the cancellation time and user.
+            \item Sends a notification to the other party (driver or passenger) about the cancellation, specifying who cancelled.
+            \item Throws an error if the ride does not exist or the user is unauthorized to cancel.
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{completeRide}
+    \begin{itemize}
+        \item Mutation (Write operation — external access)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    rideId: string,
+    driverId: string
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "rideId": "ride_abc123",
+    "driverId": "user_driver456"
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+{
+    _id: string,    // Updated ride document ID
+    message: string // Confirmation message
+}
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Validates that the ride exists and the requesting driver is the assigned driver.
+            \item Ensures the ride status is currently "accepted" before completing.
+            \item Updates the ride status to "completed" and sets the completion timestamp.
+            \item Sends notifications to both passenger and driver via internal notification system.
+            \item Throws an error if the ride is not found, the driver is unauthorized, or the ride is not in the correct status.
+        \end{itemize}
+    \end{itemize}
+
+\item \textbf{endRide}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  userId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideId": "ride_abc123",
+  "userId": "user_xyz789"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  // Response depends on the implementation in endRideHandler,
+  // typically a status object or updated ride info,
+  // or void if no response is returned.
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "status": "success",
+  "rideId": "ride_abc123",
+  "endedAt": 1687804800000
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Invokes the \texttt{endRideHandler} to mark the ride as ended.
+      \item Typically updates ride status and records the end timestamp.
+      \item May trigger related business logic like fare calculation, notifications, etc.
+    \end{itemize}
+  \end{itemize}
+
+    \item \textbf{getRideById}
+    \begin{itemize}
+        \item Query (Read operation)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    rideId: string
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "rideId": "ride_abc123"
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+{
+    _id: string,
+    rideId: string,
+    passengerId: string,
+    driverId?: string,
+    status: string,
+    startLocation: object,
+    endLocation: object,
+    requestedAt: number,
+    acceptedAt?: number,
+    completedAt?: number,
+    ... // other ride fields
+} 
+// or null if rideId is not provided or ride not found
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Retrieves a ride document by its rideId.
+            \item Returns null if no rideId is provided or the ride is not found.
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{requestRide}
+    \begin{itemize}
+        \item Mutation (Write operation)
+        \item \textbf{Request:}
+        \begin{verbatim}
+{
+    passengerId: string,
+    driverId: string,
+    startLocation: {
+        coordinates: { latitude: number, longitude: number },
+        address: string
+    },
+    endLocation: {
+        coordinates: { latitude: number, longitude: number },
+        address: string
+    },
+    estimatedFare?: number,
+    estimatedDistance?: number,
+    estimatedDuration?: number
+}
+        \end{verbatim}
+        Example:
+        \begin{verbatim}
+{
+    "passengerId": "user_passenger123",
+    "driverId": "user_driver456",
+    "startLocation": {
+        "coordinates": { "latitude": -25.748333, "longitude": 28.1875 },
+        "address": "123 Main St, Pretoria"
+    },
+    "endLocation": {
+        "coordinates": { "latitude": -25.757, "longitude": 28.229 },
+        "address": "456 Elm St, Pretoria"
+    },
+    "estimatedFare": 150.50,
+    "estimatedDistance": 12.5,
+    "estimatedDuration": 1800
+}
+        \end{verbatim}
+        \item \textbf{Response:}
+        \begin{verbatim}
+{
+    _id: string,      // Database document ID
+    rideId: string,   // Generated ride identifier
+    message: string   // Confirmation message
+}
+        \end{verbatim}
+        \item \textbf{Effect:}
+        \begin{itemize}
+            \item Creates a new ride request record with the status set to "requested".
+            \item Generates a unique ride ID.
+            \item Notifies the assigned driver of the new ride request via the internal notification system.
+        \end{itemize}
+    \end{itemize}
+
+\item \textbf{startRide}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  userId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideId": "ride_xyz123",
+  "userId": "user_abc789"
+}
+    \end{verbatim}
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  _id: string,
+  message: string
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "_id": "ride_doc456",
+  "message": "Ride marked as started."
+}
+    \end{verbatim}
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Finds the ride by \texttt{rideId}.
+      \item Throws an error if the ride is not found.
+      \item Throws an error if the user is not the passenger of the ride.
+      \item Throws an error if the ride status is not "accepted".
+      \item Updates the ride status to "in_progress" and sets the \texttt{startedAt} timestamp.
+      \item Sends notifications to both the driver and passenger indicating the ride has started.
+    \end{itemize}
+  \end{itemize} 
+
+  \item \textbf{declineRide}
+  \begin{itemize}
+    \item Mutation (Write operation)
+    
+    \item \textbf{Request:}
+    \begin{verbatim}
+{
+  rideId: string,
+  driverId: Id<"taxiTap_users">
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "rideId": "ride_xyz123",
+  "driverId": "user_driver456"
+}
+    \end{verbatim}
+    
+    \item \textbf{Response:}
+    \begin{verbatim}
+{
+  message: string
+}
+    \end{verbatim}
+    Example:
+    \begin{verbatim}
+{
+  "message": "Ride declined by driver."
+}
+    \end{verbatim}
+    
+    \item \textbf{Effect:}
+    \begin{itemize}
+      \item Finds the ride by \texttt{rideId}.
+      \item Validates that the driverId belongs to the driver assigned or available for the ride.
+      \item Marks the ride as declined or removes the driver from the list of available candidates.
+      \item May trigger reassignment of the ride to another driver or notify the passenger.
+    \end{itemize}
+  \end{itemize}
+\end{enumerate}
+
+\section{Domain Model}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{Domain_Model_TaxiTap-Page.png} 
+\end{figure}
+
+\section{Functional Requirements}
+
+\subsection*{R1: User Account Management}
+\begin{itemize}
+    \item R1.1: Users should be able to register as either a driver or a passenger.
+    \item R1.2: Users should be able to update their Profile information.
+    \item R1.3: The system should support role-based access control for passenger and driver interfaces.
+    \item R1.4: Users should be able to reset or change their passwords.
+\end{itemize}
+
+\subsection*{R2: Location Services}
+\begin{itemize}
+    \item R2.1: The system should track driver locations in real-time using GPS.
+    \item R2.2: The system should determine passenger locations for pickup requests.
+    \item R2.3: The system should calculate proximity between taxis and passengers.
+    \item R2.4: The system should send proximity alerts to notify passengers when their requested taxi is approaching.
+    \item R2.5: The system should display estimated time of arrival for approaching taxis.
+\end{itemize}
+
+\subsection*{R3: Taxi Request System}
+\begin{itemize}
+    \item R3.1: Passengers should be able to request taxi pickups based on their location.
+    \item R3.2: Passengers should be able to see nearby available taxis.
+    \item R3.3: Drivers should be notified of nearby passenger pickup requests.
+    \item R3.4: Drivers should be able to accept or decline pickup requests.
+    \item R3.5: Passengers should be able to specify their destinations.
+\end{itemize}
+
+\subsection*{R4: Route Management}
+\begin{itemize}
+    \item R4.1: The system should allow drivers to announce their routes.
+    \item R4.2: The system should display taxi routes to passengers.
+    \item R4.3: The system should allow drivers to indicate their destinations.
+    \item R4.4: The system should support flexible drop-off points along routes.
+    \item R4.5: The system should display route information in a visual format suitable for quick comprehension.
+\end{itemize}
+
+\subsection*{R5: Taxi Status Information}
+\begin{itemize}
+    \item R5.1: The system should display real-time taxi tracking showing vehicle location.
+    \item R5.2: The system should show available seats in approaching taxis.
+    \item R5.3: The system should allow drivers to update their seat availability status.
+    \item R5.4: The system should indicate taxi status (en route, picking up, full, etc.).
+    \item R5.5: The system should notify waiting passengers when taxis reach capacity.
+\end{itemize}
+
+\subsection*{R6: Notifications}
+\begin{itemize}
+    \item R6.1: The system should send push notifications for taxi proximity alerts.
+    \item R6.2: The system should notify passengers when their requested taxi accepts or declines the pickup.
+    \item R6.3: The system should notify drivers of new nearby passenger requests.
+    \item R6.4: The system should provide ETA updates to waiting passengers.
+    \item R6.5: The system should send notifications even with limited connectivity.
+    \item R6.6: The system should allow users to customize notification preferences.
+\end{itemize}
+
+\subsection*{R7: Passenger Destination Management}
+\begin{itemize}
+    \item R7.1: The system should allow passengers to specify their drop-off locations.
+    \item R7.2: The system should suggest optimal drop-off order to drivers.
+\end{itemize}
+
+\subsection*{R8: User Interface}
+\begin{itemize}
+    \item R8.1: The system should provide separate interfaces for passengers and drivers.
+    \item R8.2: The system should offer a clean, easy-to-use interface with visual elements.
+    \item R8.3: The system should support multiple South African languages. 
+\end{itemize}
+
+\subsection*{R9: Rating and Feedback}
+\begin{itemize}
+    \item R9.1: Passengers should be able to rate drivers/taxis.
+    \item R9.2: The system should collect feedback on routes and service.
+\end{itemize}
+
+\subsection*{R10: Fare Management}
+\begin{itemize}
+    \item R10.1: The system should calculate fare estimates based on route and distance.
+    \item R10.2: The system should support both digital and cash payment options.
+    \item R10.3: The system should provide payment confirmation receipts.
+    \item R10.4: The system should track payment status for trips.
+\end{itemize}
+
+\subsection*{R11: Taxi Identification}
+\begin{itemize}
+    \item R11.1: The system should provide unique identifiers for each taxi.
+    \item R11.2: The system should support QR code-based taxi identification and verification.
+    \item R11.3: The system should display taxi information (registration, operator) to passengers.
+\end{itemize}
+
+\subsection*{R12: Safety Features}
+\begin{itemize}
+    \item R12.1: The system should provide an anonymous crime reporting tool.
+    \item R12.2: The system should include emergency contact features.
+\end{itemize}
+
+\section{Use Case Diagrams}
+  \subsection*{Overall System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{TaxiTap App.jpg} 
+    \end{figure}
+    \subsection*{Notification System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Notification System.jpg} 
+    \end{figure}
+     \subsection*{Ride Request}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Ride Request System.jpg} 
+    \end{figure}
+     \subsection*{Route Management System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Route Management System.jpg} 
+    \end{figure}
+    \subsection*{Location System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Location System.jpg} 
+    \end{figure}
+   
+  \subsection*{Feedback System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{UserFeedback.png} 
+    \end{figure}
+  \subsection*{Login System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Login System.jpg} 
+    \end{figure}
+  \subsection*{Signup System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Signup System.jpg} 
+    \end{figure}
+
+\section{Technology Requirements}
+
+\subsection{Frontend}
+\textbf{Expo (React Native with TypeScript)}\\
+\textbf{Why we chose to use Expo?}
+\begin{itemize}
+    \item \textbf{Cross-platform Compatibility:} Code once, deploy to both Android and iOS.
+    \item \textbf{Native Features:} Access to GPS, accelerometer, push notifications, offline storage, camera, QR scanning, etc.
+    \item \textbf{Web Support:} Leverages Expo Web for rendering web-based dashboards and admin panels.
+    \item \textbf{Live Reloading \& Fast Iteration:} Expo Go provides hot reloading and rapid prototyping with a unified development experience.
+    \item \textbf{Battery \& Data Optimization:} React Native ecosystem provides fine-grained control over performance, reducing overhead.
+\end{itemize}
+
+\subsection{Backend}
+\textbf{Convex (TypeScript)}\\
+\textbf{Why we chose to use Convex?}
+\begin{itemize}
+    \item \textbf{Truly Serverless:} No provisioning, no scaling headaches. Functions, database, and auth all run in one integrated environment.
+    \item \textbf{Built-in Database:} Convex provides a powerful document-oriented database that supports relations, IDs, indexes, and real-time reactivity.
+    \item \textbf{Type Safety:} Schema definition is in TypeScript, ensuring end-to-end type safety from backend to frontend.
+    \item \textbf{Zero DevOps:} No need to manage infrastructure or containers. Deploy directly from your project.
+    \item \textbf{Realtime Sync:} Built-in support for reactive queries allows passengers to see live taxi updates, seat availability, and ETA.
+\end{itemize}
+
+\subsubsection*{Convex Database Architecture}
+\begin{itemize}
+    \item \textbf{Document Store:} Convex uses collections of JSON-like documents, like MongoDB, but with built-in schema validation.
+    \item \textbf{Indexes:} Automatic indexing on IDs and custom indexing for optimized query performance.
+    \item \textbf{Relationships:} You can use Convex \texttt{v.id()} to reference documents between tables, ensuring referential integrity.
+    \item \textbf{Realtime Subscriptions:} Query results update automatically when the underlying data changes.
+\end{itemize}
+
+\subsubsection*{Convex Free Tier (as of 2025)}
+\begin{itemize}
+    \item Compute: Up to 1 million function calls/month.
+    \item Storage: 1 GB document data storage.
+    \item Bandwidth: 5 GB of egress.
+    \item Authentication: Integrated with third-party auth providers (Firebase Auth, Clerk, etc.).
+    \item Deployment: 1 Production Deployment and 1 Dev Deployment per project.
+\end{itemize}
+
+\noindent Perfect for COS 301: Within budget, no surprise bills, and production-grade scalability.
+
+\subsection{Key Functional Modules \& Implementation Plan}
+
+\subsubsection*{User Management Subsystem}
+\begin{itemize}
+    \item Authentication: Convex Auth with Clerk or Firebase integration.
+    \item Registration/Login: Role-based registration (passenger or driver) with schema enforcement.
+    \item Profile Updates: Mutation to update user document with profile fields.
+    \item Security: JWT-based session validation, encryption at rest and in transit.
+\end{itemize}
+
+\subsubsection*{Location Services Subsystem}
+\begin{itemize}
+    \item Driver Location: Periodic GPS updates using Expo Location API.
+    \item Passenger Location: One-time or continuous tracking during trip.
+    \item Proximity Alerts: Triggered from Convex using background function.
+    \item ETA Calculation: Naive approach using Haversine distance + average speed (no Google Maps API due to cost).
+\end{itemize}
+
+\subsubsection*{Taxi Request Subsystem}
+\begin{itemize}
+    \item Request Workflow:
+    \begin{itemize}
+        \item Passenger sends request with coordinates and optional destination.
+        \item Nearby drivers notified (push notification via Expo).
+        \item Driver accepts or rejects request.
+        \item Status changes handled in real time.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{Route Management Subsystem}
+\begin{itemize}
+    \item Driver Route Declaration: Input form for common route + destination.
+    \item Passenger View: Map view of taxis on route + destinations.
+    \item Optimized Routing (Optional): Historical route optimization using stored patterns (stretch goal).
+\end{itemize}
+
+\subsubsection*{Notification System}
+\begin{itemize}
+    \item Technology: Expo Notifications API.
+    \item Use Cases:
+    \begin{itemize}
+        \item Taxi is approaching.
+        \item Ride accepted or declined.
+        \item Route changes or delays.
+    \end{itemize}
+    \item Offline Support: Caching notifications locally using AsyncStorage.
+\end{itemize}
+
+\subsubsection*{Safety and Fare Management Subsystem}
+\begin{itemize}
+    \item QR Identification: QR codes linked to taxi documents in Convex.
+    \item Reporting: Anonymous incident reports saved to a secure Convex table.
+    \item Fare Estimate: Static fare matrix per route (e.g., km-based fare slabs).
+    \item Payment: Optional - integrate with SnapScan/Yoco for digital payments.
+\end{itemize}
+
+\subsection{Testing Frameworks}
+\begin{itemize}
+    \item Backend: Jest (unit and integration tests for Convex functions).
+    \item Frontend: React Native Testing Library.
+    \item Manual Testing: Device tests using Expo Go and emulators.
+\end{itemize}
+
+\subsection{CI/CD}
+\begin{itemize}
+    \item Convex Deployment: Triggered via GitHub Action or manual \texttt{npx convex dev} / \texttt{convex deploy}.
+    \item Expo Deployment: Use \texttt{eas build} + \texttt{eas submit} for App Store/Play Store releases.
+    \item Linting \& Tests: Pre-commit lint checks with ESLint + Jest unit tests.
+\end{itemize}
+
+\subsection{Version Control}
+\begin{itemize}
+    \item GitHub repo with main and dev branches.
+    \item Feature branches for each core module.
+\end{itemize}
+
+\section{Architectural Requirements}
+
+\textbf{\href{https://github.com/COS301-SE-2025/Taxi-Tap/blob/7a74ddb4e0d0e853188d32b984f07e9f6e0393c3/docs/Architectural\%20Requirements.pdf}{Architectural Requirements Document Here}}
+
+\subsection{Quality Requirements}
+Quality requirements determine the overall quality of Taxi Tap by specifying criteria that define how well the system performs and behaves.
+
+\begin{enumerate}
+    \item \textbf{Security}
+    \begin{itemize}
+        \item \textbf{Encryption:} All data must be encrypted in transit and at rest using the best security practices.
+        \item \textbf{Compliance:}
+        \begin{itemize}
+            \item Data capturing and storing must adhere to the POPI act.
+            \item Ensure data privacy and consent handling.
+        \end{itemize}
+        \item \textbf{Secure authentication:} Users must authenticate securely, and sessions must be protected.
+    \end{itemize}
+
+    \item \textbf{Usability}
+    \begin{itemize}
+        \item \textbf{Simplicity:} The interface should be easy to use for people with varying levels of tech literacy.
+        \item \textbf{Accessibility:} The use of clear labels, large tap targets and minimal steps to complete key tasks.
+        \item \textbf{Feedback and error handling:} Provide real-time feedback for user actions, loading states and clear error messages when issues occur.
+    \end{itemize}
+
+    \item \textbf{Scalability}
+    \begin{itemize}
+        \item The backend must scale to handle fluctuations in user or data load without performance degradation. This is automatically done by our chosen backend.
+    \end{itemize}
+
+    \item \textbf{Performance}
+    \begin{itemize}
+        \item \textbf{Low bandwidth optimization:} The system must perform reliably under low-bandwidth or intermittent connectivity.
+        \item \textbf{Battery efficiency:} The app must minimize CPU, GPS and network usage to extend battery life.
+    \end{itemize}
+
+    \item \textbf{Reliability and Availability}
+    \begin{itemize}
+        \item \textbf{Offline Support:} The app must function even without a constant internet connection, using local caching or data queuing mechanisms.
+        \item \textbf{High uptime:} The system should be available with minimal downtime to support driver operations throughout the day.
+        \item \textbf{Data integrity:} Ensure that data is not lost or duplicated during sync offline and online states.
+    \end{itemize}
+
+    \item \textbf{Maintainability and Extensibility}
+    \begin{itemize}
+        \item \textbf{Clean architecture:} Backend and frontend systems should be modular and loosely coupled to allow easier updates, fixes, or feature additions in the future.
+        \item \textbf{Logging and monitoring:} Implement centralized logging and monitoring to quickly identify and resolve issues.
+        \item \textbf{Configurability:} Support code configurations without needing code changes.
+    \end{itemize}
+
+    \item \textbf{Affordability}
+    \begin{itemize}
+        \item \textbf{Low data consumption:} The app must use data sparingly to remain cost-effective for users in regions with expensive or limited mobile data.
+        \item \textbf{Resource efficiency:} The system should minimize server and client-side consumption to reduce infrastructure and battery costs.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Design Patterns}
+
+\paragraph{Observer Pattern}
+\begin{itemize}
+    \item Pattern Type: Behavioural
+    \item Participants:
+    \begin{itemize}
+        \item Subject: Notification System
+        \item Observer: User
+        \item Concrete Observer: Passenger, Driver 
+    \end{itemize}
+    \item Explanation: The Observer pattern allows an object (User) to be notified automatically of state changes in another object (Notification System). This is ideal for handling events like route updates or ride status.
+    \item Example:
+    \begin{itemize}
+        \item User receives alerts from the Notification System.
+        \item Notification System initiates a notification when a route is announced.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Mediator Pattern}
+\begin{itemize}
+    \item Pattern Type: Behavioural
+    \item Participants:
+    \begin{itemize}
+        \item Mediator: Taxi Request System
+        \item Colleague: Passenger, Driver
+    \end{itemize}
+    \item Explanation: The Mediator pattern centralizes complex communication between objects. Instead of Passenger directly interacting with Driver, requests are handled through the Taxi Request System.
+    \item Example:
+    \begin{itemize}
+        \item Taxi Request System acts as an intermediary between Passenger and Driver.
+        \item Passenger makes a request for pickup to a driver, but the Taxi request system acts as the middleman for this request.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Constraints}
+The client laid out the following constraints, by which Taxi Tap must abide, in their specification.
+
+\begin{enumerate}
+    \item \textbf{All data must be encrypted at transit and at rest}\\
+    All data exchanged between the mobile application and backend services will be encrypted using HTTPS with TLS (Transport Layer Security). Role-based access policies and authentication mechanisms (e.g., JWTs) ensure only authorised users can access specific system resources.
+
+    \item \textbf{POPI act}\\
+    To ensure we abide by this, we will not collect any user data that is not necessary for the functionality of the app. With that, we will have permission set up to ensure that users are comfortable with collecting info, such as the user’s location. Furthermore, we will consider providing a Terms and Conditions for the app that lays out how user data will be used.
+
+    \item \textbf{The app must function with low bandwidth, low data usage and be battery-efficient}\\
+    We will accomplish this by having a UI that does not use too many resources and lightweight calls to the API.
+
+    \item \textbf{Budget}\\
+    We must use AWS Free Tier platforms or any platforms that are open source or within free tier allowance.
+\end{enumerate}
+
+\section{Deployment Model}
+The system will be deployed following a cloud-based deployment model to ensure scalability, availability, and ease of access. The deployment environment will include:
+\begin{itemize}
+    \item \textbf{Frontend:} Deployed via Expo Go.
+    \item \textbf{Backend:} Hosted on Convex cloud (Convex backend as a service).
+    \item \textbf{Database:}  Managed by Convex (integrated serverless database).
+    \item \textbf{CI/CD:} Managed via GitHub Actions to automate linting, testing and deployment.
+\end{itemize}
+
+\section{Live Deployed System}
+A fully functional live version of the system will be accessible for demonstration purposes. This deployed system will allow real-time interaction by both drivers and passengers via mobile devices. The system will include:
+\begin{itemize}
+    \item User registration and authentication.
+    \item Route selection and reservation.
+    \item Real-time updates.
+    \item Payment simulation (optional).
+    \item Feedback and rating system.
+    \item Switch between passenger and driver.
+\end{itemize}
+
+\end{document}

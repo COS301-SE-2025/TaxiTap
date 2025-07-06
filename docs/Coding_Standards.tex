@@ -1,0 +1,151 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{booktabs}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{float}
+
+\title{Coding Standards Document\\Taxi Tap by Git It Done}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+This document outlines the coding standards, conventions, and practices adopted for the development of the project. Adhering to these standards ensures:
+
+\begin{itemize}
+\item \textbf{Uniformity}: All developers follow the same style.
+\item \textbf{Clarity}: Code is easy to read and maintain.
+\item \textbf{Reliability}: Reduce bugs caused by inconsistent practices.
+\item \textbf{Efficiency}: Improve development speed through predictable patterns.
+\end{itemize}
+
+\section{Repository Structure}
+The project repository follows a clear and organized structure:
+
+\begin{verbatim}
+project-root/
+|-- .github                     % Workflow files
+    |-- workflows
+        |-- platform.yml
+|-- assets                      % All project images
+    |-- images
+|-- docs/                       % Documentation
+|-- platform                    % The app
+    |-- app                     % Frontend
+    |-- assets                  % Fonts and images
+    |-- components
+    |-- constants
+    |-- contexts
+    |-- convex                  % Backend
+    |-- hooks
+    |-- tests/                  % Unit and integration tests
+    |-- .eslint.config.mjs      % ESLint configuration
+    |-- package.json            % Project dependencies and scripts
+|-- .prettierrc                 % Prettier configuration
+|-- README.md                   % Project description
+\end{verbatim}
+
+\section{Coding Conventions}
+
+\subsection{Language and Framework}
+The project uses:
+\begin{itemize}
+\item Programming Language: \texttt{TypeScript/JavaScript}
+\item Frontend Framework: \texttt{React Native}
+\item Backend Framework: \texttt{Convex}
+\end{itemize}
+
+\subsection{Naming Conventions}
+\begin{itemize}
+\item \textbf{Files and directories}: camelCase and PascalCase
+\item \textbf{Variables}: camelCase
+\item \textbf{Constants:} \texttt{UPPER\_SNAKE\_CASE} and camelCase
+\item \textbf{Classes/Components}: camelCase and PascalCase
+\item \textbf{Functions}: camelCase
+\end{itemize}
+
+\subsection{Code Style}
+\begin{itemize}
+\item Indentation: 2 spaces
+\item Maximum line length: 100 characters
+\item Use semicolons at the end of statements
+\item Use single quotes for strings
+\item Always use curly braces for blocks
+\end{itemize}
+
+\section{Tooling and Configuration}
+
+\subsection{Prettier}
+Prettier is used for consistent code formatting.
+\begin{verbatim}
+npm install --save-dev prettier
+\end{verbatim}
+
+Example \texttt{.prettierrc} configuration:
+\begin{verbatim}
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "printWidth": 100,
+  "trailingComma": "all"
+}
+\end{verbatim}
+
+\subsection{ESLint}
+ESLint is used for linting and enforcing coding standards.
+\begin{verbatim}
+npm install --save-dev eslint
+\end{verbatim}
+
+\section{Testing Standards}
+\begin{itemize}
+\item All code must be covered with unit tests using \texttt{Jest}.
+\item Use descriptive test names.
+\item Mock external dependencies where appropriate.
+\item Integration tests.
+\end{itemize}
+
+\section{Documentation Standards}
+\begin{itemize}
+\item Use clear and concise comments where necessary.
+\item Keep the README updated with setup and usage instructions.
+\end{itemize}
+
+\section{Pull Request Guidelines}
+\begin{itemize}
+\item Ensure code passes all linting and tests before submission.
+\item Provide clear commit messages.
+\item Perform peer reviews.
+\item Do not merge code with failing tests.
+\end{itemize}
+
+\section{Continuous Integration}
+\begin{itemize}
+\item We are using GitHub Actions to automate linting and tests on every pull request.
+\end{itemize}
+
+\end{document}
