@@ -22,6 +22,7 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNotifications } from '../../contexts/NotificationContext';
+import * as Location from "expo-location";
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -32,6 +33,38 @@ export default function HomeScreen() {
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
+
+  const [detectedLocation, setDetectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Location permission is required to find nearby taxis.");
+        setIsLoadingCurrentLocation(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setDetectedLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    })();
+  }, []);
+
+  const nearbyDrivers = useQuery(
+    api.functions.locations.getNearbyTaxis.getNearbyDrivers,
+    detectedLocation
+      ? {
+          latitude: detectedLocation.latitude,
+          longitude: detectedLocation.longitude,
+        }
+      : "skip"
+  );
 
   // Address input states
   const [originAddress, setOriginAddress] = useState('');
@@ -82,20 +115,20 @@ export default function HomeScreen() {
 
   //This has our functionality but used Ati's variable, so we will change this
   useEffect(() => {
-    if (userLocation && (!currentLocation || currentLocation.name === '')) {
+    if (detectedLocation  && (!currentLocation || currentLocation.name === '')) {
       setCurrentLocation({
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: detectedLocation .latitude,
+        longitude: detectedLocation .longitude,
         name: 'Current Location'
       });
       setIsLoadingCurrentLocation(false);
     } else {
     }
-  }, [userLocation, currentLocation]);
+  }, [detectedLocation , currentLocation]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!userLocation && isLoadingCurrentLocation) {
+      if (!detectedLocation  && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
         Alert.alert(
           'Location Error', 
@@ -106,7 +139,7 @@ export default function HomeScreen() {
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [userLocation, isLoadingCurrentLocation]);
+  }, [detectedLocation , isLoadingCurrentLocation]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -159,7 +192,6 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
       Alert.alert('Error', 'Could not find the address. Please try again.');
       return null;
     }
@@ -171,18 +203,12 @@ export default function HomeScreen() {
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!userId) {
-      console.log('⚠ No user ID available for taxi search');
       return;
     }
 
     setIsSearchingTaxis(true);
     
     try {
-      console.log('🔍 Searching for available taxis:', {
-        origin: { lat: origin.latitude, lng: origin.longitude },
-        destination: { lat: dest.latitude, lng: dest.longitude }
-      });
-
       // Trigger the enhanced taxi search by setting search parameters
       setTaxiSearchParams({
         originLat: origin.latitude,
@@ -192,7 +218,6 @@ export default function HomeScreen() {
       });
       
     } catch (error) {
-      console.error('❌ Error searching for taxis:', error);
       setIsSearchingTaxis(false);
       Alert.alert(
         'Search Error', 
@@ -209,10 +234,7 @@ export default function HomeScreen() {
     if (taxiSearchResult) {
       setIsSearchingTaxis(false);
       
-      if (taxiSearchResult.success) {
-        console.log(`✅ Found ${taxiSearchResult.availableTaxis.length} available taxis`);
-        console.log(`📊 Matching routes: ${taxiSearchResult.matchingRoutes.length}`);
-        
+      if (taxiSearchResult.success) { 
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
         
@@ -227,9 +249,7 @@ export default function HomeScreen() {
           distance: taxi.distanceToOrigin,
           routeName: taxi.routeInfo.routeName
         }));
-        
       } else {
-        console.log('⚠ No available taxis found:', taxiSearchResult.message);
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
       }
@@ -336,7 +356,6 @@ export default function HomeScreen() {
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!GOOGLE_MAPS_API_KEY) {
-      console.log('Error', 'Google Maps API key is not configured');
       return;
     }
 
@@ -378,7 +397,6 @@ export default function HomeScreen() {
       searchForAvailableTaxis(origin, dest);
       
     } catch (err) {
-      console.error(err);
       Alert.alert('Route Error', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoadingRoute(false);
@@ -695,10 +713,10 @@ export default function HomeScreen() {
 
   // Fix: Improved initial region logic
   const getInitialRegion = () => {
-    if (userLocation) {
+    if (detectedLocation ) {
       return {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: detectedLocation .latitude,
+        longitude: detectedLocation .longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
@@ -739,14 +757,29 @@ export default function HomeScreen() {
             <Marker coordinate={currentLocation} title="Origin" pinColor="blue" />
           )}
 
-          // {destination && (
+          {destination && (
             <Marker coordinate={destination} title={destination.name} pinColor="orange" />
           )}
+          
+          {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || []).map((driver) => (
+            <Marker
+              key={driver._id}
+              coordinate={{
+                latitude: driver.latitude,
+                longitude: driver.longitude,
+              }}
+              title={driver.name || "Available Driver"}
+            >
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="car" size={36} color="green" />
+              </View>
+            </Marker>
+          ))}
 
           {routeLoaded && routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
           )}
-      //   </MapView>
+        </MapView>
       )}
 
       <View style={dynamicStyles.bottomSheet}>
