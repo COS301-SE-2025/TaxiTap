@@ -38,13 +38,7 @@ jest.mock('../../../contexts/RouteContext', () => ({
   }),
 }));
 
-jest.mock('../../../contexts/UserContext', () => ({
-  useUser: () => ({
-    user: {
-      id: 'test-user-id',
-    },
-  }),
-}));
+
 
 jest.mock('convex/react', () => ({
   useQuery: jest.fn(),
