@@ -34,7 +34,7 @@ export default function HomeScreen() {
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
-  const role = user?.accountType || 'passenger';
+  const role = user?.role || user?.accountType || 'passenger';
 
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;

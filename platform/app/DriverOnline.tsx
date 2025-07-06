@@ -20,6 +20,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
+import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -62,11 +63,14 @@ export default function DriverOnline({
   const router = useRouter();
   const { user } = useUser();
   const userId = user?.id;
+  const role = user?.role || user?.accountType || 'driver';
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
+  
+  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
   
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -335,6 +339,35 @@ export default function DriverOnline({
       color: theme.text,
       fontSize: 16,
       marginTop: 16,
+    },
+    locationStreamingStatus: {
+      position: 'absolute',
+      top: 120,
+      left: 20,
+      right: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 8,
+      padding: 8,
+      alignItems: 'center',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 4,
+      zIndex: 998,
+    },
+    locationStreamingText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    locationStreamingSuccess: {
+      color: '#4CAF50',
+    },
+    locationStreamingError: {
+      color: '#F44336',
+    },
+    locationStreamingLoading: {
+      color: theme.textSecondary,
     },
     menuButton: {
       position: 'absolute',
@@ -657,6 +690,23 @@ export default function DriverOnline({
                   </Text>
                   <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
                 </TouchableOpacity>
+              </View>
+
+              {/* Live Location Streaming Status for Drivers */}
+              <View style={dynamicStyles.locationStreamingStatus}>
+                {locationStreamError ? (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
+                    Location Error: {locationStreamError}
+                  </Text>
+                ) : streamedLocation ? (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
+                    Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
+                  </Text>
+                ) : (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
+                    Starting location streaming...
+                  </Text>
+                )}
               </View>
 
               <View style={dynamicStyles.bottomContainer}>
