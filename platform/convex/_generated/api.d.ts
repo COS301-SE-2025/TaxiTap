@@ -16,6 +16,7 @@ import type {
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
+import type * as functions_locations_updateUserLocation from "../functions/locations/updateUserLocation.js";
 import type * as functions_notifications_deactivatePushToken from "../functions/notifications/deactivatePushToken.js";
 import type * as functions_notifications_getNotificationSettings from "../functions/notifications/getNotificationSettings.js";
 import type * as functions_notifications_getNotifications from "../functions/notifications/getNotifications.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
+  "functions/locations/updateUserLocation": typeof functions_locations_updateUserLocation;
   "functions/notifications/deactivatePushToken": typeof functions_notifications_deactivatePushToken;
   "functions/notifications/getNotificationSettings": typeof functions_notifications_getNotificationSettings;
   "functions/notifications/getNotifications": typeof functions_notifications_getNotifications;
