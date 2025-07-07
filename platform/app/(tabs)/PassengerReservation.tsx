@@ -62,6 +62,7 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
+	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -371,6 +372,26 @@ export default function SeatReserved() {
 			);
 		}
 	}, [notifications, markAsRead, router]);
+
+	useEffect(() => {
+		if (taxiInfoError && !hasShownDeclinedAlert) {
+			Alert.alert(
+				'Ride Declined',
+				'No active reservation found. Your ride may have been cancelled or declined.',
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							setHasShownDeclinedAlert(true);
+							router.push('/HomeScreen');
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+		}
+	}, [taxiInfoError, hasShownDeclinedAlert]);
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -727,11 +748,7 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{taxiInfoError ? (
-							<Text style={{ color: 'red', textAlign: 'center', marginTop: 20 }}>
-								No active reservation found. Your ride may have been cancelled or declined.
-							</Text>
-						) : (
+						{!taxiInfoError && (
 							<View style={dynamicStyles.driverInfoSection}>
 								<View style={dynamicStyles.driverAvatar}>
 									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
