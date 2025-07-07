@@ -59,6 +59,10 @@ export default function SeatReserved() {
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
 
+	const passengerId = user?.id;
+	const rideId = taxiInfo?.rideDocId;
+	const driverId = taxiInfo?.driver.userId;
+
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
@@ -79,28 +83,36 @@ export default function SeatReserved() {
 	// Parse location data from params and update context
 	useEffect(() => {
 		if (!useLiveLocation) {
-			const newCurrentLocation = {
-				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
-				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-				name: getParamAsString(params.currentName, "Current Location")
-			};
+			const rawCurrentLat = getParamAsString(params.currentLat);
+			const rawCurrentLng = getParamAsString(params.currentLng);
+			const rawDestLat = getParamAsString(params.destinationLat);
+			const rawDestLng = getParamAsString(params.destinationLng);
 
-			const newDestination = {
-				latitude: parseFloat(getParamAsString(params.destinationLat, "-25.7824")),
-				longitude: parseFloat(getParamAsString(params.destinationLng, "28.2753")),
-				name: getParamAsString(params.destinationName, "")
-			};
+			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+
+			const currentLat = parseFloat(rawCurrentLat);
+			const currentLng = parseFloat(rawCurrentLng);
+			const destLat = parseFloat(rawDestLat);
+			const destLng = parseFloat(rawDestLng);
 
 			if (
-				isNaN(newCurrentLocation.latitude) || isNaN(newCurrentLocation.longitude) ||
-				isNaN(newDestination.latitude) || isNaN(newDestination.longitude)
+				isNaN(currentLat) || isNaN(currentLng) ||
+				isNaN(destLat) || isNaN(destLng)
 			) {
-				console.warn('Invalid coordinates detected, skipping update');
+				console.warn('Skipping update due to invalid coordinates.');
 				return;
 			}
 
-			setCurrentLocation(newCurrentLocation);
-			setDestination(newDestination);
+			setCurrentLocation({
+				latitude: currentLat,
+				longitude: currentLng,
+				name: getParamAsString(params.currentName, "Current Location")
+			});
+			setDestination({
+				latitude: destLat,
+				longitude: destLng,
+				name: getParamAsString(params.destinationName, "")
+			});
 		}
 	}, [useLiveLocation]);
 
@@ -337,6 +349,19 @@ export default function SeatReserved() {
 						text: 'OK',
 						onPress: () => {
 							markAsRead(rideStarted._id);
+							if (!currentLocation || !destination) {
+								return;
+							}
+							router.push({
+								pathname: './SubmitFeedback',
+								params: {
+									startName: currentLocation.name,
+									endName: destination.name,
+									passengerId: passengerId,
+									rideId: rideId,
+									driverId: driverId,
+								},
+							});
 						},
 						style: 'default',
 					},
@@ -388,7 +413,19 @@ export default function SeatReserved() {
 		try {
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			Alert.alert('Success', 'Ride ended!');
-			router.push('/HomeScreen');
+			if (!currentLocation || !destination) {
+				return;
+			}
+			router.push({
+				pathname: './SubmitFeedback',
+				params: {
+					startName: currentLocation.name,
+					endName: destination.name,
+					passengerId: passengerId,
+    				rideId: rideId,
+					driverId: driverId,
+				},
+			});
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to end ride.');
 		}

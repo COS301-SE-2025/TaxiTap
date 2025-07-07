@@ -142,6 +142,7 @@ export default function HomeScreen() {
   }, [detectedLocation , isLoadingCurrentLocation]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
+  const uniqueRoutes = Array.from(new Map((routes || []).map(r => [r.routeId, r])).values());
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
 
@@ -761,19 +762,24 @@ export default function HomeScreen() {
             <Marker coordinate={destination} title={destination.name} pinColor="orange" />
           )}
           
-          {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || []).map((driver) => (
-            <Marker
-              key={driver._id}
-              coordinate={{
-                latitude: driver.latitude,
-                longitude: driver.longitude,
-              }}
-              title={driver.name || "Available Driver"}
-            >
-              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="car" size={36} color="green" />
-              </View>
-            </Marker>
+          {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
+            .filter(driver => 
+              typeof driver.latitude === 'number' && 
+              typeof driver.longitude === 'number'
+            )
+            .map((driver, index) => (
+              <Marker
+                key={`${driver._id}_${availableTaxis.length > 0 ? 'available' : 'nearby'}_${index}`}
+                coordinate={{
+                  latitude: driver.latitude,
+                  longitude: driver.longitude,
+                }}
+                title={driver.name || "Available Driver"}
+              >
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="car" size={36} color="green" />
+                </View>
+              </Marker>
           ))}
 
           {routeLoaded && routeCoordinates.length > 0 && (
@@ -879,9 +885,9 @@ export default function HomeScreen() {
 
         <Text style={dynamicStyles.savedRoutesTitle}>Recently Used Taxi Ranks</Text>
         <ScrollView style={{ marginTop: 10 }}>
-          {routes?.map((route: any, idx: number) => (
+          {uniqueRoutes?.map((route: any, index) => (
             <TouchableOpacity
-              key={idx}
+              key={`${route.routeId}-${index}`}
               style={dynamicStyles.routeCard}
               onPress={() => handleDestinationSelect(route)}
             >
