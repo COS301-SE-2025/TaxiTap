@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import DriverHomeScreen from '../../../app/DriverHomeScreen';
 
 interface DriverOfflineProps {
@@ -69,7 +69,7 @@ describe('DriverHomeScreen', () => {
   });
 
   describe('State Transitions', () => {
-    it('should switch to DriverOnline when handleGoOnline is called', () => {
+    it('should switch to DriverOnline when handleGoOnline is called', async () => {
       const { getByTestId, queryByTestId } = render(<DriverHomeScreen />);
       
       // Initially should show offline component
@@ -79,27 +79,33 @@ describe('DriverHomeScreen', () => {
       // Simulate going online
       fireEvent.press(getByTestId('go-online-button'));
       
-      // Should now show online component
-      expect(getByTestId('driver-online-component')).toBeTruthy();
-      expect(queryByTestId('driver-offline-component')).toBeNull();
+      // Wait for the state to update
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+        expect(queryByTestId('driver-offline-component')).toBeNull();
+      });
     });
 
-    it('should switch back to DriverOffline when handleGoOffline is called', () => {
+    it('should switch back to DriverOffline when handleGoOffline is called', async () => {
       const { getByTestId, queryByTestId } = render(<DriverHomeScreen />);
       
       // Go online first
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('driver-online-component')).toBeTruthy();
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+      });
       
       // Go offline
       fireEvent.press(getByTestId('go-offline-button'));
       
       // Should be back to offline component
-      expect(getByTestId('driver-offline-component')).toBeTruthy();
-      expect(queryByTestId('driver-online-component')).toBeNull();
+      await waitFor(() => {
+        expect(getByTestId('driver-offline-component')).toBeTruthy();
+        expect(queryByTestId('driver-online-component')).toBeNull();
+      });
     });
 
-    it('should toggle between online and offline states multiple times', () => {
+    it('should toggle between online and offline states multiple times', async () => {
       const { getByTestId, queryByTestId } = render(<DriverHomeScreen />);
       
       // Start offline
@@ -107,18 +113,24 @@ describe('DriverHomeScreen', () => {
       
       // Go online
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('driver-online-component')).toBeTruthy();
-      expect(queryByTestId('driver-offline-component')).toBeNull();
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+        expect(queryByTestId('driver-offline-component')).toBeNull();
+      });
       
       // Go offline
       fireEvent.press(getByTestId('go-offline-button'));
-      expect(getByTestId('driver-offline-component')).toBeTruthy();
-      expect(queryByTestId('driver-online-component')).toBeNull();
+      await waitFor(() => {
+        expect(getByTestId('driver-offline-component')).toBeTruthy();
+        expect(queryByTestId('driver-online-component')).toBeNull();
+      });
       
       // Go online again
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('driver-online-component')).toBeTruthy();
-      expect(queryByTestId('driver-offline-component')).toBeNull();
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+        expect(queryByTestId('driver-offline-component')).toBeNull();
+      });
     });
   });
 
@@ -133,20 +145,22 @@ describe('DriverHomeScreen', () => {
       expect(() => fireEvent.press(getByTestId('go-online-button'))).not.toThrow();
     });
 
-    it('should pass correct props to DriverOnline component', () => {
+    it('should pass correct props to DriverOnline component', async () => {
       const { getByTestId } = render(<DriverHomeScreen />);
       
       // Go online first
       fireEvent.press(getByTestId('go-online-button'));
       
-      // Check that earnings are passed correctly
-      expect(getByTestId('online-earnings')).toHaveTextContent('Earnings: R0.00');
+      // Wait for the state to update and check that earnings are passed correctly
+      await waitFor(() => {
+        expect(getByTestId('online-earnings')).toHaveTextContent('Earnings: R0.00');
+      });
       
       // Check that onGoOffline function works
       expect(() => fireEvent.press(getByTestId('go-offline-button'))).not.toThrow();
     });
 
-    it('should maintain todaysEarnings value across state changes', () => {
+    it('should maintain todaysEarnings value across state changes', async () => {
       const { getByTestId } = render(<DriverHomeScreen />);
       
       // Check initial earnings in offline state
@@ -154,16 +168,20 @@ describe('DriverHomeScreen', () => {
       
       // Go online
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('online-earnings')).toHaveTextContent('Earnings: R0.00');
+      await waitFor(() => {
+        expect(getByTestId('online-earnings')).toHaveTextContent('Earnings: R0.00');
+      });
       
       // Go offline again
       fireEvent.press(getByTestId('go-offline-button'));
-      expect(getByTestId('offline-earnings')).toHaveTextContent('Earnings: R0.00');
+      await waitFor(() => {
+        expect(getByTestId('offline-earnings')).toHaveTextContent('Earnings: R0.00');
+      });
     });
   });
 
   describe('Component Rendering', () => {
-    it('should only render one component at a time', () => {
+    it('should only render one component at a time', async () => {
       const { getByTestId, queryByTestId } = render(<DriverHomeScreen />);
       
       // Initially offline
@@ -172,21 +190,29 @@ describe('DriverHomeScreen', () => {
       
       // Go online
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('driver-online-component')).toBeTruthy();
-      expect(queryByTestId('driver-offline-component')).toBeNull();
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+        expect(queryByTestId('driver-offline-component')).toBeNull();
+      });
     });
 
     it('should render components without crashing', () => {
       expect(() => render(<DriverHomeScreen />)).not.toThrow();
     });
 
-    it('should handle rapid state changes without crashing', () => {
+    it('should handle rapid state changes without crashing', async () => {
       const { getByTestId } = render(<DriverHomeScreen />);
       
       // Rapidly toggle states
       for (let i = 0; i < 5; i++) {
         fireEvent.press(getByTestId('go-online-button'));
+        await waitFor(() => {
+          expect(getByTestId('driver-online-component')).toBeTruthy();
+        });
         fireEvent.press(getByTestId('go-offline-button'));
+        await waitFor(() => {
+          expect(getByTestId('driver-offline-component')).toBeTruthy();
+        });
       }
       
       // Should still be functional
@@ -213,7 +239,7 @@ describe('DriverHomeScreen', () => {
   });
 
   describe('State Management', () => {
-    it('should not mutate state directly', () => {
+    it('should not mutate state directly', async () => {
       const { getByTestId } = render(<DriverHomeScreen />);
       
       // The state changes should only happen through the provided handlers
@@ -222,10 +248,12 @@ describe('DriverHomeScreen', () => {
       
       // State should only change when handler is called
       fireEvent.press(getByTestId('go-online-button'));
-      expect(getByTestId('driver-online-component')).toBeTruthy();
+      await waitFor(() => {
+        expect(getByTestId('driver-online-component')).toBeTruthy();
+      });
     });
 
-    it('should have consistent state behavior', () => {
+    it('should have consistent state behavior', async () => {
       const { getByTestId, queryByTestId } = render(<DriverHomeScreen />);
       
       // Test the state flow multiple times to ensure consistency
@@ -238,11 +266,17 @@ describe('DriverHomeScreen', () => {
         
         // Go online
         fireEvent.press(getByTestId('go-online-button'));
-        expect(getByTestId('driver-online-component')).toBeTruthy();
-        expect(queryByTestId('driver-offline-component')).toBeNull();
+        await waitFor(() => {
+          expect(getByTestId('driver-online-component')).toBeTruthy();
+          expect(queryByTestId('driver-offline-component')).toBeNull();
+        });
         
         // Go back offline
         fireEvent.press(getByTestId('go-offline-button'));
+        await waitFor(() => {
+          expect(getByTestId('driver-offline-component')).toBeTruthy();
+          expect(queryByTestId('driver-online-component')).toBeNull();
+        });
       }
     });
   });

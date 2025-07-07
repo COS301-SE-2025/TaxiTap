@@ -53,7 +53,8 @@ export default {
         {
           "icon": "../assets/images/transparent-whitetext.png",
           "color": "#ffffff",
-          "sounds": ["../assets/audios/hoot.wav"]
+          "sounds": ["../assets/audios/hoot.wav"],
+          "projectId": "TaxiTap"
         }
       ]
     ],

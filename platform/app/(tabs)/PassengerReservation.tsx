@@ -41,12 +41,16 @@ export default function SeatReserved() {
 
 	const mapRef = useRef<MapView | null>(null);
 	
-	// Move all hooks to the top, before any conditional logic
 	// Fetch taxi and driver info for the current reservation using Convex
-	const taxiInfo = useQuery(
-		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-		user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-	);
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any } | undefined, taxiInfoError: unknown;
+	try {
+		taxiInfo = useQuery(
+			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+		);
+	} catch (err) {
+		taxiInfoError = err;
+	}
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const startRide = useMutation(api.functions.rides.startRide.startRide);
@@ -58,6 +62,7 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
+	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -367,6 +372,26 @@ export default function SeatReserved() {
 			);
 		}
 	}, [notifications, markAsRead, router]);
+
+	useEffect(() => {
+		if (taxiInfoError && !hasShownDeclinedAlert) {
+			Alert.alert(
+				'Ride Declined',
+				'No active reservation found. Your ride may have been cancelled or declined.',
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							setHasShownDeclinedAlert(true);
+							router.push('/HomeScreen');
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+		}
+	}, [taxiInfoError, hasShownDeclinedAlert]);
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -723,28 +748,30 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						<View style={dynamicStyles.driverInfoSection}>
-							<View style={dynamicStyles.driverAvatar}>
-								<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
-							<View style={{ marginRight: 35 }}>
-								<Text style={dynamicStyles.driverName}>
-									{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+						{!taxiInfoError && (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+									</Text>
+									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
+										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
+									</TouchableOpacity>
+								</View>
+								<Text style={dynamicStyles.ratingText}>
+									{taxiInfo?.driver?.rating?.toFixed(1) || "5.0"}
 								</Text>
-								<Text style={dynamicStyles.driverVehicle}>
-									{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
-								</Text>
-								<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
-									<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
-								</TouchableOpacity>
+								{[1, 2, 3, 4, 5].map((star, index) => (
+									<Icon key={index} name="star" size={12} color={theme.primary} style={{ marginRight: 1 }} />
+								))}
 							</View>
-							<Text style={dynamicStyles.ratingText}>
-								{taxiInfo?.driver?.rating?.toFixed(1) || "5.0"}
-							</Text>
-							{[1, 2, 3, 4, 5].map((star, index) => (
-								<Icon key={index} name="star" size={12} color={theme.primary} style={{ marginRight: 1 }} />
-							))}
-						</View>
+						)}
 						
 						{/* Location Box - Start and Destination */}
 						<View style={dynamicStyles.locationBox}>

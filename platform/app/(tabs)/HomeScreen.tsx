@@ -23,6 +23,7 @@ import { useUser } from '../../contexts/UserContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNotifications } from '../../contexts/NotificationContext';
 import * as Location from "expo-location";
+import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
+  const role = user?.role || user?.accountType || 'passenger';
 
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;
@@ -112,6 +114,9 @@ export default function HomeScreen() {
     getCachedRoute,
     setCachedRoute,
   } = useMapContext();
+
+  // Integrate live location streaming
+  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId, role, true);
 
   //This has our functionality but used Ati's variable, so we will change this
   useEffect(() => {
@@ -740,6 +745,16 @@ export default function HomeScreen() {
 
   return (
     <View style={dynamicStyles.container}>
+      {/* Live Location Streaming Status */}
+      <View style={{ padding: 8, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
+        {locationStreamError ? (
+          <Text style={{ color: 'red' }}>Location Streaming Error: {locationStreamError}</Text>
+        ) : streamedLocation ? (
+          <Text style={{ color: 'green' }}>Live Location Streaming: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}</Text>
+        ) : (
+          <Text>Streaming location...</Text>
+        )}
+      </View>
       {isLoadingCurrentLocation ? (
         <View style={[dynamicStyles.map, { justifyContent: 'center', alignItems: 'center' }]}>
           <Image source={loading} style={{ width: 120, height: 120 }} resizeMode="contain" />

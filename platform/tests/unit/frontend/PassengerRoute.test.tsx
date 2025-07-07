@@ -16,21 +16,7 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
-jest.mock('../../../contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      background: '#FFFFFF',
-      surface: '#F8F8F8',
-      primary: '#FF9900',
-      text: '#000000',
-      textSecondary: '#666666',
-      border: '#E0E0E0',
-      shadow: '#000000',
-      card: '#FFFFFF',
-    },
-    isDark: false,
-  }),
-}));
+
 
 jest.mock('convex/react', () => ({
   useQuery: jest.fn(),
