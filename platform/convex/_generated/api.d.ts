@@ -13,6 +13,8 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
+import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -72,6 +74,8 @@ import type * as functions_users_UserManagement_switchPassengertoBoth from "../f
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
+  "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;

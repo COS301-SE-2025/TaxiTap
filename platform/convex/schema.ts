@@ -75,7 +75,8 @@ export default defineSchema({
       v.literal("accepted"),
       v.literal("in_progress"),
       v.literal("completed"),
-      v.literal("cancelled")
+      v.literal("cancelled"),
+      v.literal("declined")
     ),
     
     driverId: v.optional(v.id("taxiTap_users")),
@@ -288,4 +289,17 @@ routes: defineTable({
     ),
     updatedAt: v.string(),
   }).index("by_user", ["userId"]),
+  feedback: defineTable({
+    rideId: v.id("rides"),
+    passengerId: v.id("taxiTap_users"),
+    driverId: v.id("taxiTap_users"),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+    startLocation: v.string(),
+    endLocation: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_ride", ["rideId"])
+    .index("by_driver", ["driverId"])
+    .index("by_passenger", ["passengerId"]),
 });
