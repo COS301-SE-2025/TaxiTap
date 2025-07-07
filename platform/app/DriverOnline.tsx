@@ -79,6 +79,7 @@ export default function DriverOnline({
 
   const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
+  const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -151,7 +152,7 @@ export default function DriverOnline({
             text: "Decline",
             onPress: async () => {
               try {
-                await cancelRide({ rideId: rideRequest.metadata.rideId, userId: user.id as Id<"taxiTap_users">, });
+                await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
                 markAsRead(rideRequest._id);
               } catch (error) {
                 console.error(error);
