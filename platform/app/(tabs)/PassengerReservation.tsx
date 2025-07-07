@@ -42,12 +42,16 @@ export default function SeatReserved() {
 
 	const mapRef = useRef<MapView | null>(null);
 	
-	// Move all hooks to the top, before any conditional logic
 	// Fetch taxi and driver info for the current reservation using Convex
-	const taxiInfo = useQuery(
-		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-		user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-	);
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
+	try {
+		taxiInfo = useQuery(
+			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+		);
+	} catch (err) {
+		taxiInfoError = err;
+	}
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const startRide = useMutation(api.functions.rides.startRide.startRide);
@@ -65,6 +69,7 @@ export default function SeatReserved() {
 	const driverId = taxiInfo?.driver.userId;
 
 	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
+	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -385,6 +390,26 @@ export default function SeatReserved() {
 			);
 		}
 	}, [notifications, markAsRead, router]);
+
+	useEffect(() => {
+		if (taxiInfoError && !hasShownDeclinedAlert) {
+			Alert.alert(
+				'Ride Declined',
+				'No active reservation found. Your ride may have been cancelled or declined.',
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							setHasShownDeclinedAlert(true);
+							router.push('/HomeScreen');
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+		}
+	}, [taxiInfoError, hasShownDeclinedAlert]);
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -753,29 +778,30 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						<View style={dynamicStyles.driverInfoSection}>
-							<View style={dynamicStyles.driverAvatar}>
-								<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
-							<View style={{ marginRight: 35 }}>
-								<Text style={dynamicStyles.driverName}>
-									{taxiInfo?.driver?.name || "Tshepo Mthembu"}
-								</Text>
-								<Text style={dynamicStyles.driverVehicle}>
-									{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
-								</Text>
-								<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
-									<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
-								</TouchableOpacity>
-							</View>
+						{!taxiInfoError && (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+									</Text>
+									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
+										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
+									</TouchableOpacity>
+								</View>
 							<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<Text style={dynamicStyles.ratingText}>
-									{(averageRating ?? 0).toFixed(1)}
-								</Text>
+									<Text style={dynamicStyles.ratingText}>
+										{(averageRating ?? 0).toFixed(1)}
+									</Text>
 								<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-									{[1, 2, 3, 4, 5].map((star, index) => {
+										{[1, 2, 3, 4, 5].map((star, index) => {
 										const full = (averageRating ?? 0) >= star;
-										const half = (averageRating ?? 0) >= star - 0.5 && !full;
+											const half = (averageRating ?? 0) >= star - 0.5 && !full;
 
 										return (
 										<FontAwesome
@@ -785,11 +811,12 @@ export default function SeatReserved() {
 											color={theme.primary}
 											style={{ marginRight: 1 }}
 										/>
-										);
+											);
 									})}
 								</View>
 							</View>
-						</View>
+							</View>
+						)}
 						
 						{/* Location Box - Start and Destination */}
 						<View style={dynamicStyles.locationBox}>

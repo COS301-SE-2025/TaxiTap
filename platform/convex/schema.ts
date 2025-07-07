@@ -76,7 +76,7 @@ export default defineSchema({
       v.literal("in_progress"),
       v.literal("completed"),
       v.literal("cancelled"),
-      v.literal("declined")
+      v.literal("declined"),
     ),
     
     driverId: v.optional(v.id("taxiTap_users")),
