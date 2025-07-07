@@ -42,9 +42,14 @@ export default function FeedbackHistoryScreen() {
               <Text style={{ color: theme.text }}>📝 Comment: {entry.comment}</Text>
             )}
             {(entry.startLocation || entry.endLocation) && (
-              <Text style={{ color: theme.text }}>
-                Trip: {entry.startLocation || 'N/A'} → {entry.endLocation || 'N/A'}
-              </Text>
+              <View>
+                <Text style={{ color: theme.text }}>
+                  From: {entry.startLocation || 'N/A'}
+                </Text>
+                <Text style={{ color: theme.text }}>
+                  To: {entry.endLocation || 'N/A'}
+                </Text>
+              </View>
             )}
             <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
               {new Date(entry.createdAt).toLocaleString()}

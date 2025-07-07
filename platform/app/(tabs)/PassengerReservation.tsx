@@ -355,16 +355,6 @@ export default function SeatReserved() {
 							if (!currentLocation || !destination) {
 								return;
 							}
-							router.push({
-								pathname: './SubmitFeedback',
-								params: {
-									startName: currentLocation.name,
-									endName: destination.name,
-									passengerId: passengerId,
-									rideId: rideId,
-									driverId: driverId,
-								},
-							});
 						},
 						style: 'default',
 					},
