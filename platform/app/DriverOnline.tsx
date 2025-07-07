@@ -63,7 +63,7 @@ export default function DriverOnline({
   const router = useRouter();
   const { user } = useUser();
   const userId = user?.id;
-  const role = user?.role || user?.accountType || 'driver';
+  const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
