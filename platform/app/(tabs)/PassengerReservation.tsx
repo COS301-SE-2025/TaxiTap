@@ -11,6 +11,7 @@ import { useUser } from '../../contexts/UserContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
+import { FontAwesome } from "@expo/vector-icons";
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -62,6 +63,8 @@ export default function SeatReserved() {
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
 	const driverId = taxiInfo?.driver.userId;
+
+	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -775,12 +778,27 @@ export default function SeatReserved() {
 									<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 								</TouchableOpacity>
 							</View>
-							<Text style={dynamicStyles.ratingText}>
-								{taxiInfo?.driver?.rating?.toFixed(1) || "5.0"}
-							</Text>
-							{[1, 2, 3, 4, 5].map((star, index) => (
-								<Icon key={index} name="star" size={12} color={theme.primary} style={{ marginRight: 1 }} />
-							))}
+							<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+								<Text style={dynamicStyles.ratingText}>
+									{(averageRating ?? 0).toFixed(1)}
+								</Text>
+								<View style={{ flexDirection: 'row', marginLeft: 4 }}>
+									{[1, 2, 3, 4, 5].map((star, index) => {
+										const full = (averageRating ?? 0) >= star;
+										const half = (averageRating ?? 0) >= star - 0.5 && !full;
+
+										return (
+										<FontAwesome
+											key={index}
+											name={full ? "star" : half ? "star-half-full" : "star-o"}
+											size={12}
+											color={theme.primary}
+											style={{ marginRight: 1 }}
+										/>
+										);
+									})}
+								</View>
+							</View>
 						</View>
 						
 						{/* Location Box - Start and Destination */}

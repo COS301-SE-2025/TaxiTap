@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
@@ -74,6 +75,7 @@ import type * as functions_users_UserManagement_switchPassengertoBoth from "../f
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
