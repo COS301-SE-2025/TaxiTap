@@ -31,6 +31,25 @@ export default defineSchema({
       v.literal("other"),
       v.literal("prefer_not_to_say")
     )),
+    
+    // Added address fields
+    homeAddress: v.optional(v.object({
+      address: v.string(),
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      nickname: v.optional(v.string()), // e.g., "Home", "My Place"
+    })),
+    
+    workAddress: v.optional(v.object({
+      address: v.string(),
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      nickname: v.optional(v.string()), // e.g., "Work", "Office"
+    })),
         
     emergencyContact: v.optional(v.object({
       name: v.string(),
