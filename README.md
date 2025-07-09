@@ -135,7 +135,7 @@ release/v1.0     ─────────────────────
 <table align="center">
   <tr>
     <td align="center" width="250">
-      <img src="assets/images/annie.jpeg" width="120" height="120" style="border-radius: 50%"/>
+      <img src="assets/images/annie.png" width="120" height="120" style="border-radius: 50%"/>
       <br><br>
       <strong>Ann-Marí Oberholzer</strong>
       <br>
@@ -150,7 +150,7 @@ release/v1.0     ─────────────────────
       </a>
     </td>
     <td align="center" width="250">
-      <img src="assets/images/unathi.jpeg" width="120" height="120" style="border-radius: 50%"/>
+      <img src="assets/images/unathi.png" width="120" height="120" style="border-radius: 50%"/>
       <br><br>
       <strong>Unathi Dlamini</strong>
       <br>
@@ -167,7 +167,7 @@ release/v1.0     ─────────────────────
   </tr>
   <tr>
     <td align="center" width="250">
-      <img src="assets/images/tebogo.jpg" width="120" height="120" style="border-radius: 50%"/>
+      <img src="assets/images/tebogo.png" width="120" height="120" style="border-radius: 50%"/>
       <br><br>
       <strong>Moyahabo Hamese</strong>
       <br>
@@ -182,7 +182,7 @@ release/v1.0     ─────────────────────
       </a>
     </td>
     <td align="center" width="250">
-      <img src="assets/images/nev.jpg" width="120" height="120" style="border-radius: 50%"/>
+      <img src="assets/images/nev.png" width="120" height="120" style="border-radius: 50%"/>
       <br><br>
       <strong>Nevan Rahman</strong>
       <br>
