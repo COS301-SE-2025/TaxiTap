@@ -34,6 +34,8 @@ export const getUserByIdHandler = async (
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLoginAt: user.lastLoginAt,
+    homeAddress: user.homeAddress,
+    workAddress: user.workAddress,
   };
 };
 
@@ -76,6 +78,8 @@ export const getUserByPhoneHandler = async (
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLoginAt: user.lastLoginAt,
+    homeAddress: user.homeAddress,
+    workAddress: user.workAddress,
   };
 };
 
@@ -135,6 +139,8 @@ export const getUserWithProfilesHandler = async (
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       lastLoginAt: user.lastLoginAt,
+      homeAddress: user.homeAddress,
+      workAddress: user.workAddress,
     },
     driverProfile,
     passengerProfile,
