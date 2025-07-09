@@ -11,6 +11,8 @@ import { useUser } from '../../contexts/UserContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
+import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
+import * as Location from 'expo-location';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -41,6 +43,18 @@ export default function SeatReserved() {
 
 	const mapRef = useRef<MapView | null>(null);
 	
+	// Location streaming for passenger
+	const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(
+		user?.id || '', 
+		(user?.role as "passenger" | "driver" | "both") || 'passenger', 
+		true
+	);
+
+	// State for tracking current map mode
+	const [mapMode, setMapMode] = useState<'initial' | 'to_driver' | 'to_destination'>('initial');
+	const [driverLocation, setDriverLocation] = useState<{latitude: number, longitude: number} | null>(null);
+	const [lastProximityAlert, setLastProximityAlert] = useState<string | null>(null);
+
 	// Fetch taxi and driver info for the current reservation using Convex
 	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any } | undefined, taxiInfoError: unknown;
 	try {
@@ -63,6 +77,97 @@ export default function SeatReserved() {
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
+
+	// Location update interval for sending location to backend
+	useEffect(() => {
+		if (!user?.id || !streamedLocation) return;
+
+		const updateLocationInterval = setInterval(async () => {
+			try {
+				// Integrate here: Call backend updateUserLocation mutation
+				// await updateUserLocation({
+				//   userId: user.id,
+				//   latitude: streamedLocation.latitude,
+				//   longitude: streamedLocation.longitude,
+				//   role: user.role || 'passenger'
+				// });
+				console.log('Location update sent:', streamedLocation);
+			} catch (error) {
+				console.log('Error updating location:', error);
+			}
+		}, 15000); // Update every 15 seconds
+
+		return () => clearInterval(updateLocationInterval);
+	}, [user?.id, streamedLocation]);
+
+	// Proximity notification listener and ETA calculator
+	useEffect(() => {
+		if (!streamedLocation || !driverLocation || rideStatus !== 'accepted') return;
+
+		const calculateETA = async () => {
+			try {
+				// Integrate here: Use Google Maps Directions API for real ETA
+				const origin = `${streamedLocation.latitude},${streamedLocation.longitude}`;
+				const destination = `${driverLocation.latitude},${driverLocation.longitude}`;
+				const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
+				
+				const response = await fetch(url);
+				const data = await response.json();
+				
+				if (data.routes && data.routes.length > 0) {
+					const duration = data.routes[0].legs[0].duration.value; // in seconds
+					const etaMinutes = Math.round(duration / 60);
+					
+					// Check for proximity alerts
+					if (etaMinutes <= 10 && lastProximityAlert !== '10min' && etaMinutes > 5) {
+						setLastProximityAlert('10min');
+						// Integrate here: Trigger 10-minute proximity notification
+						console.log('Driver is 10 minutes away!');
+					} else if (etaMinutes <= 5 && lastProximityAlert !== '5min' && etaMinutes > 1) {
+						setLastProximityAlert('5min');
+						// Integrate here: Trigger 5-minute proximity notification
+						console.log('Driver is 5 minutes away!');
+					} else if (etaMinutes <= 1 && lastProximityAlert !== 'arrived') {
+						setLastProximityAlert('arrived');
+						// Integrate here: Trigger driver arrived notification
+						console.log('Driver has arrived!');
+					}
+				}
+			} catch (error) {
+				console.log('Error calculating ETA:', error);
+			}
+		};
+
+		const etaInterval = setInterval(calculateETA, 30000); // Check every 30 seconds
+		return () => clearInterval(etaInterval);
+	}, [streamedLocation, driverLocation, rideStatus, lastProximityAlert]);
+
+	// Mock driver location updates (replace with real driver location query)
+	useEffect(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.driver) {
+			// Integrate here: Query driver's live location
+			// const driverLiveLocation = useQuery(api.functions.locations.getDriverLocation, {
+			//   driverId: taxiInfo.driver.id
+			// });
+			
+			// Mock driver location for demonstration
+			const mockDriverLocation = {
+				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")) + 0.01,
+				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")) + 0.01
+			};
+			setDriverLocation(mockDriverLocation);
+		}
+	}, [rideStatus, taxiInfo]);
+
+	// Handle map mode transitions
+	useEffect(() => {
+		if (rideStatus === 'accepted' && mapMode === 'initial') {
+			setMapMode('to_driver');
+			setUseLiveLocation(true);
+		} else if ((rideStatus === 'started' || rideStatus === 'in_progress') && mapMode === 'to_driver') {
+			setMapMode('to_destination');
+		}
+	}, [rideStatus, mapMode]);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -106,8 +211,15 @@ export default function SeatReserved() {
 
 			setCurrentLocation(newCurrentLocation);
 			setDestination(newDestination);
+		} else if (streamedLocation) {
+			// Use live location when available
+			setCurrentLocation({
+				latitude: streamedLocation.latitude,
+				longitude: streamedLocation.longitude,
+				name: "Your Live Location"
+			});
 		}
-	}, [useLiveLocation]);
+	}, [useLiveLocation, streamedLocation]);
 
 	const vehicleInfo = {
 		plate: getParamAsString(params.plate, "Unknown"),
@@ -269,14 +381,48 @@ export default function SeatReserved() {
 		}
 	};
 
-	// Get route when locations are available and route not loaded
+	// Dynamic route calculation based on map mode
 	useEffect(() => {
-		if (currentLocation && destination && 
-			currentLocation.latitude && destination.latitude && 
-			!routeLoaded && !isLoadingRoute) {
-			getRoute(currentLocation, destination);
+		if (!currentLocation || !destination) return;
+
+		switch (mapMode) {
+			case 'initial':
+				// Original route: passenger origin -> destination
+				if (!routeLoaded && !isLoadingRoute) {
+					getRoute(currentLocation, destination);
+				}
+				break;
+				
+			case 'to_driver':
+				// Route from passenger live location to driver location
+				if (driverLocation && streamedLocation) {
+					const passengerLiveLocation = {
+						latitude: streamedLocation.latitude,
+						longitude: streamedLocation.longitude,
+						name: "Your Location"
+					};
+					const driverLocationFormatted = {
+						latitude: driverLocation.latitude,
+						longitude: driverLocation.longitude,
+						name: "Driver Location"
+					};
+					getRoute(passengerLiveLocation, driverLocationFormatted);
+				}
+				break;
+				
+			case 'to_destination':
+				// Route from passenger origin to final destination
+				if (streamedLocation) {
+					const passengerLiveLocation = {
+						latitude: streamedLocation.latitude,
+						longitude: streamedLocation.longitude,
+						name: "Your Location"
+					};
+					getRoute(passengerLiveLocation, destination);
+				}
+				break;
 		}
-	}, [currentLocation, destination, routeLoaded, isLoadingRoute]);
+	}, [mapMode, currentLocation, destination, driverLocation, streamedLocation, routeLoaded, isLoadingRoute]);
 
 	// Initial fit to route when route or destination changes
 	useEffect(() => {
@@ -314,22 +460,38 @@ export default function SeatReserved() {
 			(rideStatus === 'started' || rideStatus === 'in_progress') &&
 			isFollowing &&
 			mapRef.current &&
-			currentLocation
+			streamedLocation
 		) {
 			mapRef.current.animateToRegion(
 				{
-					latitude: currentLocation.latitude,
-					longitude: currentLocation.longitude,
+					latitude: streamedLocation.latitude,
+					longitude: streamedLocation.longitude,
 					latitudeDelta: 0.01,
 					longitudeDelta: 0.01,
 				},
 				500
 			);
 		}
-	}, [currentLocation, rideStatus, isFollowing]);
+	}, [streamedLocation, rideStatus, isFollowing]);
 
 	// Handle notifications effect
 	useEffect(() => {
+		// Handle proximity notifications
+		const proximityNotifications = [
+			{ type: 'driver_10min_away', message: 'Driver is 10 minutes away!' },
+			{ type: 'driver_5min_away', message: 'Driver is 5 minutes away!' },
+			{ type: 'driver_arrived', message: 'Driver has arrived at your location!' }
+		];
+
+		proximityNotifications.forEach(({ type, message }) => {
+			const notification = notifications.find(n => n.type === type && !n.isRead);
+			if (notification) {
+				Alert.alert('Driver Update', message, [
+					{ text: 'OK', onPress: () => markAsRead(notification._id) }
+				]);
+			}
+		});
+
 		const rideStarted = notifications.find(
 			n => n.type === 'ride_started' && !n.isRead
 		);
@@ -458,12 +620,16 @@ export default function SeatReserved() {
 			left: 0,
 			right: 0,
 			alignItems: "center",
+			flexDirection: "row",
+			justifyContent: "center",
+			paddingHorizontal: 20,
 		},
 		arrivalTimeBox: {
 			backgroundColor: isDark ? theme.surface : "#121212",
 			borderRadius: 30,
 			paddingVertical: 16,
 			paddingHorizontal: 20,
+			marginRight: 10,
 		},
 		arrivalTimeText: {
 			color: isDark ? theme.text : "#FFFFFF",
@@ -477,6 +643,51 @@ export default function SeatReserved() {
 			fontStyle: 'italic',
 			textAlign: "center",
 			marginTop: 4,
+		},
+		mapModeIndicator: {
+			backgroundColor: "#FFFFFF",
+			borderRadius: 30,
+			paddingVertical: 16,
+			paddingHorizontal: 20,
+			shadowColor: theme.shadow,
+			shadowOpacity: 0.15,
+			shadowOffset: { width: 0, height: 2 },
+			shadowRadius: 4,
+			elevation: 4,
+		},
+		mapModeText: {
+			fontSize: 13,
+			fontWeight: "bold",
+			color: "#000000",
+			textAlign: "center",
+		},
+		locationStreamingStatus: {
+			position: 'absolute',
+			top: 140,
+			left: 20,
+			right: 20,
+			backgroundColor: theme.surface,
+			borderRadius: 8,
+			padding: 8,
+			alignItems: 'center',
+			shadowColor: theme.shadow,
+			shadowOpacity: isDark ? 0.3 : 0.15,
+			shadowOffset: { width: 0, height: 2 },
+			shadowRadius: 4,
+			elevation: 4,
+		},
+		locationStreamingText: {
+			fontSize: 11,
+			fontWeight: 'bold',
+		},
+		locationStreamingSuccess: {
+			color: '#4CAF50',
+		},
+		locationStreamingError: {
+			color: '#F44336',
+		},
+		locationStreamingLoading: {
+			color: theme.textSecondary,
 		},
 		bottomSection: {
 			alignItems: "center",
@@ -677,6 +888,103 @@ export default function SeatReserved() {
 		);
 	}
 
+	// Determine which location to show for current position based on map mode
+	const displayLocation = useLiveLocation && streamedLocation ? {
+		latitude: streamedLocation.latitude,
+		longitude: streamedLocation.longitude,
+		name: "Your Live Location"
+	} : currentLocation;
+
+	// Determine markers based on map mode
+	const getMapMarkers = () => {
+		const markers = [];
+
+		switch (mapMode) {
+			case 'initial':
+				markers.push(
+					<Marker
+						key="passenger"
+						coordinate={displayLocation}
+						title="You are here"
+						pinColor="blue"
+					/>,
+					<Marker
+						key="destination"
+						coordinate={destination}
+						title={destination.name}
+						pinColor="orange"
+					/>
+				);
+				break;
+
+			case 'to_driver':
+				if (streamedLocation) {
+					markers.push(
+						<Marker
+							key="passenger-live"
+							coordinate={{
+								latitude: streamedLocation.latitude,
+								longitude: streamedLocation.longitude
+							}}
+							title="Your Location"
+							pinColor="blue"
+						/>
+					);
+				}
+				if (driverLocation) {
+					markers.push(
+						<Marker
+							key="driver"
+							coordinate={driverLocation}
+							title="Driver Location"
+							pinColor="green"
+						/>
+					);
+				}
+				break;
+
+			case 'to_destination':
+				if (streamedLocation) {
+					markers.push(
+						<Marker
+							key="passenger-live"
+							coordinate={{
+								latitude: streamedLocation.latitude,
+								longitude: streamedLocation.longitude
+							}}
+							title="Your Location"
+							pinColor="blue"
+						/>
+					);
+				}
+				markers.push(
+					<Marker
+						key="destination"
+						coordinate={destination}
+						title={destination.name}
+						pinColor="orange"
+					/>
+				);
+				break;
+		}
+
+		return markers;
+	};
+
+	// Get map mode display text
+	const getMapModeText = () => {
+		switch (mapMode) {
+			case 'initial':
+				return 'To Destination';
+			case 'to_driver':
+				return 'To Driver';
+			case 'to_destination':
+				return 'To Destination';
+			default:
+				return '';
+		}
+	};
+
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
 			<ScrollView style={dynamicStyles.scrollView}>
@@ -688,27 +996,16 @@ export default function SeatReserved() {
 							style={{ flex: 1 }}
 							provider={PROVIDER_GOOGLE}
 							initialRegion={{
-								latitude: (currentLocation.latitude + destination.latitude) / 2,
-								longitude: (currentLocation.longitude + destination.longitude) / 2,
-								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
-								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
+								latitude: (displayLocation.latitude + destination.latitude) / 2,
+								longitude: (displayLocation.longitude + destination.longitude) / 2,
+								latitudeDelta: Math.abs(displayLocation.latitude - destination.latitude) * 2 + 0.01,
+								longitudeDelta: Math.abs(displayLocation.longitude - destination.longitude) * 2 + 0.01,
 							}}
 							customMapStyle={isDark ? darkMapStyle : []}
 							onPanDrag={() => setIsFollowing(false)}
 							onRegionChangeComplete={() => setIsFollowing(false)}
 						>
-							<Marker
-								coordinate={currentLocation}
-								title="You are here"
-								pinColor="blue"
-							>
-							</Marker>
-							<Marker
-								coordinate={destination}
-								title={destination.name}
-								pinColor="orange"
-							>
-							</Marker>
+							{getMapMarkers()}
 							{/* Render the route polyline */}
 							{routeCoordinates.length > 0 && (
 								<Polyline
@@ -731,7 +1028,35 @@ export default function SeatReserved() {
 									</Text>
 								)}
 							</View>
+
+							{/* Map Mode Indicator */}
+							{mapMode !== 'initial' && (
+								<View style={dynamicStyles.mapModeIndicator}>
+									<Text style={dynamicStyles.mapModeText}>
+										{getMapModeText()}
+									</Text>
+								</View>
+							)}
 						</View>
+
+						{/* Live Location Streaming Status for Passengers */}
+						{useLiveLocation && (
+							<View style={dynamicStyles.locationStreamingStatus}>
+								{locationStreamError ? (
+									<Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
+										Location Error: {locationStreamError}
+									</Text>
+								) : streamedLocation ? (
+									<Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
+										Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
+									</Text>
+								) : (
+									<Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
+										Starting location streaming...
+									</Text>
+								)}
+							</View>
+						)}
 					</View>
 
 					<View style={dynamicStyles.bottomSection}>
@@ -799,7 +1124,7 @@ export default function SeatReserved() {
 								</Text>
 								<View style={dynamicStyles.locationSeparator}></View>
 								<Text style={dynamicStyles.destinationText}>
-									{destination.name}
+									{mapMode === 'to_driver' ? 'Driver Location' : destination.name}
 								</Text>
 							</View>
 						</View>
