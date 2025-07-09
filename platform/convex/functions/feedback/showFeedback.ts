@@ -6,11 +6,28 @@ export const showFeedbackPassenger = query({
     passengerId: v.id("taxiTap_users"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db
+    // Fetch feedbacks by passenger
+    const feedbacks = await ctx.db
       .query("feedback")
       .withIndex("by_passenger", (q) => q.eq("passengerId", args.passengerId))
       .order("desc")
       .collect();
+
+    // For each feedback, fetch the driver's name
+    const enrichedFeedbacks = await Promise.all(
+      feedbacks.map(async (fb) => {
+        const driver = fb.driverId
+          ? await ctx.db.get(fb.driverId)
+          : null;
+
+        return {
+          ...fb,
+          driverName: driver?.name || "Unknown",
+        };
+      })
+    );
+
+    return enrichedFeedbacks;
   },
 });
 

@@ -41,6 +41,9 @@ export default function FeedbackHistoryScreen() {
             {entry.comment && (
               <Text style={{ color: theme.text }}>📝 Comment: {entry.comment}</Text>
             )}
+            {entry.driverName && (
+              <Text style={{ color: theme.text }}>Driver: {entry.driverName}</Text>
+            )}
             {(entry.startLocation || entry.endLocation) && (
               <View>
                 <Text style={{ color: theme.text }}>

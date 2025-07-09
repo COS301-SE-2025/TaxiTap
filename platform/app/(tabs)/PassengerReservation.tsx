@@ -70,6 +70,7 @@ export default function SeatReserved() {
 
 	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
+	const [rideJustEnded, setRideJustEnded] = useState(false);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -392,6 +393,8 @@ export default function SeatReserved() {
 	}, [notifications, markAsRead, router]);
 
 	useEffect(() => {
+		if (rideJustEnded) return;
+		
 		if (taxiInfoError && !hasShownDeclinedAlert) {
 			Alert.alert(
 				'Ride Declined',
@@ -444,6 +447,7 @@ export default function SeatReserved() {
 					driverId: driverId,
 				},
 			});
+			setRideJustEnded(true);
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to end ride.');
 		}
