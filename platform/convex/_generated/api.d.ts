@@ -33,6 +33,7 @@ import type * as functions_rides_acceptRide from "../functions/rides/acceptRide.
 import type * as functions_rides_acceptRideHandler from "../functions/rides/acceptRideHandler.js";
 import type * as functions_rides_cancelRide from "../functions/rides/cancelRide.js";
 import type * as functions_rides_cancelRideHandler from "../functions/rides/cancelRideHandler.js";
+import type * as functions_rides_checkProximityAndNotify from "../functions/rides/checkProximityAndNotify.js";
 import type * as functions_rides_completeRide from "../functions/rides/completeRide.js";
 import type * as functions_rides_completeRideHandler from "../functions/rides/completeRideHandler.js";
 import type * as functions_rides_declineRide from "../functions/rides/declineRide.js";
@@ -40,7 +41,9 @@ import type * as functions_rides_declineRideHandler from "../functions/rides/dec
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
+import type * as functions_rides_scheduledProximityCheck from "../functions/rides/scheduledProximityCheck.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
+import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
 import type * as functions_routes_calculateRoute from "../functions/routes/calculateRoute.js";
 import type * as functions_routes_displayRoutes from "../functions/routes/displayRoutes.js";
 import type * as functions_routes_enhancedTaxiMatching from "../functions/routes/enhancedTaxiMatching.js";
@@ -95,6 +98,7 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/acceptRideHandler": typeof functions_rides_acceptRideHandler;
   "functions/rides/cancelRide": typeof functions_rides_cancelRide;
   "functions/rides/cancelRideHandler": typeof functions_rides_cancelRideHandler;
+  "functions/rides/checkProximityAndNotify": typeof functions_rides_checkProximityAndNotify;
   "functions/rides/completeRide": typeof functions_rides_completeRide;
   "functions/rides/completeRideHandler": typeof functions_rides_completeRideHandler;
   "functions/rides/declineRide": typeof functions_rides_declineRide;
@@ -102,7 +106,9 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
+  "functions/rides/scheduledProximityCheck": typeof functions_rides_scheduledProximityCheck;
   "functions/rides/startRide": typeof functions_rides_startRide;
+  "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
   "functions/routes/calculateRoute": typeof functions_routes_calculateRoute;
   "functions/routes/displayRoutes": typeof functions_routes_displayRoutes;
   "functions/routes/enhancedTaxiMatching": typeof functions_routes_enhancedTaxiMatching;
