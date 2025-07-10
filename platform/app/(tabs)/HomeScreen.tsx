@@ -17,13 +17,15 @@ import { router, useNavigation, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import loading from '../../assets/images/loading4.png';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNotifications } from '../../contexts/NotificationContext';
 import * as Location from "expo-location";
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
+import { Id } from "../../convex/_generated/dataModel";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -35,6 +37,14 @@ export default function HomeScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const role = user?.role || user?.accountType || 'passenger';
+
+  const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  const shouldRunQuery = !!userId;
+
+  const recentRoutes = useQuery(
+    api.functions.routes.getRecentRoutes.getPassengerTopRoutes,
+    shouldRunQuery ? { passengerId: userId as Id<"taxiTap_users"> } : "skip"
+  );
 
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;
@@ -116,7 +126,14 @@ export default function HomeScreen() {
   } = useMapContext();
 
   // Integrate live location streaming
-  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId, role, true);
+  const validRoles = ["passenger", "driver", "both"] as const;
+
+  const safeRole = validRoles.includes(role as any)
+    ? (role as "passenger" | "driver" | "both")
+    : "passenger";
+
+  const { location: streamedLocation, error: locationStreamError } =
+    useThrottledLocationStreaming(userId, safeRole, true);
 
   //This has our functionality but used Ati's variable, so we will change this
   useEffect(() => {
@@ -147,7 +164,6 @@ export default function HomeScreen() {
   }, [detectedLocation , isLoadingCurrentLocation]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
-  const uniqueRoutes = Array.from(new Map((routes || []).map(r => [r.routeId, r])).values());
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
 
@@ -157,6 +173,69 @@ export default function HomeScreen() {
   const mapRef = useRef<MapView | null>(null);
 
   const { notifications, markAsRead } = useNotifications();
+
+  const [manualDestination, setManualDestination] = useState<{
+    latitude: number;
+    longitude: number;
+    name: string;
+  } | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('lastManualDestination').then((val) => {
+      if (val) {
+        try {
+          const parsed = JSON.parse(val);
+          if (parsed?.latitude && parsed?.longitude && parsed?.name) {
+            setManualDestination(parsed);
+          }
+        } catch (err) {
+          console.warn("Failed to parse manual destination", err);
+        }
+      }
+    });
+  }, []);
+
+  const fullRecentRoutes = React.useMemo(() => {
+    if (!recentRoutes || !routes) return [];
+
+    return recentRoutes.map(recent => {
+      if (recent.routeId === "manual-route") {
+        return {
+          ...recent,
+          _id: recent._id,
+          routeName: manualDestination?.name
+            ? `Manual: ${manualDestination.name}`
+            : "Manual Destination",
+          destinationLat: manualDestination?.latitude ?? null,
+          destinationLng: manualDestination?.longitude ?? null,
+        };
+      }
+
+      const fullRoute = routes.find(r => r.routeId === recent.routeId);
+      if (fullRoute && fullRoute.destinationCoords) {
+        return {
+          ...recent,
+          _id: fullRoute._id,
+          routeName: `${fullRoute.start} → ${fullRoute.destination}`,
+          destinationLat: fullRoute.destinationCoords.latitude,
+          destinationLng: fullRoute.destinationCoords.longitude,
+        };
+      }
+
+      return {
+        ...recent,
+        routeName: 'Unknown Route',
+        destinationLat: null,
+        destinationLng: null,
+      };
+
+      return null;
+    });
+  }, [recentRoutes, routes, destination, manualDestination]);
+
+  const displayRoutes = fullRecentRoutes.filter(
+    (r): r is NonNullable<typeof r> => r !== null
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -300,6 +379,16 @@ export default function HomeScreen() {
     if (result) {
       setDestination(result);
       setSelectedRouteId('manual-route'); // Set a manual route ID
+      
+      await AsyncStorage.setItem(
+        'lastManualDestination',
+        JSON.stringify({
+          latitude: result.latitude,
+          longitude: result.longitude,
+          name: result.name,
+        })
+      );
+
       // If we have both origin and destination, get route
       if (currentLocation) {
         getRoute(currentLocation, result);
@@ -307,7 +396,7 @@ export default function HomeScreen() {
     }
   };
 
-  const handleReserveSeat = () => {
+  const handleReserveSeat = async () => {
     if (!destination || !currentLocation) {
       Alert.alert('Error', 'Please enter both origin and destination addresses');
       return;
@@ -326,6 +415,19 @@ export default function HomeScreen() {
         [{ text: 'OK' }]
       );
       return;
+    }
+
+    if (!routes || !selectedRouteId) return;
+
+    try {
+      await storeRouteForPassenger({
+        passengerId: userId as Id<"taxiTap_users">,
+        routeId: selectedRouteId === "manual-route"
+          ? "manual-route"
+          : (selectedRouteId as Id<"routes">),
+      });
+    } catch (err) {
+      console.error("Failed to store route:", err);
     }
 
     router.push({
@@ -442,21 +544,38 @@ export default function HomeScreen() {
     return pts;
   };
 
-  const handleDestinationSelect = (route: {
+  const handleDestinationSelect = async (route: {
+    _id: Id<"routes">;
     routeId: string;
     destination: string;
     destinationCoords: { latitude: number; longitude: number } | null;
   }) => {
-    if (!route.destinationCoords || !currentLocation) return;
+    if (
+      !route.destinationCoords || 
+      typeof route.destinationCoords.latitude !== 'number' ||
+      typeof route.destinationCoords.longitude !== 'number' ||
+      !currentLocation || 
+      !userId || 
+      !route.routeId
+    ) return;
+
     const dest = {
       latitude: route.destinationCoords.latitude,
       longitude: route.destinationCoords.longitude,
       name: route.destination,
     };
+
     setDestination(dest);
-    setDestinationAddress(route.destination); // Update the input field
-    setSelectedRouteId(route.routeId);
-    getRoute(currentLocation, dest);
+    setDestinationAddress(route.destination);
+    setSelectedRouteId(route._id);
+
+    try {
+      await getRoute(currentLocation, dest);
+      setRouteLoaded(true);
+    } catch (error) {
+      console.error("Failed to load route:", error);
+      setRouteLoaded(false);
+    }
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -769,12 +888,16 @@ export default function HomeScreen() {
           initialRegion={getInitialRegion()}
           customMapStyle={isDark ? darkMapStyle : []}
         >
-          {currentLocation && (
-            <Marker coordinate={currentLocation} title="Origin" pinColor="blue" />
+          {currentLocation && 
+            typeof currentLocation.latitude === 'number' &&
+            typeof currentLocation.longitude === 'number' &&(
+              <Marker coordinate={currentLocation} title="Origin" pinColor="blue" />
           )}
 
-          {destination && (
-            <Marker coordinate={destination} title={destination.name} pinColor="orange" />
+          {destination &&
+            typeof destination.latitude === 'number' &&
+            typeof destination.longitude === 'number' && (
+              <Marker coordinate={destination} title={destination.name} pinColor="orange" />
           )}
           
           {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
@@ -900,24 +1023,44 @@ export default function HomeScreen() {
 
         <Text style={dynamicStyles.savedRoutesTitle}>Recently Used Taxi Ranks</Text>
         <ScrollView style={{ marginTop: 10 }}>
-          {uniqueRoutes?.map((route: any, index) => (
-            <TouchableOpacity
-              key={`${route.routeId}-${index}`}
-              style={dynamicStyles.routeCard}
-              onPress={() => handleDestinationSelect(route)}
-            >
-              <Icon
-                name="location-sharp"
-                size={20}
-                color={theme.primary}
-                style={{ marginRight: 12 }}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={dynamicStyles.routeTitle}>{route.destination}</Text>
-                <Text style={dynamicStyles.routeSubtitle}>Pickup: {route.start}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {displayRoutes.length > 0 ? (
+            displayRoutes.map((route, index) => (
+              <TouchableOpacity
+                key={`${route.routeId}-${index}`}
+                style={dynamicStyles.routeCard}
+                onPress={() =>
+                  handleDestinationSelect({
+                    _id: route._id as any,
+                    routeId: route.routeId,
+                    destination: route.routeName || 'Saved Destination',
+                    destinationCoords: {
+                      latitude: route.destinationLat!,
+                      longitude: route.destinationLng!,
+                    },
+                  })
+                }
+              >
+                <Icon
+                  name="location-sharp"
+                  size={20}
+                  color={theme.primary}
+                  style={{ marginRight: 12 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={dynamicStyles.routeTitle}>
+                    {route.routeName || 'Saved Route'}
+                  </Text>
+                  <Text style={dynamicStyles.routeSubtitle}>
+                    Used {route.usageCount} times
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={{ textAlign: 'center', marginTop: 8 }}>
+              No recently used routes yet.
+            </Text>
+          )}
         </ScrollView>
       </View>
 
