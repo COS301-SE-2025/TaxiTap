@@ -40,7 +40,6 @@ export const getActiveRidesForProximityCheck = internalQuery({
       .filter((q) => 
         q.or(
           q.eq(q.field("status"), "accepted"),
-          q.eq(q.field("status"), "started"),
           q.eq(q.field("status"), "in_progress")
         )
       )
@@ -64,141 +63,150 @@ export const checkRideProximity = internalMutation({
   handler: async (ctx, args) => {
     const { rideId, driverLat, driverLon, passengerLat, passengerLon, destinationLat, destinationLon } = args;
 
-    // Get the ride details
-    const ride = await ctx.db
-      .query("rides")
-      .withIndex("by_ride_id", (q) => q.eq("rideId", rideId))
-      .first();
+    try {
+      // Get the ride details
+      const ride = await ctx.db
+        .query("rides")
+        .withIndex("by_ride_id", (q) => q.eq("rideId", rideId))
+        .first();
 
-    if (!ride) {
-      console.log(`Ride ${rideId} not found for proximity check`);
-      return;
-    }
+      if (!ride) {
+        console.log(`Ride ${rideId} not found for proximity check`);
+        return;
+      }
 
-    // Calculate distances
-    const driverToPassengerDistance = calculateDistance(driverLat, driverLon, passengerLat, passengerLon);
-    const passengerToDestinationDistance = calculateDistance(passengerLat, passengerLon, destinationLat, destinationLon);
+      if (!ride.driverId || !ride.passengerId) {
+        console.log(`Ride ${rideId} missing driver or passenger ID`);
+        return;
+      }
 
-    // Estimate ETAs
-    const driverToPassengerETA = estimateETA(driverToPassengerDistance);
-    const passengerToDestinationETA = estimateETA(passengerToDestinationDistance);
+      // Calculate distances
+      const driverToPassengerDistance = calculateDistance(driverLat, driverLon, passengerLat, passengerLon);
+      const passengerToDestinationDistance = calculateDistance(passengerLat, passengerLon, destinationLat, destinationLon);
 
-    console.log(`Proximity check for ride ${rideId}:`, {
-      driverToPassenger: { distance: driverToPassengerDistance, eta: driverToPassengerETA },
-      passengerToDestination: { distance: passengerToDestinationDistance, eta: passengerToDestinationETA }
-    });
+      // Estimate ETAs
+      const driverToPassengerETA = estimateETA(driverToPassengerDistance);
+      const passengerToDestinationETA = estimateETA(passengerToDestinationDistance);
 
-    // Check for driver proximity alerts (for passenger)
-    if (ride.status === "accepted" || ride.status === "started") {
-      // Check if driver is 10 minutes away
-      if (driverToPassengerETA <= DRIVER_10MIN_THRESHOLD && driverToPassengerETA > DRIVER_5MIN_THRESHOLD) {
-        const existingNotification = await ctx.db
-          .query("notifications")
-          .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-          .filter((q) => 
-            q.and(
-              q.eq(q.field("type"), "driver_10min_away"),
-              q.eq(q.field("metadata.rideId"), rideId),
-              q.eq(q.field("isRead"), false)
+      console.log(`Proximity check for ride ${rideId}:`, {
+        driverToPassenger: { distance: driverToPassengerDistance, eta: driverToPassengerETA },
+        passengerToDestination: { distance: passengerToDestinationDistance, eta: passengerToDestinationETA }
+      });
+
+      // Check for driver proximity alerts (for passenger)
+      if (ride.status === "accepted" || ride.status === "in_progress") {
+        // Check if driver is 10 minutes away
+        if (driverToPassengerETA <= DRIVER_10MIN_THRESHOLD && driverToPassengerETA > DRIVER_5MIN_THRESHOLD) {
+          const existingNotification = await ctx.db
+            .query("notifications")
+            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
+            .filter((q) => 
+              q.and(
+                q.eq(q.field("type"), "driver_10min_away"),
+                q.eq(q.field("metadata.rideId"), rideId),
+                q.eq(q.field("isRead"), false)
+              )
             )
-          )
-          .first();
+            .first();
 
-        if (!existingNotification) {
-          await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
-            userId: ride.passengerId,
-            type: "driver_10min_away",
-            title: "Driver Approaching",
-            message: "Your driver is approximately 10 minutes away.",
-            priority: "high",
-            metadata: { rideId }
-          });
-          console.log(`Sent 10min alert for ride ${rideId}`);
+          if (!existingNotification && ride.passengerId) {
+            await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
+              userId: ride.passengerId,
+              type: "driver_10min_away",
+              title: "Driver Approaching",
+              message: "Your driver is approximately 10 minutes away.",
+              priority: "high",
+              metadata: { rideId }
+            });
+            console.log(`Sent 10min alert for ride ${rideId}`);
+          }
+        }
+
+        // Check if driver is 5 minutes away
+        if (driverToPassengerETA <= DRIVER_5MIN_THRESHOLD && driverToPassengerETA > DRIVER_ARRIVED_THRESHOLD) {
+          const existingNotification = await ctx.db
+            .query("notifications")
+            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
+            .filter((q) => 
+              q.and(
+                q.eq(q.field("type"), "driver_5min_away"),
+                q.eq(q.field("metadata.rideId"), rideId),
+                q.eq(q.field("isRead"), false)
+              )
+            )
+            .first();
+
+          if (!existingNotification && ride.passengerId) {
+            await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
+              userId: ride.passengerId,
+              type: "driver_5min_away",
+              title: "Driver Almost Here",
+              message: "Your driver is approximately 5 minutes away.",
+              priority: "high",
+              metadata: { rideId }
+            });
+            console.log(`Sent 5min alert for ride ${rideId}`);
+          }
+        }
+
+        // Check if driver has arrived
+        if (driverToPassengerETA <= DRIVER_ARRIVED_THRESHOLD) {
+          const existingNotification = await ctx.db
+            .query("notifications")
+            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
+            .filter((q) => 
+              q.and(
+                q.eq(q.field("type"), "driver_arrived"),
+                q.eq(q.field("metadata.rideId"), rideId),
+                q.eq(q.field("isRead"), false)
+              )
+            )
+            .first();
+
+          if (!existingNotification && ride.passengerId) {
+            await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
+              userId: ride.passengerId,
+              type: "driver_arrived",
+              title: "Driver Arrived",
+              message: "Your driver has arrived at your location.",
+              priority: "urgent",
+              metadata: { rideId }
+            });
+            console.log(`Sent arrived alert for ride ${rideId}`);
+          }
         }
       }
 
-      // Check if driver is 5 minutes away
-      if (driverToPassengerETA <= DRIVER_5MIN_THRESHOLD && driverToPassengerETA > DRIVER_ARRIVED_THRESHOLD) {
-        const existingNotification = await ctx.db
-          .query("notifications")
-          .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-          .filter((q) => 
-            q.and(
-              q.eq(q.field("type"), "driver_5min_away"),
-              q.eq(q.field("metadata.rideId"), rideId),
-              q.eq(q.field("isRead"), false)
+      // Check for passenger at destination alerts (for driver)
+      if (ride.status === "in_progress") {
+        if (passengerToDestinationDistance <= PASSENGER_AT_STOP_DISTANCE) {
+          const existingNotification = await ctx.db
+            .query("notifications")
+            .withIndex("by_user_id", (q) => q.eq("userId", ride.driverId!))
+            .filter((q) => 
+              q.and(
+                q.eq(q.field("type"), "passenger_at_stop"),
+                q.eq(q.field("metadata.rideId"), rideId),
+                q.eq(q.field("isRead"), false)
+              )
             )
-          )
-          .first();
+            .first();
 
-        if (!existingNotification) {
-          await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
-            userId: ride.passengerId,
-            type: "driver_5min_away",
-            title: "Driver Almost Here",
-            message: "Your driver is approximately 5 minutes away.",
-            priority: "high",
-            metadata: { rideId }
-          });
-          console.log(`Sent 5min alert for ride ${rideId}`);
+          if (!existingNotification && ride.driverId) {
+            await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
+              userId: ride.driverId,
+              type: "passenger_at_stop",
+              title: "Passenger at Destination",
+              message: "Your passenger has arrived at their destination.",
+              priority: "medium",
+              metadata: { rideId }
+            });
+            console.log(`Sent passenger at stop alert for ride ${rideId}`);
+          }
         }
       }
-
-      // Check if driver has arrived
-      if (driverToPassengerETA <= DRIVER_ARRIVED_THRESHOLD) {
-        const existingNotification = await ctx.db
-          .query("notifications")
-          .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-          .filter((q) => 
-            q.and(
-              q.eq(q.field("type"), "driver_arrived"),
-              q.eq(q.field("metadata.rideId"), rideId),
-              q.eq(q.field("isRead"), false)
-            )
-          )
-          .first();
-
-        if (!existingNotification) {
-          await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
-            userId: ride.passengerId,
-            type: "driver_arrived",
-            title: "Driver Arrived",
-            message: "Your driver has arrived at your location.",
-            priority: "urgent",
-            metadata: { rideId }
-          });
-          console.log(`Sent arrived alert for ride ${rideId}`);
-        }
-      }
-    }
-
-    // Check for passenger at destination alerts (for driver)
-    if (ride.status === "started" || ride.status === "in_progress") {
-      if (passengerToDestinationDistance <= PASSENGER_AT_STOP_DISTANCE) {
-        const existingNotification = await ctx.db
-          .query("notifications")
-          .withIndex("by_user_id", (q) => q.eq("userId", ride.driverId))
-          .filter((q) => 
-            q.and(
-              q.eq(q.field("type"), "passenger_at_stop"),
-              q.eq(q.field("metadata.rideId"), rideId),
-              q.eq(q.field("isRead"), false)
-            )
-          )
-          .first();
-
-        if (!existingNotification) {
-          await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
-            userId: ride.driverId,
-            type: "passenger_at_stop",
-            title: "Passenger at Destination",
-            message: "Your passenger has arrived at their destination.",
-            priority: "medium",
-            metadata: { rideId }
-          });
-          console.log(`Sent passenger at stop alert for ride ${rideId}`);
-        }
-      }
+    } catch (error) {
+      console.error(`Error in checkRideProximity for ride ${rideId}:`, error);
     }
   }
 });
@@ -209,39 +217,59 @@ export const checkAllRidesProximity = internalMutation({
   handler: async (ctx) => {
     console.log("Starting proximity check for all active rides...");
 
-    // Get all active rides
-    const activeRides = await ctx.runQuery(internal.functions.rides.checkProximityAndNotify.getActiveRidesForProximityCheck);
+    try {
+      // Get all active rides
+      const activeRides = await ctx.runQuery(internal.functions.rides.checkProximityAndNotify.getActiveRidesForProximityCheck);
+      console.log(`Found ${activeRides.length} active rides to check`);
 
-    for (const ride of activeRides) {
-      try {
-        // Get driver location
-        const driverLocation = await ctx.db
-          .query("locations")
-          .withIndex("by_user", (q) => q.eq("userId", ride.driverId))
-          .first();
+      for (const ride of activeRides) {
+        try {
+          console.log(`Checking proximity for ride ${ride.rideId} (status: ${ride.status})`);
+          
+          // Get driver location
+          const driverLocation = await ctx.db
+            .query("locations")
+            .withIndex("by_user", (q) => q.eq("userId", ride.driverId!))
+            .first();
 
-        // Get passenger location
-        const passengerLocation = await ctx.db
-          .query("locations")
-          .withIndex("by_user", (q) => q.eq("userId", ride.passengerId))
-          .first();
+          // Get passenger location
+          const passengerLocation = await ctx.db
+            .query("locations")
+            .withIndex("by_user", (q) => q.eq("userId", ride.passengerId))
+            .first();
 
-        if (driverLocation && passengerLocation) {
+          if (!driverLocation) {
+            console.log(`No driver location found for ride ${ride.rideId}`);
+            continue;
+          }
+
+          if (!passengerLocation) {
+            console.log(`No passenger location found for ride ${ride.rideId}`);
+            continue;
+          }
+
+          if (!ride.endLocation?.coordinates) {
+            console.log(`No destination coordinates found for ride ${ride.rideId}`);
+            continue;
+          }
+
           await ctx.runMutation(internal.functions.rides.checkProximityAndNotify.checkRideProximity, {
             rideId: ride.rideId,
             driverLat: driverLocation.latitude,
             driverLon: driverLocation.longitude,
             passengerLat: passengerLocation.latitude,
             passengerLon: passengerLocation.longitude,
-            destinationLat: ride.endLocation.latitude,
-            destinationLon: ride.endLocation.longitude
+            destinationLat: ride.endLocation.coordinates.latitude,
+            destinationLon: ride.endLocation.coordinates.longitude
           });
+        } catch (error) {
+          console.error(`Error checking proximity for ride ${ride.rideId}:`, error);
         }
-      } catch (error) {
-        console.error(`Error checking proximity for ride ${ride.rideId}:`, error);
       }
-    }
 
-    console.log(`Completed proximity check for ${activeRides.length} rides`);
+      console.log(`Completed proximity check for ${activeRides.length} rides`);
+    } catch (error) {
+      console.error("Error in checkAllRidesProximity:", error);
+    }
   }
 }); 
