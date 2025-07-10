@@ -22,6 +22,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+import { useProximityTimer } from './hooks/useProximityTimer';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -78,6 +79,9 @@ export default function DriverOnline({
   
   // Enhanced location streaming with backend updates
   const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
+  
+  // Proximity timer for periodic checks
+  useProximityTimer(true);
   
   // Route display state
   const [routeCoordinates, setRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
@@ -396,6 +400,7 @@ export default function DriverOnline({
   }, [notifications, markAsRead]);
 
   useEffect(() => {
+    // Handle ride started notifications
     const rideStarted = notifications.find(
       n => n.type === 'ride_started' && !n.isRead
     );
@@ -407,6 +412,25 @@ export default function DriverOnline({
           {
             text: 'OK',
             onPress: () => markAsRead(rideStarted._id),
+            style: 'default',
+          },
+        ],
+        { cancelable: false }
+      );
+    }
+
+    // Handle passenger at stop notifications
+    const passengerAtStop = notifications.find(
+      n => n.type === 'passenger_at_stop' && !n.isRead
+    );
+    if (passengerAtStop) {
+      Alert.alert(
+        'Passenger Update',
+        passengerAtStop.message,
+        [
+          {
+            text: 'OK',
+            onPress: () => markAsRead(passengerAtStop._id),
             style: 'default',
           },
         ],

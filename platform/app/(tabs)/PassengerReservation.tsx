@@ -12,6 +12,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
+import { useProximityTimer } from '../hooks/useProximityTimer';
 import * as Location from 'expo-location';
 
 // Get platform-specific API key
@@ -49,6 +50,9 @@ export default function SeatReserved() {
 		(user?.role as "passenger" | "driver" | "both") || 'passenger', 
 		true
 	);
+
+	// Proximity timer for periodic checks
+	useProximityTimer(true);
 
 	// State for tracking current map mode
 	const [mapMode, setMapMode] = useState<'initial' | 'to_driver' | 'to_destination'>('initial');
@@ -106,7 +110,7 @@ export default function SeatReserved() {
 
 		const calculateETA = async () => {
 			try {
-				// Integrate here: Use Google Maps Directions API for real ETA
+				// Use Google Maps Directions API for real ETA
 				const origin = `${streamedLocation.latitude},${streamedLocation.longitude}`;
 				const destination = `${driverLocation.latitude},${driverLocation.longitude}`;
 				const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
@@ -118,19 +122,16 @@ export default function SeatReserved() {
 					const duration = data.routes[0].legs[0].duration.value; // in seconds
 					const etaMinutes = Math.round(duration / 60);
 					
-					// Check for proximity alerts
+					// Check for proximity alerts (frontend fallback - backend handles the real notifications)
 					if (etaMinutes <= 10 && lastProximityAlert !== '10min' && etaMinutes > 5) {
 						setLastProximityAlert('10min');
-						// Integrate here: Trigger 10-minute proximity notification
-						console.log('Driver is 10 minutes away!');
+						console.log('Driver is 10 minutes away! (Frontend check)');
 					} else if (etaMinutes <= 5 && lastProximityAlert !== '5min' && etaMinutes > 1) {
 						setLastProximityAlert('5min');
-						// Integrate here: Trigger 5-minute proximity notification
-						console.log('Driver is 5 minutes away!');
+						console.log('Driver is 5 minutes away! (Frontend check)');
 					} else if (etaMinutes <= 1 && lastProximityAlert !== 'arrived') {
 						setLastProximityAlert('arrived');
-						// Integrate here: Trigger driver arrived notification
-						console.log('Driver has arrived!');
+						console.log('Driver has arrived! (Frontend check)');
 					}
 				}
 			} catch (error) {
@@ -476,7 +477,7 @@ export default function SeatReserved() {
 
 	// Handle notifications effect
 	useEffect(() => {
-		// Handle proximity notifications
+		// Handle proximity notifications from backend
 		const proximityNotifications = [
 			{ type: 'driver_10min_away', message: 'Driver is 10 minutes away!' },
 			{ type: 'driver_5min_away', message: 'Driver is 5 minutes away!' },
