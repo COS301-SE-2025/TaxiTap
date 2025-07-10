@@ -514,8 +514,13 @@ export default function SeatReserved() {
 			return;
 		} 
 
+		const rideCompleted = notifications.find(
+			n => n.type === 'ride_completed' && !n.isRead
+		);
 		const rideDeclined = notifications.find(
-			n => n.type === 'ride_declined' && !n.isRead
+			n => n.type === 'ride_declined' && !n.isRead &&
+			// Only show ride_declined if there is no ride_completed for the same ride
+			!(rideCompleted && n.metadata?.rideId === rideCompleted.metadata?.rideId)
 		);
 		if (rideDeclined) {
 			Alert.alert(

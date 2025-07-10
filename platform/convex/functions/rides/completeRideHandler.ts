@@ -11,8 +11,8 @@ export const completeRideHandler = async (ctx: any, args: any) => {
   if (ride.driverId !== args.driverId) {
     throw new Error("Only the assigned driver can complete this ride");
   }
-  if (ride.status !== "accepted") {
-    throw new Error("Ride is not in progress");
+  if (ride.status === "cancelled" || ride.status === "declined") {
+    throw new Error("Cannot complete a ride that is already cancelled or declined.");
   }
 
   // Update the ride status
