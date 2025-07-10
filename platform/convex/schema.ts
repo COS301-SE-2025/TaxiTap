@@ -6,6 +6,8 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     password: v.string(),
+    // resetPasswordToken: v.optional(v.string()),
+    // resetPasswordExpiresAt: v.optional(v.number()),
     age: v.number(),
     phoneNumber: v.string(),
     
@@ -37,16 +39,28 @@ export default defineSchema({
       phoneNumber: v.string(),
       relationship: v.string(),
     })),
+
+    // googleSub: v.optional(v.string()),
+    // createdVia: v.optional(v.string()), // "google" or "manual"
     
     createdAt: v.number(),
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
+    homeAddress: v.optional(v.object({
+      address: v.string(),
+      nickname: v.string(),
+      coordinates: v.object({
+        latitude: v.float64(),
+        longitude: v.float64(),
+      })
+    })),
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phoneNumber"])
     .index("by_account_type", ["accountType"])
     .index("by_current_role", ["currentActiveRole"])
     .index("by_is_active", ["isActive"])
+    // .index("by_google_sub", ["googleSub"])
     .index("by_created_at", ["createdAt"]),
 
   rides: defineTable({
@@ -302,4 +316,21 @@ routes: defineTable({
     .index("by_ride", ["rideId"])
     .index("by_driver", ["driverId"])
     .index("by_passenger", ["passengerId"]),
+  passengerRoutes: defineTable({
+    passengerId: v.id("taxiTap_users"),
+    routeId: v.string(),
+    usageCount: v.number(),
+    lastUsedAt: v.number(),
+  })
+    .index("by_passenger", ["passengerId"])
+    .index("by_passenger_and_route", ["passengerId", "routeId"])
+    .index("by_passenger_last_used", ["passengerId", "lastUsedAt"]),
+  trips: defineTable({
+    driverId: v.id("taxiTap_users"),
+    startTime: v.number(),
+    endTime: v.number(),
+    fare: v.number(),
+    reservation: v.boolean(),
+  })
+    .index("by_driver_and_startTime", ["driverId", "startTime"]),
 });

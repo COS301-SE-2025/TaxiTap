@@ -127,6 +127,20 @@ export default function SubmitFeedbackScreen() {
       <TouchableOpacity onPress={handleSubmit} style={{ backgroundColor: theme.primary, padding: 16, borderRadius: 12 }}>
         <Text style={{ color: '#fff', fontSize: 18, textAlign: 'center' }}>Submit Feedback</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => router.push('/HomeScreen')}
+        style={{
+          backgroundColor: theme.surface,
+          padding: 16,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: theme.primary,
+        }}
+      >
+        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center' }}>
+          Skip Feedback
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
