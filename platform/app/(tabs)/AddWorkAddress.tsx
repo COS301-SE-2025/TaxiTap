@@ -103,7 +103,7 @@ export default function AddWorkAddress() {
                 },
             });
             Alert.alert('Success', 'Work address saved successfully!', [
-                { text: 'OK', onPress: () => router.back() }
+                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
             ]);
         } catch (error: any) {
             console.error('Save error:', error);
@@ -134,7 +134,7 @@ export default function AddWorkAddress() {
                                 workAddress: null,
                             });
                             Alert.alert('Success', 'Work address deleted successfully!', [
-                                { text: 'OK', onPress: () => router.back() }
+                                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
                             ]);
                         } catch (error: any) {
                             console.error('Delete error:', error);
@@ -300,7 +300,7 @@ export default function AddWorkAddress() {
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Header */}
                 <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>

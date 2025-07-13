@@ -223,6 +223,27 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="AddHomeAddress"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="AddWorkAddress"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="PersonalInfoEdit"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };
