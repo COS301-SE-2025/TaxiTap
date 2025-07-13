@@ -92,16 +92,27 @@ export default function PassengerProfile() {
                                     await updateAccountType('both');
                                     await updateUserRole('driver');
                                     
-                                    console.log('Success', 'Successfully switched to driver mode!');
-                                    router.push('../DriverOffline');
+                                    Alert.alert('Success', 'Successfully switched to driver mode!', [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => {
+                                                try {
+                                                    router.push('../DriverOffline');
+                                                } catch (navError) {
+                                                    console.error('Navigation error:', navError);
+                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                }
+                                            }
+                                        }
+                                    ]);
                                 } catch (error: any) {
-                                    console.log('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
                                 }
                             },
                         },
                     ]
                 );
-            } 
+            }
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 Alert.alert(
@@ -122,20 +133,31 @@ export default function PassengerProfile() {
                                     // Update context
                                     await updateUserRole('driver');
                                     
-                                    console.log('Success', 'Switched to driver mode!');
-                                    router.push('../DriverOffline');
+                                    Alert.alert('Success', 'Switched to driver mode!', [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => {
+                                                try {
+                                                    router.push('../DriverOffline');
+                                                } catch (navError) {
+                                                    console.error('Navigation error:', navError);
+                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                }
+                                            }
+                                        }
+                                    ]);
                                 } catch (error: any) {
-                                    console.log('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
                                 }
                             },
                         },
                     ]
                 );
             } else {
-                console.log('Error', 'Invalid account type for switching to driver mode');
+                Alert.alert('Error', 'Invalid account type for switching to driver mode');
             }
-        } catch {
-            console.log('Error', 'An unexpected error occurred');
+        } catch (error: any) {
+            Alert.alert('Error', 'An unexpected error occurred');
         }
     };
 

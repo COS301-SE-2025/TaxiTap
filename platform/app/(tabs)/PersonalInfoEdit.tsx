@@ -110,7 +110,7 @@ export default function PersonalInfoEdit() {
                 await updateNumber(phoneNumber);
             }
             Alert.alert('Success', 'Profile updated successfully!', [
-                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
+                { text: 'OK', onPress: () => router.back() }
             ]);
         } catch (error: any) {
             console.error('Update error:', error);
@@ -230,7 +230,7 @@ export default function PersonalInfoEdit() {
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Header */}
                 <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>Personal Information</Text>

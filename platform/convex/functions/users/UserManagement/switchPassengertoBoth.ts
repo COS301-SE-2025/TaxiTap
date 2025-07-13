@@ -44,7 +44,7 @@ export const switchPassengerToBothHandler = async (
       averageRating: undefined,
       activeRoute: undefined,
       assignedRoute: undefined,
-      taxiAssociation: "",
+      taxiAssociation: undefined,
       routeAssignedAt: undefined,
     });
   }
