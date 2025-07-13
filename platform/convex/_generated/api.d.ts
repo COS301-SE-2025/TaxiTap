@@ -67,6 +67,7 @@ import type * as functions_users_UserManagement_switchDrivertoBoth from "../func
 import type * as functions_users_UserManagement_switchPassengertoBoth from "../functions/users/UserManagement/switchPassengertoBoth.js";
 import type * as functions_users_UserManagement_updateHomeAddress from "../functions/users/UserManagement/updateHomeAddress.js";
 import type * as functions_users_UserManagement_updateUserProfile from "../functions/users/UserManagement/updateUserProfile.js";
+import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -131,6 +132,7 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/switchPassengertoBoth": typeof functions_users_UserManagement_switchPassengertoBoth;
   "functions/users/UserManagement/updateHomeAddress": typeof functions_users_UserManagement_updateHomeAddress;
   "functions/users/UserManagement/updateUserProfile": typeof functions_users_UserManagement_updateUserProfile;
+  "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
