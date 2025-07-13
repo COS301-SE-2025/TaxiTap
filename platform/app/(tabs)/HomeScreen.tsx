@@ -396,6 +396,10 @@ export default function HomeScreen() {
     }
   };
 
+  const uniqueManualRouteId = destination
+    ? `manual-${destination.latitude.toFixed(5)}-${destination.longitude.toFixed(5)}`
+    : 'manual-route';
+
   const handleReserveSeat = async () => {
     if (!destination || !currentLocation) {
       Alert.alert('Error', 'Please enter both origin and destination addresses');
@@ -422,9 +426,7 @@ export default function HomeScreen() {
     try {
       await storeRouteForPassenger({
         passengerId: userId as Id<"taxiTap_users">,
-        routeId: selectedRouteId === "manual-route"
-          ? "manual-route"
-          : (selectedRouteId as Id<"routes">),
+        routeId: uniqueManualRouteId,
       });
     } catch (err) {
       console.error("Failed to store route:", err);
@@ -571,6 +573,10 @@ export default function HomeScreen() {
 
     try {
       await getRoute(currentLocation, dest);
+      await storeRouteForPassenger({
+        passengerId: userId as Id<"taxiTap_users">,
+        routeId: uniqueManualRouteId,
+      });
       setRouteLoaded(true);
     } catch (error) {
       console.error("Failed to load route:", error);
