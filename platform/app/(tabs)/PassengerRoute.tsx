@@ -160,14 +160,14 @@ export default function RouteSelectionScreen() {
     let filtered = processedRoutes;
 
     if (searchTerm) {
-      filtered = filtered.filter((route: RouteData) => 
-        route.start?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        route.destination?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(route =>
+        (route.start?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+        (route.destination?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
       );
     }
 
-    setFilteredRoutes(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setFilteredRoutes(filtered as RouteData[]);
+    setCurrentPage(1);
   }, [processedRoutes, searchTerm]);
 
   // ============================================================================

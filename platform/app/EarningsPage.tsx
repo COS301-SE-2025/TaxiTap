@@ -35,7 +35,11 @@ function formatDateRange(fromTimestamp: number): string {
   return `${formatDate(start)} - ${formatDate(end)}`;
 }
 
-export default function EarningsPage() {
+type EarningsPageProps = {
+  todaysEarnings?: number;
+};
+
+export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
@@ -103,7 +107,11 @@ export default function EarningsPage() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleGoBack}
+            testID="back-button"
+          >
             <Icon name="arrow-back" size={24} color={isDark ? '#121212' : '#FF9900'} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Weekly Summary</Text>
@@ -134,7 +142,7 @@ export default function EarningsPage() {
 
           {/* Earnings Card */}
           <View style={styles.card}>
-            <Text style={styles.amount}>R{currentWeek.earnings.toFixed(2)}</Text>
+            <Text style={styles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
             <Text style={styles.label}>Weekly Earnings</Text>
           </View>
 
