@@ -72,6 +72,9 @@ export default function SeatReserved() {
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 
+	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
+	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
+
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
@@ -421,6 +424,11 @@ export default function SeatReserved() {
 		}
 		try {
 			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await startTripConvex({
+				passengerId: passengerId as Id<'taxiTap_users'>,
+				driverId: driverId as Id<'taxiTap_users'>,
+				reservation: true,
+			});
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to start ride.');
 		}
@@ -433,7 +441,12 @@ export default function SeatReserved() {
 		}
 		try {
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			Alert.alert('Success', 'Ride ended!');
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+			});
+			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			if (!currentLocation || !destination) {
 				return;
 			}
