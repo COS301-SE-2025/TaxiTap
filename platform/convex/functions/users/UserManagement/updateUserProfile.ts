@@ -9,7 +9,7 @@ export async function updateUserProfileHandler(
     userId: Id<"taxiTap_users">;
     name: string;
     phoneNumber: string;
-    email: string;
+    email?: string;
     profilePicture?: string;
     emergencyContact?: {
       name: string;
@@ -37,10 +37,10 @@ export async function updateUserProfileHandler(
   }
 
   // Check if email is already taken by another user
-  if (args.email !== user.email) {
+  if (args.email && args.email !== user.email) {
     const existingEmailUser = await ctx.db
       .query("taxiTap_users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", args.email!))
       .first();
 
     if (existingEmailUser && existingEmailUser._id !== args.userId) {
