@@ -1,5 +1,6 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { saveFeedbackHandler } from "./saveFeedbackHandler";
 
 export const saveFeedback = mutation({
   args: {
@@ -11,27 +12,5 @@ export const saveFeedback = mutation({
     startLocation: v.string(),
     endLocation: v.string(),
   },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("feedback")
-      .withIndex("by_ride", (q) => q.eq("rideId", args.rideId))
-      .first();
-
-    if (existing) {
-      throw new Error("Feedback already submitted for this ride.");
-    }
-
-    const id = await ctx.db.insert("feedback", {
-      rideId: args.rideId,
-      passengerId: args.passengerId,
-      driverId: args.driverId,
-      rating: args.rating,
-      comment: args.comment,
-      startLocation: args.startLocation,
-      endLocation: args.endLocation,
-      createdAt: Date.now(),
-    });
-
-    return { id };
-  },
+  handler: saveFeedbackHandler,
 });

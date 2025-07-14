@@ -18,7 +18,9 @@ import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
+import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
+import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -88,7 +90,9 @@ declare const fullApi: ApiFromModules<{
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
+  "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
+  "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
