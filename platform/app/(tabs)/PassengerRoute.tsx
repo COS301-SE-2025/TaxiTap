@@ -19,10 +19,12 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { router, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { Id } from "../../convex/_generated/dataModel";
+import { useUser } from '@/contexts/UserContext';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -38,6 +40,7 @@ interface RouteStop {
 
 /** Complete route data structure */
 interface RouteData {
+  _id: Id<"routes">;
   routeId: string;
   start: string;
   destination: string;
@@ -99,6 +102,9 @@ const processStopName = (name: string): string => {
  * - Navigation to taxi information screen
  */
 export default function RouteSelectionScreen() {
+  const { user } = useUser();
+  const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
+  const userId = user?.id || navId || '';
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   
@@ -154,14 +160,14 @@ export default function RouteSelectionScreen() {
     let filtered = processedRoutes;
 
     if (searchTerm) {
-      filtered = filtered.filter((route: RouteData) => 
-        route.start?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        route.destination?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(route =>
+        (route.start?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+        (route.destination?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
       );
     }
 
-    setFilteredRoutes(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setFilteredRoutes(filtered as RouteData[]);
+    setCurrentPage(1);
   }, [processedRoutes, searchTerm]);
 
   // ============================================================================
@@ -224,6 +230,8 @@ export default function RouteSelectionScreen() {
     return pages;
   };
 
+  const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
@@ -233,10 +241,21 @@ export default function RouteSelectionScreen() {
    * 
    * @param route - Selected route data
    */
-  const handleRouteSelect = (route: RouteData) => {
+  const handleRouteSelect = async (route: RouteData) => {
     if (!route.destinationCoords) {
       Alert.alert("Error", "Route coordinates not available");
       return;
+    }
+
+    try {
+      await storeRouteForPassenger({
+        passengerId: userId as Id<"taxiTap_users">,
+        routeId: route.routeId === "manual-route"
+          ? "manual-route"
+          : route.routeId,
+      });
+    } catch (err) {
+      console.error("Failed to store route:", err);
     }
 
     router.push({

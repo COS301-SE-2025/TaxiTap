@@ -179,6 +179,7 @@ export const displayRoutesHandler = async ({ db }: QueryCtx) => {
     const hasStops = false;
 
     return {
+      _id: route._id,
       routeId: route.routeId,
       start: formatRouteName(parts[0]) ?? "Unknown",
       destination: formatRouteName(parts[1]) ?? "Unknown",

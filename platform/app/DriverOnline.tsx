@@ -282,6 +282,12 @@ export default function DriverOnline({
         router.push('/EarningsPage');
       }
     },
+    {
+      icon: 'person-outline',
+      title: 'Feedback',
+      subtitle: 'Ratings & Feedback',
+      onPress: () => router.push('/FeedbackHistoryScreen'),
+    },
     { 
       icon: "settings-outline", 
       title: "Toggle Theme", 

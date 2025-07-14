@@ -13,6 +13,14 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
+import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
+import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
+import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
+import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
+import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
+import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
+import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -44,10 +52,12 @@ import type * as functions_rides_startRide from "../functions/rides/startRide.js
 import type * as functions_routes_calculateRoute from "../functions/routes/calculateRoute.js";
 import type * as functions_routes_displayRoutes from "../functions/routes/displayRoutes.js";
 import type * as functions_routes_enhancedTaxiMatching from "../functions/routes/enhancedTaxiMatching.js";
+import type * as functions_routes_getRecentRoutes from "../functions/routes/getRecentRoutes.js";
 import type * as functions_routes_insertRoute_internal from "../functions/routes/insertRoute_internal.js";
 import type * as functions_routes_mutations from "../functions/routes/mutations.js";
 import type * as functions_routes_queries from "../functions/routes/queries.js";
 import type * as functions_routes_reverseGeocode from "../functions/routes/reverseGeocode.js";
+import type * as functions_routes_storeRecentRoutes from "../functions/routes/storeRecentRoutes.js";
 import type * as functions_taxis_displayTaxis from "../functions/taxis/displayTaxis.js";
 import type * as functions_taxis_getTaxiForDriver from "../functions/taxis/getTaxiForDriver.js";
 import type * as functions_taxis_getTaxiForDriverHandler from "../functions/taxis/getTaxiForDriverHandler.js";
@@ -75,6 +85,14 @@ import type * as functions_users_UserManagement_switchPassengertoBoth from "../f
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "functions/earnings/earnings": typeof functions_earnings_earnings;
+  "functions/earnings/endTrip": typeof functions_earnings_endTrip;
+  "functions/earnings/startTrip": typeof functions_earnings_startTrip;
+  "functions/feedback/averageRating": typeof functions_feedback_averageRating;
+  "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
+  "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
+  "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
+  "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
@@ -106,10 +124,12 @@ declare const fullApi: ApiFromModules<{
   "functions/routes/calculateRoute": typeof functions_routes_calculateRoute;
   "functions/routes/displayRoutes": typeof functions_routes_displayRoutes;
   "functions/routes/enhancedTaxiMatching": typeof functions_routes_enhancedTaxiMatching;
+  "functions/routes/getRecentRoutes": typeof functions_routes_getRecentRoutes;
   "functions/routes/insertRoute_internal": typeof functions_routes_insertRoute_internal;
   "functions/routes/mutations": typeof functions_routes_mutations;
   "functions/routes/queries": typeof functions_routes_queries;
   "functions/routes/reverseGeocode": typeof functions_routes_reverseGeocode;
+  "functions/routes/storeRecentRoutes": typeof functions_routes_storeRecentRoutes;
   "functions/taxis/displayTaxis": typeof functions_taxis_displayTaxis;
   "functions/taxis/getTaxiForDriver": typeof functions_taxis_getTaxiForDriver;
   "functions/taxis/getTaxiForDriverHandler": typeof functions_taxis_getTaxiForDriverHandler;

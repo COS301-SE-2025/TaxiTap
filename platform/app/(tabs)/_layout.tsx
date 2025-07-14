@@ -11,6 +11,7 @@ import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
 import { MapProvider } from '../../contexts/MapContext';
+import { FeedbackProvider } from '../../contexts/FeedbackContext';
 
 // Notification Button Component
 const NotificationButton: React.FC = () => {
@@ -153,7 +154,7 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
-        name="Feedback"
+        name="FeedbackHistoryScreen"
         options={{
           title: 'Feedback',
           tabBarIcon: ({ color }) => (
@@ -198,6 +199,13 @@ const TabNavigation: React.FC = () => {
 
       <Tabs.Screen
         name="SeatReserved"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="SubmitFeedback"
         options={{
           href: null,
         }}
@@ -299,7 +307,9 @@ export default function TabLayout() {
     <SafeAreaProvider>
       <UserProvider>
         <MapProvider>
-          <TabNavigation />
+          <FeedbackProvider>
+            <TabNavigation />
+          </FeedbackProvider>
         </MapProvider>
       </UserProvider>
     </SafeAreaProvider>
