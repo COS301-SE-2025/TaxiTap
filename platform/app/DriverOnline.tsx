@@ -21,6 +21,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+const [activeRideRequest, setActiveRideRequest] = useState<any | null>(null);
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -725,11 +726,46 @@ export default function DriverOnline({
                     </View>
                   )}
                   <View style={dynamicStyles.quickStatusItem}>
-                    <Text style={dynamicStyles.quickStatusValue}>
-                      {taxiInfo?.capacity === 0
-                        ? "No seats available"
-                        : taxiInfo?.capacity?.toString() ?? "Loading..."}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await updateTaxiSeatAvailability({
+                              rideId: activeRideRequest?.metadata.rideId,
+                              action: "decrease",
+                            });
+                          } catch (error) {
+                            // Optional: handle error (e.g., show a toast or log it)
+                            console.error("Failed to update seat availability:", error);
+                          }
+                        }}
+                      >
+                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>−</Text>
+                      </TouchableOpacity>
+
+                      <Text style={dynamicStyles.quickStatusValue}>
+                        {taxiInfo?.capacity === 0
+                          ? "No seats available"
+                          : taxiInfo?.capacity?.toString() ?? "Loading..."}
+                      </Text>
+
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await updateTaxiSeatAvailability({
+                              rideId: activeRideRequest?.metadata.rideId,
+                              action: "increase",
+                            });
+                          } catch (error) {
+                            // Optional: handle error (e.g., show a toast or log it)
+                            console.error("Failed to update seat availability:", error);
+                          }
+                        }}
+                      >
+                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+
                     <Text style={dynamicStyles.quickStatusLabel}>Available Seats</Text>
                   </View>
                 </View>
