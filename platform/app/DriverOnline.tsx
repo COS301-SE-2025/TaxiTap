@@ -21,7 +21,6 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
-const [activeRideRequest, setActiveRideRequest] = useState<any | null>(null);
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -58,7 +57,8 @@ export default function DriverOnline({
   const { width, height } = Dimensions.get('window');
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
-  
+  const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
+
   const navigation = useNavigation();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
@@ -624,6 +624,30 @@ export default function DriverOnline({
     },
   });
 
+  async function increaseSeats() {
+    if (!user) {
+      Alert.alert("You must be logged in");
+      return;
+    }
+    try {
+      await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "increase" });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function decreaseSeats() {
+    if (!user) {
+      Alert.alert("You must be logged in");
+      return;
+    }
+    try {
+      await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "decrease" });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
       <StatusBar 
@@ -730,10 +754,7 @@ export default function DriverOnline({
                       <TouchableOpacity
                         onPress={async () => {
                           try {
-                            await updateTaxiSeatAvailability({
-                              rideId: activeRideRequest?.metadata.rideId,
-                              action: "decrease",
-                            });
+                            await decreaseSeats();
                           } catch (error) {
                             // Optional: handle error (e.g., show a toast or log it)
                             console.error("Failed to update seat availability:", error);
@@ -752,10 +773,7 @@ export default function DriverOnline({
                       <TouchableOpacity
                         onPress={async () => {
                           try {
-                            await updateTaxiSeatAvailability({
-                              rideId: activeRideRequest?.metadata.rideId,
-                              action: "increase",
-                            });
+                            await increaseSeats()
                           } catch (error) {
                             // Optional: handle error (e.g., show a toast or log it)
                             console.error("Failed to update seat availability:", error);
