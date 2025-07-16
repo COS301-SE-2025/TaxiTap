@@ -239,6 +239,7 @@ export default function TabLayout() {
     currentLocation = undefined;
     destination = undefined;
   }
+  
   useEffect(() => {
     const rideDeclined = notifications.find(
       n => n.type === 'ride_declined' && !n.isRead
@@ -262,7 +263,7 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead]);
 
-  // Global handler for ride_accepted notifications (match HomeScreen logic)
+  // Global handler for ride_accepted notifications
   useEffect(() => {
     const rideAccepted = notifications.find(
       n => n.type === 'ride_accepted' && !n.isRead
@@ -295,6 +296,27 @@ export default function TabLayout() {
       );
     }
   }, [notifications, markAsRead, currentLocation, destination]);
+
+  // Global handler for ride_cancelled notifications
+  useEffect(() => {
+    const rideCancelled = notifications.find(
+      n => n.type === 'ride_cancelled' && !n.isRead
+    );
+    if (rideCancelled) {
+      Alert.alert(
+        'Ride Cancelled',
+        rideCancelled.message,
+        [
+          {
+            text: 'OK',
+            onPress: () => markAsRead(rideCancelled._id),
+            style: 'default'
+          }
+        ],
+        { cancelable: false }
+      );
+    }
+  }, [notifications, markAsRead]);
 
   return (
     <SafeAreaProvider>
