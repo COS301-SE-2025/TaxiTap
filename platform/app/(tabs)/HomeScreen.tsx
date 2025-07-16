@@ -112,11 +112,13 @@ export default function HomeScreen() {
   
   const {
     currentLocation,
+    origin,
     destination,
     routeCoordinates,
     isLoadingRoute,
     routeLoaded,
     setCurrentLocation,
+    setOrigin,
     setDestination,
     setRouteCoordinates,
     setIsLoadingRoute,
