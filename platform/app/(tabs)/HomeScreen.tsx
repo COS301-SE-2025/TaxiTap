@@ -137,7 +137,6 @@ export default function HomeScreen() {
   const { location: streamedLocation, error: locationStreamError } =
     useThrottledLocationStreaming(userId, safeRole, true);
 
-  //This has our functionality but used Ati's variable, so we will change this
   useEffect(() => {
     if (detectedLocation  && (!currentLocation || currentLocation.name === '')) {
       setCurrentLocation({
@@ -146,9 +145,19 @@ export default function HomeScreen() {
         name: 'Current Location'
       });
       setIsLoadingCurrentLocation(false);
-    } else {
     }
   }, [detectedLocation , currentLocation]);
+
+  // Auto-set origin to current location when detected
+  useEffect(() => {
+    if (detectedLocation && !origin) {
+      setOrigin({
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        name: 'Current Location'
+      });
+    }
+  }, [detectedLocation, origin]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -242,14 +251,16 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       setRouteLoaded(false);
+      setOrigin(null);
       setDestination(null);
       setRouteCoordinates([]);
       setSelectedRouteId(null);
+      setOriginAddress('');
       setDestinationAddress('');
       setAvailableTaxis([]);
       setRouteMatchResults(null);
       setIsSearchingTaxis(false);
-    }, [setRouteLoaded, setDestination, setRouteCoordinates])
+    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
   );
 
   useLayoutEffect(() => {
@@ -352,11 +363,7 @@ export default function HomeScreen() {
     setIsGeocodingOrigin(false);
 
     if (result) {
-      setCurrentLocation(result);
-      // If we have both origin and destination, get route
-      if (destination) {
-        getRoute(result, destination);
-      }
+      setOrigin(result);
       // Animate map to origin
       mapRef.current?.animateToRegion(
         {
@@ -380,7 +387,7 @@ export default function HomeScreen() {
 
     if (result) {
       setDestination(result);
-      setSelectedRouteId('manual-route'); // Set a manual route ID
+      setSelectedRouteId('manual-route');
       
       await AsyncStorage.setItem(
         'lastManualDestination',
@@ -390,11 +397,6 @@ export default function HomeScreen() {
           name: result.name,
         })
       );
-
-      // If we have both origin and destination, get route
-      if (currentLocation) {
-        getRoute(currentLocation, result);
-      }
     }
   };
 
@@ -403,7 +405,7 @@ export default function HomeScreen() {
     : 'manual-route';
 
   const handleReserveSeat = async () => {
-    if (!destination || !currentLocation) {
+    if (!destination || !origin) {
       Alert.alert('Error', 'Please enter both origin and destination addresses');
       return;
     }
@@ -440,9 +442,9 @@ export default function HomeScreen() {
         destinationName: destination.name,
         destinationLat: destination.latitude.toString(),
         destinationLng: destination.longitude.toString(),
-        currentName: currentLocation.name,
-        currentLat: currentLocation.latitude.toString(),
-        currentLng: currentLocation.longitude.toString(),
+        currentName: origin.name,
+        currentLat: origin.latitude.toString(),
+        currentLng: origin.longitude.toString(),
         routeId: selectedRouteId,
         // Pass the available taxis data
         availableTaxisCount: availableTaxis.length.toString(),
@@ -463,8 +465,15 @@ export default function HomeScreen() {
     }
   }, [routeLoaded]);
 
+  // Auto-route loading effect
+  useEffect(() => {
+    if (origin && destination) {
+      getRoute(origin, destination);
+    }
+  }, [origin, destination]);
+
   const getRoute = async (
-    origin: { latitude: number; longitude: number; name: string },
+    originParam: { latitude: number; longitude: number; name: string },
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!GOOGLE_MAPS_API_KEY) {
@@ -472,7 +481,7 @@ export default function HomeScreen() {
     }
 
     const cacheKey = createRouteKey(
-      { ...origin, name: '' },
+      { ...originParam, name: '' },
       { ...dest, name: '' }
     );
 
@@ -480,8 +489,7 @@ export default function HomeScreen() {
     if (cached) {
       setRouteCoordinates(cached);
       setRouteLoaded(true);
-      // Also search for available taxis when route is loaded from cache
-      searchForAvailableTaxis(origin, dest);
+      searchForAvailableTaxis(originParam, dest);
       return;
     }
 
@@ -489,7 +497,7 @@ export default function HomeScreen() {
     setRouteLoaded(false);
 
     try {
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${dest.latitude},${dest.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originParam.latitude},${originParam.longitude}&destination=${dest.latitude},${dest.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -499,14 +507,13 @@ export default function HomeScreen() {
       setCachedRoute(cacheKey, points);
       setRouteCoordinates(points);
 
-      mapRef.current?.fitToCoordinates([origin, dest, ...points], {
+      mapRef.current?.fitToCoordinates([originParam, dest, ...points], {
         edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
       setRouteLoaded(true);
       
-      // Search for available taxis on matching routes
-      searchForAvailableTaxis(origin, dest);
+      searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
       Alert.alert('Route Error', err instanceof Error ? err.message : 'Unknown error');
@@ -558,7 +565,7 @@ export default function HomeScreen() {
       !route.destinationCoords || 
       typeof route.destinationCoords.latitude !== 'number' ||
       typeof route.destinationCoords.longitude !== 'number' ||
-      !currentLocation || 
+      !origin || 
       !userId || 
       !route.routeId
     ) return;
@@ -574,15 +581,12 @@ export default function HomeScreen() {
     setSelectedRouteId(route._id);
 
     try {
-      await getRoute(currentLocation, dest);
       await storeRouteForPassenger({
         passengerId: userId as Id<"taxiTap_users">,
         routeId: uniqueManualRouteId,
       });
-      setRouteLoaded(true);
     } catch (error) {
-      console.error("Failed to load route:", error);
-      setRouteLoaded(false);
+      console.error("Failed to store route:", error);
     }
   };
 
@@ -785,10 +789,10 @@ export default function HomeScreen() {
               markAsRead(rideAccepted._id);
               router.push({
                 pathname: './PassengerReservation',
-                params: currentLocation && destination ? {
-                  currentLat: currentLocation.latitude.toString(),
-                  currentLng: currentLocation.longitude.toString(),
-                  currentName: currentLocation.name,
+                params: origin && destination ? {
+                  currentLat: origin.latitude.toString(),
+                  currentLng: origin.longitude.toString(),
+                  currentName: origin.name,
                   destinationLat: destination.latitude.toString(),
                   destinationLng: destination.longitude.toString(),
                   destinationName: destination.name,
@@ -819,7 +823,7 @@ export default function HomeScreen() {
         { cancelable: false }
       );
    }
-  }, [notifications, markAsRead, currentLocation, destination]);
+  }, [notifications, markAsRead, origin, destination]);
 
   useEffect(() => {
     const rideDeclined = notifications.find(
@@ -850,6 +854,14 @@ export default function HomeScreen() {
       return {
         latitude: detectedLocation .latitude,
         longitude: detectedLocation .longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    if (origin) {
+      return {
+        latitude: origin.latitude,
+        longitude: origin.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
@@ -896,10 +908,10 @@ export default function HomeScreen() {
           initialRegion={getInitialRegion()}
           customMapStyle={isDark ? darkMapStyle : []}
         >
-          {currentLocation && 
-            typeof currentLocation.latitude === 'number' &&
-            typeof currentLocation.longitude === 'number' &&(
-              <Marker coordinate={currentLocation} title="Origin" pinColor="blue" />
+          {origin && 
+            typeof origin.latitude === 'number' &&
+            typeof origin.longitude === 'number' &&(
+              <Marker coordinate={origin} title="Origin" pinColor="blue" />
           )}
 
           {destination &&
@@ -954,7 +966,7 @@ export default function HomeScreen() {
           <View style={dynamicStyles.locationTextContainer}>
             <TextInput
               style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-              placeholder={currentLocation ? currentLocation.name : "Enter origin address..."}
+              placeholder={origin ? origin.name : "Enter origin address..."}
               value={originAddress}
               onChangeText={setOriginAddress}
               onSubmitEditing={handleOriginSubmit}
