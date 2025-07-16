@@ -184,13 +184,6 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
-        name="DriverProfile"
-        options={{
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
         name="index"
         options={{
           href: null,
