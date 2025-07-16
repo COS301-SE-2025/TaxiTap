@@ -53,6 +53,7 @@ export default function DriverOnline({
   onGoOffline, 
   todaysEarnings,
   currentRoute = "Not Set",
+
 }: DriverOnlineProps) {
   const { width, height } = Dimensions.get('window');
 
