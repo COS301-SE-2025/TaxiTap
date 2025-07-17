@@ -14,6 +14,9 @@ export const completeRideHandler = async (ctx: any, args: any) => {
   if (ride.status === "cancelled" || ride.status === "declined") {
     throw new Error("Cannot complete a ride that is already cancelled or declined.");
   }
+  if (ride.status !== "accepted" && ride.status !== "in_progress") {
+    throw new Error("Ride is not in progress");
+  }
 
   // Update the ride status
   await ctx.db.patch(ride._id, {
