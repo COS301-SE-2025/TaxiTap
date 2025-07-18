@@ -27,18 +27,27 @@ export const getWeeklyEarnings = query({
       const trips = await ctx.db
         .query("trips")
         .withIndex("by_driver_and_startTime", (q) =>
-          q.eq("driverId", driverId)
-          .gt("startTime", from)
-          .lt("startTime", to)
+          q.eq("driverId", driverId).gt("startTime", from).lt("startTime", to)
         )
         .collect();
 
+      const sessions = await ctx.db
+        .query("work_sessions")
+        .withIndex("by_driver_and_start", (q) =>
+          q.eq("driverId", driverId).gt("startTime", from).lt("startTime", to)
+        )
+        .collect();
+
+      const hoursOnline = sessions.reduce((sum, session) => {
+        if (session.endTime !== undefined) {
+          const duration = (session.endTime - session.startTime) / (1000 * 60 * 60); // hours
+          return sum + duration;
+        }
+        return sum;
+      }, 0);
+
       const earnings = trips.reduce((sum, trip) => sum + trip.fare, 0);
       const reservations = trips.filter((t) => t.reservation).length;
-      const hours = trips.reduce(
-        (sum, t) => sum + (t.endTime - t.startTime) / (1000 * 60 * 60),
-        0
-      );
 
       const dailyData = Array.from({ length: 7 }, (_, dayOffset) => {
         const dayStart = from + dayOffset * MILLIS_PER_DAY;
@@ -57,7 +66,8 @@ export const getWeeklyEarnings = query({
       weeks.push({
         dateRangeStart: from,
         earnings,
-        hoursOnline: Math.round(hours),
+        hoursOnline: Math.round(hoursOnline),
+        averagePerHour: hoursOnline > 0 ? Math.round(earnings / hoursOnline) : 0,
         reservations,
         dailyData,
       });
