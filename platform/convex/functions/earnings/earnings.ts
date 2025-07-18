@@ -28,6 +28,8 @@ export const getWeeklyEarnings = query({
         .query("trips")
         .withIndex("by_driver_and_startTime", (q) =>
           q.eq("driverId", driverId)
+          .gt("startTime", from)
+          .lt("startTime", to)
         )
         .collect();
 
