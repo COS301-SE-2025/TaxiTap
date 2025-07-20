@@ -88,6 +88,13 @@ export const checkRideProximity = internalMutation({
       const driverToPassengerETA = estimateETA(driverToPassengerDistance);
       const passengerToDestinationETA = estimateETA(passengerToDestinationDistance);
 
+      // Calculate clock time ETA for driver arrival
+      const now = new Date();
+      const etaDate = new Date(now.getTime() + Math.round(driverToPassengerETA) * 60000);
+      const etaHours = etaDate.getHours().toString().padStart(2, '0');
+      const etaMinutes = etaDate.getMinutes().toString().padStart(2, '0');
+      const etaString = `${etaHours}:${etaMinutes}`;
+
       console.log(`Proximity check for ride ${rideId}:`, {
         driverToPassenger: { distance: driverToPassengerDistance, eta: driverToPassengerETA },
         passengerToDestination: { distance: passengerToDestinationDistance, eta: passengerToDestinationETA }
@@ -114,7 +121,7 @@ export const checkRideProximity = internalMutation({
               userId: ride.passengerId,
               type: "driver_10min_away",
               title: "Driver Approaching",
-              message: "Your driver is approximately 10 minutes away.",
+              message: `Your driver will be arriving around ${etaString}. (Approximately 10 minutes away.)`,
               priority: "high",
               metadata: { rideId }
             });
@@ -141,7 +148,7 @@ export const checkRideProximity = internalMutation({
               userId: ride.passengerId,
               type: "driver_5min_away",
               title: "Driver Almost Here",
-              message: "Your driver is approximately 5 minutes away.",
+              message: `Your driver will be arriving around ${etaString}. (Approximately 5 minutes away.)`,
               priority: "high",
               metadata: { rideId }
             });
@@ -168,7 +175,7 @@ export const checkRideProximity = internalMutation({
               userId: ride.passengerId,
               type: "driver_arrived",
               title: "Driver Arrived",
-              message: "Your driver has arrived at your location.",
+              message: `Your driver has arrived at your location. (Expected around ${etaString})`,
               priority: "urgent",
               metadata: { rideId }
             });
