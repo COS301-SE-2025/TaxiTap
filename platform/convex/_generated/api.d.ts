@@ -76,8 +76,12 @@ import type * as functions_users_UserManagement_switchBothtoDriver from "../func
 import type * as functions_users_UserManagement_switchBothtoPassenger from "../functions/users/UserManagement/switchBothtoPassenger.js";
 import type * as functions_users_UserManagement_switchDrivertoBoth from "../functions/users/UserManagement/switchDrivertoBoth.js";
 import type * as functions_users_UserManagement_switchPassengertoBoth from "../functions/users/UserManagement/switchPassengertoBoth.js";
+import type * as functions_users_UserManagement_updateHomeAddress from "../functions/users/UserManagement/updateHomeAddress.js";
+import type * as functions_users_UserManagement_updateUserProfile from "../functions/users/UserManagement/updateUserProfile.js";
+import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
+
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -151,6 +155,9 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/switchBothtoPassenger": typeof functions_users_UserManagement_switchBothtoPassenger;
   "functions/users/UserManagement/switchDrivertoBoth": typeof functions_users_UserManagement_switchDrivertoBoth;
   "functions/users/UserManagement/switchPassengertoBoth": typeof functions_users_UserManagement_switchPassengertoBoth;
+  "functions/users/UserManagement/updateHomeAddress": typeof functions_users_UserManagement_updateHomeAddress;
+  "functions/users/UserManagement/updateUserProfile": typeof functions_users_UserManagement_updateUserProfile;
+  "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
   "functions/work_sessions/endWorkSession": typeof functions_work_sessions_endWorkSession;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;
 }>;

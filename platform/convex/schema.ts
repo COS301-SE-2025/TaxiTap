@@ -39,7 +39,9 @@ export default defineSchema({
         latitude: v.number(),
         longitude: v.number(),
       }),
-      nickname: v.optional(v.string()),
+
+      nickname: v.optional(v.string()), // e.g., "Home", "My Place"
+
     })),
     
     workAddress: v.optional(v.object({
@@ -48,7 +50,9 @@ export default defineSchema({
         latitude: v.number(),
         longitude: v.number(),
       }),
-      nickname: v.optional(v.string()),
+
+      nickname: v.optional(v.string()), // e.g., "Work", "Office"
+
     })),
         
     emergencyContact: v.optional(v.object({

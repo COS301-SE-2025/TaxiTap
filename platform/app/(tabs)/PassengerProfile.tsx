@@ -59,14 +59,6 @@ export default function PassengerProfile() {
         router.push('../LandingPage');
     };
 
-    const handleNameChange = (newName: string) => {
-        setName(newName);
-    };
-
-    const handleNumberChange = (newNumber: string) => {
-        setNumber(newNumber);
-    };
-
     const handleSwitchToDriver = async () => {
         try {
             if (!user?.id) {
@@ -100,16 +92,27 @@ export default function PassengerProfile() {
                                     await updateAccountType('both');
                                     await updateUserRole('driver');
                                     
-                                    console.log('Success', 'Successfully switched to driver mode!');
-                                    router.push('../DriverOffline');
+                                    Alert.alert('Success', 'Successfully switched to driver mode!', [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => {
+                                                try {
+                                                    router.push('../DriverOffline');
+                                                } catch (navError) {
+                                                    console.error('Navigation error:', navError);
+                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                }
+                                            }
+                                        }
+                                    ]);
                                 } catch (error: any) {
-                                    console.log('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
                                 }
                             },
                         },
                     ]
                 );
-            } 
+            }
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 Alert.alert(
@@ -130,42 +133,67 @@ export default function PassengerProfile() {
                                     // Update context
                                     await updateUserRole('driver');
                                     
-                                    console.log('Success', 'Switched to driver mode!');
-                                    router.push('../DriverOffline');
+                                    Alert.alert('Success', 'Switched to driver mode!', [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => {
+                                                try {
+                                                    router.push('../DriverOffline');
+                                                } catch (navError) {
+                                                    console.error('Navigation error:', navError);
+                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                }
+                                            }
+                                        }
+                                    ]);
                                 } catch (error: any) {
-                                    console.log('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
                                 }
                             },
                         },
                     ]
                 );
             } else {
-                console.log('Error', 'Invalid account type for switching to driver mode');
+                Alert.alert('Error', 'Invalid account type for switching to driver mode');
             }
-        } catch {
-            console.log('Error', 'An unexpected error occurred');
+        } catch (error: any) {
+            Alert.alert('Error', 'An unexpected error occurred');
         }
     };
 
-    const handleSave = async () => {
-        try {
-            if (!user?.id) {
-                Alert.alert('Not found', 'User not found');
-                return;
-            }
-            // Update name in context
-            if (name !== user.name) {
-                await updateUserName(name);
-            }
-            // Update number if changed
-            if (number !== user.phoneNumber) {
-                await updateNumber(number);
-            }
-            Alert.alert('Success', 'Profile saved successfully!');
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to save profile');
-        }
+    const handlePersonalInfo = () => {
+        // Navigate to personal info edit screen
+        router.push('../PersonalInfoEdit');
     };
+
+    const handleAddHomeAddress = () => {
+        router.push('../AddHomeAddress');
+    };
+
+    const handleAddWorkAddress = () => {
+        // Navigate to add work address screen
+        router.push('../AddWorkAddress');
+    };
+
+    type MenuItemProps = {
+        icon: keyof typeof Ionicons.glyphMap;
+        title: string;
+        onPress: () => void;
+        showArrow?: boolean;
+      };
+      
+      const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, title, onPress, showArrow = true }) => (
+          <Pressable style={dynamicStyles.menuItem} onPress={onPress}>
+              <View style={dynamicStyles.menuItemLeft}>
+                  <Ionicons name={icon} size={24} color={theme.text} />
+                  <Text style={dynamicStyles.menuItemText}>{title}</Text>
+              </View>
+              {showArrow && (
+                  <Ionicons name="chevron-forward" size={20} color={theme.text} />
+              )}
+          </Pressable>
+      );
+      
 
     const dynamicStyles = StyleSheet.create({
         safeArea: {
@@ -177,60 +205,76 @@ export default function PassengerProfile() {
             padding: 20,
             paddingBottom: 40,
         },
-        headerText: {
-            color: theme.text,
-            fontSize: 22,
-            fontWeight: '600',
-            marginBottom: 16,
+        headerSection: {
+            alignItems: 'center',
+            marginBottom: 30,
         },
-        card: {
+        profileImage: {
+            marginBottom: 15,
+        },
+        userName: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: theme.text,
+            marginBottom: 5,
+        },
+        userRole: {
+            fontSize: 16,
+            color: theme.text,
+            opacity: 0.7,
+        },
+        section: {
             backgroundColor: theme.card,
-            borderRadius: 16,
-            padding: 20,
+            borderRadius: 12,
+            marginBottom: 20,
             shadowColor: theme.shadow,
             shadowOpacity: isDark ? 0.3 : 0.1,
             shadowRadius: 4,
             elevation: 4,
-            alignItems: 'center',
-            marginBottom: 30,
             borderWidth: isDark ? 1 : 0,
             borderColor: theme.border,
         },
-        fieldContainer: {
-            alignSelf: 'stretch',
-            marginBottom: 12,
-        },
-        label: {
-            fontWeight: 'bold',
-            fontSize: 16,
-            marginBottom: 4,
-            color: theme.text,
-        },
-        input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
-            borderRadius: 8,
-            paddingHorizontal: 12,
-            height: 44,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
-            color: theme.text,
-        },
-        button: {
-            backgroundColor: theme.primary,
-            paddingVertical: 16,
-            borderRadius: 30,
+        menuItem: {
+            flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 16,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.15,
-            shadowRadius: 4,
-            elevation: 3,
+            justifyContent: 'space-between',
+            paddingVertical: 16,
+            paddingHorizontal: 20,
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? theme.border : '#f0f0f0',
         },
-        buttonText: {
-            color: isDark ? '#121212' : '#fff',
-            fontWeight: 'bold',
-            fontSize: 18,
+        menuItemLeft: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        menuItemText: {
+            fontSize: 16,
+            color: theme.text,
+            marginLeft: 15,
+        },
+        lastMenuItem: {
+            borderBottomWidth: 0,
+        },
+        logoutSection: {
+            backgroundColor: theme.card,
+            borderRadius: 12,
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowRadius: 4,
+            elevation: 4,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: theme.border,
+        },
+        logoutItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 16,
+            paddingHorizontal: 20,
+        },
+        logoutText: {
+            fontSize: 16,
+            color: '#FF3B30',
+            marginLeft: 15,
         },
     });
     
@@ -247,63 +291,66 @@ export default function PassengerProfile() {
     return (
       <SafeAreaView style={dynamicStyles.safeArea}>
         <ScrollView contentContainerStyle={dynamicStyles.container}>
-            <Text style={dynamicStyles.headerText}>Passenger Profile</Text>
-
-            <View style={dynamicStyles.card}>
-              <Pressable
-                onPress={handleUploadPhoto}
-                style={{
-                  paddingVertical: 14,
-                  borderRadius: 30,
-                  alignItems: 'center',
-                  marginTop: 20,
-                }}
-              >
-                {imageUri ? (
-                  <Image
-                    source={{ uri: imageUri }}
-                    resizeMode="cover"
-                    style={{ width: 150, height: 150, borderRadius: 75 }}
-                  />
-                ) : (
-                  <Ionicons name="person-circle" size={150} color={theme.text} />
-                )}
-              </Pressable>
-
-              <View style={dynamicStyles.fieldContainer}>
-                <Text style={dynamicStyles.label}>Name:</Text>
-                <TextInput
-                  value={name}
-                  onChangeText={handleNameChange}
-                  style={dynamicStyles.input}
-                  placeholder="Enter name"
-                  placeholderTextColor={isDark ? '#999' : '#aaa'}
-                />
-              </View>
-
-              <View style={dynamicStyles.fieldContainer}>
-                <Text style={dynamicStyles.label}>Number:</Text>
-                <TextInput
-                  value={number}
-                  onChangeText={handleNumberChange}
-                  style={dynamicStyles.input}
-                  placeholder="Enter number"
-                  placeholderTextColor={isDark ? '#999' : '#aaa'}
-                />
-              </View>
+            {/* Header Section with Profile Picture and Name */}
+            <View style={dynamicStyles.headerSection}>
+                <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImage}>
+                    {imageUri ? (
+                        <Image
+                            source={{ uri: imageUri }}
+                            resizeMode="cover"
+                            style={{ width: 80, height: 80, borderRadius: 40 }}
+                        />
+                    ) : (
+                        <Ionicons name="person-circle" size={80} color={theme.text} />
+                    )}
+                </Pressable>
+                <Text style={dynamicStyles.userName}>{name || 'Your Name'}</Text>
+                <Text style={dynamicStyles.userRole}>Passenger</Text>
             </View>
 
-            <Pressable style={dynamicStyles.button} onPress={handleSave}>
-                <Text style={dynamicStyles.buttonText}>Save Profile</Text>
-            </Pressable>
+            {/* Section 1: Personal Info & Driver Switch */}
+            <View style={dynamicStyles.section}>
+                <MenuItemComponent
+                    icon="person-outline"
+                    title="Personal Info"
+                    onPress={handlePersonalInfo}
+                />
+                <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                    <View style={dynamicStyles.menuItemLeft}>
+                        <Ionicons name="car-outline" size={24} color={theme.text} />
+                        <Text style={dynamicStyles.menuItemText}>Switch to Driver Profile</Text>
+                    </View>
+                    <Pressable onPress={handleSwitchToDriver}>
+                        <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                    </Pressable>
+                </View>
+            </View>
 
-            <Pressable style={dynamicStyles.button} onPress={handleSwitchToDriver}>
-                <Text style={dynamicStyles.buttonText}>Switch to Driver Profile</Text>
-            </Pressable>
+            {/* Section 2: Saved Places */}
+            <View style={dynamicStyles.section}>
+                <MenuItemComponent
+                    icon="home-outline"
+                    title="Add Home Address"
+                    onPress={handleAddHomeAddress}
+                />
+                <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                    <View style={dynamicStyles.menuItemLeft}>
+                        <Ionicons name="briefcase-outline" size={24} color={theme.text} />
+                        <Text style={dynamicStyles.menuItemText}>Add Work Address</Text>
+                    </View>
+                    <Pressable onPress={handleAddWorkAddress}>
+                        <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                    </Pressable>
+                </View>
+            </View>
 
-            <Pressable style={dynamicStyles.button} onPress={handleSignout}>
-                <Text style={dynamicStyles.buttonText}>Sign Out</Text>
-            </Pressable>
+            {/* Section 3: Logout */}
+            <View style={dynamicStyles.logoutSection}>
+                <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
+                    <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
+                    <Text style={dynamicStyles.logoutText}>Log Out</Text>
+                </Pressable>
+            </View>
         </ScrollView>
       </SafeAreaView>
     );
