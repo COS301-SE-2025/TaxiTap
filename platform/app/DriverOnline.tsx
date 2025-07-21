@@ -53,11 +53,13 @@ export default function DriverOnline({
   onGoOffline, 
   todaysEarnings,
   currentRoute = "Not Set",
+
 }: DriverOnlineProps) {
   const { width, height } = Dimensions.get('window');
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
-  
+  const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
+
   const navigation = useNavigation();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
@@ -281,6 +283,12 @@ export default function DriverOnline({
         setShowMenu(false);
         router.push('/EarningsPage');
       }
+    },
+    {
+      icon: 'person-outline',
+      title: 'Feedback',
+      subtitle: 'Ratings & Feedback',
+      onPress: () => router.push('/FeedbackHistoryScreen'),
     },
     { 
       icon: "settings-outline", 
@@ -617,6 +625,30 @@ export default function DriverOnline({
     },
   });
 
+  async function increaseSeats() {
+    if (!user) {
+      Alert.alert("You must be logged in");
+      return;
+    }
+    try {
+      await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "increase" });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function decreaseSeats() {
+    if (!user) {
+      Alert.alert("You must be logged in");
+      return;
+    }
+    try {
+      await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "decrease" });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
       <StatusBar 
@@ -719,11 +751,40 @@ export default function DriverOnline({
                     </View>
                   )}
                   <View style={dynamicStyles.quickStatusItem}>
-                    <Text style={dynamicStyles.quickStatusValue}>
-                      {taxiInfo?.capacity === 0
-                        ? "No seats available"
-                        : taxiInfo?.capacity?.toString() ?? "Loading..."}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await decreaseSeats();
+                          } catch (error) {
+                            // Optional: handle error (e.g., show a toast or log it)
+                            console.error("Failed to update seat availability:", error);
+                          }
+                        }}
+                      >
+                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>−</Text>
+                      </TouchableOpacity>
+
+                      <Text style={dynamicStyles.quickStatusValue}>
+                        {taxiInfo?.capacity === 0
+                          ? "No seats available"
+                          : taxiInfo?.capacity?.toString() ?? "Loading..."}
+                      </Text>
+
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await increaseSeats()
+                          } catch (error) {
+                            // Optional: handle error (e.g., show a toast or log it)
+                            console.error("Failed to update seat availability:", error);
+                          }
+                        }}
+                      >
+                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+
                     <Text style={dynamicStyles.quickStatusLabel}>Available Seats</Text>
                   </View>
                 </View>

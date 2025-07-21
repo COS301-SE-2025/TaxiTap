@@ -14,12 +14,12 @@ jest.mock('expo-router', () => ({
   useNavigation: () => ({
     setOptions: mockSetOptions,
   }),
+  useLocalSearchParams: jest.fn(() => ({})),
 }));
-
-
 
 jest.mock('convex/react', () => ({
   useQuery: jest.fn(),
+  useMutation: jest.fn(() => jest.fn()),  // mock useMutation as a jest.fn that returns a jest.fn
 }));
 
 jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');

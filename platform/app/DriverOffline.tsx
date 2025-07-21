@@ -136,6 +136,12 @@ export default function DriverOffline({
       onPress: () => router.push('/EarningsPage'),
     },
     {
+      icon: 'person-outline',
+      title: 'Feedback',
+      subtitle: 'Ratings & Feedback',
+      onPress: () => router.push('/FeedbackHistoryScreen'),
+    },
+    {
       icon: 'settings-outline',
       title: 'Toggle Theme',
       subtitle: 'Switch between light and dark mode',
