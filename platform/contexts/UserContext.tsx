@@ -62,16 +62,28 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const [userId, userName, userRole, userAccountType, userNumber] = userData.map(([key, value]) => value);
       
       if (userId) {
-        setUser({
+        const userInfo: User = {
           id: userId,
           name: userName || '',
           role: userRole || '',
           accountType: userAccountType as "passenger" | "driver" | "both",
           phoneNumber: userNumber || '',
-        });
+        };
+        setUser(userInfo);
+        
+        // If user is already logged in, navigate to appropriate screen
+        if (userInfo.accountType === 'driver' || userInfo.role === 'driver') {
+          router.replace('/DriverHomeScreen');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // No user data, ensure we're on the landing page
+        router.replace('/LandingPage');
       }
     } catch (error) {
       console.error('Error loading user from storage:', error);
+      router.replace('/LandingPage');
     } finally {
       setLoading(false);
     }
