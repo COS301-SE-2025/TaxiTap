@@ -60,7 +60,7 @@ export const NotificationProvider: React.FC<{
   const responseListener = useRef<Notifications.Subscription | null>(null);
   const inAppTimeouts = useRef<Map<string, number>>(new Map());
 
-  // Convex mutations and queries
+  // FIXED: Only run Convex queries when userId is available
   const registerToken = useMutation(
     api.functions.notifications.registerPushToken.registerPushToken
   );
@@ -92,8 +92,15 @@ export const NotificationProvider: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (userId) {
+    // FIXED: Only register for notifications if userId exists and not in Expo Go
+    if (userId && !__DEV__) {
       registerForPushNotifications();
+    }
+
+    // FIXED: Skip notification listeners in Expo Go to avoid errors
+    if (__DEV__) {
+      console.log('Skipping notification setup in development/Expo Go');
+      return;
     }
 
     // Listener for notifications received while app is foregrounded
@@ -146,12 +153,23 @@ export const NotificationProvider: React.FC<{
 
   // Update badge count when unread count changes
   useEffect(() => {
-    if (unreadCount !== undefined) {
-      NotificationService.setBadgeCount(unreadCount);
+    if (unreadCount !== undefined && !__DEV__) {
+      // Skip badge updates in Expo Go
+      try {
+        NotificationService.setBadgeCount(unreadCount);
+      } catch (error) {
+        console.log('Badge count not supported in Expo Go');
+      }
     }
   }, [unreadCount]);
 
   const registerForPushNotifications = async () => {
+    // FIXED: Skip in Expo Go/development
+    if (__DEV__) {
+      console.log('Skipping push notification registration in Expo Go');
+      return;
+    }
+
     try {
       const token = await NotificationService.registerForPushNotifications();
       if (token && userId) {
@@ -197,6 +215,8 @@ export const NotificationProvider: React.FC<{
   };
 
   const markAsRead = async (notificationId: Id<"notifications">) => {
+    if (!userId) return; // FIXED: Guard against missing userId
+    
     try {
       await markNotificationAsRead({ notificationId });
     } catch (error) {
@@ -205,7 +225,8 @@ export const NotificationProvider: React.FC<{
   };
 
   const markAllAsRead = async () => {
-    if (!userId) return;
+    if (!userId) return; // FIXED: Guard against missing userId
+    
     try {
       await markAllNotificationsAsRead({ userId });
     } catch (error) {

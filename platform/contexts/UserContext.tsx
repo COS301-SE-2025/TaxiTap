@@ -1,9 +1,8 @@
-// contexts/UserContext.tsx
+// contexts/UserContext.tsx - Simple version without auto-navigation
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 
-// Type definitions
+// Type definitions (keep your existing types)
 interface User {
   id: string;
   name: string;
@@ -50,7 +49,6 @@ export const useUser = (): UserContextType => {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const router = useRouter();
 
   useEffect(() => {
     loadUserFromStorage();
@@ -62,28 +60,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const [userId, userName, userRole, userAccountType, userNumber] = userData.map(([key, value]) => value);
       
       if (userId) {
-        const userInfo: User = {
+        setUser({
           id: userId,
           name: userName || '',
           role: userRole || '',
-          accountType: userAccountType as "passenger" | "driver" | "both",
+          accountType: userAccountType as "passenger" | "driver" | "both" || 'passenger',
           phoneNumber: userNumber || '',
-        };
-        setUser(userInfo);
-        
-        // If user is already logged in, navigate to appropriate screen
-        if (userInfo.accountType === 'driver' || userInfo.role === 'driver') {
-          router.replace('/DriverHomeScreen');
-        } else {
-          router.replace('/(tabs)');
-        }
-      } else {
-        // No user data, ensure we're on the landing page
-        router.replace('/LandingPage');
+        });
       }
+      // REMOVED: Automatic navigation - let components handle navigation
     } catch (error) {
       console.error('Error loading user from storage:', error);
-      router.replace('/LandingPage');
     } finally {
       setLoading(false);
     }
@@ -109,12 +96,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       ['userNumber', userInfo.phoneNumber],
     ]);
 
-    // Navigate to appropriate screen based on role and reset navigation stack
-    if (userInfo.accountType === 'driver' || userInfo.role === 'driver') {
-      router.replace('/DriverHomeScreen');
-    } else {
-      router.replace('/(tabs)'); // Navigate to main tabs
-    }
+    // REMOVED: Automatic navigation - let Login component handle navigation
   };
 
   const logout = async (): Promise<void> => {
@@ -125,8 +107,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // Clear AsyncStorage
       await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber']);
       
-      // Reset navigation stack and go to landing page
-      router.replace('/LandingPage');
+      // REMOVED: Automatic navigation - let Logout component handle navigation
       
     } catch (error) {
       console.error('Error during logout:', error);
