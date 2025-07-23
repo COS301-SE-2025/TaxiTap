@@ -181,6 +181,7 @@ routes: defineTable({
     })),
     fare: v.number(),
     estimatedDuration: v.number(),
+    estimatedDistance: v.optional(v.number()), // Added estimated distance field
     isActive: v.boolean(),
     taxiAssociation: v.string(),
     taxiAssociationRegistrationNumber: v.string()
