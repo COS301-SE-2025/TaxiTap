@@ -313,6 +313,9 @@ export default function HomeScreen() {
       return;
     }
 
+    // FIXED: Reset previous search results before starting new search
+    setAvailableTaxis([]);
+    setRouteMatchResults(null);
     setIsSearchingTaxis(true);
     
     try {
@@ -504,6 +507,10 @@ export default function HomeScreen() {
 
     setIsLoadingRoute(true);
     setRouteLoaded(false);
+    // FIXED: Reset search state when starting new route
+    setIsSearchingTaxis(false);
+    setAvailableTaxis([]);
+    setRouteMatchResults(null);
 
     try {
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originParam.latitude},${originParam.longitude}&destination=${dest.latitude},${dest.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
