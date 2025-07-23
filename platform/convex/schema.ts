@@ -112,8 +112,7 @@ export default defineSchema({
     estimatedFare: v.optional(v.number()),
     finalFare: v.optional(v.number()),
     
-    estimatedDistance: v.optional(v.number()),
-    actualDistance: v.optional(v.number()),
+    distance: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
