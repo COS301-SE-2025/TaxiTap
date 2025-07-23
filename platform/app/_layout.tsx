@@ -74,7 +74,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
-  const { user } = useUser();
+  const { user, loading } = useUser();
  
   // Create navigation theme based on our custom theme
   const navigationTheme = {
@@ -90,12 +90,24 @@ function RootLayoutNav() {
     fonts: DefaultTheme.fonts,
   };
 
+  // Show nothing while loading user data
+  if (loading) {
+    return null;
+  }
+
+  // Authentication-based navigation structure
+  const isAuthenticated = !!user?.id;
+
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         <NotificationProvider userId={user?.id as Id<"taxiTap_users">}>
           <InAppNotificationOverlay />
+          
+          {/* Conditional Navigation Based on Authentication */}
+          {!isAuthenticated ? (
+            // Authentication Stack - Only accessible when not logged in
             <Stack
               screenOptions={{
                 headerStyle: {
@@ -108,6 +120,9 @@ function RootLayoutNav() {
                 },
                 headerTitleAlign: 'center',
                 headerTintColor: theme.text,
+                // Prevent going back from auth screens
+                gestureEnabled: false,
+                headerLeft: () => null,
               }}
             >
               <Stack.Screen
@@ -116,11 +131,46 @@ function RootLayoutNav() {
                   headerShown: false
                 }}
               />
-            
+              <Stack.Screen
+                name="Login"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: false,
+                }}
+              />
+              <Stack.Screen
+                name="SignUp"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: false,
+                }}
+              />
+            </Stack>
+          ) : (
+            // Main App Stack - Only accessible when logged in
+            <Stack
+              screenOptions={{
+                headerStyle: {
+                  backgroundColor: theme.headerBackground,
+                },
+                headerTitleStyle: {
+                  fontFamily: 'AmazonEmber-Medium',
+                  fontSize: 18,
+                  color: theme.text,
+                },
+                headerTitleAlign: 'center',
+                headerTintColor: theme.text,
+                // Prevent going back to auth screens
+                gestureEnabled: true, // Allow normal navigation within app
+              }}
+            >
               <Stack.Screen
                 name="(tabs)"
                 options={{
                   headerShown: false,
+                  // Prevent going back to auth screens
+                  gestureEnabled: false,
+                  headerLeft: () => null,
                 }}
               />
               
@@ -171,23 +221,12 @@ function RootLayoutNav() {
               />
               
               <Stack.Screen
-                name="Login"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="SignUp"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
                 name="DriverHomeScreen"
                 options={{
-                  headerShown: false
+                  headerShown: false,
+                  // Prevent going back to auth screens
+                  gestureEnabled: false,
+                  headerLeft: () => null,
                 }}
               />
               
@@ -206,14 +245,16 @@ function RootLayoutNav() {
                   title: "Vehicle Details"
                 }}
               />
+              
               <Stack.Screen
-              name="NotificationsScreen"
-              options={{
-                headerShown: true,
-                title: "Notifications" 
+                name="NotificationsScreen"
+                options={{
+                  headerShown: true,
+                  title: "Notifications" 
                 }}
               />
             </Stack>
+          )}
         </NotificationProvider>
       </View>
     </NavigationThemeProvider>
