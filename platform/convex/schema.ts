@@ -113,12 +113,15 @@ export default defineSchema({
     finalFare: v.optional(v.number()),
     
     distance: v.optional(v.number()),
+    tripId: v.optional(v.id("trips")),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
     .index("by_driver", ["driverId"])
     .index("by_status", ["status"])
-    .index("by_requested_at", ["requestedAt"]),
+    .index("by_requested_at", ["requestedAt"])
+    .index("by_trip_id", ["tripId"])
+    .index("by_passenger_and_driver", ["passengerId", "driverId"]),
 
   //passenger table
   passengers: defineTable({
