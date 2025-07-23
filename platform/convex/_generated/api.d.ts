@@ -58,6 +58,7 @@ import type * as functions_routes_mutations from "../functions/routes/mutations.
 import type * as functions_routes_queries from "../functions/routes/queries.js";
 import type * as functions_routes_reverseGeocode from "../functions/routes/reverseGeocode.js";
 import type * as functions_routes_storeRecentRoutes from "../functions/routes/storeRecentRoutes.js";
+import type * as functions_routes_updateRouteDistances_internal from "../functions/routes/updateRouteDistances_internal.js";
 import type * as functions_taxis_displayTaxis from "../functions/taxis/displayTaxis.js";
 import type * as functions_taxis_getTaxiForDriver from "../functions/taxis/getTaxiForDriver.js";
 import type * as functions_taxis_getTaxiForDriverHandler from "../functions/taxis/getTaxiForDriverHandler.js";
@@ -81,7 +82,6 @@ import type * as functions_users_UserManagement_updateUserProfile from "../funct
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
-
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -137,6 +137,7 @@ declare const fullApi: ApiFromModules<{
   "functions/routes/queries": typeof functions_routes_queries;
   "functions/routes/reverseGeocode": typeof functions_routes_reverseGeocode;
   "functions/routes/storeRecentRoutes": typeof functions_routes_storeRecentRoutes;
+  "functions/routes/updateRouteDistances_internal": typeof functions_routes_updateRouteDistances_internal;
   "functions/taxis/displayTaxis": typeof functions_taxis_displayTaxis;
   "functions/taxis/getTaxiForDriver": typeof functions_taxis_getTaxiForDriver;
   "functions/taxis/getTaxiForDriverHandler": typeof functions_taxis_getTaxiForDriverHandler;
