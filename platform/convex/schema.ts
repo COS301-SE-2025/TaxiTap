@@ -39,7 +39,9 @@ export default defineSchema({
         latitude: v.number(),
         longitude: v.number(),
       }),
-      nickname: v.optional(v.string()),
+
+      nickname: v.optional(v.string()), // e.g., "Home", "My Place"
+
     })),
     
     workAddress: v.optional(v.object({
@@ -48,7 +50,9 @@ export default defineSchema({
         latitude: v.number(),
         longitude: v.number(),
       }),
-      nickname: v.optional(v.string()),
+
+      nickname: v.optional(v.string()), // e.g., "Work", "Office"
+
     })),
         
     emergencyContact: v.optional(v.object({
@@ -332,7 +336,7 @@ routes: defineTable({
     .index("by_passenger_last_used", ["passengerId", "lastUsedAt"]),
   trips: defineTable({
     driverId: v.id("taxiTap_users"),
-    passengerId: v.id("taxiTap_users"),
+    passengerId: v.optional(v.id("taxiTap_users")),
     startTime: v.number(),
     endTime: v.number(),
     fare: v.number(),
@@ -340,4 +344,10 @@ routes: defineTable({
   })
     .index("by_driver_and_startTime", ["driverId", "startTime"])
     .index("by_passenger_and_startTime", ["passengerId", "startTime"]),
+  work_sessions: defineTable({
+    driverId: v.id("taxiTap_users"),
+    startTime: v.number(),
+    endTime: v.optional(v.number()),
+  })
+  .index("by_driver_and_start", ["driverId", "startTime"]),
 });
