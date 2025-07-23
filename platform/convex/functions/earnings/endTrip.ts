@@ -6,6 +6,7 @@ export const endTrip = mutation({
     passengerId: v.id("taxiTap_users"),
   },
   handler: async (ctx, { passengerId }) => {
+    // Step 1: Find the most recent ongoing trip
     const trips = await ctx.db
       .query("trips")
       .withIndex("by_passenger_and_startTime", q => q.eq("passengerId", passengerId))
@@ -15,18 +16,24 @@ export const endTrip = mutation({
     const ongoingTrip = trips.find(t => t.endTime === 0);
     if (!ongoingTrip) throw new Error("No ongoing trip found.");
 
+    // Step 2: Find the corresponding ride (if any) to get the estimated fare
+    const ride = await ctx.db
+      .query("rides")
+      .withIndex("by_trip_id", q => q.eq("tripId", ongoingTrip._id)) // You must have this index
+      .unique();
+
+    if (!ride || ride.estimatedFare == null) {
+      throw new Error("Estimated fare not found for this trip.");
+    }
+
     const endTime = Date.now();
-    const durationInMinutes = (endTime - ongoingTrip.startTime) / 60000;
 
-    const baseFare = 20;
-    const ratePerMinute = 5;
-    const fare = baseFare + ratePerMinute * durationInMinutes;
-
+    // Step 3: Patch the trip with the endTime and fare from rides
     await ctx.db.patch(ongoingTrip._id, {
       endTime,
-      fare: Math.round(fare),
+      fare: ride.estimatedFare,
     });
 
-    return { endTime, fare };
+    return { endTime, fare: ride.estimatedFare };
   },
 });
