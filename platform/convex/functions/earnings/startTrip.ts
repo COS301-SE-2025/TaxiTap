@@ -19,6 +19,22 @@ export const startTrip = mutation({
       reservation,
     });
 
+    const matchingRide = await ctx.db
+      .query("rides")
+      .withIndex("by_passenger_and_driver", q =>
+        q.eq("passengerId", passengerId).eq("driverId", driverId)
+      )
+      .order("desc")
+      .collect();
+
+    const rideToPatch = matchingRide.find(r => !r.tripId);
+
+    if (rideToPatch) {
+      await ctx.db.patch(rideToPatch._id, {
+        tripId,
+      });
+    }
+
     return tripId;
   },
 });
