@@ -274,7 +274,8 @@ export default function TabLayout() {
             text: 'OK',
             onPress: () => {
               markAsRead(rideDeclined._id);
-              router.push('/HomeScreen');
+              // FIXED: Navigate to HomeScreen tab, not root HomeScreen
+              router.push('./HomeScreen');
             },
             style: 'default',
           },
