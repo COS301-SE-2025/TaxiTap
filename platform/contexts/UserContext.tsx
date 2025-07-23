@@ -1,6 +1,7 @@
 // contexts/UserContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 // Type definitions
 interface User {
@@ -49,6 +50,7 @@ export const useUser = (): UserContextType => {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
   useEffect(() => {
     loadUserFromStorage();
@@ -94,11 +96,29 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       ['userAccountType', userInfo.accountType],
       ['userNumber', userInfo.phoneNumber],
     ]);
+
+    // Navigate to appropriate screen based on role and reset navigation stack
+    if (userInfo.accountType === 'driver' || userInfo.role === 'driver') {
+      router.replace('/DriverHomeScreen');
+    } else {
+      router.replace('/(tabs)'); // Navigate to main tabs
+    }
   };
 
   const logout = async (): Promise<void> => {
-    setUser(null);
-    await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber' ]);
+    try {
+      // Clear user state
+      setUser(null);
+      
+      // Clear AsyncStorage
+      await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber']);
+      
+      // Reset navigation stack and go to landing page
+      router.replace('/LandingPage');
+      
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const updateUserRole = async (newRole: string | undefined): Promise<void> => {
