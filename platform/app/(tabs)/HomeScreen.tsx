@@ -98,6 +98,9 @@ export default function HomeScreen() {
     destinationLng: number;
   } | null>(null);
 
+  // FIXED: Add state to track if this is the first load to prevent unnecessary state clearing
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
   // Query for enhanced taxi matching - only runs when we have search params
   const taxiSearchResult = useQuery(
     api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
@@ -248,19 +251,25 @@ export default function HomeScreen() {
     (r): r is NonNullable<typeof r> => r !== null
   );
 
+  // FIXED: Only clear state on first load, not every focus - this was causing the taxi search issue
   useFocusEffect(
     React.useCallback(() => {
-      setRouteLoaded(false);
-      setOrigin(null);
-      setDestination(null);
-      setRouteCoordinates([]);
-      setSelectedRouteId(null);
-      setOriginAddress('');
-      setDestinationAddress('');
-      setAvailableTaxis([]);
-      setRouteMatchResults(null);
-      setIsSearchingTaxis(false);
-    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
+      if (isFirstLoad) {
+        // Only clear state on the very first load
+        setRouteLoaded(false);
+        setOrigin(null);
+        setDestination(null);
+        setRouteCoordinates([]);
+        setSelectedRouteId(null);
+        setOriginAddress('');
+        setDestinationAddress('');
+        setAvailableTaxis([]);
+        setRouteMatchResults(null);
+        setIsSearchingTaxis(false);
+        setIsFirstLoad(false);
+      }
+      // Don't clear state on subsequent focuses - this preserves taxi search results
+    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
   );
 
   useLayoutEffect(() => {
@@ -1003,7 +1012,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={{ textAlign: 'center', marginTop: 8 }}>
+            <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
               No recently used routes yet.
             </Text>
           )}
