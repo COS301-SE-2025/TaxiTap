@@ -20,7 +20,7 @@
   [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/commits)
   [![Commit Activity](https://img.shields.io/github/commit-activity/m/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/graphs/commit-activity)
 
-  **[📋 Project Board](https://github.com/orgs/COS301-SE-2025/projects/137/views/1)** • **[📖 Documentation](docs/)** • **[🌐 Website](http://gititdone2025.site)**
+  **[📋 Project Board](https://github.com/orgs/COS301-SE-2025/projects/265/views/1)** • **[📖 Documentation](docs/)** • **[🌐 Website](http://gititdone2025.site)**
 </div>
 
 ---
