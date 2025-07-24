@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
+import type * as functions_earnings_fare from "../functions/earnings/fare.js";
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
@@ -94,6 +95,7 @@ import type * as functions_work_sessions_startWorkSession from "../functions/wor
 declare const fullApi: ApiFromModules<{
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
+  "functions/earnings/fare": typeof functions_earnings_fare;
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
