@@ -12,6 +12,8 @@ export default function DriverHomeScreen() {
   const [todaysEarnings] = useState(0.00); 
   const { user, updateUserRole } = useUser();
   const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
+  const startWorkSession = useMutation(api.functions.work_sessions.startWorkSession.startWorkSession);
+  const endWorkSession = useMutation(api.functions.work_sessions.endWorkSession.endWorkSession);
 
   const handleGoOnline = async () => {
     try {
@@ -24,14 +26,28 @@ export default function DriverHomeScreen() {
       } else if (user && user.accountType === 'driver') {
         await updateUserRole('driver');
       }
+      if (user) {
+        await startWorkSession({
+          driverId: user.id as Id<"taxiTap_users">,
+        });
+      }
       setIsOnline(true);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to go online as driver.');
     }
   };
 
-  const handleGoOffline = () => {
-    setIsOnline(false);
+  const handleGoOffline = async () => {
+    try {
+      if (user) {
+        await endWorkSession({
+          driverId: user.id as Id<"taxiTap_users">,
+        });
+      }
+      setIsOnline(false);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to go offline.');
+    }
   };
 
   return (

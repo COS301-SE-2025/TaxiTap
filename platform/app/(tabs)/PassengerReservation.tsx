@@ -14,6 +14,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { useProximityTimer } from '../hooks/useProximityTimer';
 import * as Location from 'expo-location';
+import { FontAwesome } from "@expo/vector-icons";
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -60,7 +61,7 @@ export default function SeatReserved() {
 	const [lastProximityAlert, setLastProximityAlert] = useState<string | null>(null);
 
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -80,6 +81,12 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
+
+	const passengerId = user?.id;
+	const rideId = taxiInfo?.rideDocId;
+	const driverId = taxiInfo?.driver.userId;
+
+	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 
 	// Location update interval for sending location to backend
@@ -169,6 +176,10 @@ export default function SeatReserved() {
 			setMapMode('to_destination');
 		}
 	}, [rideStatus, mapMode]);
+	const [rideJustEnded, setRideJustEnded] = useState(false);
+
+	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
+	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -190,34 +201,35 @@ export default function SeatReserved() {
 	// Parse location data from params and update context
 	useEffect(() => {
 		if (!useLiveLocation) {
-			const newCurrentLocation = {
-				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
-				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-				name: getParamAsString(params.currentName, "Current Location")
-			};
+			const rawCurrentLat = getParamAsString(params.currentLat);
+			const rawCurrentLng = getParamAsString(params.currentLng);
+			const rawDestLat = getParamAsString(params.destinationLat);
+			const rawDestLng = getParamAsString(params.destinationLng);
 
-			const newDestination = {
-				latitude: parseFloat(getParamAsString(params.destinationLat, "-25.7824")),
-				longitude: parseFloat(getParamAsString(params.destinationLng, "28.2753")),
-				name: getParamAsString(params.destinationName, "")
-			};
+			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+
+			const currentLat = parseFloat(rawCurrentLat);
+			const currentLng = parseFloat(rawCurrentLng);
+			const destLat = parseFloat(rawDestLat);
+			const destLng = parseFloat(rawDestLng);
 
 			if (
-				isNaN(newCurrentLocation.latitude) || isNaN(newCurrentLocation.longitude) ||
-				isNaN(newDestination.latitude) || isNaN(newDestination.longitude)
+				isNaN(currentLat) || isNaN(currentLng) ||
+				isNaN(destLat) || isNaN(destLng)
 			) {
-				console.warn('Invalid coordinates detected, skipping update');
+				console.warn('Skipping update due to invalid coordinates.');
 				return;
 			}
 
-			setCurrentLocation(newCurrentLocation);
-			setDestination(newDestination);
-		} else if (streamedLocation) {
-			// Use live location when available
 			setCurrentLocation({
-				latitude: streamedLocation.latitude,
-				longitude: streamedLocation.longitude,
-				name: "Your Live Location"
+				latitude: currentLat,
+				longitude: currentLng,
+				name: getParamAsString(params.currentName, "Current Location")
+			});
+			setDestination({
+				latitude: destLat,
+				longitude: destLng,
+				name: getParamAsString(params.destinationName, "")
 			});
 		}
 	}, [useLiveLocation, streamedLocation]);
@@ -505,6 +517,9 @@ export default function SeatReserved() {
 						text: 'OK',
 						onPress: () => {
 							markAsRead(rideStarted._id);
+							if (!currentLocation || !destination) {
+								return;
+							}
 						},
 						style: 'default',
 					},
@@ -542,6 +557,8 @@ export default function SeatReserved() {
 	}, [notifications, markAsRead, router]);
 
 	useEffect(() => {
+		if (rideJustEnded) return;
+		
 		if (taxiInfoError && !hasShownDeclinedAlert) {
 			Alert.alert(
 				'Ride Declined',
@@ -568,6 +585,11 @@ export default function SeatReserved() {
 		}
 		try {
 			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await startTripConvex({
+				passengerId: passengerId as Id<'taxiTap_users'>,
+				driverId: driverId as Id<'taxiTap_users'>,
+				reservation: true,
+			});
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to start ride.');
 		}
@@ -580,8 +602,26 @@ export default function SeatReserved() {
 		}
 		try {
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			Alert.alert('Success', 'Ride ended!');
-			router.push('/HomeScreen');
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+			});
+			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			if (!currentLocation || !destination) {
+				return;
+			}
+			router.push({
+				pathname: './SubmitFeedback',
+				params: {
+					startName: currentLocation.name,
+					endName: destination.name,
+					passengerId: passengerId,
+    				rideId: rideId,
+					driverId: driverId,
+				},
+			});
+			setRideJustEnded(true);
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to end ride.');
 		}
@@ -1095,12 +1135,27 @@ export default function SeatReserved() {
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-								<Text style={dynamicStyles.ratingText}>
-									{taxiInfo?.driver?.rating?.toFixed(1) || "5.0"}
-								</Text>
-								{[1, 2, 3, 4, 5].map((star, index) => (
-									<Icon key={index} name="star" size={12} color={theme.primary} style={{ marginRight: 1 }} />
-								))}
+							<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={dynamicStyles.ratingText}>
+										{(averageRating ?? 0).toFixed(1)}
+									</Text>
+								<View style={{ flexDirection: 'row', marginLeft: 4 }}>
+										{[1, 2, 3, 4, 5].map((star, index) => {
+										const full = (averageRating ?? 0) >= star;
+											const half = (averageRating ?? 0) >= star - 0.5 && !full;
+
+										return (
+										<FontAwesome
+											key={index}
+											name={full ? "star" : half ? "star-half-full" : "star-o"}
+											size={12}
+											color={theme.primary}
+											style={{ marginRight: 1 }}
+										/>
+											);
+									})}
+								</View>
+							</View>
 							</View>
 						)}
 						

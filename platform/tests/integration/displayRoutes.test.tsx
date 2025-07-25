@@ -31,10 +31,10 @@ const createMockDatabase = () => {
 const createMockCtx = () => {
   const db = createMockDatabase();
   const ctx: QueryCtx = {
-    db: db as any,  // Cast since we're mocking
+    db: db as any, // Cast since we're mocking
     auth: {} as any,
     storage: {} as any,
-    runQuery: async () => undefined,  // We don't need this for your queries
+    runQuery: async () => undefined,
   };
   return { ctx, db };
 };
@@ -55,7 +55,7 @@ describe('Integration tests for displayRoutesHandler', () => {
       name: 'CBD - SAUSVILLE',
       geometry: {
         coordinates: [
-          [27.123, -25.456],
+          [27.123, -25.456], // latitude, longitude
           [27.789, -25.789],
         ],
       },
@@ -67,13 +67,14 @@ describe('Integration tests for displayRoutesHandler', () => {
 
     expect(result).toEqual([
       {
+        _id: 'route1',
         routeId: 'R1',
         start: 'Cbd',
         destination: 'Sausville',
         startCoords: { latitude: 27.123, longitude: -25.456 },
         destinationCoords: { latitude: 27.789, longitude: -25.789 },
         stops: [],
-        fare: 30,
+        fare: 30, // 1200 / 600 * 15 = 30
         estimatedDuration: 1200,
         taxiAssociation: 'Sausville Taxis',
         hasStops: false,
@@ -114,7 +115,7 @@ describe('Integration tests for displayRoutesHandler', () => {
       name: 'City - Mall',
       geometry: {
         coordinates: [
-          [26.123, -25.000],
+          [26.123, -25.0],
           [26.999, -25.999],
         ],
       },
@@ -137,5 +138,30 @@ describe('Integration tests for displayRoutesHandler', () => {
 
     const result = await displayRoutesHandler(ctx);
     expect(result.length).toBe(2);
+
+    // Optionally check first and last route processed correctly
+    expect(result[0]).toEqual(expect.objectContaining({
+      _id: 'route3',
+      routeId: 'R3',
+      start: 'City',
+      destination: 'Mall',
+      startCoords: { latitude: 26.123, longitude: -25.0 },
+      destinationCoords: { latitude: 26.999, longitude: -25.999 },
+      fare: 30, // 900/600*15 = 22.5 rounded up to 30 (per your fare calculation)
+      taxiAssociation: 'City Transport',
+      hasStops: false,
+    }));
+
+    expect(result[1]).toEqual(expect.objectContaining({
+      _id: 'route4',
+      routeId: 'R4',
+      start: 'Station',
+      destination: 'University',
+      startCoords: { latitude: 26.888, longitude: -25.111 },
+      destinationCoords: { latitude: 27.555, longitude: -25.777 },
+      fare: 60, // 2400/600*15 = 60
+      taxiAssociation: 'Uni Taxis',
+      hasStops: false,
+    }));
   });
 });

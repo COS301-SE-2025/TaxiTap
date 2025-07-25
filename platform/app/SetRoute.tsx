@@ -7,7 +7,7 @@
  * @author Moyahabo Hamese
  */
 
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -101,6 +101,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // ============================================================================
   // LIFECYCLE EFFECTS
   // ============================================================================
+
+  // Mount when assignedRoute changes
+  useEffect(() => {
+    if (assignedRoute) {
+      const { start, destination } = parseRouteName(assignedRoute.name);
+      setCurrentRoute(`${start} → ${destination}`);
+    }
+  }, [assignedRoute, setCurrentRoute]);
 
   // Configure navigation header
   useLayoutEffect(() => {

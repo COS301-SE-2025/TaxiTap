@@ -31,6 +31,29 @@ export default defineSchema({
       v.literal("other"),
       v.literal("prefer_not_to_say")
     )),
+    
+    // Added address fields
+    homeAddress: v.optional(v.object({
+      address: v.string(),
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+
+      nickname: v.optional(v.string()), // e.g., "Home", "My Place"
+
+    })),
+    
+    workAddress: v.optional(v.object({
+      address: v.string(),
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+
+      nickname: v.optional(v.string()), // e.g., "Work", "Office"
+
+    })),
         
     emergencyContact: v.optional(v.object({
       name: v.string(),
@@ -293,4 +316,42 @@ routes: defineTable({
     ),
     updatedAt: v.string(),
   }).index("by_user", ["userId"]),
+  feedback: defineTable({
+    rideId: v.id("rides"),
+    passengerId: v.id("taxiTap_users"),
+    driverId: v.id("taxiTap_users"),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+    startLocation: v.string(),
+    endLocation: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_ride", ["rideId"])
+    .index("by_driver", ["driverId"])
+    .index("by_passenger", ["passengerId"]),
+  passengerRoutes: defineTable({
+    passengerId: v.id("taxiTap_users"),
+    routeId: v.string(),
+    usageCount: v.number(),
+    lastUsedAt: v.number(),
+  })
+    .index("by_passenger", ["passengerId"])
+    .index("by_passenger_and_route", ["passengerId", "routeId"])
+    .index("by_passenger_last_used", ["passengerId", "lastUsedAt"]),
+  trips: defineTable({
+    driverId: v.id("taxiTap_users"),
+    passengerId: v.optional(v.id("taxiTap_users")),
+    startTime: v.number(),
+    endTime: v.number(),
+    fare: v.number(),
+    reservation: v.boolean(),
+  })
+    .index("by_driver_and_startTime", ["driverId", "startTime"])
+    .index("by_passenger_and_startTime", ["passengerId", "startTime"]),
+  work_sessions: defineTable({
+    driverId: v.id("taxiTap_users"),
+    startTime: v.number(),
+    endTime: v.optional(v.number()),
+  })
+  .index("by_driver_and_start", ["driverId", "startTime"]),
 });

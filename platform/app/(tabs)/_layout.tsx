@@ -11,6 +11,7 @@ import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
 import { MapProvider } from '../../contexts/MapContext';
+import { FeedbackProvider } from '../../contexts/FeedbackContext';
 
 // Notification Button Component
 const NotificationButton: React.FC = () => {
@@ -153,7 +154,7 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
-        name="Feedback"
+        name="FeedbackHistoryScreen"
         options={{
           title: 'Feedback',
           tabBarIcon: ({ color }) => (
@@ -183,13 +184,6 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
-        name="DriverProfile"
-        options={{
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
         name="index"
         options={{
           href: null,
@@ -198,6 +192,13 @@ const TabNavigation: React.FC = () => {
 
       <Tabs.Screen
         name="SeatReserved"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="SubmitFeedback"
         options={{
           href: null,
         }}
@@ -223,6 +224,27 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="AddHomeAddress"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="AddWorkAddress"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="PersonalInfoEdit"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };
@@ -238,6 +260,7 @@ export default function TabLayout() {
     currentLocation = undefined;
     destination = undefined;
   }
+  
   useEffect(() => {
     const rideDeclined = notifications.find(
       n => n.type === 'ride_declined' && !n.isRead
@@ -251,7 +274,8 @@ export default function TabLayout() {
             text: 'OK',
             onPress: () => {
               markAsRead(rideDeclined._id);
-              router.push('/HomeScreen');
+              // FIXED: Navigate to HomeScreen tab, not root HomeScreen
+              router.push('./HomeScreen');
             },
             style: 'default',
           },
@@ -261,7 +285,7 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead]);
 
-  // Global handler for ride_accepted notifications (match HomeScreen logic)
+  // Global handler for ride_accepted notifications
   useEffect(() => {
     const rideAccepted = notifications.find(
       n => n.type === 'ride_accepted' && !n.isRead
@@ -295,11 +319,34 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead, currentLocation, destination]);
 
+  // Global handler for ride_cancelled notifications
+  useEffect(() => {
+    const rideCancelled = notifications.find(
+      n => n.type === 'ride_cancelled' && !n.isRead
+    );
+    if (rideCancelled) {
+      Alert.alert(
+        'Ride Cancelled',
+        rideCancelled.message,
+        [
+          {
+            text: 'OK',
+            onPress: () => markAsRead(rideCancelled._id),
+            style: 'default'
+          }
+        ],
+        { cancelable: false }
+      );
+    }
+  }, [notifications, markAsRead]);
+
   return (
     <SafeAreaProvider>
       <UserProvider>
         <MapProvider>
-          <TabNavigation />
+          <FeedbackProvider>
+            <TabNavigation />
+          </FeedbackProvider>
         </MapProvider>
       </UserProvider>
     </SafeAreaProvider>
