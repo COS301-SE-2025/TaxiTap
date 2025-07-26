@@ -1,49 +1,86 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import React, { useEffect, useCallback } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Image, AppState, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
+import { useRouter } from "expo-router";
 
 const PaymentScreen = () => {
   const { user } = useUser();
+  const router = useRouter();
   const userId = user?.id;
-  if (!user) return;
-  const fare = useQuery(api.functions.earnings.fare.getFareForLatestTrip, userId ? { userId: userId as Id<"taxiTap_users"> } : "skip", );
 
+  const fare = useQuery(
+    api.functions.earnings.fare.getFareForLatestTrip,
+    userId ? { userId: userId as Id<"taxiTap_users"> } : "skip"
+  );
+  //============================================
+  //Add correct links below
+  //============================================
   const paymentMethods = [
     {
       name: "SnapScan",
       icon: require("../../assets/images/snapscan.png"),
+      link: "snapscan://pay",
       textColor: "#007aff",
     },
     {
       name: "vodapay",
       icon: require("../../assets/images/vodapay.png"),
+      link: "vodapay://pay",
       textColor: "#E53935",
     },
     {
       name: "MoMo",
       icon: require("../../assets/images/momo.png"),
+      link: "momo://pay",
       textColor: "#FFB300",
     },
   ];
 
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === "active") {
+        router.push("./SubmitFeedback");
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
+
+  const handlePayment = useCallback(async (link: string) => {
+    try {
+      const supported = await Linking.canOpenURL(link);
+      if (supported) {
+        await Linking.openURL(link);
+      } else {
+        console.warn("Cannot open URL:", link);
+      }
+    } catch (error) {
+      console.error("Error opening deep link:", error);
+    }
+  }, []);
+
+  if (!user) return null;
+
   return (
     <View style={styles.container}>
-      {/* Total Box */}
       <View style={styles.totalBox}>
         <Text style={styles.totalText}>Total</Text>
-        <Text style={styles.amountText}> R{(fare ?? 0).toFixed(2)}</Text>
+        <Text style={styles.amountText}>R{(fare ?? 0).toFixed(2)}</Text>
       </View>
 
-      {/* Payment Methods Label */}
       <Text style={styles.paymentLabel}>Payment methods</Text>
 
-      {/* Payment Methods List */}
       {paymentMethods.map((method, index) => (
-        <TouchableOpacity key={index} style={styles.methodBox}>
+        <TouchableOpacity
+          key={index}
+          style={styles.methodBox}
+          onPress={() => handlePayment(method.link)}
+        >
           <View style={styles.methodLeft}>
             <Image source={method.icon} style={styles.methodIcon} />
           </View>
