@@ -239,9 +239,8 @@ routes: defineTable({
     v.literal("system_maintenance"),
     v.literal("promotional"),
     v.literal("driver_10min_away"),
-    v.literal("driver_5min_away"), 
-    v.literal("driver_arrived"),
-    v.literal("passenger_at_stop"),
+    v.literal("driver_5min_away"),
+    v.literal("passenger_at_stop")
   ),
   title: v.string(),
   message: v.string(),
