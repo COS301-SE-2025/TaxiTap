@@ -95,10 +95,7 @@ export const checkRideProximity = internalMutation({
       const etaMinutes = etaDate.getMinutes().toString().padStart(2, '0');
       const etaString = `${etaHours}:${etaMinutes}`;
 
-      console.log(`Proximity check for ride ${rideId}:`, {
-        driverToPassenger: { distance: driverToPassengerDistance, eta: driverToPassengerETA },
-        passengerToDestination: { distance: passengerToDestinationDistance, eta: passengerToDestinationETA }
-      });
+      console.log(`Proximity check for ride ${rideId}`);
 
       // Check for driver proximity alerts (for passenger)
       if (ride.status === "accepted" || ride.status === "in_progress") {
