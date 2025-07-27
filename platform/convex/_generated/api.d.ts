@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
+import type * as functions_earnings_fare from "../functions/earnings/fare.js";
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
@@ -58,6 +59,7 @@ import type * as functions_routes_mutations from "../functions/routes/mutations.
 import type * as functions_routes_queries from "../functions/routes/queries.js";
 import type * as functions_routes_reverseGeocode from "../functions/routes/reverseGeocode.js";
 import type * as functions_routes_storeRecentRoutes from "../functions/routes/storeRecentRoutes.js";
+import type * as functions_routes_updateRouteDistances_internal from "../functions/routes/updateRouteDistances_internal.js";
 import type * as functions_taxis_displayTaxis from "../functions/taxis/displayTaxis.js";
 import type * as functions_taxis_getTaxiForDriver from "../functions/taxis/getTaxiForDriver.js";
 import type * as functions_taxis_getTaxiForDriverHandler from "../functions/taxis/getTaxiForDriverHandler.js";
@@ -82,7 +84,6 @@ import type * as functions_users_UserManagement_updateWorkAddress from "../funct
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
 
-
 /**
  * A utility for referencing Convex functions in your app's API.
  *
@@ -94,6 +95,7 @@ import type * as functions_work_sessions_startWorkSession from "../functions/wor
 declare const fullApi: ApiFromModules<{
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
+  "functions/earnings/fare": typeof functions_earnings_fare;
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
@@ -137,6 +139,7 @@ declare const fullApi: ApiFromModules<{
   "functions/routes/queries": typeof functions_routes_queries;
   "functions/routes/reverseGeocode": typeof functions_routes_reverseGeocode;
   "functions/routes/storeRecentRoutes": typeof functions_routes_storeRecentRoutes;
+  "functions/routes/updateRouteDistances_internal": typeof functions_routes_updateRouteDistances_internal;
   "functions/taxis/displayTaxis": typeof functions_taxis_displayTaxis;
   "functions/taxis/getTaxiForDriver": typeof functions_taxis_getTaxiForDriver;
   "functions/taxis/getTaxiForDriverHandler": typeof functions_taxis_getTaxiForDriverHandler;
