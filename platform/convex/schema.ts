@@ -64,6 +64,12 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
+
+    snapScanWallet: v.optional(v.string()), 
+    snapCode: v.optional(v.string()), 
+    vodaPayLinked: v.optional(v.boolean()), 
+    momoLinked: v.optional(v.boolean()), 
+    preferredPaymentMethods: v.optional(v.array(v.string())),
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phoneNumber"])
@@ -114,6 +120,18 @@ export default defineSchema({
     
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
+    paymentStatus: v.optional(v.string()), //pending , link_generated , completed , failed
+    paymentMethod: v.optional(v.string()), 
+    paymentDeepLink: v.optional(v.string()), 
+    paymentWebFallback: v.optional(v.string()), 
+    paymentInstructions: v.optional(v.array(v.string())), 
+    transactionId: v.optional(v.string()), 
+    paymentProof: v.optional(v.string()), 
+    paymentInitiatedAt: v.optional(v.number()), 
+    paymentCompletedAt: v.optional(v.number()), 
+    confirmedByUser: v.optional(v.boolean()), 
+    createdAt: v.number(), 
+    completedPaymentAt: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
