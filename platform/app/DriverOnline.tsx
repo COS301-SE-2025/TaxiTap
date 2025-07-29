@@ -312,134 +312,126 @@ export default function DriverOnline({
     }
   }, [onGoOffline, router]);
 
+// CONSOLIDATED NOTIFICATION HANDLER
+useEffect(() => {
+  if (!user) {
+    return;
+  }
+
   // Handle ride request notifications
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-    const rideRequest = notifications.find(
-      n => n.type === "ride_request" && !n.isRead
-    );
-    if (rideRequest) {
-      Alert.alert(
-        "New Ride Request",
-        rideRequest.message,
-        [
-          {
-            text: "Decline",
-            onPress: async () => {
-              try {
-                await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
-                markAsRead(rideRequest._id);
-              } catch (error) {
-                console.error(error);
-                Alert.alert("Error", "Failed to decline ride or update seats.");
-              }
+  const rideRequest = notifications.find(
+    n => n.type === "ride_request" && !n.isRead
+  );
+  if (rideRequest) {
+    Alert.alert(
+      "New Ride Request",
+      rideRequest.message,
+      [
+        {
+          text: "Decline",
+          onPress: async () => {
+            try {
+              await declineRide({ 
+                rideId: rideRequest.metadata.rideId, 
+                driverId: user.id as Id<"taxiTap_users"> 
+              });
               markAsRead(rideRequest._id);
-            },
-            style: "destructive"
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "Failed to decline ride or update seats.");
+            }
           },
-          {
-            text: "Accept",
-            onPress: async () => {
-              try {
-                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
-                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
-                markAsRead(rideRequest._id);
-              } catch (error) {
-                console.error(error);
-                Alert.alert("Error", "Failed to accept ride or update seats.");
-              }
+          style: "destructive"
+        },
+        {
+          text: "Accept",
+          onPress: async () => {
+            try {
+              // ONLY accept the ride - DO NOT start it automatically
+              await acceptRide({ 
+                rideId: rideRequest.metadata.rideId, 
+                driverId: user.id as Id<"taxiTap_users"> 
+              });
+              await updateTaxiSeatAvailability({ 
+                rideId: rideRequest.metadata.rideId, 
+                action: "decrease" 
+              });
               markAsRead(rideRequest._id);
-            },
-            style: "default"
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, user, declineRide, markAsRead, acceptRide, updateTaxiSeatAvailability]);
+              // The ride status becomes 'accepted' - passenger can now start it
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "Failed to accept ride or update seats.");
+            }
+          },
+          style: "default"
+        }
+      ],
+      { cancelable: false }
+    );
+    return; // Exit early to prevent multiple alerts
+  }
 
   // Handle passenger at stop notifications
-  useEffect(() => {
-    const passengerAtStop = notifications.find(
-      n => n.type === 'passenger_at_stop' && !n.isRead
+  const passengerAtStop = notifications.find(
+    n => n.type === 'passenger_at_stop' && !n.isRead
+  );
+  if (passengerAtStop) {
+    Alert.alert(
+      'Passenger at Stop',
+      passengerAtStop.message,
+      [
+        {
+          text: 'OK',
+          onPress: () => markAsRead(passengerAtStop._id),
+          style: 'default',
+        },
+      ],
+      { cancelable: false }
     );
-    if (passengerAtStop) {
-      Alert.alert(
-        'Passenger at Stop',
-        passengerAtStop.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(passengerAtStop._id),
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
+    return;
+  }
 
-  useEffect(() => {
-    const rideCancelled = notifications.find(
-      n => n.type === 'ride_cancelled' && !n.isRead
+  // Handle ride cancelled notifications
+  const rideCancelled = notifications.find(
+    n => n.type === 'ride_cancelled' && !n.isRead
+  );
+  if (rideCancelled) {
+    Alert.alert(
+      'Ride Cancelled',
+      rideCancelled.message,
+      [
+        {
+          text: 'OK',
+          onPress: () => markAsRead(rideCancelled._id),
+          style: 'default',
+        },
+      ],
+      { cancelable: false }
     );
-    if (rideCancelled) {
-      Alert.alert(
-        'Ride Cancelled',
-        rideCancelled.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(rideCancelled._id),
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
+    return;
+  }
 
-  useEffect(() => {
-    // Handle ride started notifications
-    const rideStarted = notifications.find(
-      n => n.type === 'ride_started' && !n.isRead
+  // Handle ride started notifications (when passenger starts the ride)
+  const rideStarted = notifications.find(
+    n => n.type === 'ride_started' && !n.isRead
+  );
+  if (rideStarted) {
+    Alert.alert(
+      'Ride Started',
+      rideStarted.message,
+      [
+        {
+          text: 'OK',
+          onPress: () => markAsRead(rideStarted._id),
+          style: 'default',
+        },
+      ],
+      { cancelable: false }
     );
-    if (rideStarted) {
-      Alert.alert(
-        'Ride Started',
-        rideStarted.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(rideStarted._id),
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
+    return;
+  }
 
-    // Handle passenger at stop notifications
-    const passengerAtStop = notifications.find(
-      n => n.type === 'passenger_at_stop' && !n.isRead
-    );
-    if (passengerAtStop) {
-      Alert.alert(
-        'Passenger Update',
-        passengerAtStop.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(passengerAtStop._id),
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
+}, [notifications, user, declineRide, markAsRead, acceptRide, updateTaxiSeatAvailability]);
 
   const handleMenuPress = () => {
     setShowMenu(!showMenu);

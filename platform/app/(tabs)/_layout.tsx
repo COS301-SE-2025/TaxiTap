@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Image, View, Alert } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -251,6 +251,8 @@ const TabNavigation: React.FC = () => {
 
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
+  const [processedNotifications, setProcessedNotifications] = useState<Set<string>>(new Set());
+  
   let currentLocation, destination;
   try {
     // Try to get map context if available
@@ -260,85 +262,165 @@ export default function TabLayout() {
     currentLocation = undefined;
     destination = undefined;
   }
-  
-  useEffect(() => {
-    const rideDeclined = notifications.find(
-      n => n.type === 'ride_declined' && !n.isRead
-    );
-    if (rideDeclined) {
-      Alert.alert(
-        'Ride Declined',
-        rideDeclined.message || 'Your ride request was declined.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              markAsRead(rideDeclined._id);
-              // FIXED: Navigate to HomeScreen tab, not root HomeScreen
-              router.push('./HomeScreen');
-            },
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
 
-  // Global handler for ride_accepted notifications
+  // CONSOLIDATED NOTIFICATION HANDLER - All notifications handled here
   useEffect(() => {
-    const rideAccepted = notifications.find(
-      n => n.type === 'ride_accepted' && !n.isRead
-    );
-    if (rideAccepted) {
-      Alert.alert(
-        'Ride Accepted',
-        rideAccepted.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              markAsRead(rideAccepted._id);
-              router.push({
-                pathname: './PassengerReservation',
-                params: currentLocation && destination ? {
-                  currentLat: currentLocation.latitude.toString(),
-                  currentLng: currentLocation.longitude.toString(),
-                  currentName: currentLocation.name,
-                  destinationLat: destination.latitude.toString(),
-                  destinationLng: destination.longitude.toString(),
-                  destinationName: destination.name,
-                } : undefined
-              });
-            },
-            style: 'default'
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead, currentLocation, destination]);
+    if (!notifications || notifications.length === 0) return;
 
-  // Global handler for ride_cancelled notifications
-  useEffect(() => {
-    const rideCancelled = notifications.find(
-      n => n.type === 'ride_cancelled' && !n.isRead
-    );
-    if (rideCancelled) {
-      Alert.alert(
-        'Ride Cancelled',
-        rideCancelled.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(rideCancelled._id),
-            style: 'default'
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
+    // Process each unread notification only once
+    notifications.forEach(notification => {
+      if (notification.isRead || processedNotifications.has(notification._id)) {
+        return; // Skip already processed notifications
+      }
+
+      // Mark as processed immediately to prevent duplicates
+      setProcessedNotifications(prev => new Set(prev).add(notification._id));
+
+      switch (notification.type) {
+        case 'ride_accepted':
+          Alert.alert(
+            'Ride Accepted',
+            notification.message || 'Your ride has been accepted by the driver!',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  markAsRead(notification._id);
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: currentLocation && destination ? {
+                      currentLat: currentLocation.latitude.toString(),
+                      currentLng: currentLocation.longitude.toString(),
+                      currentName: currentLocation.name,
+                      destinationLat: destination.latitude.toString(),
+                      destinationLng: destination.longitude.toString(),
+                      destinationName: destination.name,
+                    } : undefined
+                  });
+                },
+                style: 'default'
+              }
+            ],
+            { cancelable: false }
+          );
+          break;
+
+        case 'ride_declined':
+          Alert.alert(
+            'Ride Declined',
+            notification.message || 'Your ride request was declined.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  markAsRead(notification._id);
+                  router.push('./HomeScreen');
+                },
+                style: 'default',
+              },
+            ],
+            { cancelable: false }
+          );
+          break;
+
+        case 'ride_cancelled':
+          Alert.alert(
+            'Ride Cancelled',
+            notification.message || 'Your ride has been cancelled.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  markAsRead(notification._id);
+                  router.push('./HomeScreen');
+                },
+                style: 'default'
+              }
+            ],
+            { cancelable: false }
+          );
+          break;
+
+        case 'ride_started':
+          Alert.alert(
+            'Ride Started',
+            notification.message || 'Your ride has started!',
+            [
+              {
+                text: 'OK',
+                onPress: () => markAsRead(notification._id),
+                style: 'default',
+              },
+            ],
+            { cancelable: false }
+          );
+          break;
+
+        case 'ride_completed':
+          Alert.alert(
+            'Ride Completed',
+            notification.message || 'Your ride has been completed!',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  markAsRead(notification._id);
+                  // Navigate to feedback or home
+                  router.push('./HomeScreen');
+                },
+                style: 'default',
+              },
+            ],
+            { cancelable: false }
+          );
+          break;
+
+        case 'driver_10min_away':
+          Alert.alert(
+            'Driver Update',
+            'Driver is 10 minutes away!',
+            [
+              {
+                text: 'OK',
+                onPress: () => markAsRead(notification._id)
+              }
+            ]
+          );
+          break;
+
+        case 'driver_5min_away':
+          Alert.alert(
+            'Driver Update',
+            'Driver is 5 minutes away!',
+            [
+              {
+                text: 'OK',
+                onPress: () => markAsRead(notification._id)
+              }
+            ]
+          );
+          break;
+
+        case 'driver_arrived':
+          Alert.alert(
+            'Driver Update',
+            'Driver has arrived at your location!',
+            [
+              {
+                text: 'OK',
+                onPress: () => markAsRead(notification._id)
+              }
+            ]
+          );
+          break;
+
+        default:
+          // Handle any other notification types
+          console.log('Unhandled notification type:', notification.type);
+          break;
+      }
+    });
+  }, [notifications, markAsRead, currentLocation, destination, processedNotifications]);
 
   return (
     <SafeAreaProvider>

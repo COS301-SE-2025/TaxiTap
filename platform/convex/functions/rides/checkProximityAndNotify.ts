@@ -11,6 +11,9 @@ const DRIVER_5MIN_THRESHOLD = 5;   // minutes
 const DRIVER_ARRIVED_THRESHOLD = 1; // minutes
 const PASSENGER_AT_STOP_DISTANCE = 0.1; // km
 
+// Debounce time constants (in milliseconds)
+const NOTIFICATION_DEBOUNCE_TIME = 300000; // 5 minutes
+
 // Calculate distance between two points using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in kilometers
@@ -29,6 +32,29 @@ function estimateETA(distanceKm: number): number {
   // Assume average speed of 30 km/h in city traffic
   const averageSpeedKmh = 30;
   return (distanceKm / averageSpeedKmh) * 60; // Convert to minutes
+}
+
+// Helper function to check if a notification was sent recently
+async function wasNotificationSentRecently(
+  ctx: any,
+  userId: string,
+  notificationType: string,
+  rideId: string,
+  debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME
+): Promise<boolean> {
+  const recentNotification = await ctx.db
+    .query("notifications")
+    .withIndex("by_user_id", (q: any) => q.eq("userId", userId))
+    .filter((q: any) => 
+      q.and(
+        q.eq(q.field("type"), notificationType),
+        q.eq(q.field("metadata.rideId"), rideId),
+        q.gt(q.field("_creationTime"), Date.now() - debounceTimeMs)
+      )
+    )
+    .first();
+
+  return !!recentNotification;
 }
 
 // Get active rides that need proximity monitoring
@@ -99,21 +125,18 @@ export const checkRideProximity = internalMutation({
 
       // Check for driver proximity alerts (for passenger)
       if (ride.status === "accepted" || ride.status === "in_progress") {
+        
         // Check if driver is 10 minutes away
         if (driverToPassengerETA <= DRIVER_10MIN_THRESHOLD && driverToPassengerETA > DRIVER_5MIN_THRESHOLD) {
-          const existingNotification = await ctx.db
-            .query("notifications")
-            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-            .filter((q) => 
-              q.and(
-                q.eq(q.field("type"), "driver_10min_away"),
-                q.eq(q.field("metadata.rideId"), rideId),
-                q.eq(q.field("isRead"), false)
-              )
-            )
-            .first();
+          const wasRecentlySent = await wasNotificationSentRecently(
+            ctx, 
+            ride.passengerId, 
+            "driver_10min_away", 
+            rideId,
+            NOTIFICATION_DEBOUNCE_TIME
+          );
 
-          if (!existingNotification && ride.passengerId) {
+          if (!wasRecentlySent && ride.passengerId) {
             await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
               userId: ride.passengerId,
               type: "driver_10min_away",
@@ -128,19 +151,15 @@ export const checkRideProximity = internalMutation({
 
         // Check if driver is 5 minutes away
         if (driverToPassengerETA <= DRIVER_5MIN_THRESHOLD && driverToPassengerETA > DRIVER_ARRIVED_THRESHOLD) {
-          const existingNotification = await ctx.db
-            .query("notifications")
-            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-            .filter((q) => 
-              q.and(
-                q.eq(q.field("type"), "driver_5min_away"),
-                q.eq(q.field("metadata.rideId"), rideId),
-                q.eq(q.field("isRead"), false)
-              )
-            )
-            .first();
+          const wasRecentlySent = await wasNotificationSentRecently(
+            ctx, 
+            ride.passengerId, 
+            "driver_5min_away", 
+            rideId,
+            NOTIFICATION_DEBOUNCE_TIME
+          );
 
-          if (!existingNotification && ride.passengerId) {
+          if (!wasRecentlySent && ride.passengerId) {
             await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
               userId: ride.passengerId,
               type: "driver_5min_away",
@@ -155,19 +174,15 @@ export const checkRideProximity = internalMutation({
 
         // Check if driver has arrived
         if (driverToPassengerETA <= DRIVER_ARRIVED_THRESHOLD) {
-          const existingNotification = await ctx.db
-            .query("notifications")
-            .withIndex("by_user_id", (q) => q.eq("userId", ride.passengerId))
-            .filter((q) => 
-              q.and(
-                q.eq(q.field("type"), "driver_arrived"),
-                q.eq(q.field("metadata.rideId"), rideId),
-                q.eq(q.field("isRead"), false)
-              )
-            )
-            .first();
+          const wasRecentlySent = await wasNotificationSentRecently(
+            ctx, 
+            ride.passengerId, 
+            "driver_arrived", 
+            rideId,
+            NOTIFICATION_DEBOUNCE_TIME
+          );
 
-          if (!existingNotification && ride.passengerId) {
+          if (!wasRecentlySent && ride.passengerId) {
             await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
               userId: ride.passengerId,
               type: "driver_arrived",
@@ -184,19 +199,15 @@ export const checkRideProximity = internalMutation({
       // Check for passenger at destination alerts (for driver)
       if (ride.status === "in_progress") {
         if (passengerToDestinationDistance <= PASSENGER_AT_STOP_DISTANCE) {
-          const existingNotification = await ctx.db
-            .query("notifications")
-            .withIndex("by_user_id", (q) => q.eq("userId", ride.driverId!))
-            .filter((q) => 
-              q.and(
-                q.eq(q.field("type"), "passenger_at_stop"),
-                q.eq(q.field("metadata.rideId"), rideId),
-                q.eq(q.field("isRead"), false)
-              )
-            )
-            .first();
+          const wasRecentlySent = await wasNotificationSentRecently(
+            ctx, 
+            ride.driverId!, 
+            "passenger_at_stop", 
+            rideId,
+            NOTIFICATION_DEBOUNCE_TIME
+          );
 
-          if (!existingNotification && ride.driverId) {
+          if (!wasRecentlySent && ride.driverId) {
             await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
               userId: ride.driverId,
               type: "passenger_at_stop",
@@ -276,4 +287,4 @@ export const checkAllRidesProximity = internalMutation({
       console.error("Error in checkAllRidesProximity:", error);
     }
   }
-}); 
+});

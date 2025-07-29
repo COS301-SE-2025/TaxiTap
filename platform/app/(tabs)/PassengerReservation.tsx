@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
-import { useNotifications } from '../../contexts/NotificationContext';
 import { useUser } from '../../contexts/UserContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -41,7 +40,6 @@ export default function SeatReserved() {
 		getCachedRoute,
 		setCachedRoute
 	} = useMapContext();
-	const { notifications, markAsRead } = useNotifications();
 
 	const mapRef = useRef<MapView | null>(null);
 	
@@ -58,7 +56,6 @@ export default function SeatReserved() {
 	// State for tracking current map mode
 	const [mapMode, setMapMode] = useState<'initial' | 'to_driver' | 'to_destination'>('initial');
 	const [driverLocation, setDriverLocation] = useState<{latitude: number, longitude: number} | null>(null);
-	const [lastProximityAlert, setLastProximityAlert] = useState<string | null>(null);
 
 	// Fetch taxi and driver info for the current reservation using Convex
 	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
@@ -84,98 +81,9 @@ export default function SeatReserved() {
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
-	const driverId = taxiInfo?.driver.userId;
+	const driverId = taxiInfo?.driver?.userId;
 
 	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
-	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
-
-	// Location update interval for sending location to backend
-	useEffect(() => {
-		if (!user?.id || !streamedLocation) return;
-
-		const updateLocationInterval = setInterval(async () => {
-			try {
-				// Integrate here: Call backend updateUserLocation mutation
-				// await updateUserLocation({
-				//   userId: user.id,
-				//   latitude: streamedLocation.latitude,
-				//   longitude: streamedLocation.longitude,
-				//   role: user.role || 'passenger'
-				// });
-				console.log('Location update sent:', streamedLocation);
-			} catch (error) {
-				console.log('Error updating location:', error);
-			}
-		}, 15000); // Update every 15 seconds
-
-		return () => clearInterval(updateLocationInterval);
-	}, [user?.id, streamedLocation]);
-
-	// Proximity notification listener and ETA calculator
-	useEffect(() => {
-		if (!streamedLocation || !driverLocation || rideStatus !== 'accepted') return;
-
-		const calculateETA = async () => {
-			try {
-				// Use Google Maps Directions API for real ETA
-				const origin = `${streamedLocation.latitude},${streamedLocation.longitude}`;
-				const destination = `${driverLocation.latitude},${driverLocation.longitude}`;
-				const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
-				
-				const response = await fetch(url);
-				const data = await response.json();
-				
-				if (data.routes && data.routes.length > 0) {
-					const duration = data.routes[0].legs[0].duration.value; // in seconds
-					const etaMinutes = Math.round(duration / 60);
-					
-					// Check for proximity alerts (frontend fallback - backend handles the real notifications)
-					if (etaMinutes <= 10 && lastProximityAlert !== '10min' && etaMinutes > 5) {
-						setLastProximityAlert('10min');
-						console.log('Driver is 10 minutes away! (Frontend check)');
-					} else if (etaMinutes <= 5 && lastProximityAlert !== '5min' && etaMinutes > 1) {
-						setLastProximityAlert('5min');
-						console.log('Driver is 5 minutes away! (Frontend check)');
-					} else if (etaMinutes <= 1 && lastProximityAlert !== 'arrived') {
-						setLastProximityAlert('arrived');
-						console.log('Driver has arrived! (Frontend check)');
-					}
-				}
-			} catch (error) {
-				console.log('Error calculating ETA:', error);
-			}
-		};
-
-		const etaInterval = setInterval(calculateETA, 30000); // Check every 30 seconds
-		return () => clearInterval(etaInterval);
-	}, [streamedLocation, driverLocation, rideStatus, lastProximityAlert]);
-
-	// Mock driver location updates (replace with real driver location query)
-	useEffect(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.driver) {
-			// Integrate here: Query driver's live location
-			// const driverLiveLocation = useQuery(api.functions.locations.getDriverLocation, {
-			//   driverId: taxiInfo.driver.id
-			// });
-			
-			// Mock driver location for demonstration
-			const mockDriverLocation = {
-				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")) + 0.01,
-				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")) + 0.01
-			};
-			setDriverLocation(mockDriverLocation);
-		}
-	}, [rideStatus, taxiInfo]);
-
-	// Handle map mode transitions
-	useEffect(() => {
-		if (rideStatus === 'accepted' && mapMode === 'initial') {
-			setMapMode('to_driver');
-			setUseLiveLocation(true);
-		} else if ((rideStatus === 'started' || rideStatus === 'in_progress') && mapMode === 'to_driver') {
-			setMapMode('to_destination');
-		}
-	}, [rideStatus, mapMode]);
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 
 	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
@@ -487,96 +395,67 @@ export default function SeatReserved() {
 		}
 	}, [streamedLocation, rideStatus, isFollowing]);
 
-	// Handle notifications effect
+	// Location update interval for sending location to backend
 	useEffect(() => {
-		// Handle proximity notifications from backend
-		const proximityNotifications = [
-			{ type: 'driver_10min_away', message: 'Driver is 10 minutes away!' },
-			{ type: 'driver_5min_away', message: 'Driver is 5 minutes away!' },
-			{ type: 'driver_arrived', message: 'Driver has arrived at your location!' }
-		];
+		if (!user?.id || !streamedLocation) return;
 
-		proximityNotifications.forEach(({ type, message }) => {
-			const notification = notifications.find(n => n.type === type && !n.isRead);
-			if (notification) {
-				Alert.alert('Driver Update', message, [
-					{ text: 'OK', onPress: () => markAsRead(notification._id) }
-				]);
+		const updateLocationInterval = setInterval(async () => {
+			try {
+				// Integrate here: Call backend updateUserLocation mutation
+				// await updateUserLocation({
+				//   userId: user.id,
+				//   latitude: streamedLocation.latitude,
+				//   longitude: streamedLocation.longitude,
+				//   role: user.role || 'passenger'
+				// });
+				console.log('Location update sent:', streamedLocation);
+			} catch (error) {
+				console.log('Error updating location:', error);
 			}
-		});
+		}, 15000); // Update every 15 seconds
 
-		const rideStarted = notifications.find(
-			n => n.type === 'ride_started' && !n.isRead
-		);
-		if (rideStarted) {
-			Alert.alert(
-				'Ride Started',
-				rideStarted.message,
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							markAsRead(rideStarted._id);
-							if (!currentLocation || !destination) {
-								return;
-							}
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
-			return;
-		} 
+		return () => {
+			clearInterval(updateLocationInterval); // Ensure cleanup
+		};
+	}, [user?.id, streamedLocation]);
 
-		const rideCompleted = notifications.find(
-			n => n.type === 'ride_completed' && !n.isRead
-		);
-		const rideDeclined = notifications.find(
-			n => n.type === 'ride_declined' && !n.isRead &&
-			// Only show ride_declined if there is no ride_completed for the same ride
-			!(rideCompleted && n.metadata?.rideId === rideCompleted.metadata?.rideId)
-		);
-		if (rideDeclined) {
-			Alert.alert(
-				'Ride Declined',
-				rideDeclined.message || 'Your ride request was declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							markAsRead(rideDeclined._id);
-							router.push('/HomeScreen');
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
-		}
-	}, [notifications, markAsRead, router]);
-
+	// Mock driver location updates (this will be removed in next commit)
 	useEffect(() => {
-		if (rideJustEnded) return;
-		
-		if (taxiInfoError && !hasShownDeclinedAlert) {
-			Alert.alert(
-				'Ride Declined',
-				'No active reservation found. Your ride may have been cancelled or declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							setHasShownDeclinedAlert(true);
-							router.push('/HomeScreen');
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
+		if (rideStatus === 'accepted' && taxiInfo?.driver) {
+			// Integrate here: Query driver's live location
+			// const driverLiveLocation = useQuery(api.functions.locations.getDriverLocation, {
+			//   driverId: taxiInfo.driver.id
+			// });
+			
+			// Mock driver location for demonstration
+			const mockDriverLocation = {
+				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")) + 0.01,
+				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")) + 0.01
+			};
+			setDriverLocation(mockDriverLocation);
 		}
-	}, [taxiInfoError, hasShownDeclinedAlert]);
+	}, [rideStatus, taxiInfo]);
+
+	// Handle map mode transitions
+	useEffect(() => {
+		if (rideStatus === 'accepted' && mapMode === 'initial') {
+			setMapMode('to_driver');
+			setUseLiveLocation(true);
+		} else if ((rideStatus === 'started' || rideStatus === 'in_progress') && mapMode === 'to_driver') {
+			setMapMode('to_destination');
+		}
+	}, [rideStatus, mapMode]);
+
+	// Safety check - early return if essential data is missing
+	if (!user) {
+		return (
+			<SafeAreaView style={{flex: 1, backgroundColor: theme.background}}>
+				<View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+					<Text style={{color: theme.text}}>Loading...</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
