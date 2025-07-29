@@ -74,8 +74,20 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
   };
 
   it("should find available taxis on matching routes successfully", async () => {
-    // Mock routes query
+    // Mock locations query
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -88,18 +100,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           withIndex: () => ({
             unique: () => Promise.resolve(null)
           })
-        };
-      }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve([mockDriver])
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve([mockLocation])
         };
       }
       if (table === "taxis") {
@@ -142,11 +142,24 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     });
     expect(result.totalTaxisFound).toBe(1);
     expect(result.validRoutesFound).toBe(1);
+    expect(result.totalRoutesChecked).toBe(1);
     expect(result.matchingRoutes).toHaveLength(1);
   });
 
   it("should return empty results when no active routes exist", async () => {
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -163,7 +176,7 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     expect(result.availableTaxis).toHaveLength(0);
     expect(result.totalRoutesChecked).toBe(0);
     expect(result.validRoutesFound).toBe(0);
-    expect(result.message).toContain("No taxi routes found");
+    expect(result.message).toContain("No taxi routes found that pass near both your pickup location and destination");
   });
 
   it("should filter out routes that don't pass near origin and destination", async () => {
@@ -176,6 +189,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     };
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -197,8 +222,9 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
 
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(0);
+    expect(result.message).toContain("No taxi routes found that pass near both your pickup location and destination");
+    expect(result.totalRoutesChecked).toBe(1);
     expect(result.validRoutesFound).toBe(0);
-    expect(result.message).toContain("No taxi routes found that pass near both");
   });
 
   it("should filter out routes without direct connection (reverse order)", async () => {
@@ -211,6 +237,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     };
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -233,6 +271,7 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(0);
     expect(result.validRoutesFound).toBe(0);
+    expect(result.totalRoutesChecked).toBe(1);
   });
 
   it("should handle multiple taxis and sort them correctly", async () => {
@@ -270,6 +309,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     };
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation, mockLocation2])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver, mockDriver2])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -282,18 +333,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           withIndex: () => ({
             unique: () => Promise.resolve(null)
           })
-        };
-      }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve([mockDriver, mockDriver2])
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve([mockLocation, mockLocation2])
         };
       }
       if (table === "taxis") {
@@ -337,6 +376,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
 
   it("should handle no drivers on matching routes", async () => {
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([]) // No drivers
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -351,18 +402,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           })
         };
       }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve([]) // No drivers
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve([])
-        };
-      }
       return { collect: () => Promise.resolve([]) };
     });
 
@@ -370,8 +409,9 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
 
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(0);
-    expect(result.validRoutesFound).toBe(1); // Route is valid but no drivers
+    expect(result.validRoutesFound).toBe(0); // Route is valid but no drivers
     expect(result.totalTaxisFound).toBe(0);
+    expect(result.totalRoutesChecked).toBe(0);
   });
 
   it("should handle drivers too far from origin", async () => {
@@ -382,6 +422,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     };
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([farLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -396,18 +448,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           })
         };
       }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve([mockDriver])
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve([farLocation])
-        };
-      }
       return { collect: () => Promise.resolve([]) };
     });
 
@@ -415,8 +455,9 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
 
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(0);
-    expect(result.validRoutesFound).toBe(1);
+    expect(result.validRoutesFound).toBe(0);
     expect(result.totalTaxisFound).toBe(0);
+    expect(result.totalRoutesChecked).toBe(0);
   });
 
   it("should handle enriched route stops when available", async () => {
@@ -429,6 +470,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     };
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve([mockLocation])
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve([mockDriver])
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -441,18 +494,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           withIndex: () => ({
             unique: () => Promise.resolve(enrichedStops)
           })
-        };
-      }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve([mockDriver])
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve([mockLocation])
         };
       }
       if (table === "taxis") {
@@ -471,6 +512,8 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
 
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(1);
+    expect(result.totalRoutesChecked).toBe(1);
+    expect(result.validRoutesFound).toBe(1);
     expect(result.availableTaxis[0].routeInfo.closestStartStop?.name).toBe("Enhanced Central");
     expect(result.availableTaxis[0].routeInfo.closestEndStop?.name).toBe("Enhanced Hatfield");
   });
@@ -515,6 +558,18 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     }));
 
     ctx.db.query.mockImplementation((table: string) => {
+      if (table === "locations") {
+        return {
+          collect: () => Promise.resolve(manyLocations)
+        };
+      }
+      if (table === "drivers") {
+        return {
+          filter: () => ({
+            collect: () => Promise.resolve(manyDrivers)
+          })
+        };
+      }
       if (table === "routes") {
         return {
           filter: () => ({
@@ -527,18 +582,6 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
           withIndex: () => ({
             unique: () => Promise.resolve(null)
           })
-        };
-      }
-      if (table === "drivers") {
-        return {
-          withIndex: () => ({
-            collect: () => Promise.resolve(manyDrivers)
-          })
-        };
-      }
-      if (table === "locations") {
-        return {
-          collect: () => Promise.resolve(manyLocations)
         };
       }
       if (table === "taxis") {
@@ -564,5 +607,7 @@ describe("_findAvailableTaxisForJourneyHandler integration", () => {
     expect(result.success).toBe(true);
     expect(result.availableTaxis).toHaveLength(5); // Limited by maxResults
     expect(result.totalTaxisFound).toBe(15); // But total found should show all
+    expect(result.totalRoutesChecked).toBe(1);
+    expect(result.validRoutesFound).toBe(1);
   });
 });

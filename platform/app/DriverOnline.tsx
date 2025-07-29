@@ -85,6 +85,10 @@ export default function DriverOnline({
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
 
+  if (!user) return;
+
+  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
@@ -736,7 +740,7 @@ export default function DriverOnline({
                   activeOpacity={0.8}
                 >
                   <Text style={dynamicStyles.earningsAmount}>
-                   R{(todaysEarnings ?? 0).toFixed(2)}
+                   R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
                   </Text>
                   <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
                 </TouchableOpacity>

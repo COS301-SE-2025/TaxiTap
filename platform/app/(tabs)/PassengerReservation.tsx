@@ -443,7 +443,7 @@ export default function SeatReserved() {
 				return;
 			}
 			router.push({
-				pathname: './SubmitFeedback',
+				pathname: './Payments',
 				params: {
 					startName: currentLocation.name,
 					endName: destination.name,

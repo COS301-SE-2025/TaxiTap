@@ -66,11 +66,17 @@ export default function DriverOffline({
       user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
+
   // Get driver's assigned route from database
   const assignedRoute = useQuery(
     api.functions.routes.queries.getDriverAssignedRoute,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
+
+  if (!user) return;
+  
+  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+  
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -603,7 +609,7 @@ export default function DriverOffline({
             onPress={() => router.push('/EarningsPage')}
           >
             <Text style={dynamicStyles.earningsAmount}>
-              R{(todaysEarnings ?? 0).toFixed(2)}
+              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
             <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
             <Text style={dynamicStyles.earningsSubtitle}>

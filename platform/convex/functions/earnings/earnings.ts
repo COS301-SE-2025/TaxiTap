@@ -12,6 +12,12 @@ function startOfWeek(d: Date): Date {
   return dt;
 }
 
+function startOfToday(): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now.getTime();
+}
+
 export const getWeeklyEarnings = query({
   args: { driverId: v.id("taxiTap_users") },
   handler: async (ctx, { driverId }) => {
@@ -19,6 +25,8 @@ export const getWeeklyEarnings = query({
     const weeks: any[] = [];
 
     const currentWeekStart = startOfWeek(new Date(now)).getTime();
+    const todayStart = startOfToday();
+    const todayEnd = todayStart + MILLIS_PER_DAY;
 
     for (let i = 0; i < 4; i++) {
       const from = currentWeekStart - i * 7 * MILLIS_PER_DAY;
@@ -63,6 +71,12 @@ export const getWeeklyEarnings = query({
         };
       });
 
+      const todayEarnings = i === 0
+        ? trips
+            .filter((t) => t.startTime >= todayStart && t.startTime < todayEnd)
+            .reduce((sum, t) => sum + t.fare, 0)
+        : 0;
+
       weeks.push({
         dateRangeStart: from,
         earnings,
@@ -70,6 +84,7 @@ export const getWeeklyEarnings = query({
         averagePerHour: hoursOnline > 0 ? Math.round(earnings / hoursOnline) : 0,
         reservations,
         dailyData,
+        todayEarnings: Math.round(todayEarnings),
       });
     }
 
