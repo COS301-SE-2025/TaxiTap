@@ -240,7 +240,10 @@ routes: defineTable({
     v.literal("route_update"),
     v.literal("emergency_alert"),
     v.literal("system_maintenance"),
-    v.literal("promotional")
+    v.literal("promotional"),
+    v.literal("driver_10min_away"),
+    v.literal("driver_5min_away"),
+    v.literal("passenger_at_stop")
   ),
   title: v.string(),
   message: v.string(),
