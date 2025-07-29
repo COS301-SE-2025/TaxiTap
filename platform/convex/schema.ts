@@ -112,14 +112,16 @@ export default defineSchema({
     estimatedFare: v.optional(v.number()),
     finalFare: v.optional(v.number()),
     
-    estimatedDistance: v.optional(v.number()),
-    actualDistance: v.optional(v.number()),
+    distance: v.optional(v.number()),
+    tripId: v.optional(v.id("trips")),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
     .index("by_driver", ["driverId"])
     .index("by_status", ["status"])
-    .index("by_requested_at", ["requestedAt"]),
+    .index("by_requested_at", ["requestedAt"])
+    .index("by_trip_id", ["tripId"])
+    .index("by_passenger_and_driver", ["passengerId", "driverId"]),
 
   //passenger table
   passengers: defineTable({
@@ -181,6 +183,7 @@ routes: defineTable({
     })),
     fare: v.number(),
     estimatedDuration: v.number(),
+    estimatedDistance: v.optional(v.number()), // Added estimated distance field
     isActive: v.boolean(),
     taxiAssociation: v.string(),
     taxiAssociationRegistrationNumber: v.string()
@@ -237,11 +240,7 @@ routes: defineTable({
     v.literal("route_update"),
     v.literal("emergency_alert"),
     v.literal("system_maintenance"),
-    v.literal("promotional"),
-    v.literal("driver_10min_away"),
-    v.literal("driver_5min_away"), 
-    v.literal("driver_arrived"),
-    v.literal("passenger_at_stop"),
+    v.literal("promotional")
   ),
   title: v.string(),
   message: v.string(),

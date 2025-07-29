@@ -49,6 +49,7 @@ import type * as functions_rides_declineRideHandler from "../functions/rides/dec
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
+import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
 import type * as functions_rides_scheduledProximityCheck from "../functions/rides/scheduledProximityCheck.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
 import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
@@ -84,7 +85,6 @@ import type * as functions_users_UserManagement_updateUserProfile from "../funct
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
-
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -131,6 +131,7 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
+  "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
   "functions/rides/scheduledProximityCheck": typeof functions_rides_scheduledProximityCheck;
   "functions/rides/startRide": typeof functions_rides_startRide;
   "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
