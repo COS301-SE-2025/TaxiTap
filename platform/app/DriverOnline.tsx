@@ -21,6 +21,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+import LocationSpoofer from '../components/LocationSpoofer';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -69,6 +70,7 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   
@@ -175,6 +177,12 @@ export default function DriverOnline({
                 await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
                 await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
                 markAsRead(rideRequest._id);
+                
+                // Navigate to PIN entry screen after accepting ride
+                router.push({
+                  pathname: '/DriverPinEntry',
+                  params: { rideId: rideRequest.metadata.rideId }
+                });
               } catch (error) {
                 console.error(error);
                 Alert.alert("Error", "Failed to accept ride or update seats.");
@@ -304,7 +312,16 @@ export default function DriverOnline({
       }
     },
     { 
-      icon: "settings-outline", 
+      icon: "location-outline", 
+      title: "Location Spoofer", 
+      subtitle: "Set custom location for testing",
+      onPress: () => {
+        setShowMenu(false);
+        setShowLocationSpoofer(true);
+      }
+    },
+    { 
+      icon: "help-outline", 
       title: "Help", 
       subtitle: "App information",
       onPress: () => navigation.navigate('HelpPage' as never)
@@ -879,6 +896,11 @@ export default function DriverOnline({
                   </View>
                 </TouchableOpacity>
               )}
+
+              <LocationSpoofer 
+                isVisible={showLocationSpoofer}
+                onClose={() => setShowLocationSpoofer(false)}
+              />
             </>
           )}
         </View>
