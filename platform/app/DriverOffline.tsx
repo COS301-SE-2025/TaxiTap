@@ -56,7 +56,7 @@ export default function DriverOffline({
   const { theme, isDark, setThemeMode } = useTheme();
   const { user } = useUser();
   const router = useRouter();
-  const { setCurrentRoute, currentRoute } = useRouteContext();
+  const { setCurrentRoute } = useRouteContext();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
@@ -64,6 +64,12 @@ export default function DriverOffline({
   const taxiInfo = useQuery(
       api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
       user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+  // Get driver's assigned route from database
+  const assignedRoute = useQuery(
+    api.functions.routes.queries.getDriverAssignedRoute,
+    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
   useLayoutEffect(() => {
@@ -79,6 +85,15 @@ export default function DriverOffline({
       router.replace('/DriverHomeScreen');
     }
   }, [onGoOnline, router]);
+
+  // Helper function to parse route name
+  const parseRouteName = (routeName: string) => {
+    const parts = routeName?.split(" to ").map(part => part.trim()) ?? ["Unknown", "Unknown"];
+    return {
+      start: parts[0] ?? "Unknown",
+      destination: parts[1] ?? "Unknown"
+    };
+  };
 
   const handleSetRoute = () => {
     router.push('/SetRoute');
@@ -155,13 +170,20 @@ export default function DriverOffline({
     },
   ];
 
+  // Get route display string from database
+  const getRouteDisplayString = () => {
+    if (!assignedRoute) return "Not Set";
+    const { start, destination } = parseRouteName(assignedRoute.name);
+    return `${start} → ${destination}`;
+  };
+
   const quickActions: QuickActionType[] = [
     {
       icon: "location-outline",
       title: "Current Route",
-      value: (currentRoute || "Not Set") as string,
+      value: getRouteDisplayString(),
       subtitle: "Tap to set route",
-      color: (currentRoute || "Not Set") === "Not Set" ? "#FF9900" : "#00A591",
+      color: getRouteDisplayString() === "Not Set" ? "#FF9900" : "#00A591",
       onPress: () => router.push('/SetRoute'),
     },
     {

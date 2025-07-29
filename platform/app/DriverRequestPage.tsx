@@ -44,6 +44,12 @@ export default () => {
                 case 'accept':
                     result = await acceptRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
                     Alert.alert('Success', 'Ride accepted! The passenger has been notified.');
+                    
+                    // Navigate to PIN entry screen after accepting ride
+                    router.push({
+                        pathname: '/DriverPinEntry',
+                        params: { rideId: ride.rideId }
+                    });
                     break;
                 case 'decline':
                     result = await declineRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
@@ -54,7 +60,9 @@ export default () => {
                     Alert.alert('Success', 'Ride marked as completed!');
                     break;
             }
-            router.back();
+            if (action !== 'accept') {
+                router.back();
+            }
         } catch (err: any) {
             console.error(`Failed to ${action} ride:`, err);
             Alert.alert('Error', err.message || `Failed to ${action} ride. Please try again.`);
