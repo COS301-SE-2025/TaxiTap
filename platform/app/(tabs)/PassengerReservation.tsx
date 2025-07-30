@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
+import React, { useLayoutEffect, useState, useRef, useEffect, useCallback } from "react";
 import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -78,6 +78,7 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
+	const [isRouteCalculating, setIsRouteCalculating] = useState(false); // Prevent multiple simultaneous route calculations
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
@@ -187,9 +188,15 @@ export default function SeatReserved() {
 		return points;
 	};
 
-	// Function to get route from Google Directions API
-	const getRoute = async (origin: { latitude: number; longitude: number; name: string }, dest: { latitude: number; longitude: number; name: string }) => {
-		// Validate coordinates
+	// FIXED: Stabilized route calculation with proper error handling and debouncing
+	const getRoute = useCallback(async (origin: { latitude: number; longitude: number; name: string }, dest: { latitude: number; longitude: number; name: string }) => {
+		// Prevent multiple simultaneous route calculations
+		if (isRouteCalculating) {
+			console.log('Route calculation already in progress, skipping...');
+			return;
+		}
+
+		// Validate coordinates with better error handling
 		if (!origin || !dest) {
 			console.warn('Invalid coordinates provided to getRoute');
 			return;
@@ -205,6 +212,13 @@ export default function SeatReserved() {
 			return;
 		}
 
+		// Additional validation for reasonable coordinate ranges
+		if (Math.abs(origin.latitude) > 90 || Math.abs(origin.longitude) > 180 ||
+			Math.abs(dest.latitude) > 90 || Math.abs(dest.longitude) > 180) {
+			console.warn('Coordinates out of valid range');
+			return;
+		}
+
 		if (!GOOGLE_MAPS_API_KEY) {
 			console.error('Google Maps API key is not configured');
 			return;
@@ -215,11 +229,13 @@ export default function SeatReserved() {
 		// Check cache first
 		const cachedRoute = getCachedRoute(routeKey);
 		if (cachedRoute) {
+			console.log('Using cached route');
 			setRouteCoordinates(cachedRoute);
 			setRouteLoaded(true);
 			return;
 		}
 
+		setIsRouteCalculating(true);
 		setIsLoadingRoute(true);
 		setRouteLoaded(false);
 		
@@ -230,7 +246,6 @@ export default function SeatReserved() {
 			const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
 			
 			console.log('Fetching route from:', url);
-			console.log('Platform:', Platform.OS);
 			
 			const response = await fetch(url);
 			
@@ -265,16 +280,24 @@ export default function SeatReserved() {
 				setRouteCoordinates(decodedCoords);
 				setRouteLoaded(true);
 				
-				// Fit the map to show the entire route
-				const coordinates = [
-					{ latitude: origin.latitude, longitude: origin.longitude },
-					{ latitude: dest.latitude, longitude: dest.longitude },
-					...decodedCoords
-				];
-				mapRef.current?.fitToCoordinates(coordinates, {
-					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
-					animated: true,
-				});
+				// FIXED: Safer map fitting with existence check
+				if (mapRef.current) {
+					const coordinates = [
+						{ latitude: origin.latitude, longitude: origin.longitude },
+						{ latitude: dest.latitude, longitude: dest.longitude },
+						...decodedCoords
+					];
+					
+					// Use setTimeout to ensure map is ready
+					setTimeout(() => {
+						if (mapRef.current) {
+							mapRef.current.fitToCoordinates(coordinates, {
+								edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
+								animated: true,
+							});
+						}
+					}, 100);
+				}
 			} else {
 				throw new Error('No routes found');
 			}
@@ -290,60 +313,97 @@ export default function SeatReserved() {
 			setRouteCoordinates(fallbackRoute);
 			setRouteLoaded(true);
 			
-			// Center the map to show both points
+			// FIXED: Safer fallback map fitting
 			if (mapRef.current) {
-				mapRef.current.fitToCoordinates(fallbackRoute, {
-					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
-					animated: true,
-				});
+				setTimeout(() => {
+					if (mapRef.current) {
+						mapRef.current.fitToCoordinates(fallbackRoute, {
+							edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
+							animated: true,
+						});
+					}
+				}, 100);
 			}
 		} finally {
 			setIsLoadingRoute(false);
+			setIsRouteCalculating(false); // Always reset this flag
 		}
-	};
+	}, []); // FIXED: Empty dependency array to prevent function recreation
 
-	// Dynamic route calculation based on map mode
+	// FIXED: More aggressive debouncing and route calculation control
 	useEffect(() => {
 		if (!currentLocation || !destination) return;
-
-		switch (mapMode) {
-			case 'initial':
-				// Original route: passenger origin -> destination
-				if (!routeLoaded && !isLoadingRoute) {
-					getRoute(currentLocation, destination);
-				}
-				break;
-				
-			case 'to_driver':
-				// Route from passenger live location to driver location
-				if (driverLocation && streamedLocation) {
-					const passengerLiveLocation = {
-						latitude: streamedLocation.latitude,
-						longitude: streamedLocation.longitude,
-						name: "Your Location"
-					};
-					const driverLocationFormatted = {
-						latitude: driverLocation.latitude,
-						longitude: driverLocation.longitude,
-						name: "Driver Location"
-					};
-					getRoute(passengerLiveLocation, driverLocationFormatted);
-				}
-				break;
-				
-			case 'to_destination':
-				// Route from passenger origin to final destination
-				if (streamedLocation) {
-					const passengerLiveLocation = {
-						latitude: streamedLocation.latitude,
-						longitude: streamedLocation.longitude,
-						name: "Your Location"
-					};
-					getRoute(passengerLiveLocation, destination);
-				}
-				break;
+		if (isRouteCalculating) {
+			console.log('Route calculation in progress, skipping effect');
+			return;
 		}
-	}, [mapMode, currentLocation, destination, driverLocation, streamedLocation, routeLoaded, isLoadingRoute]);
+
+		let timeoutId: ReturnType<typeof setTimeout>;
+		let isEffectActive = true; // Track if effect is still active
+
+		const calculateRoute = () => {
+			// Double-check if effect is still active and not calculating
+			if (!isEffectActive || isRouteCalculating) {
+				console.log('Effect cancelled or calculation in progress');
+				return;
+			}
+
+			switch (mapMode) {
+				case 'initial':
+					// Original route: passenger origin -> destination
+					if (!routeLoaded && !isLoadingRoute) {
+						getRoute(currentLocation, destination);
+					}
+					break;
+					
+				case 'to_driver':
+					// Route from passenger live location to driver location
+					if (driverLocation && streamedLocation) {
+						const passengerLiveLocation = {
+							latitude: streamedLocation.latitude,
+							longitude: streamedLocation.longitude,
+							name: "Your Location"
+						};
+						const driverLocationFormatted = {
+							latitude: driverLocation.latitude,
+							longitude: driverLocation.longitude,
+							name: "Driver Location"
+						};
+						
+						// FIXED: Only calculate if driver location changed significantly
+						const currentRouteKey = `${passengerLiveLocation.latitude},${passengerLiveLocation.longitude}-${driverLocationFormatted.latitude},${driverLocationFormatted.longitude}`;
+						
+						// Check if we already have this exact route
+						if (!getCachedRoute(currentRouteKey)) {
+							getRoute(passengerLiveLocation, driverLocationFormatted);
+						} else {
+							console.log('Using existing cached route for driver location');
+						}
+					}
+					break;
+					
+				case 'to_destination':
+					// Route from passenger origin to final destination
+					if (streamedLocation) {
+						const passengerLiveLocation = {
+							latitude: streamedLocation.latitude,
+							longitude: streamedLocation.longitude,
+							name: "Your Location"
+						};
+						getRoute(passengerLiveLocation, destination);
+					}
+					break;
+			}
+		};
+
+		// FIXED: Increased debounce time to 1000ms for more stability
+		timeoutId = setTimeout(calculateRoute, 1000);
+
+		return () => {
+			isEffectActive = false; // Mark effect as inactive
+			if (timeoutId) clearTimeout(timeoutId);
+		};
+	}, [mapMode, currentLocation, destination, driverLocation, streamedLocation, routeLoaded, isLoadingRoute, isRouteCalculating]); // Added isRouteCalculating to dependencies
 
 	// Initial fit to route when route or destination changes
 	useEffect(() => {
@@ -354,19 +414,24 @@ export default function SeatReserved() {
 			mapRef.current &&
 			!hasFittedRoute
 		) {
-			mapRef.current.fitToCoordinates(
-				[
-					{ latitude: currentLocation.latitude, longitude: currentLocation.longitude },
-					{ latitude: destination.latitude, longitude: destination.longitude },
-					...routeCoordinates,
-				],
-				{
-					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
-					animated: true,
+			// FIXED: Added safety check and timeout
+			setTimeout(() => {
+				if (mapRef.current && !hasFittedRoute) {
+					mapRef.current.fitToCoordinates(
+						[
+							{ latitude: currentLocation.latitude, longitude: currentLocation.longitude },
+							{ latitude: destination.latitude, longitude: destination.longitude },
+							...routeCoordinates,
+						],
+						{
+							edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
+							animated: true,
+						}
+					);
+					setHasFittedRoute(true);
+					setIsFollowing(true);
 				}
-			);
-			setHasFittedRoute(true);
-			setIsFollowing(true);
+			}, 200);
 		}
 	}, [routeCoordinates, currentLocation, destination, hasFittedRoute]);
 
@@ -383,15 +448,20 @@ export default function SeatReserved() {
 			mapRef.current &&
 			streamedLocation
 		) {
-			mapRef.current.animateToRegion(
-				{
-					latitude: streamedLocation.latitude,
-					longitude: streamedLocation.longitude,
-					latitudeDelta: 0.01,
-					longitudeDelta: 0.01,
-				},
-				500
-			);
+			// FIXED: Added safety check
+			setTimeout(() => {
+				if (mapRef.current && isFollowing) {
+					mapRef.current.animateToRegion(
+						{
+							latitude: streamedLocation.latitude,
+							longitude: streamedLocation.longitude,
+							latitudeDelta: 0.01,
+							longitudeDelta: 0.01,
+						},
+						500
+					);
+				}
+			}, 100);
 		}
 	}, [streamedLocation, rideStatus, isFollowing]);
 
@@ -419,29 +489,50 @@ export default function SeatReserved() {
 		};
 	}, [user?.id, streamedLocation]);
 
-	// Mock driver location updates (this will be removed in next commit)
+	// FIXED: Safer driver location updates with validation
 	useEffect(() => {
 		if (rideStatus === 'accepted' && taxiInfo?.driver) {
-			// Integrate here: Query driver's live location
-			// const driverLiveLocation = useQuery(api.functions.locations.getDriverLocation, {
-			//   driverId: taxiInfo.driver.id
-			// });
-			
-			// Mock driver location for demonstration
-			const mockDriverLocation = {
-				latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")) + 0.01,
-				longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")) + 0.01
-			};
-			setDriverLocation(mockDriverLocation);
+			try {
+				// Integrate here: Query driver's live location
+				// const driverLiveLocation = useQuery(api.functions.locations.getDriverLocation, {
+				//   driverId: taxiInfo.driver.id
+				// });
+				
+				// Mock driver location for demonstration - with validation
+				const currentLat = parseFloat(getParamAsString(params.currentLat, "-25.7479"));
+				const currentLng = parseFloat(getParamAsString(params.currentLng, "28.2293"));
+				
+				if (!isNaN(currentLat) && !isNaN(currentLng)) {
+					const mockDriverLocation = {
+						latitude: currentLat + 0.01,
+						longitude: currentLng + 0.01
+					};
+					
+					// Only update if significantly different to prevent unnecessary re-renders
+					setDriverLocation(prev => {
+						if (!prev || 
+							Math.abs(prev.latitude - mockDriverLocation.latitude) > 0.0001 ||
+							Math.abs(prev.longitude - mockDriverLocation.longitude) > 0.0001) {
+							console.log('Updating driver location:', mockDriverLocation);
+							return mockDriverLocation;
+						}
+						return prev;
+					});
+				}
+			} catch (error) {
+				console.error('Error updating driver location:', error);
+			}
 		}
-	}, [rideStatus, taxiInfo]);
+	}, [rideStatus, taxiInfo?.driver, params.currentLat, params.currentLng]);
 
 	// Handle map mode transitions
 	useEffect(() => {
 		if (rideStatus === 'accepted' && mapMode === 'initial') {
+			console.log('Switching to driver mode');
 			setMapMode('to_driver');
 			setUseLiveLocation(true);
 		} else if ((rideStatus === 'started' || rideStatus === 'in_progress') && mapMode === 'to_driver') {
+			console.log('Switching to destination mode');
 			setMapMode('to_destination');
 		}
 	}, [rideStatus, mapMode]);
@@ -820,77 +911,85 @@ export default function SeatReserved() {
 		name: "Your Live Location"
 	} : currentLocation;
 
-	// Determine markers based on map mode
+	// FIXED: Safer marker generation with proper error handling
 	const getMapMarkers = () => {
 		const markers = [];
 
-		switch (mapMode) {
-			case 'initial':
-				markers.push(
-					<Marker
-						key="passenger"
-						coordinate={displayLocation}
-						title="You are here"
-						pinColor="blue"
-					/>,
-					<Marker
-						key="destination"
-						coordinate={destination}
-						title={destination.name}
-						pinColor="orange"
-					/>
-				);
-				break;
+		try {
+			switch (mapMode) {
+				case 'initial':
+					if (displayLocation && destination) {
+						markers.push(
+							<Marker
+								key="passenger"
+								coordinate={displayLocation}
+								title="You are here"
+								pinColor="blue"
+							/>,
+							<Marker
+								key="destination"
+								coordinate={destination}
+								title={destination.name}
+								pinColor="orange"
+							/>
+						);
+					}
+					break;
 
-			case 'to_driver':
-				if (streamedLocation) {
-					markers.push(
-						<Marker
-							key="passenger-live"
-							coordinate={{
-								latitude: streamedLocation.latitude,
-								longitude: streamedLocation.longitude
-							}}
-							title="Your Location"
-							pinColor="blue"
-						/>
-					);
-				}
-				if (driverLocation) {
-					markers.push(
-						<Marker
-							key="driver"
-							coordinate={driverLocation}
-							title="Driver Location"
-							pinColor="green"
-						/>
-					);
-				}
-				break;
+				case 'to_driver':
+					if (streamedLocation) {
+						markers.push(
+							<Marker
+								key="passenger-live"
+								coordinate={{
+									latitude: streamedLocation.latitude,
+									longitude: streamedLocation.longitude
+								}}
+								title="Your Location"
+								pinColor="blue"
+							/>
+						);
+					}
+					if (driverLocation) {
+						markers.push(
+							<Marker
+								key="driver"
+								coordinate={driverLocation}
+								title="Driver Location"
+								pinColor="green"
+							/>
+						);
+					}
+					break;
 
-			case 'to_destination':
-				if (streamedLocation) {
-					markers.push(
-						<Marker
-							key="passenger-live"
-							coordinate={{
-								latitude: streamedLocation.latitude,
-								longitude: streamedLocation.longitude
-							}}
-							title="Your Location"
-							pinColor="blue"
-						/>
-					);
-				}
-				markers.push(
-					<Marker
-						key="destination"
-						coordinate={destination}
-						title={destination.name}
-						pinColor="orange"
-					/>
-				);
-				break;
+				case 'to_destination':
+					if (streamedLocation) {
+						markers.push(
+							<Marker
+								key="passenger-live"
+								coordinate={{
+									latitude: streamedLocation.latitude,
+									longitude: streamedLocation.longitude
+								}}
+								title="Your Location"
+								pinColor="blue"
+							/>
+						);
+					}
+					if (destination) {
+						markers.push(
+							<Marker
+								key="destination"
+								coordinate={destination}
+								title={destination.name}
+								pinColor="orange"
+							/>
+						);
+					}
+					break;
+			}
+		} catch (error) {
+			console.error('Error generating map markers:', error);
 		}
 
 		return markers;

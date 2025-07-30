@@ -43,7 +43,7 @@ const NotificationButton: React.FC = () => {
   );
 };
 
-// Theme Toggle Button Component (inline)
+// Theme Toggle Button Component
 const ThemeToggleButton: React.FC = () => {
   const { isDark, setThemeMode } = useTheme();
 
@@ -82,14 +82,13 @@ const HeaderRightButtons: React.FC = () => {
   );
 };
 
-// Tab Navigation Component (separated for cleaner structure)
+// Tab Navigation Component
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        // Tab Bar Styling with Theme
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
@@ -104,14 +103,9 @@ const TabNavigation: React.FC = () => {
           fontSize: 12,
           marginBottom: 4,
         },
-        
-        // Header Styling with Theme
         headerTitle: () => (
           <Image
-            source={isDark 
-              ? dark
-              : light
-            }
+            source={isDark ? dark : light}
             style={{ 
               width: 150,
               height: 150,
@@ -128,11 +122,9 @@ const TabNavigation: React.FC = () => {
           borderBottomWidth: 1,
         },
         headerTintColor: theme.text,
-        // Add both notification and theme toggle buttons to all tab headers
         headerRight: () => <HeaderRightButtons />,
       }}
     >
-      {/* Home Tab */}
       <Tabs.Screen
         name="HomeScreen"
         options={{
@@ -252,29 +244,70 @@ const TabNavigation: React.FC = () => {
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
   const [processedNotifications, setProcessedNotifications] = useState<Set<string>>(new Set());
+  const [shownNotificationTypes, setShownNotificationTypes] = useState<Set<string>>(new Set());
   
   let currentLocation, destination;
   try {
-    // Try to get map context if available
     ({ currentLocation, destination } = useMapContext());
   } catch (e) {
-    // MapProvider may not be present yet
     currentLocation = undefined;
     destination = undefined;
   }
 
-  // CONSOLIDATED NOTIFICATION HANDLER - All notifications handled here
+  // Only reset on ride_accepted (start of backend notification flow)
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+    
+    const unprocessedRideAccepted = notifications.find(n => 
+      n.type === 'ride_accepted' && 
+      !n.isRead && 
+      !processedNotifications.has(n._id)
+    );
+    
+    if (unprocessedRideAccepted) {
+      console.log('New ride detected, resetting notification types for ride:', unprocessedRideAccepted._id);
+      setShownNotificationTypes(new Set());
+    }
+  }, [notifications, processedNotifications]);
+
+  // CONSOLIDATED NOTIFICATION HANDLER
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;
 
-    // Process each unread notification only once
+    // DEBUG: Log all notifications
+    console.log('=== NOTIFICATION DEBUG ===');
+    console.log('All notifications:', notifications.map(n => ({
+      id: n._id,
+      type: n.type,
+      isRead: n.isRead,
+      message: n.message?.substring(0, 50)
+    })));
+    console.log('Processed notifications:', Array.from(processedNotifications));
+    console.log('Shown notification types:', Array.from(shownNotificationTypes));
+
     notifications.forEach(notification => {
-      if (notification.isRead || processedNotifications.has(notification._id)) {
-        return; // Skip already processed notifications
+      console.log(`Checking notification ${notification._id} (${notification.type})`);
+      
+      if (notification.isRead) {
+        console.log(`- Skipping: already read`);
+        return;
+      }
+      
+      if (processedNotifications.has(notification._id)) {
+        console.log(`- Skipping: already processed`);
+        return;
       }
 
-      // Mark as processed immediately to prevent duplicates
+      if (shownNotificationTypes.has(notification.type)) {
+        console.log(`- Skipping: type ${notification.type} already shown`);
+        markAsRead(notification._id);
+        return;
+      }
+
+      console.log(`- Processing notification: ${notification.type}`);
+      
       setProcessedNotifications(prev => new Set(prev).add(notification._id));
+      setShownNotificationTypes(prev => new Set(prev).add(notification.type));
 
       switch (notification.type) {
         case 'ride_accepted':
@@ -314,6 +347,7 @@ export default function TabLayout() {
                 text: 'OK',
                 onPress: () => {
                   markAsRead(notification._id);
+                  setShownNotificationTypes(new Set());
                   router.push('./HomeScreen');
                 },
                 style: 'default',
@@ -332,6 +366,7 @@ export default function TabLayout() {
                 text: 'OK',
                 onPress: () => {
                   markAsRead(notification._id);
+                  setShownNotificationTypes(new Set());
                   router.push('./HomeScreen');
                 },
                 style: 'default'
@@ -365,7 +400,7 @@ export default function TabLayout() {
                 text: 'OK',
                 onPress: () => {
                   markAsRead(notification._id);
-                  // Navigate to feedback or home
+                  setShownNotificationTypes(new Set());
                   router.push('./HomeScreen');
                 },
                 style: 'default',
@@ -415,12 +450,12 @@ export default function TabLayout() {
           break;
 
         default:
-          // Handle any other notification types
           console.log('Unhandled notification type:', notification.type);
+          markAsRead(notification._id);
           break;
       }
     });
-  }, [notifications, markAsRead, currentLocation, destination, processedNotifications]);
+  }, [notifications, markAsRead, currentLocation, destination, processedNotifications, shownNotificationTypes]);
 
   return (
     <SafeAreaProvider>
