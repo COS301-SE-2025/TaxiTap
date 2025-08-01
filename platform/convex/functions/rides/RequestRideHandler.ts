@@ -9,6 +9,28 @@ export const requestRideHandler = async (
     estimatedDistance?: number;
   }
 ) => {
+  // Check for existing pending ride request between this passenger and driver
+  const existingRide = await ctx.db
+    .query("rides")
+    .filter((q) => 
+      q.and(
+        q.eq(q.field("passengerId"), args.passengerId),
+        q.eq(q.field("driverId"), args.driverId),
+        q.eq(q.field("status"), "requested")
+      )
+    )
+    .first();
+
+  if (existingRide) {
+    console.log(`Duplicate ride request detected for passenger ${args.passengerId} and driver ${args.driverId}`);
+    return {
+      _id: existingRide._id,
+      rideId: existingRide.rideId,
+      message: `Ride request already exists from ${args.startLocation.address} to ${args.endLocation.address}`,
+      isDuplicate: true
+    };
+  }
+
   const rideId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const ride = await ctx.db.insert("rides", {
