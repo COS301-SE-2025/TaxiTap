@@ -171,6 +171,12 @@ export default function TaxiInformation() {
       return;
     }
 
+    // Prevent multiple rapid calls
+    if (isBooking) {
+      console.log('Booking already in progress, ignoring duplicate call');
+      return;
+    }
+
     setIsBooking(true);
 
     try {
@@ -202,32 +208,62 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
-        Alert.alert(
-          'Ride Request Sent',
-          `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                router.push({
-                  pathname: './PassengerReservation',
-                  params: {
-                    currentLat,
-                    currentLng,
-                    currentName,
-                    destinationLat,
-                    destinationLng,
-                    destinationName,
-                    driverId: selectedTaxi.userId,
-                    driverName: selectedTaxi.name,
-                    fare: selectedTaxi.routeInfo?.fare?.toString() || '0',
-                    rideId: result.rideId,
-                  },
-                });
+        // Check if this was a duplicate request
+        if (result.isDuplicate) {
+          Alert.alert(
+            'Ride Request Already Sent',
+            'You have already sent a ride request to this driver. Please wait for their response.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: {
+                      currentLat,
+                      currentLng,
+                      currentName,
+                      destinationLat,
+                      destinationLng,
+                      destinationName,
+                      driverId: selectedTaxi.userId,
+                      driverName: selectedTaxi.name,
+                      fare: selectedTaxi.routeInfo?.fare?.toString() || '0',
+                      rideId: result.rideId,
+                    },
+                  });
+                },
               },
-            },
-          ]
-        );
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Ride Request Sent',
+            `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: {
+                      currentLat,
+                      currentLng,
+                      currentName,
+                      destinationLat,
+                      destinationLng,
+                      destinationName,
+                      driverId: selectedTaxi.userId,
+                      driverName: selectedTaxi.name,
+                      fare: selectedTaxi.routeInfo?.fare?.toString() || '0',
+                      rideId: result.rideId,
+                    },
+                  });
+                },
+              },
+            ]
+          );
+        }
       }
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
