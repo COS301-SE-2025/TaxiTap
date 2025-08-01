@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { Id } from "../../../convex/_generated/dataModel";
 
 // Mock the internal API and server modules
 jest.mock("../../../convex/_generated/api", () => ({
@@ -305,5 +306,63 @@ describe("sendRideNotification internal mutation", () => {
         metadata: expect.objectContaining({ rideId: "ride1" })
       })
     );
+  });
+
+  it("should debounce duplicate notifications", async () => {
+    const ctx = createMutationCtx();
+    const args = {
+      rideId: "ride123",
+      type: "ride_requested",
+      driverId: "driver456" as Id<"taxiTap_users">,
+      passengerId: "passenger789" as Id<"taxiTap_users">,
+    };
+
+    // Mock existing ride
+    ctx.db.query.mockReturnValue({
+      withIndex: () => ({
+        first: () => Promise.resolve({
+          rideId: "ride123",
+          passengerId: "passenger789",
+          driverId: "driver456",
+          startLocation: { address: "123 Main St" },
+          endLocation: { address: "456 Oak Ave" },
+        }),
+      }),
+    });
+
+    // Mock recent notification check - first call returns false (no recent notification)
+    ctx.db.query.mockReturnValueOnce({
+      withIndex: () => ({
+        filter: () => ({
+          first: () => Promise.resolve(null), // No recent notification
+        }),
+      }),
+    });
+
+    // First call should send notification
+    await actualHandler(ctx, args);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(1);
+
+    // Reset mock for second call
+    ctx.runMutation.mockClear();
+
+    // Mock recent notification check - second call returns true (recent notification exists)
+    ctx.db.query.mockReturnValueOnce({
+      withIndex: () => ({
+        filter: () => ({
+          first: () => Promise.resolve({
+            // Recent notification exists
+            _id: "recent_notification",
+            type: "ride_request",
+            metadata: { rideId: "ride123" },
+            _creationTime: Date.now() - 100000, // 1.6 minutes ago
+          }),
+        }),
+      }),
+    });
+
+    // Second call should not send notification due to debouncing
+    await actualHandler(ctx, args);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(0);
   });
 });
