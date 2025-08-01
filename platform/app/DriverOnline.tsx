@@ -378,11 +378,6 @@ export default function DriverOnline({
       backgroundColor: theme.surface,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
       zIndex: 1000,
     },
     darkModeToggle: {
