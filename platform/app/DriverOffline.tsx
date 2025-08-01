@@ -220,7 +220,7 @@ export default function DriverOffline({
     container: {
       flex: 1,
       backgroundColor: theme.background,
-      paddingTop: 20,
+      zIndex: 999,
     },
     safeArea: {
       flex: 1,
@@ -288,20 +288,6 @@ export default function DriverOffline({
       paddingHorizontal: 20,
       paddingTop: 20,
     },
-    earningsCard: {
-      backgroundColor: theme.surface,
-      borderRadius: 30,
-      padding: 24,
-      marginBottom: 20,
-      alignItems: "center",
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
-    },
     earningsAmount: {
       color: theme.primary,
       fontSize: 32,
@@ -356,20 +342,6 @@ export default function DriverOffline({
       lineHeight: 22,
       marginBottom: 24,
     },
-    goOnlineButton: {
-      width: '100%',
-      height: 56,
-      borderRadius: 30,
-      backgroundColor: isDark ? '#10B981' : '#00A591',
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      flexDirection: 'row',
-    },
     goOnlineButtonText: {
       fontSize: 18,
       fontWeight: 'bold',
@@ -422,84 +394,33 @@ export default function DriverOffline({
       fontWeight: 'bold',
       color: theme.textSecondary,
     },
-    safetyButton: {
-      position: 'absolute',
-      bottom: 30,
-      right: 20,
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: '#FF4444',
+    actionButton: {
+      flexDirection: 'row',
+      backgroundColor: '#007AFF',
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      marginBottom: 10,
+      borderRadius: 25,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
-      zIndex: 1000,
+      width: 150,
+      height: 50,
+    },
+    actionButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginLeft: 8,
     },
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'flex-start',
       alignItems: 'flex-start',
-    },
-    menuModal: {
-      marginTop: 80,
-      marginLeft: 20,
-      marginRight: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      paddingVertical: 8,
-      minWidth: 280,
-      maxWidth: '90%',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 12,
-    },
-    menuModalHeader: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? theme.border : "#D4A57D",
-    },
-    menuModalHeaderText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    menuModalItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      minHeight: 60,
-    },
-    menuModalItemIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: isDark ? theme.primary : "#ECD9C3",
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 16,
-    },
-    menuModalItemContent: {
-      flex: 1,
-    },
-    menuModalItemTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 2,
-    },
-    menuModalItemSubtitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
     },
     safetyModal: {
       position: 'absolute',
@@ -602,9 +523,9 @@ export default function DriverOffline({
               padding: 24,
               marginBottom: 20,
               alignItems: 'center',
-              borderLeftWidth: 4,
-              borderLeftColor: theme.primary,
-              elevation: 4,
+              width: '100%',
+              justifyContent: 'center',
+              elevation: 4,        
             }}
             onPress={() => router.push('/EarningsPage')}
           >
@@ -625,6 +546,13 @@ export default function DriverOffline({
             <Text style={dynamicStyles.offlineSubtitle}>
               Go online to start accepting seat reservation requests
             </Text>
+            <TouchableOpacity
+              style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
+              onPress={handleSafetyPress}
+            >
+              <Icon name="call" size={20} color="#fff" />
+              <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={{
                 width: '100%',
@@ -673,7 +601,7 @@ export default function DriverOffline({
           </View>
         </ScrollView>
 
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={dynamicStyles.safetyButton}
           onPress={handleSafetyPress}
           activeOpacity={0.8}
@@ -718,7 +646,7 @@ export default function DriverOffline({
               ))}
             </View>
           </TouchableOpacity>
-        </Modal>
+        </Modal> */}
 
         {showSafetyMenu && (
           <TouchableOpacity 
