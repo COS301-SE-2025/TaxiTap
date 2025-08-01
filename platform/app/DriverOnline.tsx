@@ -71,8 +71,8 @@ export default function DriverOnline({
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
-  
-  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
+  const [showMap, setShowMap] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
   
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -368,38 +368,9 @@ export default function DriverOnline({
       fontSize: 16,
       marginTop: 16,
     },
-    locationStreamingStatus: {
-      position: 'absolute',
-      top: 120,
-      left: 20,
-      right: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      padding: 8,
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 4,
-      zIndex: 998,
-    },
-    locationStreamingText: {
-      fontSize: 12,
-      fontWeight: 'bold',
-    },
-    locationStreamingSuccess: {
-      color: '#4CAF50',
-    },
-    locationStreamingError: {
-      color: '#F44336',
-    },
-    locationStreamingLoading: {
-      color: theme.textSecondary,
-    },
     menuButton: {
       position: 'absolute',
-      top: 60,
+      top: 10,
       left: 20,
       width: 50,
       height: 50,
@@ -416,7 +387,7 @@ export default function DriverOnline({
     },
     darkModeToggle: {
       position: 'absolute',
-      top: 60,
+      top: 8,
       right: 20,
       width: 50,
       height: 50,
@@ -425,37 +396,21 @@ export default function DriverOnline({
       zIndex: 1000,
     },
     earningsContainer: {
-      position: 'absolute',
-      top: 60,
-      left: 80,
-      right: 80,
       alignItems: 'center',
       zIndex: 999,
     },
     earningsCard: {
       backgroundColor: theme.surface,
-      borderRadius: 30,
-      padding: 20,
+      padding: 15,
       alignItems: "center",
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
       elevation: 4,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
-      minWidth: 200,
+      width: '100%',
     },
     earningsAmount: {
       color: theme.primary,
       fontSize: 24,
       fontWeight: "bold",
       marginBottom: 4,
-    },
-    earningsTitle: {
-      color: theme.textSecondary,
-      fontSize: 14,
-      fontWeight: "bold",
     },
     bottomContainer: {
       position: 'absolute',
@@ -474,33 +429,16 @@ export default function DriverOnline({
       shadowRadius: 4,
       elevation: 8,
     },
-    quickStatus: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginBottom: 20,
-    },
-    quickStatusItem: {
-      flex: 1,
-      alignItems: 'center',
-      paddingHorizontal: 8,
-    },
     quickStatusValue: {
-      fontSize: 18,
+      fontSize: 100,
       fontWeight: 'bold',
       color: theme.primary,
       marginBottom: 4,
     },
-    quickStatusLabel: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-      textAlign: 'center',
-    },
     offlineButton: {
-      width: '100%',
       height: 56,
       borderRadius: 30,
-      backgroundColor: '#FF4444',
+      backgroundColor: theme.primary,
       justifyContent: 'center',
       alignItems: 'center',
       shadowColor: theme.shadow,
@@ -516,83 +454,11 @@ export default function DriverOnline({
       color: '#FFFFFF',
       marginLeft: 8,
     },
-    safetyButton: {
-      position: 'absolute',
-      bottom: 200,
-      left: 20,
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: '#FF4444',
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
-      zIndex: 1000,
-    },
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'flex-start',
       alignItems: 'flex-start',
-    },
-    menuModal: {
-      marginTop: 120,
-      marginLeft: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      paddingVertical: 8,
-      minWidth: 280,
-      maxWidth: '90%',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 12,
-    },
-    menuModalHeader: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    menuModalHeaderText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    menuModalItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      minHeight: 60,
-    },
-    menuModalItemIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.primary + '20',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 16,
-    },
-    menuModalItemContent: {
-      flex: 1,
-    },
-    menuModalItemTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 2,
-    },
-    menuModalItemSubtitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
     },
     safetyModal: {
       position: 'absolute',
@@ -601,7 +467,7 @@ export default function DriverOnline({
       backgroundColor: theme.surface,
       borderRadius: 20,
       padding: 8,
-      minWidth: 200,
+      minWidth: 300,
       shadowColor: theme.shadow,
       shadowOpacity: isDark ? 0.3 : 0.15,
       shadowOffset: { width: 0, height: 4 },
@@ -641,6 +507,28 @@ export default function DriverOnline({
       fontSize: 12,
       fontWeight: 'bold',
       color: theme.textSecondary,
+    },
+    actionButton: {
+      flexDirection: 'row',
+      backgroundColor: '#007AFF',
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 25,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 150,
+      height: 50,
+    },
+    actionButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginLeft: 8,
     },
   });
 
@@ -682,6 +570,7 @@ export default function DriverOnline({
             </View>
           ) : (
             <>
+            {mapExpanded && (
               <MapView
                 ref={mapRef}
                 style={dynamicStyles.map}
@@ -707,9 +596,10 @@ export default function DriverOnline({
                     longitude: currentLocation.longitude,
                   }}
                   title="Your Location"
-                  pinColor="#4CAF50"
+                  pinColor="#FF0000"
                 />
               </MapView>
+            )}
 
               <TouchableOpacity 
                 style={dynamicStyles.menuButton}
@@ -740,72 +630,86 @@ export default function DriverOnline({
                   <Text style={dynamicStyles.earningsAmount}>
                    R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
                   </Text>
-                  <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
                 </TouchableOpacity>
               </View>
+              
+              {!mapExpanded && (
+                <View
+                  style={{
+                    backgroundColor: '#fff',
+                    alignItems: 'center',
+                    marginTop: 80,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        await increaseSeats();
+                      } catch (error) {
+                        console.error("Failed to update seat availability:", error);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: '#28a745',
+                      borderRadius: 50,
+                      width: 100,
+                      height: 100,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Text style={{ fontSize: 60, color: '#fff' }}>+</Text>
+                  </TouchableOpacity>
 
-              {/* Live Location Streaming Status for Drivers */}
-              <View style={dynamicStyles.locationStreamingStatus}>
-                {locationStreamError ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
-                    Location Error: {locationStreamError}
+                  <Text style={[dynamicStyles.quickStatusValue, { fontSize: 50 }]}>
+                    {taxiInfo?.capacity === 0
+                      ? "No seats"
+                      : taxiInfo?.capacity?.toString() ?? "Loading..."}
                   </Text>
-                ) : streamedLocation ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
-                    Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
-                  </Text>
-                ) : (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
-                    Starting location streaming...
-                  </Text>
-                )}
-              </View>
+
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        await decreaseSeats();
+                      } catch (error) {
+                        console.error("Failed to update seat availability:", error);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: '#dc3545',
+                      borderRadius: 50,
+                      width: 100,
+                      height: 100,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginTop: 16,
+                    }}
+                  >
+                    <Text style={{ fontSize: 60, color: '#fff' }}>−</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <View style={dynamicStyles.bottomContainer}>
-                <View style={dynamicStyles.quickStatus}>
-                  {currentRoute && currentRoute !== 'Not Set' && (
-                    <View style={dynamicStyles.quickStatusItem}>
-                      <Text style={dynamicStyles.quickStatusValue}>{currentRoute}</Text>
-                      <Text style={dynamicStyles.quickStatusLabel}>Current Route</Text>
-                    </View>
-                  )}
-                  <View style={dynamicStyles.quickStatusItem}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            await decreaseSeats();
-                          } catch (error) {
-                            // Optional: handle error (e.g., show a toast or log it)
-                            console.error("Failed to update seat availability:", error);
-                          }
-                        }}
-                      >
-                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>−</Text>
-                      </TouchableOpacity>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
+                  <TouchableOpacity
+                    style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
+                    onPress={handleSafetyPress}
+                  >
+                    <Icon name="call" size={20} color="#fff" />
+                    <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
+                  </TouchableOpacity>
 
-                      <Text style={dynamicStyles.quickStatusValue}>
-                        {taxiInfo?.capacity === 0
-                          ? "No seats available"
-                          : taxiInfo?.capacity?.toString() ?? "Loading..."}
-                      </Text>
-
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            await increaseSeats()
-                          } catch (error) {
-                            // Optional: handle error (e.g., show a toast or log it)
-                            console.error("Failed to update seat availability:", error);
-                          }
-                        }}
-                      >
-                        <Text style={{ fontSize: 18, paddingHorizontal: 6 }}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text style={dynamicStyles.quickStatusLabel}>Available Seats</Text>
-                  </View>
+                  <TouchableOpacity
+                    style={dynamicStyles.actionButton}
+                    onPress={() => setMapExpanded(prev => !prev)} // Toggle mapExpanded
+                  >
+                    <Icon name="map" size={20} color="#fff" />
+                    <Text style={dynamicStyles.actionButtonText}>
+                      {mapExpanded ? "Hide Map" : "Show Map"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
@@ -817,53 +721,6 @@ export default function DriverOnline({
                   <Text style={dynamicStyles.offlineButtonText}>GO OFFLINE</Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity 
-                style={dynamicStyles.safetyButton}
-                onPress={handleSafetyPress}
-                activeOpacity={0.8}
-                accessibilityLabel="Safety and emergency options"
-              >
-                <Icon name="shield-checkmark" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-
-              <Modal
-                visible={showMenu}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowMenu(false)}
-              >
-                <TouchableOpacity 
-                  style={dynamicStyles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowMenu(false)}
-                >
-                  <View style={dynamicStyles.menuModal}>
-                    <View style={dynamicStyles.menuModalHeader}>
-                      <Text style={dynamicStyles.menuModalHeaderText}>Menu</Text>
-                    </View>
-                    {menuItems.map((item, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={dynamicStyles.menuModalItem}
-                        onPress={() => {
-                          item.onPress();
-                          setShowMenu(false);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={dynamicStyles.menuModalItemIcon}>
-                          <Icon name={item.icon} size={20} color={theme.primary} />
-                        </View>
-                        <View style={dynamicStyles.menuModalItemContent}>
-                          <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
-                          <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
 
               {showSafetyMenu && (
                 <TouchableOpacity 
