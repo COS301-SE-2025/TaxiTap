@@ -60,6 +60,7 @@ export default function DriverOffline({
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showFullStatus, setShowFullStatus] = useState(true);
 
   const taxiInfo = useQuery(
       api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -91,6 +92,14 @@ export default function DriverOffline({
       router.replace('/DriverHomeScreen');
     }
   }, [onGoOnline, router]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
 
   // Helper function to parse route name
   const parseRouteName = (routeName: string) => {
@@ -249,7 +258,7 @@ export default function DriverOffline({
       backgroundColor: isDark ? theme.primary : "#f5f5f5",
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 3,
     },
     headerTitle: {
       fontSize: 18,
@@ -270,18 +279,19 @@ export default function DriverOffline({
       paddingVertical: 8,
       borderRadius: 20,
       marginRight: 12,
+      marginLeft: 10,
     },
     statusDot: {
       width: 10,
       height: 10,
       borderRadius: 5,
       backgroundColor: '#FF4444',
-      marginRight: 6,
     },
     statusText: {
       fontSize: 14,
       fontWeight: '600',
       color: isDark ? theme.text : "#C62828",
+      marginLeft: 6,
     },
     contentContainer: {
       flex: 1,
@@ -494,7 +504,9 @@ export default function DriverOffline({
           <View style={dynamicStyles.headerRight}>
             <View style={dynamicStyles.statusContainer}>
               <View style={dynamicStyles.statusDot} />
-              <Text style={dynamicStyles.statusText}>OFFLINE</Text>
+              {showFullStatus && (
+                <Text style={dynamicStyles.statusText}>OFFLINE</Text>
+              )}
             </View>
             
             <TouchableOpacity
