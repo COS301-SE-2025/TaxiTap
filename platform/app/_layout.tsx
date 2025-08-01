@@ -230,8 +230,6 @@ function RootLayoutNav() {
               />
             </Stack>
 
-          <StackNavigator />
-
         </NotificationProvider>
       </View>
     </NavigationThemeProvider>
