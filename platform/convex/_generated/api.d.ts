@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
+import type * as functions_earnings_fare from "../functions/earnings/fare.js";
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
@@ -48,11 +49,15 @@ import type * as functions_rides_declineRide from "../functions/rides/declineRid
 import type * as functions_rides_declineRideHandler from "../functions/rides/declineRideHandler.js";
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
+import type * as functions_rides_generatePin from "../functions/rides/generatePin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
+import type * as functions_rides_getRidePin from "../functions/rides/getRidePin.js";
 import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
 import type * as functions_rides_scheduledProximityCheck from "../functions/rides/scheduledProximityCheck.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
 import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
+import type * as functions_rides_verifyPin from "../functions/rides/verifyPin.js";
+import type * as functions_rides_verifyPinSimple from "../functions/rides/verifyPinSimple.js";
 import type * as functions_routes_calculateRoute from "../functions/routes/calculateRoute.js";
 import type * as functions_routes_displayRoutes from "../functions/routes/displayRoutes.js";
 import type * as functions_routes_enhancedTaxiMatching from "../functions/routes/enhancedTaxiMatching.js";
@@ -62,6 +67,7 @@ import type * as functions_routes_mutations from "../functions/routes/mutations.
 import type * as functions_routes_queries from "../functions/routes/queries.js";
 import type * as functions_routes_reverseGeocode from "../functions/routes/reverseGeocode.js";
 import type * as functions_routes_storeRecentRoutes from "../functions/routes/storeRecentRoutes.js";
+import type * as functions_routes_updateRouteDistances_internal from "../functions/routes/updateRouteDistances_internal.js";
 import type * as functions_taxis_displayTaxis from "../functions/taxis/displayTaxis.js";
 import type * as functions_taxis_getTaxiForDriver from "../functions/taxis/getTaxiForDriver.js";
 import type * as functions_taxis_getTaxiForDriverHandler from "../functions/taxis/getTaxiForDriverHandler.js";
@@ -97,6 +103,7 @@ import type * as functions_work_sessions_startWorkSession from "../functions/wor
 declare const fullApi: ApiFromModules<{
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
+  "functions/earnings/fare": typeof functions_earnings_fare;
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
@@ -130,11 +137,15 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/declineRideHandler": typeof functions_rides_declineRideHandler;
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
+  "functions/rides/generatePin": typeof functions_rides_generatePin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
   "functions/rides/scheduledProximityCheck": typeof functions_rides_scheduledProximityCheck;
+  "functions/rides/getRidePin": typeof functions_rides_getRidePin;
   "functions/rides/startRide": typeof functions_rides_startRide;
   "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
+  "functions/rides/verifyPin": typeof functions_rides_verifyPin;
+  "functions/rides/verifyPinSimple": typeof functions_rides_verifyPinSimple;
   "functions/routes/calculateRoute": typeof functions_routes_calculateRoute;
   "functions/routes/displayRoutes": typeof functions_routes_displayRoutes;
   "functions/routes/enhancedTaxiMatching": typeof functions_routes_enhancedTaxiMatching;
@@ -144,6 +155,7 @@ declare const fullApi: ApiFromModules<{
   "functions/routes/queries": typeof functions_routes_queries;
   "functions/routes/reverseGeocode": typeof functions_routes_reverseGeocode;
   "functions/routes/storeRecentRoutes": typeof functions_routes_storeRecentRoutes;
+  "functions/routes/updateRouteDistances_internal": typeof functions_routes_updateRouteDistances_internal;
   "functions/taxis/displayTaxis": typeof functions_taxis_displayTaxis;
   "functions/taxis/getTaxiForDriver": typeof functions_taxis_getTaxiForDriver;
   "functions/taxis/getTaxiForDriverHandler": typeof functions_taxis_getTaxiForDriverHandler;

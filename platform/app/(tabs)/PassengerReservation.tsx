@@ -58,7 +58,7 @@ export default function SeatReserved() {
 	const [driverLocation, setDriverLocation] = useState<{latitude: number, longitude: number} | null>(null);
 
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -69,7 +69,6 @@ export default function SeatReserved() {
 	}
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
-	const startRide = useMutation(api.functions.rides.startRide.startRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
 
 	// Helper to determine ride status
@@ -78,13 +77,14 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
+	const [currentPin, setCurrentPin] = useState<string | null>(null);
 	const [isRouteCalculating, setIsRouteCalculating] = useState(false); // Prevent multiple simultaneous route calculations
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
 	const driverId = taxiInfo?.driver?.userId;
 
-	const averageRating = useQuery(api.functions.feedback.averageRating.getAverageRating, driverId ? { driverId } : "skip");
+	// Remove averageRating usage if not available
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 
 	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
@@ -95,6 +95,15 @@ export default function SeatReserved() {
 			headerShown: false
 		});
 	}, [navigation]);
+
+	// Simple PIN generation for demo purposes
+	useEffect(() => {
+		if (rideStatus === 'accepted' && !currentPin) {
+			// Get PIN from ride data or use demo PIN
+			const ridePin = taxiInfo?.ridePin || "1234";
+			setCurrentPin(ridePin);
+		}
+	}, [rideStatus, currentPin, taxiInfo?.ridePin]);
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -548,23 +557,6 @@ export default function SeatReserved() {
 		);
 	}
 
-	const handleStartRide = async () => {
-		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
-			return;
-		}
-		try {
-			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await startTripConvex({
-				passengerId: passengerId as Id<'taxiTap_users'>,
-				driverId: driverId as Id<'taxiTap_users'>,
-				reservation: true,
-			});
-		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to start ride.');
-		}
-	};
-
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
 			Alert.alert('Error', 'No ride or user information available.');
@@ -582,7 +574,7 @@ export default function SeatReserved() {
 				return;
 			}
 			router.push({
-				pathname: './SubmitFeedback',
+				pathname: './Payments',
 				params: {
 					startName: currentLocation.name,
 					endName: destination.name,
@@ -866,6 +858,57 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
+		pinContainer: {
+			alignItems: "center",
+			marginBottom: 15,
+			padding: 12,
+			backgroundColor: "transparent",
+			borderRadius: 8,
+			borderWidth: 1,
+			borderColor: "#FF9900",
+			borderStyle: "dashed",
+			width: '90%',
+			alignSelf: 'center',
+		},
+		pinLabel: {
+			fontSize: 12,
+			fontWeight: "500",
+			color: "#666666",
+			marginBottom: 8,
+			textAlign: "center",
+			textTransform: "uppercase",
+			letterSpacing: 0.5,
+		},
+		pinDisplay: {
+			flexDirection: "row",
+			justifyContent: "center",
+			marginBottom: 6,
+			alignItems: "center",
+		},
+		pinDigit: {
+			width: 28,
+			height: 32,
+			backgroundColor: "#121212",
+			borderRadius: 4,
+			justifyContent: "center",
+			alignItems: "center",
+			marginHorizontal: 2,
+			borderWidth: 1,
+			borderColor: "#FF9900",
+		},
+		pinDigitText: {
+			fontSize: 16,
+			fontWeight: "bold",
+			color: "#FF9900",
+			fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+		},
+		pinInstruction: {
+			fontSize: 10,
+			color: "#888888",
+			textAlign: "center",
+			fontStyle: "normal",
+			fontWeight: "400",
+		},
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -1113,24 +1156,24 @@ export default function SeatReserved() {
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-							<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-									<Text style={dynamicStyles.ratingText}>
-										{(averageRating ?? 0).toFixed(1)}
-									</Text>
+														<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+								<Text style={dynamicStyles.ratingText}>
+									{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+								</Text>
 								<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-										{[1, 2, 3, 4, 5].map((star, index) => {
-										const full = (averageRating ?? 0) >= star;
-											const half = (averageRating ?? 0) >= star - 0.5 && !full;
+									{[1, 2, 3, 4, 5].map((star, index) => {
+										const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
+										const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
 
 										return (
-										<FontAwesome
-											key={index}
-											name={full ? "star" : half ? "star-half-full" : "star-o"}
-											size={12}
-											color={theme.primary}
-											style={{ marginRight: 1 }}
-										/>
-											);
+											<FontAwesome
+												key={index}
+												name={full ? "star" : half ? "star-half-full" : "star-o"}
+												size={12}
+												color={theme.primary}
+												style={{ marginRight: 1 }}
+											/>
+										);
 									})}
 								</View>
 							</View>
@@ -1180,16 +1223,29 @@ export default function SeatReserved() {
 									</Text>
 								</TouchableOpacity>
 							)}
-							{/* When ride is accepted and not started: show both Start Ride and Cancel Request */}
+							{/* When ride is accepted: show PIN and Cancel Request */}
 							{rideStatus === 'accepted' && (
 								<>
-									<TouchableOpacity 
-										style={dynamicStyles.startRideButton} 
-										onPress={handleStartRide}>
-										<Text style={dynamicStyles.startRideButtonText}>
-											{"Start Ride"}
-										</Text>
-									</TouchableOpacity>
+									{/* PIN Display */}
+									{currentPin && (
+	<View style={dynamicStyles.pinContainer}>
+		<Text style={dynamicStyles.pinLabel}>Safety PIN</Text>
+		<View style={dynamicStyles.pinDisplay}>
+			{currentPin.split('').map((digit, index) => (
+				<View key={index} style={dynamicStyles.pinDigit}>
+					<Text style={dynamicStyles.pinDigitText}>{digit}</Text>
+				</View>
+			))}
+		</View>
+		<Text style={dynamicStyles.pinInstruction}>
+			Show to driver
+		</Text>
+		<TouchableOpacity 
+		>
+			
+		</TouchableOpacity>
+	</View>
+)}
 									<TouchableOpacity 
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
@@ -1202,9 +1258,9 @@ export default function SeatReserved() {
 							{/* Only show End Ride when ride is started or in progress */}
 							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
 								<TouchableOpacity 
-									style={dynamicStyles.startRideButton} 
+									style={dynamicStyles.cancelButton} 
 									onPress={handleEndRide}>
-									<Text style={dynamicStyles.startRideButtonText}>
+									<Text style={dynamicStyles.cancelButtonText}>
 										{"End Ride"}
 									</Text>
 								</TouchableOpacity>

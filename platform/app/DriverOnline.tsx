@@ -22,6 +22,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+import LocationSpoofer from '../components/LocationSpoofer';
 import { useProximityTimer } from './hooks/useProximityTimer';
 
 // Get platform-specific API key
@@ -76,6 +77,7 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   
@@ -139,6 +141,10 @@ export default function DriverOnline({
   const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
+
+  if (!user) return;
+
+  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
 
   // Location update interval for sending location to backend
   useEffect(() => {
@@ -508,7 +514,16 @@ useEffect(() => {
       }
     },
     { 
-      icon: "settings-outline", 
+      icon: "location-outline", 
+      title: "Location Spoofer", 
+      subtitle: "Set custom location for testing",
+      onPress: () => {
+        setShowMenu(false);
+        setShowLocationSpoofer(true);
+      }
+    },
+    { 
+      icon: "help-outline", 
       title: "Help", 
       subtitle: "App information",
       onPress: () => navigation.navigate('HelpPage' as never)
@@ -996,7 +1011,7 @@ useEffect(() => {
                   activeOpacity={0.8}
                 >
                   <Text style={dynamicStyles.earningsAmount}>
-                   R{(todaysEarnings ?? 0).toFixed(2)}
+                   R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
                   </Text>
                   <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
                 </TouchableOpacity>
@@ -1159,6 +1174,11 @@ useEffect(() => {
                   </View>
                 </TouchableOpacity>
               )}
+
+              <LocationSpoofer 
+                isVisible={showLocationSpoofer}
+                onClose={() => setShowLocationSpoofer(false)}
+              />
             </>
           )}
         </View>
