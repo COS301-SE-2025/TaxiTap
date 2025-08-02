@@ -260,6 +260,62 @@ export default function DriverOffline({
       alignItems: 'center',
       marginRight: 3,
     },
+    menuModal: {
+      marginTop: 80,
+      marginLeft: 20,
+      marginRight: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      paddingVertical: 8,
+      minWidth: 280,
+      maxWidth: '90%',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 12,
+    },
+    menuModalHeader: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? theme.border : "#D4A57D",
+    },
+    menuModalHeaderText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    menuModalItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      minHeight: 60,
+    },
+    menuModalItemIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? theme.primary : "#ECD9C3",
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    menuModalItemContent: {
+      flex: 1,
+    },
+    menuModalItemTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 2,
+    },
+    menuModalItemSubtitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+    },
     headerTitle: {
       fontSize: 18,
       fontWeight: '600',
@@ -613,15 +669,6 @@ export default function DriverOffline({
           </View>
         </ScrollView>
 
-        {/* <TouchableOpacity 
-          style={dynamicStyles.safetyButton}
-          onPress={handleSafetyPress}
-          activeOpacity={0.8}
-          accessibilityLabel="Safety and emergency options"
-        >
-          <Icon name="shield-checkmark" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-
         <Modal
           visible={showMenu}
           transparent={true}
@@ -658,7 +705,7 @@ export default function DriverOffline({
               ))}
             </View>
           </TouchableOpacity>
-        </Modal> */}
+        </Modal>
 
         {showSafetyMenu && (
           <TouchableOpacity 

@@ -310,14 +310,6 @@ export default function DriverOnline({
       }
     },
     { 
-      icon: "location-outline", 
-      title: "Location Spoofer", 
-      subtitle: "Set custom location for testing",
-      onPress: () => {
-        setShowMenu(false);
-      }
-    },
-    { 
       icon: "help-outline", 
       title: "Help", 
       subtitle: "App information",
@@ -379,6 +371,62 @@ export default function DriverOnline({
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
+    },
+    menuModal: {
+      marginTop: 80,
+      marginLeft: 20,
+      marginRight: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      paddingVertical: 8,
+      minWidth: 280,
+      maxWidth: '90%',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 12,
+    },
+    menuModalHeader: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? theme.border : "#D4A57D",
+    },
+    menuModalHeaderText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    menuModalItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      minHeight: 60,
+    },
+    menuModalItemIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? theme.primary : "#ECD9C3",
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    menuModalItemContent: {
+      flex: 1,
+    },
+    menuModalItemTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 2,
+    },
+    menuModalItemSubtitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
     },
     darkModeToggle: {
       position: 'absolute',
@@ -717,6 +765,44 @@ export default function DriverOnline({
                 </TouchableOpacity>
               </View>
 
+              <Modal
+                visible={showMenu}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowMenu(false)}
+              >
+                <TouchableOpacity 
+                  style={dynamicStyles.modalOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowMenu(false)}
+                >
+                  <View style={dynamicStyles.menuModal}>
+                    <View style={dynamicStyles.menuModalHeader}>
+                      <Text style={dynamicStyles.menuModalHeaderText}>Menu</Text>
+                    </View>
+                    {menuItems.map((item, index) => (
+                      <TouchableOpacity 
+                        key={index}
+                        style={dynamicStyles.menuModalItem}
+                        onPress={() => {
+                          item.onPress();
+                          setShowMenu(false);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View style={dynamicStyles.menuModalItemIcon}>
+                          <Icon name={item.icon} size={20} color={isDark ? "#121212" : "#FF9900"} />
+                        </View>
+                        <View style={dynamicStyles.menuModalItemContent}>
+                          <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
+                          <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+                      
               {showSafetyMenu && (
                 <TouchableOpacity 
                   style={dynamicStyles.modalOverlay}
