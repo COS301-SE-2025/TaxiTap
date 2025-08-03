@@ -146,7 +146,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerRoute"
         options={{
-          title: 'View Routes',
+          title: 'Routes',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="map" size={24} color={color} />
           ),

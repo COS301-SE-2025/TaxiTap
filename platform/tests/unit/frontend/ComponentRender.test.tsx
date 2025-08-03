@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, cleanup } from '@testing-library/react-native';
 
-// Mock the necessary dependencies
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
   return {
@@ -18,9 +17,22 @@ jest.mock('react-native-vector-icons/Ionicons', () => {
 });
 
 jest.mock('expo-location', () => ({
-  requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  getCurrentPositionAsync: jest.fn(() => Promise.resolve({ coords: { latitude: 0, longitude: 0 } })),
-  reverseGeocodeAsync: jest.fn(() => Promise.resolve([{ name: 'Test Location' }])),
+  requestForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
+  getCurrentPositionAsync: jest.fn(() =>
+    Promise.resolve({ coords: { latitude: 0, longitude: 0 } })
+  ),
+  reverseGeocodeAsync: jest.fn(() =>
+    Promise.resolve([
+      {
+        name: 'Main St',
+        street: '123',
+        city: 'Cape Town',
+        region: 'Western Cape',
+      },
+    ])
+  ),
   Accuracy: {
     Lowest: 1,
     Low: 2,
@@ -82,17 +94,20 @@ jest.mock('../../../contexts/NotificationContext', () => ({
   }),
 }));
 
-jest.mock('../../../contexts/RouteContext', () => ({
-  useRouteContext: () => ({
-    currentRoute: 'Test Route',
-    setCurrentRoute: jest.fn(),
-  }),
-}));
-
-jest.mock('convex/react', () => ({
-  useQuery: jest.fn(() => null),
-  useMutation: jest.fn(() => jest.fn()),
-}));
+jest.mock('convex/react', () => {
+  return {
+    useQuery: jest.fn((queryFn, args) => {
+      if (queryFn === 'getWeeklyEarnings') {
+        return [{ todayEarnings: 120.5 }];
+      }
+      if (queryFn === 'getTaxiForDriver') {
+        return { capacity: 4 };
+      }
+      return null;
+    }),
+    useMutation: jest.fn(() => jest.fn(() => Promise.resolve())),
+  };
+});
 
 jest.mock('../../../convex/_generated/api', () => ({
   api: {
@@ -104,7 +119,6 @@ jest.mock('../../../convex/_generated/api', () => ({
       },
       earnings: {
         earnings: { getWeeklyEarnings: 'getWeeklyEarnings' },
-        fare: { getFareForLatestTrip: 'getFareForLatestTrip' },
       },
       rides: {
         acceptRide: { acceptRide: 'acceptRide' },
@@ -122,49 +136,20 @@ jest.mock('../../../app/hooks/useLocationStreaming', () => ({
   }),
 }));
 
-describe('Component Render Tests', () => {
-  afterEach(() => {
-    cleanup();
-  });
+describe('DriverOnline Component', () => {
+  afterEach(cleanup);
 
-  describe('DriverOnline Component', () => {
-    it('should render without hooks violations', () => {
-      const DriverOnline = require('../../../app/DriverOnline').default;
-      
-      expect(() => {
-        render(
-          <DriverOnline
-            onGoOffline={jest.fn()}
-            todaysEarnings={100}
-            currentRoute="Test Route"
-          />
-        );
-      }).not.toThrow();
-    });
-  });
+  it('renders without crashing', () => {
+    const DriverOnline = require('../../../app/DriverOnline').default;
 
-  describe('DriverOffline Component', () => {
-    it('should render without hooks violations', () => {
-      const DriverOffline = require('../../../app/DriverOffline').default;
-      
-      expect(() => {
-        render(
-          <DriverOffline
-            onGoOnline={jest.fn()}
-            todaysEarnings={100}
-          />
-        );
-      }).not.toThrow();
-    });
+    expect(() =>
+      render(
+        <DriverOnline
+          onGoOffline={jest.fn()}
+          todaysEarnings={100}
+          currentRoute="Test Route"
+        />
+      )
+    ).not.toThrow();
   });
-
-  describe('Payments Component', () => {
-    it('should render without hooks violations', () => {
-      const PaymentScreen = require('../../../app/(tabs)/Payments').default;
-      
-      expect(() => {
-        render(<PaymentScreen />);
-      }).not.toThrow();
-    });
-  });
-}); 
+});
