@@ -451,7 +451,7 @@ export default function SeatReserved() {
 				return;
 			}
 			router.push({
-				pathname: './Payments',
+				pathname: './SubmitFeedback',
 				params: {
 					startName: currentLocation.name,
 					endName: destination.name,

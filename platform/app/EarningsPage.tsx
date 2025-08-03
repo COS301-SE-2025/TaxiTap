@@ -22,7 +22,7 @@ const MONTH_NAMES = [
 ] as const;
 
 const MIN_BAR_HEIGHT = 8;
-const BAR_HEIGHT_MULTIPLIER = 0.5;
+const BAR_HEIGHT_MULTIPLIER = 0.4;
 
 function formatDate(date: Date): string {
   return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
@@ -53,7 +53,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   
   const rawData = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, shouldRunQuery ? { driverId: userId as Id<"taxiTap_users"> } : "skip");
 
-  const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
+  // const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
 
   const weeklyData = useMemo(() => {
     if (!rawData) return [];
@@ -101,88 +101,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
   const averagePerHour = currentWeek.earnings / (currentWeek.hoursOnline || 1);
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.surface} />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleGoBack}
-            testID="back-button"
-          >
-            <Icon name="arrow-back" size={24} color={isDark ? '#121212' : '#FF9900'} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Weekly Summary</Text>
-        </View>
-
-        <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
-          {/* Week Dropdown */}
-          <View style={styles.dropdownContainer}>
-            <TouchableOpacity style={styles.dropdownButton} onPress={toggleDropdown}>
-              <Text style={styles.dropdownText}>{currentWeek.dateRange}</Text>
-              <Icon name={isDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={theme.textSecondary} />
-            </TouchableOpacity>
-
-            {isDropdownOpen && (
-              <View style={styles.dropdownList}>
-                {weeklyData.map((week, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.dropdownItem, selectedWeek === index && styles.dropdownItemSelected]}
-                    onPress={() => handleWeekSelect(index)}
-                  >
-                    <Text style={styles.dropdownText}>{week.dateRange}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Earnings Card */}
-          <View style={styles.card}>
-            <Text style={styles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
-            <Text style={styles.label}>Weekly Earnings</Text>
-          </View>
-
-          {/* Bar Chart */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Daily Breakdown</Text>
-            <View style={styles.barsContainer}>
-              {currentWeek.dailyData.map((day: any, index: any) => (
-                <View key={index} style={styles.barWrapper}>
-                  <View style={[styles.bar, { height: day.height }]} />
-                  <Text style={styles.barLabel}>{day.day}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Summary */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Summary</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Hours Online</Text>
-              <Text style={styles.summaryValue}>{currentWeek.hoursOnline}h</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Reservations</Text>
-              <Text style={styles.summaryValue}>{currentWeek.reservations}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Avg per Hour</Text>
-              <Text style={styles.summaryValue}>R{averagePerHour.toFixed(2)}</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-function createStyles(theme: any, isDark: boolean) {
-  return StyleSheet.create({
+  const dynamicStyles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: theme.background },
     container: { flex: 1, backgroundColor: theme.background },
     header: {
@@ -235,13 +154,22 @@ function createStyles(theme: any, isDark: boolean) {
       justifyContent: 'space-between',
       alignItems: 'flex-end',
       minHeight: 100,
+      maxHeight: 120,
+      marginTop: 10,
     },
     barWrapper: { alignItems: 'center', flex: 1 },
     bar: {
       width: 16,
       backgroundColor: '#FF9900',
-      borderRadius: 8,
       minHeight: MIN_BAR_HEIGHT,
+      maxHeight: 100,
+    },
+    barValue: {
+      marginBottom: 4,
+      fontSize: 10,
+      fontWeight: '900',
+      color: '#000000',
+      textAlign: 'center',
     },
     barLabel: { marginTop: 6, fontSize: 12, color: theme.textSecondary },
     summaryRow: {
@@ -254,4 +182,84 @@ function createStyles(theme: any, isDark: boolean) {
     summaryLabel: { fontSize: 16, color: theme.textSecondary },
     summaryValue: { fontSize: 16, fontWeight: 'bold', color: theme.text },
   });
+
+  return (
+    <SafeAreaView style={dynamicStyles.safeArea}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.surface} />
+      <View style={dynamicStyles.container}>
+        {/* Header */}
+        <View style={dynamicStyles.header}>
+          <TouchableOpacity
+            style={dynamicStyles.backButton}
+            onPress={handleGoBack}
+            testID="back-button"
+          >
+            <Icon name="arrow-back" size={24} color={isDark ? '#121212' : '#FF9900'} />
+          </TouchableOpacity>
+          <Text style={dynamicStyles.headerTitle}>Weekly Summary</Text>
+        </View>
+
+        <ScrollView style={dynamicStyles.content} contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* Week Dropdown */}
+          <View style={dynamicStyles.dropdownContainer}>
+            <TouchableOpacity style={dynamicStyles.dropdownButton} onPress={toggleDropdown}>
+              <Text style={dynamicStyles.dropdownText}>{currentWeek.dateRange}</Text>
+              <Icon name={isDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={theme.textSecondary} />
+            </TouchableOpacity>
+
+            {isDropdownOpen && (
+              <View style={dynamicStyles.dropdownList}>
+                {weeklyData.map((week, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[dynamicStyles.dropdownItem, selectedWeek === index && dynamicStyles.dropdownItemSelected]}
+                    onPress={() => handleWeekSelect(index)}
+                  >
+                    <Text style={dynamicStyles.dropdownText}>{week.dateRange}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Earnings Card */}
+          <View style={dynamicStyles.card}>
+            <Text style={dynamicStyles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
+            <Text style={dynamicStyles.label}>Weekly Earnings</Text>
+          </View>
+
+          {/* Bar Chart */}
+          <View style={dynamicStyles.card}>
+            <Text style={dynamicStyles.sectionTitle}>Daily Breakdown</Text>
+            <View style={dynamicStyles.barsContainer}>
+              {currentWeek.dailyData.map((day: any, index: any) => (
+                <View key={index} style={dynamicStyles.barWrapper}>
+                  <Text style={dynamicStyles.barValue}>R{day.earnings.toFixed(0)}</Text>
+                  <View style={[dynamicStyles.bar, { height: day.height }]} />
+                  <Text style={dynamicStyles.barLabel}>{day.day}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Summary */}
+          <View style={dynamicStyles.card}>
+            <Text style={dynamicStyles.sectionTitle}>Summary</Text>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Hours Online</Text>
+              <Text style={dynamicStyles.summaryValue}>{currentWeek.hoursOnline}h</Text>
+            </View>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Reservations</Text>
+              <Text style={dynamicStyles.summaryValue}>{currentWeek.reservations}</Text>
+            </View>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Avg per Hour</Text>
+              <Text style={dynamicStyles.summaryValue}>R{averagePerHour.toFixed(2)}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
 }
