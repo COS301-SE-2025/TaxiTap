@@ -22,7 +22,6 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
-import LocationSpoofer from '../components/LocationSpoofer';
 import { useProximityTimer } from './hooks/useProximityTimer';
 
 // Get platform-specific API key
@@ -93,6 +92,13 @@ export default function DriverOnline({
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [routeLoaded, setRouteLoaded] = useState(false);
   const [passengerLocations, setPassengerLocations] = useState<{latitude: number, longitude: number, name: string}[]>([]);
+
+  // Add the missing streamedLocation
+  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(
+    user?.id || '',
+    role,
+    true
+  );
 
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -1134,11 +1140,6 @@ useEffect(() => {
                   </View>
                 </TouchableOpacity>
               )}
-
-              <LocationSpoofer 
-                isVisible={showLocationSpoofer}
-                onClose={() => setShowLocationSpoofer(false)}
-              />
             </>
           )}
         </View>

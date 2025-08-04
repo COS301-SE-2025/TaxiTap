@@ -9,7 +9,7 @@ const NOTIFICATION_DEBOUNCE_TIME = 300000; // 5 minutes in milliseconds
 // Helper function to check if a notification was sent recently
 async function wasNotificationSentRecently(
   ctx: MutationCtx,
-  userId: string,
+  userId: Id<"taxiTap_users">,
   notificationType: string,
   rideId: string,
   debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME

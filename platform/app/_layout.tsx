@@ -104,7 +104,7 @@ function RootLayoutNav() {
         <NotificationProvider userId={user?.id as Id<"taxiTap_users"> | undefined}>
           <InAppNotificationOverlay />
 
-            <Stack
+            {/* <Stack
               screenOptions={{
                 headerStyle: {
                   backgroundColor: theme.headerBackground,
@@ -228,7 +228,7 @@ function RootLayoutNav() {
                   headerShown: false
                 }}
               />
-            </Stack>
+            </Stack> */}
 
           <StackNavigator />
 

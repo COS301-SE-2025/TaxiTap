@@ -57,7 +57,6 @@ export default function DriverOffline({
   const { user } = useUser();
   const router = useRouter();
   const { setCurrentRoute } = useRouteContext();
-  const { setCurrentRoute } = useRouteContext();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
