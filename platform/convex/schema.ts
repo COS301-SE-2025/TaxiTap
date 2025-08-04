@@ -135,7 +135,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_requested_at", ["requestedAt"])
     .index("by_trip_id", ["tripId"])
-    .index("by_passenger_and_driver", ["passengerId", "driverId"]),
+    .index("by_passenger_and_driver", ["passengerId", "driverId"])
     .index("by_requested_at", ["requestedAt"])
     .index("by_trip_id", ["tripId"])
     .index("by_passenger_and_driver", ["passengerId", "driverId"]),

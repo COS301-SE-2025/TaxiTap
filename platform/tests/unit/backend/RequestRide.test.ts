@@ -50,6 +50,9 @@ function createMockCtx() {
       }),
       query: jest.fn((table: any) => ({
         collect: jest.fn(async () => rides),
+        filter: jest.fn(() => ({
+          first: jest.fn(() => Promise.resolve(null as any))
+        }))
       })),
       get: jest.fn(async (id: string) => {
         return rides.find(r => r._id === id) || null;
@@ -393,15 +396,16 @@ describe("requestRideHandler", () => {
 
     // Mock existing ride
     ctx.db.query.mockReturnValue({
-      filter: () => ({
-        first: () => Promise.resolve({
+      collect: jest.fn(async () => []),
+      filter: jest.fn(() => ({
+        first: jest.fn(() => Promise.resolve({
           _id: "existing_ride_id",
           rideId: "existing_ride_123",
           passengerId: "user123",
           driverId: "driver456",
           status: "requested"
-        })
-      })
+        } as any))
+      }))
     });
 
     const result = await requestRideHandler(ctx, mockArgs);
@@ -431,11 +435,34 @@ describe("requestRideHandler", () => {
       estimatedDistance: 10.2,
     };
 
+    // Mock the taxi matching result
+    const mockTaxiMatchingResult = {
+      availableTaxis: [
+        {
+          userId: "driver456",
+          routeInfo: {
+            passengerDisplacement: 8.4,
+            calculatedFare: 25.5,
+            estimatedDuration: 15,
+            routeName: "Route 42"
+          }
+        }
+      ]
+    };
+
+    ctx.runQuery.mockImplementation(async (queryPath: string, queryArgs: any) => {
+      if (queryPath.includes('_findAvailableTaxisForJourney')) {
+        return mockTaxiMatchingResult;
+      }
+      return null;
+    });
+
     // Mock no existing ride
     ctx.db.query.mockReturnValue({
-      filter: () => ({
-        first: () => Promise.resolve(null)
-      })
+      collect: jest.fn(async () => []),
+      filter: jest.fn(() => ({
+        first: jest.fn(() => Promise.resolve(null as any))
+      }))
     });
 
     const result = await requestRideHandler(ctx, mockArgs);

@@ -317,27 +317,57 @@ describe("sendRideNotification internal mutation", () => {
       passengerId: "passenger789" as Id<"taxiTap_users">,
     };
 
-    // Mock existing ride
-    ctx.db.query.mockReturnValue({
-      withIndex: () => ({
-        first: () => Promise.resolve({
-          rideId: "ride123",
-          passengerId: "passenger789",
-          driverId: "driver456",
-          startLocation: { address: "123 Main St" },
-          endLocation: { address: "456 Oak Ave" },
-        }),
-      }),
+    // Track the sequence of database calls
+    let dbCallSequence = 0;
+    let notificationCheckCount = 0;
+    
+    const mockQuery = jest.fn((table: any) => {
+      if (table === "rides") {
+        // Always return the ride
+        return {
+          withIndex: jest.fn(() => ({
+            first: jest.fn(() => Promise.resolve({
+              rideId: "ride123",
+              passengerId: "passenger789",
+              driverId: "driver456",
+              startLocation: { address: "123 Main St" },
+              endLocation: { address: "456 Oak Ave" },
+            })),
+          })),
+        };
+      } else if (table === "notifications") {
+        // Check for recent notifications
+        notificationCheckCount++;
+        return {
+          withIndex: jest.fn(() => ({
+            filter: jest.fn(() => ({
+              first: jest.fn(() => {
+                if (notificationCheckCount === 1) {
+                  // First call: no recent notification (should send notification)
+                  return Promise.resolve(null);
+                } else {
+                  // Second call: recent notification exists (should not send notification)
+                  return Promise.resolve({
+                    _id: "recent_notification",
+                    type: "ride_request",
+                    metadata: { rideId: "ride123" },
+                    _creationTime: Date.now() - 100000, // 1.6 minutes ago
+                  });
+                }
+              }),
+            })),
+          })),
+        };
+      }
+      return {
+        withIndex: jest.fn(() => ({
+          first: jest.fn(() => Promise.resolve(null)),
+        })),
+      };
     });
 
-    // Mock recent notification check - first call returns false (no recent notification)
-    ctx.db.query.mockReturnValueOnce({
-      withIndex: () => ({
-        filter: () => ({
-          first: () => Promise.resolve(null), // No recent notification
-        }),
-      }),
-    });
+    // Replace the query function
+    (ctx.db.query as any) = mockQuery;
 
     // First call should send notification
     await actualHandler(ctx, args);
@@ -345,21 +375,6 @@ describe("sendRideNotification internal mutation", () => {
 
     // Reset mock for second call
     ctx.runMutation.mockClear();
-
-    // Mock recent notification check - second call returns true (recent notification exists)
-    ctx.db.query.mockReturnValueOnce({
-      withIndex: () => ({
-        filter: () => ({
-          first: () => Promise.resolve({
-            // Recent notification exists
-            _id: "recent_notification",
-            type: "ride_request",
-            metadata: { rideId: "ride123" },
-            _creationTime: Date.now() - 100000, // 1.6 minutes ago
-          }),
-        }),
-      }),
-    });
 
     // Second call should not send notification due to debouncing
     await actualHandler(ctx, args);

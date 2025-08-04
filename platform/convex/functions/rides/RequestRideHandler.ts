@@ -23,7 +23,7 @@ export const requestRideHandler = async (
     // Check for existing pending ride request between this passenger and driver
   const existingRide = await ctx.db
     .query("rides")
-    .filter((q) => 
+    .filter((q: any) => 
       q.and(
         q.eq(q.field("passengerId"), args.passengerId),
         q.eq(q.field("driverId"), args.driverId),
