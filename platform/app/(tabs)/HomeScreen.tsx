@@ -11,6 +11,8 @@ import {
   Animated,
   TextInput,
   FlatList,
+  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -95,6 +97,42 @@ export default function HomeScreen() {
   const [isGeocodingOrigin, setIsGeocodingOrigin] = useState(false);
   const [isGeocodingDestination, setIsGeocodingDestination] = useState(false);
   const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
+
+  // NEW: Add state to track if user just selected a suggestion
+  const [justSelectedOrigin, setJustSelectedOrigin] = useState(false);
+  const [justSelectedDestination, setJustSelectedDestination] = useState(false);
+
+  // NEW: Input focus states
+  const [originFocused, setOriginFocused] = useState(false);
+  const [destinationFocused, setDestinationFocused] = useState(false);
+
+  // NEW: Keyboard handling states
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // NEW: Keyboard event listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (event) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(event.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   // NEW: Autocomplete states
   const [originSuggestions, setOriginSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -261,9 +299,7 @@ export default function HomeScreen() {
         destinationLat: null,
         destinationLng: null,
       };
-
-      return null;
-    });
+    }).filter(r => r !== null);
   }, [recentRoutes, routes, destination, manualDestination]);
 
   const displayRoutes = fullRecentRoutes.filter(
@@ -356,6 +392,9 @@ export default function HomeScreen() {
 
   // NEW: Debounced autocomplete for origin
   useEffect(() => {
+    // Don't fetch suggestions if user just selected one
+    if (justSelectedOrigin) return;
+    
     const timeoutId = setTimeout(async () => {
       if (originAddress.trim().length >= 2) {
         setIsLoadingOriginSuggestions(true);
@@ -370,10 +409,13 @@ export default function HomeScreen() {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [originAddress, detectedLocation]);
+  }, [originAddress, detectedLocation, justSelectedOrigin]);
 
   // NEW: Debounced autocomplete for destination
   useEffect(() => {
+    // Don't fetch suggestions if user just selected one
+    if (justSelectedDestination) return;
+    
     const timeoutId = setTimeout(async () => {
       if (destinationAddress.trim().length >= 2) {
         setIsLoadingDestinationSuggestions(true);
@@ -388,7 +430,7 @@ export default function HomeScreen() {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [destinationAddress, detectedLocation]);
+  }, [destinationAddress, detectedLocation, justSelectedDestination]);
 
   // Enhanced function to search for available taxis using the actual enhanced matching
   const searchForAvailableTaxis = async (
@@ -454,8 +496,14 @@ export default function HomeScreen() {
 
   // NEW: Handle origin suggestion selection
   const handleOriginSuggestionSelect = async (suggestion: PlaceSuggestion) => {
-    setOriginAddress(suggestion.description);
+    // Mark that user just selected a suggestion
+    setJustSelectedOrigin(true);
+    
+    // Clear suggestions immediately and prevent them from coming back
     setShowOriginSuggestions(false);
+    setOriginSuggestions([]);
+    
+    setOriginAddress(suggestion.description);
     setIsGeocodingOrigin(true);
 
     const placeDetails = await getPlaceDetails(suggestion.place_id);
@@ -478,8 +526,14 @@ export default function HomeScreen() {
 
   // NEW: Handle destination suggestion selection
   const handleDestinationSuggestionSelect = async (suggestion: PlaceSuggestion) => {
-    setDestinationAddress(suggestion.description);
+    // Mark that user just selected a suggestion
+    setJustSelectedDestination(true);
+    
+    // Clear suggestions immediately and prevent them from coming back
     setShowDestinationSuggestions(false);
+    setDestinationSuggestions([]);
+    
+    setDestinationAddress(suggestion.description);
     setIsGeocodingDestination(true);
 
     const placeDetails = await getPlaceDetails(suggestion.place_id);
@@ -532,8 +586,11 @@ export default function HomeScreen() {
   const handleOriginSubmit = async () => {
     if (!originAddress.trim()) return;
     
+    // Hide suggestions and clear them
     setShowOriginSuggestions(false);
+    setOriginSuggestions([]);
     setIsGeocodingOrigin(true);
+    
     const result = await geocodeAddress(originAddress);
     setIsGeocodingOrigin(false);
 
@@ -556,8 +613,11 @@ export default function HomeScreen() {
   const handleDestinationSubmit = async () => {
     if (!destinationAddress.trim()) return;
     
+    // Hide suggestions and clear them
     setShowDestinationSuggestions(false);
+    setDestinationSuggestions([]);
     setIsGeocodingDestination(true);
+    
     const result = await geocodeAddress(destinationAddress);
     setIsGeocodingDestination(false);
 
@@ -773,12 +833,27 @@ export default function HomeScreen() {
   };
 
   // NEW: Render suggestion item
-  const renderSuggestionItem = ({ item, onPress }: { item: PlaceSuggestion; onPress: () => void }) => (
-    <TouchableOpacity style={dynamicStyles.suggestionItem} onPress={onPress}>
-      <Icon name="location-outline" size={16} color={theme.textSecondary} style={{ marginRight: 10 }} />
-      <View style={{ flex: 1 }}>
-        <Text style={dynamicStyles.suggestionMainText}>{item.structured_formatting.main_text}</Text>
-        <Text style={dynamicStyles.suggestionSecondaryText}>{item.structured_formatting.secondary_text}</Text>
+  const renderSuggestionItem = ({ item, onPress, index, isLast }: { 
+    item: PlaceSuggestion; 
+    onPress: () => void; 
+    index: number; 
+    isLast: boolean; 
+  }) => (
+    <TouchableOpacity 
+      style={[dynamicStyles.suggestionItem, isLast && dynamicStyles.suggestionItemLast]} 
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={dynamicStyles.suggestionIcon}>
+        <Icon name="location-outline" size={14} color={theme.primary} />
+      </View>
+      <View style={dynamicStyles.suggestionTextContainer}>
+        <Text style={dynamicStyles.suggestionMainText} numberOfLines={1}>
+          {item.structured_formatting.main_text}
+        </Text>
+        <Text style={dynamicStyles.suggestionSecondaryText} numberOfLines={1}>
+          {item.structured_formatting.secondary_text}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -788,144 +863,192 @@ export default function HomeScreen() {
       flex: 1, backgroundColor: theme.background
     },
     map: { 
-      height: '40%'
+      height: keyboardVisible ? '25%' : '40%'
     },
     bottomSheet: {
       flex: 1,
       backgroundColor: theme.background,
       borderTopLeftRadius: 25,
       borderTopRightRadius: 25,
-      padding: 16,
-      paddingTop: 24,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+      paddingBottom: keyboardVisible ? Math.max(keyboardHeight - 100, 16) : 16,
     },
     locationBox: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: isDark ? theme.surface : "#ECD9C3",
-      borderColor: isDark ? theme.border : "#D4A57D",
-      borderRadius: 20,
-      borderWidth: 1,
-      paddingVertical: 11,
-      paddingHorizontal: 13,
-      marginBottom: 36,
+      backgroundColor: isDark ? theme.card : "#FFF3E0",
+      borderRadius: 24,
+      marginBottom: keyboardVisible ? 8 : 16,
       width: '100%',
       alignSelf: 'center',
       shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
+      shadowOpacity: isDark ? 0.3 : 0.06,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 6,
+      elevation: 3,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? theme.border : 'transparent',
     },
     locationIndicator: {
-      marginRight: 10,
+      paddingLeft: 14,
+      paddingRight: 10,
+      paddingVertical: 10,
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingTop: 5,
     },
     currentLocationCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: theme.primary,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: isDark ? theme.primary : "#FF9800",
       borderWidth: 2,
-      borderColor: '#FFB84D',
-      marginBottom: 8,
+      borderColor: isDark ? '#FFB84D' : '#FFB74D',
+      marginBottom: 6,
       justifyContent: 'center',
       alignItems: 'center',
     },
     currentLocationDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: theme.primary,
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#FFFFFF',
     },
     dottedLineContainer: {
-      height: 35,
+      height: 20,
       width: 1,
-      marginBottom: 8,
+      marginBottom: 6,
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     dottedLineDot: {
-      width: 2,
-      height: 3,
-      backgroundColor: theme.primary,
-      borderRadius: 1,
+      width: 1,
+      height: 2,
+      backgroundColor: isDark ? theme.primary : "#FF9800",
+      borderRadius: 0.5,
+      opacity: 0.6,
     },
-    locationTextContainer: {
+    destinationIcon: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: '#FF6B35',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    inputSection: {
       flex: 1,
+      paddingRight: 14,
+      paddingVertical: 8,
+    },
+    inputContainer: {
+      marginBottom: 6,
+      position: 'relative',
+    },
+    inputLabel: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: isDark ? theme.textSecondary : "#BF6000",
+      marginBottom: 3,
+      marginLeft: 2,
+      textTransform: 'capitalize',
     },
     addressInput: {
-      color: theme.text,
       fontSize: 14,
-      fontWeight: "bold",
+      fontWeight: '400',
+      color: theme.text,
       backgroundColor: 'transparent',
-      padding: 0,
-      margin: 0,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      borderWidth: 0,
+      minHeight: 32,
     },
-    originInput: {
-      color: isDark ? theme.primary : "#A66400",
-      marginBottom: 17,
+    addressInputFocused: {
+      backgroundColor: isDark ? theme.surface : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: isDark ? theme.primary : '#FF9800',
+      shadowColor: isDark ? theme.primary : '#FF9800',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 1 },
+      shadowRadius: 3,
+      elevation: 1,
     },
-    destinationInput: {
-      marginLeft: 2,
-    },
-    locationSeparator: {
-      height: 1,
-      backgroundColor: isDark ? theme.border : "#D4A57D",
-      marginBottom: 19,
-      marginHorizontal: 2,
+    inputSeparator: {
+      height: 0.5,
+      backgroundColor: isDark ? theme.border : '#E8E8E8',
+      marginVertical: 1,
+      marginHorizontal: 8,
+      opacity: 0.5,
     },
     geocodingText: {
       color: theme.textSecondary,
-      fontSize: 12,
+      fontSize: 10,
       fontStyle: 'italic',
-      marginTop: 4,
+      marginTop: 3,
+      marginLeft: 2,
     },
     // NEW: Autocomplete suggestion styles
-    suggestionsContainer: {
+    inputSuggestionsContainer: {
       position: 'absolute',
       top: '100%',
       left: 0,
       right: 0,
-      backgroundColor: theme.background,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderTopWidth: 0,
-      borderBottomLeftRadius: 12,
-      borderBottomRightRadius: 12,
-      maxHeight: 200,
+      backgroundColor: theme.card,
+      borderRadius: 8,
+      maxHeight: 180,
       zIndex: 1000,
-      elevation: 5,
+      elevation: 8,
       shadowColor: theme.shadow,
-      shadowOpacity: 0.1,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
+      shadowOpacity: isDark ? 0.4 : 0.12,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? theme.border : 'transparent',
+      marginTop: 2,
+    },
+    suggestionScrollView: {
+      maxHeight: 180,
     },
     suggestionItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 12,
+      padding: 14,
       borderBottomWidth: 1,
-      borderBottomColor: theme.border,
+      borderBottomColor: isDark ? theme.border : '#F0F0F0',
+      minHeight: 56, // Material Design touch target
+    },
+    suggestionItemLast: {
+      borderBottomWidth: 0,
+    },
+    suggestionIcon: {
+      marginRight: 12,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: isDark ? theme.surface : '#F5F5F5',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    suggestionTextContainer: {
+      flex: 1,
     },
     suggestionMainText: {
       fontSize: 14,
       fontWeight: '500',
       color: theme.text,
+      marginBottom: 2,
     },
     suggestionSecondaryText: {
       fontSize: 12,
       color: theme.textSecondary,
-      marginTop: 2,
+      lineHeight: 16,
     },
     loadingSuggestions: {
-      padding: 12,
+      padding: 20,
       alignItems: 'center',
     },
     loadingSuggestionsText: {
       color: theme.textSecondary,
-      fontSize: 12,
+      fontSize: 13,
       fontStyle: 'italic',
     },
     searchResultsContainer: {
@@ -977,12 +1100,6 @@ export default function HomeScreen() {
     routeSubtitle: {
       fontSize: 12,
       color: theme.textSecondary,
-    },
-    routeLoadingText: {
-      color: theme.textSecondary,
-      fontSize: 12,
-      fontStyle: 'italic',
-      marginTop: 4,
     },
     reserveButton: {
       position: 'absolute',
@@ -1049,7 +1166,11 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={dynamicStyles.container}>
+    <KeyboardAvoidingView 
+      style={dynamicStyles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       {/* Live Location Streaming Status */}
       <View style={{ padding: 8, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
         {locationStreamError ? (
@@ -1060,6 +1181,7 @@ export default function HomeScreen() {
           <Text>Streaming location...</Text>
         )}
       </View>
+      
       {isLoadingCurrentLocation ? (
         <View style={[dynamicStyles.map, { justifyContent: 'center', alignItems: 'center' }]}>
           <Image source={loading} style={{ width: 120, height: 120 }} resizeMode="contain" />
@@ -1111,135 +1233,228 @@ export default function HomeScreen() {
         </MapView>
       )}
 
-      <View style={dynamicStyles.bottomSheet}>
-        {/* ENHANCED: Location input box with autocomplete */}
+      <ScrollView 
+        style={dynamicStyles.bottomSheet}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ 
+          paddingBottom: keyboardVisible ? 20 : 100,
+          flexGrow: 1 
+        }}
+      >
+        {/* ENHANCED: Beautiful location input box */}
         <View style={{ position: 'relative', zIndex: 10 }}>
           <View style={dynamicStyles.locationBox}>
-            <View style={dynamicStyles.locationIndicator}>
-              <View style={dynamicStyles.currentLocationCircle}>
-                <View style={dynamicStyles.currentLocationDot} />
+            <View style={{ flexDirection: 'row' }}>
+              <View style={dynamicStyles.locationIndicator}>
+                <View style={dynamicStyles.currentLocationCircle}>
+                  <View style={dynamicStyles.currentLocationDot} />
+                </View>
+                <View style={dynamicStyles.dottedLineContainer}>
+                  {[...Array(6)].map((_, i) => (
+                    <View key={i} style={dynamicStyles.dottedLineDot} />
+                  ))}
+                </View>
+                <View style={dynamicStyles.destinationIcon}>
+                  <Icon name="location" size={8} color="#FFFFFF" />
+                </View>
               </View>
-              <View style={dynamicStyles.dottedLineContainer}>
-                {[...Array(8)].map((_, i) => (
-                  <View key={i} style={dynamicStyles.dottedLineDot} />
-                ))}
+              
+              <View style={dynamicStyles.inputSection}>
+                {/* Origin Input */}
+                <View style={dynamicStyles.inputContainer}>
+                  <Text style={dynamicStyles.inputLabel}>From</Text>
+                  <TextInput
+                    style={[
+                      dynamicStyles.addressInput,
+                      originFocused && dynamicStyles.addressInputFocused
+                    ]}
+                    placeholder={origin ? origin.name : "Enter pickup location..."}
+                    value={originAddress}
+                    onChangeText={(text) => {
+                      setOriginAddress(text);
+                      setJustSelectedOrigin(false); // Reset when user types
+                    }}
+                    onSubmitEditing={handleOriginSubmit}
+                    onFocus={() => {
+                      setOriginFocused(true);
+                      setJustSelectedOrigin(false); // Reset when user starts typing again
+                      if (originSuggestions.length > 0) {
+                        setShowOriginSuggestions(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      setOriginFocused(false);
+                      // Longer delay to allow suggestion selection, then clear everything
+                      setTimeout(() => {
+                        setShowOriginSuggestions(false);
+                        if (originSuggestions.length > 0) {
+                          setOriginSuggestions([]);
+                        }
+                      }, 300);
+                    }}
+                    returnKeyType="search"
+                    placeholderTextColor={theme.textSecondary}
+                    editable={!isLoadingCurrentLocation}
+                    autoCorrect={false}
+                    autoCapitalize="words"
+                  />
+                  {isGeocodingOrigin && (
+                    <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
+                  )}
+                  {isLoadingOriginSuggestions && (
+                    <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                  )}
+                  {isLoadingCurrentLocation && (
+                    <Text style={dynamicStyles.geocodingText}>Getting current location...</Text>
+                  )}
+
+                  {/* Origin suggestions positioned relative to this input */}
+                  {showOriginSuggestions && originSuggestions.length > 0 && (
+                    <View style={dynamicStyles.inputSuggestionsContainer}>
+                      <ScrollView 
+                        style={dynamicStyles.suggestionScrollView}
+                        showsVerticalScrollIndicator={true}
+                        keyboardShouldPersistTaps="always"
+                        nestedScrollEnabled={true}
+                        bounces={false}
+                        contentContainerStyle={{ flexGrow: 1 }}
+                      >
+                        {originSuggestions.map((item, index) => (
+                          <TouchableOpacity 
+                            key={item.place_id}
+                            style={[
+                              dynamicStyles.suggestionItem, 
+                              index === originSuggestions.length - 1 && dynamicStyles.suggestionItemLast
+                            ]} 
+                            onPress={() => handleOriginSuggestionSelect(item)}
+                            activeOpacity={0.6}
+                          >
+                            <View style={dynamicStyles.suggestionIcon}>
+                              <Icon name="location-outline" size={12} color={isDark ? theme.primary : "#FF9800"} />
+                            </View>
+                            <View style={dynamicStyles.suggestionTextContainer}>
+                              <Text style={dynamicStyles.suggestionMainText} numberOfLines={1}>
+                                {item.structured_formatting.main_text}
+                              </Text>
+                              <Text style={dynamicStyles.suggestionSecondaryText} numberOfLines={1}>
+                                {item.structured_formatting.secondary_text}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+
+                <View style={dynamicStyles.inputSeparator} />
+
+                {/* Destination Input */}
+                <View style={dynamicStyles.inputContainer}>
+                  <Text style={dynamicStyles.inputLabel}>To</Text>
+                  <TextInput
+                    style={[
+                      dynamicStyles.addressInput,
+                      destinationFocused && dynamicStyles.addressInputFocused
+                    ]}
+                    placeholder="Enter destination..."
+                    value={destinationAddress}
+                    onChangeText={(text) => {
+                      setDestinationAddress(text);
+                      setJustSelectedDestination(false); // Reset when user types
+                    }}
+                    onSubmitEditing={handleDestinationSubmit}
+                    onFocus={() => {
+                      setDestinationFocused(true);
+                      setJustSelectedDestination(false); // Reset when user starts typing again
+                      if (destinationSuggestions.length > 0) {
+                        setShowDestinationSuggestions(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      setDestinationFocused(false);
+                      // Longer delay to allow suggestion selection, then clear everything
+                      setTimeout(() => {
+                        setShowDestinationSuggestions(false);
+                        if (destinationSuggestions.length > 0) {
+                          setDestinationSuggestions([]);
+                        }
+                      }, 300);
+                    }}
+                    returnKeyType="search"
+                    placeholderTextColor={theme.textSecondary}
+                    autoCorrect={false}
+                    autoCapitalize="words"
+                  />
+                  {isGeocodingDestination && (
+                    <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
+                  )}
+                  {isLoadingDestinationSuggestions && (
+                    <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                  )}
+                  
+                  {isLoadingRoute && (
+                    <Text style={[dynamicStyles.geocodingText, { color: theme.primary }]}>
+                      Loading route...
+                    </Text>
+                  )}
+                  {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
+                    <Text style={[dynamicStyles.geocodingText, { color: theme.primary }]}>
+                      Route loaded ✓
+                    </Text>
+                  )}
+                  {isSearchingTaxis && (
+                    <Text style={[dynamicStyles.geocodingText, { color: theme.primary }]}>
+                      Searching for available taxis...
+                    </Text>
+                  )}
+
+                  {/* Destination suggestions positioned relative to this input */}
+                  {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                    <View style={dynamicStyles.inputSuggestionsContainer}>
+                      <ScrollView 
+                        style={dynamicStyles.suggestionScrollView}
+                        showsVerticalScrollIndicator={true}
+                        keyboardShouldPersistTaps="always"
+                        nestedScrollEnabled={true}
+                        bounces={false}
+                        contentContainerStyle={{ flexGrow: 1 }}
+                      >
+                        {destinationSuggestions.map((item, index) => (
+                          <TouchableOpacity 
+                            key={item.place_id}
+                            style={[
+                              dynamicStyles.suggestionItem, 
+                              index === destinationSuggestions.length - 1 && dynamicStyles.suggestionItemLast
+                            ]} 
+                            onPress={() => handleDestinationSuggestionSelect(item)}
+                            activeOpacity={0.6}
+                          >
+                            <View style={dynamicStyles.suggestionIcon}>
+                              <Icon name="location-outline" size={12} color={isDark ? theme.primary : "#FF9800"} />
+                            </View>
+                            <View style={dynamicStyles.suggestionTextContainer}>
+                              <Text style={dynamicStyles.suggestionMainText} numberOfLines={1}>
+                                {item.structured_formatting.main_text}
+                              </Text>
+                              <Text style={dynamicStyles.suggestionSecondaryText} numberOfLines={1}>
+                                {item.structured_formatting.secondary_text}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
               </View>
-              <Icon
-                name="location"
-                size={18}
-                color={isDark ? theme.text : "#121212"}
-              />
-            </View>
-            <View style={dynamicStyles.locationTextContainer}>
-              <TextInput
-                style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-                placeholder={origin ? origin.name : "Enter origin address..."}
-                value={originAddress}
-                onChangeText={setOriginAddress}
-                onSubmitEditing={handleOriginSubmit}
-                onFocus={() => {
-                  if (originSuggestions.length > 0) {
-                    setShowOriginSuggestions(true);
-                  }
-                }}
-                onBlur={() => {
-                  // Delay hiding to allow suggestion selection
-                  setTimeout(() => setShowOriginSuggestions(false), 200);
-                }}
-                returnKeyType="search"
-                placeholderTextColor={isDark ? theme.textSecondary : "#A66400"}
-                editable={!isLoadingCurrentLocation}
-              />
-              {isGeocodingOrigin && (
-                <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
-              )}
-              {isLoadingOriginSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
-              )}
-              {isLoadingCurrentLocation && (
-                <Text style={dynamicStyles.geocodingText}>Getting current location...</Text>
-              )}
-              
-              <View style={dynamicStyles.locationSeparator} />
-              
-              <TextInput
-                style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
-                placeholder="Enter destination address..."
-                value={destinationAddress}
-                onChangeText={setDestinationAddress}
-                onSubmitEditing={handleDestinationSubmit}
-                onFocus={() => {
-                  if (destinationSuggestions.length > 0) {
-                    setShowDestinationSuggestions(true);
-                  }
-                }}
-                onBlur={() => {
-                  // Delay hiding to allow suggestion selection
-                  setTimeout(() => setShowDestinationSuggestions(false), 200);
-                }}
-                returnKeyType="search"
-                placeholderTextColor={theme.textSecondary}
-              />
-              {isGeocodingDestination && (
-                <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
-              )}
-              {isLoadingDestinationSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
-              )}
-              
-              {isLoadingRoute && (
-                <Text style={dynamicStyles.routeLoadingText}>
-                  Loading route...
-                </Text>
-              )}
-              {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { color: theme.primary }]}>
-                  Route loaded ✓
-                </Text>
-              )}
-              {isSearchingTaxis && (
-                <Text style={dynamicStyles.routeLoadingText}>
-                  Searching for available taxis...
-                </Text>
-              )}
             </View>
           </View>
-
-          {/* NEW: Origin suggestions dropdown */}
-          {showOriginSuggestions && originSuggestions.length > 0 && (
-            <View style={[dynamicStyles.suggestionsContainer, { top: 90 }]}>
-              <FlatList
-                data={originSuggestions}
-                keyExtractor={(item) => item.place_id}
-                renderItem={({ item }) => renderSuggestionItem({ 
-                  item, 
-                  onPress: () => handleOriginSuggestionSelect(item)
-                })}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled={true}
-              />
-            </View>
-          )}
-
-          {/* NEW: Destination suggestions dropdown */}
-          {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-            <View style={[dynamicStyles.suggestionsContainer, { top: 90 }]}>
-              <FlatList
-                data={destinationSuggestions}
-                keyExtractor={(item) => item.place_id}
-                renderItem={({ item }) => renderSuggestionItem({ 
-                  item, 
-                  onPress: () => handleDestinationSuggestionSelect(item)
-                })}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled={true}
-              />
-            </View>
-          )}
         </View>
 
         {/* Journey Status */}
-        {routeMatchResults && (
+        {routeMatchResults && !keyboardVisible && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
               Journey Status
@@ -1265,51 +1480,55 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <Text style={dynamicStyles.savedRoutesTitle}>Recently Used Taxi Ranks</Text>
-        <ScrollView style={{ marginTop: 10 }}>
-          {displayRoutes.length > 0 ? (
-            displayRoutes.map((route, index) => (
-              <TouchableOpacity
-                key={`${route.routeId}-${index}`}
-                style={dynamicStyles.routeCard}
-                onPress={() =>
-                  handleDestinationSelect({
-                    _id: route._id as any,
-                    routeId: route.routeId,
-                    destination: route.routeName || 'Saved Destination',
-                    destinationCoords: {
-                      latitude: route.destinationLat!,
-                      longitude: route.destinationLng!,
-                    },
-                  })
-                }
-              >
-                <Icon
-                  name="location-sharp"
-                  size={20}
-                  color={theme.primary}
-                  style={{ marginRight: 12 }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={dynamicStyles.routeTitle}>
-                    {route.routeName || 'Saved Route'}
-                  </Text>
-                  <Text style={dynamicStyles.routeSubtitle}>
-                    Used {route.usageCount} times
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
-              No recently used routes yet.
-            </Text>
-          )}
-        </ScrollView>
-      </View>
+        {!keyboardVisible && (
+          <>
+            <Text style={dynamicStyles.savedRoutesTitle}>Recently Used Taxi Ranks</Text>
+            <View style={{ marginTop: 10 }}>
+              {displayRoutes.length > 0 ? (
+                displayRoutes.map((route, index) => (
+                  <TouchableOpacity
+                    key={`${route.routeId}-${index}`}
+                    style={dynamicStyles.routeCard}
+                    onPress={() =>
+                      handleDestinationSelect({
+                        _id: route._id as any,
+                        routeId: route.routeId,
+                        destination: route.routeName || 'Saved Destination',
+                        destinationCoords: {
+                          latitude: route.destinationLat!,
+                          longitude: route.destinationLng!,
+                        },
+                      })
+                    }
+                  >
+                    <Icon
+                      name="location-sharp"
+                      size={20}
+                      color={theme.primary}
+                      style={{ marginRight: 12 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={dynamicStyles.routeTitle}>
+                        {route.routeName || 'Saved Route'}
+                      </Text>
+                      <Text style={dynamicStyles.routeSubtitle}>
+                        Used {route.usageCount} times
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
+                  No recently used routes yet.
+                </Text>
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
 
       {/* Reserve a Seat Button */}
-      {routeLoaded && !isLoadingRoute && (
+      {routeLoaded && !isLoadingRoute && !keyboardVisible && (
         <Animated.View style={{ opacity: buttonOpacity }}>
           <TouchableOpacity style={dynamicStyles.reserveButton} onPress={handleReserveSeat}>
             <Text style={dynamicStyles.reserveButtonText}>
@@ -1328,7 +1547,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
