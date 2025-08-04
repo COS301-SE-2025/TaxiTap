@@ -622,10 +622,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+										{taxiInfo?.driver?.name || "Driver"}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+										{taxiInfo?.taxi?.model || "Vehicle"}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
