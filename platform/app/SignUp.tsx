@@ -282,7 +282,6 @@ function LoginComponent() {
           {/* Google Sign-In Button */}
           <Pressable
             style={{
-              backgroundColor: '#f90',
               width: 45,
               height: 45,
               borderRadius: 10,

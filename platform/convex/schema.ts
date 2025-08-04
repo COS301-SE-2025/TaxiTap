@@ -121,13 +121,13 @@ export default defineSchema({
     // Trip relationship
     tripId: v.optional(v.id("trips")),
     
-    // PIN verification fields
-    ridePin: v.optional(v.string()),
-    pinRegeneratedAt: v.optional(v.number()),
-    pinVerifiedAt: v.optional(v.number()),
-    rideStartedAt: v.optional(v.number()),
-
-
+    // Payment fields
+    paymentDeepLink: v.optional(v.string()),
+    paymentInitiatedAt: v.optional(v.number()),
+    paymentInstructions: v.optional(v.array(v.string())),
+    paymentMethod: v.optional(v.string()),
+    paymentStatus: v.optional(v.string()),
+    paymentWebFallback: v.optional(v.string()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
