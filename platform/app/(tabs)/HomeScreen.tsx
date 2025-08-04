@@ -10,6 +10,7 @@ import {
   Platform,
   Animated,
   TextInput,
+  FlatList,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -31,6 +32,16 @@ const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
     ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
     : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+
+// Interface for autocomplete suggestions
+interface PlaceSuggestion {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
+}
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -84,6 +95,14 @@ export default function HomeScreen() {
   const [isGeocodingOrigin, setIsGeocodingOrigin] = useState(false);
   const [isGeocodingDestination, setIsGeocodingDestination] = useState(false);
   const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
+
+  // NEW: Autocomplete states
+  const [originSuggestions, setOriginSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
+  const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
 
   // Enhanced taxi matching states
   const [availableTaxis, setAvailableTaxis] = useState<any[]>([]);
@@ -141,15 +160,15 @@ export default function HomeScreen() {
     useThrottledLocationStreaming(userId, safeRole, true);
 
   useEffect(() => {
-    if (detectedLocation  && (!currentLocation || currentLocation.name === '')) {
+    if (detectedLocation && (!currentLocation || currentLocation.name === '')) {
       setCurrentLocation({
-        latitude: detectedLocation .latitude,
-        longitude: detectedLocation .longitude,
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
         name: 'Current Location'
       });
       setIsLoadingCurrentLocation(false);
     }
-  }, [detectedLocation , currentLocation]);
+  }, [detectedLocation, currentLocation]);
 
   // Auto-set origin to current location when detected
   useEffect(() => {
@@ -164,7 +183,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!detectedLocation  && isLoadingCurrentLocation) {
+      if (!detectedLocation && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
         Alert.alert(
           'Location Error', 
@@ -175,7 +194,7 @@ export default function HomeScreen() {
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [detectedLocation , isLoadingCurrentLocation]);
+  }, [detectedLocation, isLoadingCurrentLocation]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -276,33 +295,100 @@ export default function HomeScreen() {
     navigation.setOptions({ title: 'Home' });
   }, [navigation]);
 
-  // Geocoding function
-  const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
+  // NEW: Google Places Autocomplete function
+  const fetchPlaceSuggestions = async (input: string, location?: { latitude: number; longitude: number }): Promise<PlaceSuggestion[]> => {
+    if (!GOOGLE_MAPS_API_KEY || input.trim().length < 2) {
+      return [];
+    }
+
+    try {
+      let url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${GOOGLE_MAPS_API_KEY}`;
+      
+      // Add location bias if available
+      if (location) {
+        url += `&location=${location.latitude},${location.longitude}&radius=10000`; // 10km radius
+      }
+      
+      // Add components to bias results to South Africa (you can adjust this)
+      url += `&components=country:za`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === 'OK') {
+        return data.predictions;
+      } else {
+        console.warn('Places API error:', data.status);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching place suggestions:', error);
+      return [];
+    }
+  };
+
+  // NEW: Get place details from place_id
+  const getPlaceDetails = async (placeId: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
       Alert.alert('Error', 'Google Maps API key is not configured');
       return null;
     }
 
     try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${GOOGLE_MAPS_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.status === 'OK' && data.results.length > 0) {
-        const result = data.results[0];
+      if (data.status === 'OK' && data.result) {
         return {
-          latitude: result.geometry.location.lat,
-          longitude: result.geometry.location.lng,
-          name: result.formatted_address,
+          latitude: data.result.geometry.location.lat,
+          longitude: data.result.geometry.location.lng,
+          name: data.result.formatted_address,
         };
       } else {
-        throw new Error('Address not found');
+        throw new Error('Place details not found');
       }
     } catch (error) {
-      Alert.alert('Error', 'Could not find the address. Please try again.');
+      Alert.alert('Error', 'Could not get place details. Please try again.');
       return null;
     }
   };
+
+  // NEW: Debounced autocomplete for origin
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (originAddress.trim().length >= 2) {
+        setIsLoadingOriginSuggestions(true);
+        const suggestions = await fetchPlaceSuggestions(originAddress, detectedLocation || undefined);
+        setOriginSuggestions(suggestions);
+        setShowOriginSuggestions(true);
+        setIsLoadingOriginSuggestions(false);
+      } else {
+        setOriginSuggestions([]);
+        setShowOriginSuggestions(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [originAddress, detectedLocation]);
+
+  // NEW: Debounced autocomplete for destination
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (destinationAddress.trim().length >= 2) {
+        setIsLoadingDestinationSuggestions(true);
+        const suggestions = await fetchPlaceSuggestions(destinationAddress, detectedLocation || undefined);
+        setDestinationSuggestions(suggestions);
+        setShowDestinationSuggestions(true);
+        setIsLoadingDestinationSuggestions(false);
+      } else {
+        setDestinationSuggestions([]);
+        setShowDestinationSuggestions(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [destinationAddress, detectedLocation]);
 
   // Enhanced function to search for available taxis using the actual enhanced matching
   const searchForAvailableTaxis = async (
@@ -366,10 +452,87 @@ export default function HomeScreen() {
     }
   }, [taxiSearchResult]);
 
-  // Handle origin address submission
+  // NEW: Handle origin suggestion selection
+  const handleOriginSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    setOriginAddress(suggestion.description);
+    setShowOriginSuggestions(false);
+    setIsGeocodingOrigin(true);
+
+    const placeDetails = await getPlaceDetails(suggestion.place_id);
+    setIsGeocodingOrigin(false);
+
+    if (placeDetails) {
+      setOrigin(placeDetails);
+      // Animate map to origin
+      mapRef.current?.animateToRegion(
+        {
+          latitude: placeDetails.latitude,
+          longitude: placeDetails.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        1000
+      );
+    }
+  };
+
+  // NEW: Handle destination suggestion selection
+  const handleDestinationSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    setDestinationAddress(suggestion.description);
+    setShowDestinationSuggestions(false);
+    setIsGeocodingDestination(true);
+
+    const placeDetails = await getPlaceDetails(suggestion.place_id);
+    setIsGeocodingDestination(false);
+
+    if (placeDetails) {
+      setDestination(placeDetails);
+      setSelectedRouteId('manual-route');
+      
+      await AsyncStorage.setItem(
+        'lastManualDestination',
+        JSON.stringify({
+          latitude: placeDetails.latitude,
+          longitude: placeDetails.longitude,
+          name: placeDetails.name,
+        })
+      );
+    }
+  };
+
+  // MODIFIED: Enhanced geocoding function (fallback for manual entry)
+  const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
+    if (!GOOGLE_MAPS_API_KEY) {
+      Alert.alert('Error', 'Google Maps API key is not configured');
+      return null;
+    }
+
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        const result = data.results[0];
+        return {
+          latitude: result.geometry.location.lat,
+          longitude: result.geometry.location.lng,
+          name: result.formatted_address,
+        };
+      } else {
+        throw new Error('Address not found');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not find the address. Please try again.');
+      return null;
+    }
+  };
+
+  // Handle origin address submission (for manual entry when not using suggestions)
   const handleOriginSubmit = async () => {
     if (!originAddress.trim()) return;
     
+    setShowOriginSuggestions(false);
     setIsGeocodingOrigin(true);
     const result = await geocodeAddress(originAddress);
     setIsGeocodingOrigin(false);
@@ -389,10 +552,11 @@ export default function HomeScreen() {
     }
   };
 
-  // Handle destination address submission
+  // Handle destination address submission (for manual entry when not using suggestions)
   const handleDestinationSubmit = async () => {
     if (!destinationAddress.trim()) return;
     
+    setShowDestinationSuggestions(false);
     setIsGeocodingDestination(true);
     const result = await geocodeAddress(destinationAddress);
     setIsGeocodingDestination(false);
@@ -595,6 +759,8 @@ export default function HomeScreen() {
     setDestination(dest);
     setDestinationAddress(route.destination);
     setSelectedRouteId(route._id);
+    // Hide suggestions when selecting from saved routes
+    setShowDestinationSuggestions(false);
 
     try {
       await storeRouteForPassenger({
@@ -605,6 +771,17 @@ export default function HomeScreen() {
       console.error("Failed to store route:", error);
     }
   };
+
+  // NEW: Render suggestion item
+  const renderSuggestionItem = ({ item, onPress }: { item: PlaceSuggestion; onPress: () => void }) => (
+    <TouchableOpacity style={dynamicStyles.suggestionItem} onPress={onPress}>
+      <Icon name="location-outline" size={16} color={theme.textSecondary} style={{ marginRight: 10 }} />
+      <View style={{ flex: 1 }}>
+        <Text style={dynamicStyles.suggestionMainText}>{item.structured_formatting.main_text}</Text>
+        <Text style={dynamicStyles.suggestionSecondaryText}>{item.structured_formatting.secondary_text}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   const dynamicStyles = StyleSheet.create({
     container: { 
@@ -705,6 +882,52 @@ export default function HomeScreen() {
       fontStyle: 'italic',
       marginTop: 4,
     },
+    // NEW: Autocomplete suggestion styles
+    suggestionsContainer: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      backgroundColor: theme.background,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderTopWidth: 0,
+      borderBottomLeftRadius: 12,
+      borderBottomRightRadius: 12,
+      maxHeight: 200,
+      zIndex: 1000,
+      elevation: 5,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+    },
+    suggestionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    suggestionMainText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.text,
+    },
+    suggestionSecondaryText: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    loadingSuggestions: {
+      padding: 12,
+      alignItems: 'center',
+    },
+    loadingSuggestionsText: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      fontStyle: 'italic',
+    },
     searchResultsContainer: {
       marginBottom: 20,
     },
@@ -792,10 +1015,10 @@ export default function HomeScreen() {
 
   // Fix: Improved initial region logic
   const getInitialRegion = () => {
-    if (detectedLocation ) {
+    if (detectedLocation) {
       return {
-        latitude: detectedLocation .latitude,
-        longitude: detectedLocation .longitude,
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
@@ -889,71 +1112,130 @@ export default function HomeScreen() {
       )}
 
       <View style={dynamicStyles.bottomSheet}>
-        <View style={dynamicStyles.locationBox}>
-          <View style={dynamicStyles.locationIndicator}>
-            <View style={dynamicStyles.currentLocationCircle}>
-              <View style={dynamicStyles.currentLocationDot} />
+        {/* ENHANCED: Location input box with autocomplete */}
+        <View style={{ position: 'relative', zIndex: 10 }}>
+          <View style={dynamicStyles.locationBox}>
+            <View style={dynamicStyles.locationIndicator}>
+              <View style={dynamicStyles.currentLocationCircle}>
+                <View style={dynamicStyles.currentLocationDot} />
+              </View>
+              <View style={dynamicStyles.dottedLineContainer}>
+                {[...Array(8)].map((_, i) => (
+                  <View key={i} style={dynamicStyles.dottedLineDot} />
+                ))}
+              </View>
+              <Icon
+                name="location"
+                size={18}
+                color={isDark ? theme.text : "#121212"}
+              />
             </View>
-            <View style={dynamicStyles.dottedLineContainer}>
-              {[...Array(8)].map((_, i) => (
-                <View key={i} style={dynamicStyles.dottedLineDot} />
-              ))}
+            <View style={dynamicStyles.locationTextContainer}>
+              <TextInput
+                style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
+                placeholder={origin ? origin.name : "Enter origin address..."}
+                value={originAddress}
+                onChangeText={setOriginAddress}
+                onSubmitEditing={handleOriginSubmit}
+                onFocus={() => {
+                  if (originSuggestions.length > 0) {
+                    setShowOriginSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding to allow suggestion selection
+                  setTimeout(() => setShowOriginSuggestions(false), 200);
+                }}
+                returnKeyType="search"
+                placeholderTextColor={isDark ? theme.textSecondary : "#A66400"}
+                editable={!isLoadingCurrentLocation}
+              />
+              {isGeocodingOrigin && (
+                <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
+              )}
+              {isLoadingOriginSuggestions && (
+                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+              )}
+              {isLoadingCurrentLocation && (
+                <Text style={dynamicStyles.geocodingText}>Getting current location...</Text>
+              )}
+              
+              <View style={dynamicStyles.locationSeparator} />
+              
+              <TextInput
+                style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
+                placeholder="Enter destination address..."
+                value={destinationAddress}
+                onChangeText={setDestinationAddress}
+                onSubmitEditing={handleDestinationSubmit}
+                onFocus={() => {
+                  if (destinationSuggestions.length > 0) {
+                    setShowDestinationSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding to allow suggestion selection
+                  setTimeout(() => setShowDestinationSuggestions(false), 200);
+                }}
+                returnKeyType="search"
+                placeholderTextColor={theme.textSecondary}
+              />
+              {isGeocodingDestination && (
+                <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
+              )}
+              {isLoadingDestinationSuggestions && (
+                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+              )}
+              
+              {isLoadingRoute && (
+                <Text style={dynamicStyles.routeLoadingText}>
+                  Loading route...
+                </Text>
+              )}
+              {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
+                <Text style={[dynamicStyles.routeLoadingText, { color: theme.primary }]}>
+                  Route loaded ✓
+                </Text>
+              )}
+              {isSearchingTaxis && (
+                <Text style={dynamicStyles.routeLoadingText}>
+                  Searching for available taxis...
+                </Text>
+              )}
             </View>
-            <Icon
-              name="location"
-              size={18}
-              color={isDark ? theme.text : "#121212"}
-            />
           </View>
-          <View style={dynamicStyles.locationTextContainer}>
-            <TextInput
-              style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-              placeholder={origin ? origin.name : "Enter origin address..."}
-              value={originAddress}
-              onChangeText={setOriginAddress}
-              onSubmitEditing={handleOriginSubmit}
-              returnKeyType="search"
-              placeholderTextColor={isDark ? theme.textSecondary : "#A66400"}
-              editable={!isLoadingCurrentLocation}
-            />
-            {isGeocodingOrigin && (
-              <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
-            )}
-            {isLoadingCurrentLocation && (
-              <Text style={dynamicStyles.geocodingText}>Getting current location...</Text>
-            )}
-            
-            <View style={dynamicStyles.locationSeparator} />
-            
-            <TextInput
-              style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
-              placeholder="Enter destination address..."
-              value={destinationAddress}
-              onChangeText={setDestinationAddress}
-              onSubmitEditing={handleDestinationSubmit}
-              returnKeyType="search"
-              placeholderTextColor={theme.textSecondary}
-            />
-            {isGeocodingDestination && (
-              <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
-            )}
-            
-            {isLoadingRoute && (
-              <Text style={dynamicStyles.routeLoadingText}>
-                Loading route...
-              </Text>
-            )}
-            {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
-              <Text style={[dynamicStyles.routeLoadingText, { color: theme.primary }]}>
-                Route loaded ✓
-              </Text>
-            )}
-            {isSearchingTaxis && (
-              <Text style={dynamicStyles.routeLoadingText}>
-                Searching for available taxis...
-              </Text>
-            )}
-          </View>
+
+          {/* NEW: Origin suggestions dropdown */}
+          {showOriginSuggestions && originSuggestions.length > 0 && (
+            <View style={[dynamicStyles.suggestionsContainer, { top: 90 }]}>
+              <FlatList
+                data={originSuggestions}
+                keyExtractor={(item) => item.place_id}
+                renderItem={({ item }) => renderSuggestionItem({ 
+                  item, 
+                  onPress: () => handleOriginSuggestionSelect(item)
+                })}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              />
+            </View>
+          )}
+
+          {/* NEW: Destination suggestions dropdown */}
+          {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+            <View style={[dynamicStyles.suggestionsContainer, { top: 90 }]}>
+              <FlatList
+                data={destinationSuggestions}
+                keyExtractor={(item) => item.place_id}
+                renderItem={({ item }) => renderSuggestionItem({ 
+                  item, 
+                  onPress: () => handleDestinationSuggestionSelect(item)
+                })}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              />
+            </View>
+          )}
         </View>
 
         {/* Journey Status */}
