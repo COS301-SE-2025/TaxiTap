@@ -259,7 +259,7 @@ export default () => {
 							</View>
 							<View style={{ marginRight: 54 }}>
 								<Text style={dynamicStyles.driverName}>
-									{"Tshepo Mthembu"}
+									{"Passenger"}
 								</Text>
 							</View>
 						</View>
