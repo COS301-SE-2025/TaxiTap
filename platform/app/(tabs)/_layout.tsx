@@ -190,12 +190,7 @@ const TabNavigation: React.FC = () => {
         }}
       />
 
-      <Tabs.Screen
-        name="Payments"
-        options={{
-          href: null,
-        }}
-      />
+
 
       <Tabs.Screen
         name="SeatReserved"
@@ -248,6 +243,13 @@ const TabNavigation: React.FC = () => {
 
       <Tabs.Screen
         name="PersonalInfoEdit"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="NotificationSettings"
         options={{
           href: null,
         }}

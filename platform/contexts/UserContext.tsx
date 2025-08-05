@@ -1,6 +1,8 @@
 // contexts/UserContext.tsx - Simple version without auto-navigation
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useConvex } from 'convex/react';
+import { api } from '../convex/_generated/api';
 
 // Type definitions (keep your existing types)
 interface User {
@@ -49,6 +51,7 @@ export const useUser = (): UserContextType => {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const convex = useConvex();
 
   useEffect(() => {
     loadUserFromStorage();
@@ -101,16 +104,31 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // Get device ID for session deactivation
+      const deviceId = await AsyncStorage.getItem('deviceId');
+      
+      // Deactivate session if device ID exists
+      if (deviceId && user) {
+        try {
+          await convex.mutation(api.functions.users.UserManagement.logInWithSMS.deactivateSession, {
+            deviceId,
+          });
+        } catch (sessionError) {
+          console.error('Error deactivating session:', sessionError);
+          // Continue with logout even if session deactivation fails
+        }
+      }
+
       // Clear user state
       setUser(null);
       
       // Clear AsyncStorage
       await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber']);
       
-      // REMOVED: Automatic navigation - let Logout component handle navigation
-      
     } catch (error) {
       console.error('Error during logout:', error);
+      // Still clear user state even if there's an error
+      setUser(null);
     }
   };
 

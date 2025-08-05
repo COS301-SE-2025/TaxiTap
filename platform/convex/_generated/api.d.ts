@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as functions_assets_assets from "../functions/assets/assets.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_fare from "../functions/earnings/fare.js";
@@ -72,6 +73,7 @@ import type * as functions_taxis_viewTaxiInfo from "../functions/taxis/viewTaxiI
 import type * as functions_taxis_viewTaxiInfoHandler from "../functions/taxis/viewTaxiInfoHandler.js";
 import type * as functions_users_UserManagement_getUserById from "../functions/users/UserManagement/getUserById.js";
 import type * as functions_users_UserManagement_logInWithSMS from "../functions/users/UserManagement/logInWithSMS.js";
+import type * as functions_users_UserManagement_notificationSettings from "../functions/users/UserManagement/notificationSettings.js";
 import type * as functions_users_UserManagement_signUpWithSMS from "../functions/users/UserManagement/signUpWithSMS.js";
 import type * as functions_users_UserManagement_switchActiveRole from "../functions/users/UserManagement/switchActiveRole.js";
 import type * as functions_users_UserManagement_switchBothtoDriver from "../functions/users/UserManagement/switchBothtoDriver.js";
@@ -93,6 +95,7 @@ import type * as functions_work_sessions_startWorkSession from "../functions/wor
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "functions/assets/assets": typeof functions_assets_assets;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/fare": typeof functions_earnings_fare;
@@ -152,6 +155,7 @@ declare const fullApi: ApiFromModules<{
   "functions/taxis/viewTaxiInfoHandler": typeof functions_taxis_viewTaxiInfoHandler;
   "functions/users/UserManagement/getUserById": typeof functions_users_UserManagement_getUserById;
   "functions/users/UserManagement/logInWithSMS": typeof functions_users_UserManagement_logInWithSMS;
+  "functions/users/UserManagement/notificationSettings": typeof functions_users_UserManagement_notificationSettings;
   "functions/users/UserManagement/signUpWithSMS": typeof functions_users_UserManagement_signUpWithSMS;
   "functions/users/UserManagement/switchActiveRole": typeof functions_users_UserManagement_switchActiveRole;
   "functions/users/UserManagement/switchBothtoDriver": typeof functions_users_UserManagement_switchBothtoDriver;

@@ -62,6 +62,26 @@ export default function DriverOffline({
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
   const [showFullStatus, setShowFullStatus] = useState(true);
 
+  // Session monitoring for drivers
+  // const { updateSessionActivity } = useSessionMonitoring({
+  //   updateInterval: 5 * 60 * 1000, // Update every 5 minutes when offline
+  //   checkForConflicts: true,
+  //   onSessionConflict: (conflictInfo) => {
+  //     Alert.alert(
+  //       'Session Conflict',
+  //       'Your driver account is active on another device. You will be logged out for security.',
+  //       [
+  //         {
+  //           text: 'OK',
+  //           onPress: () => {
+  //             router.replace('/Login');
+  //           },
+  //         },
+  //       ]
+  //     );
+  //   },
+  // });
+
   const taxiInfo = useQuery(
       api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
       user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -100,6 +120,13 @@ export default function DriverOffline({
 
     return () => clearTimeout(timer); // Cleanup on unmount
   }, []);
+
+  // Update session activity when component mounts
+  useEffect(() => {
+    if (user) {
+      // updateSessionActivity(); // Removed as per edit hint
+    }
+  }, [user]); // Removed updateSessionActivity from dependency array
 
   // Helper function to parse route name
   const parseRouteName = (routeName: string) => {

@@ -114,14 +114,6 @@ export default defineSchema({
     
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
-    
-    // Payment fields
-    paymentDeepLink: v.optional(v.string()),
-    paymentInitiatedAt: v.optional(v.number()),
-    paymentInstructions: v.optional(v.array(v.string())),
-    paymentMethod: v.optional(v.string()),
-    paymentStatus: v.optional(v.string()),
-    paymentWebFallback: v.optional(v.string()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
@@ -361,4 +353,55 @@ routes: defineTable({
     endTime: v.optional(v.number()),
   })
   .index("by_driver_and_start", ["driverId", "startTime"]),
+
+  sessions: defineTable({
+    userId: v.id("taxiTap_users"),
+    deviceId: v.string(), // Unique device identifier
+    deviceName: v.optional(v.string()), // Human-readable device name
+    platform: v.union(v.literal("ios"), v.literal("android"), v.literal("web")),
+    isActive: v.boolean(),
+    lastActivityAt: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.optional(v.number()), // For session expiration
+  })
+  .index("by_user_id", ["userId"])
+  .index("by_device_id", ["deviceId"])
+  .index("by_is_active", ["isActive"])
+  .index("by_user_and_active", ["userId", "isActive"]),
+
+  assets: defineTable({
+    assetId: v.string(),
+    name: v.string(),
+    type: v.union(
+      v.literal("image"),
+      v.literal("audio"),
+      v.literal("video"),
+      v.literal("document")
+    ),
+    category: v.union(
+      v.literal("logo"),
+      v.literal("profile"),
+      v.literal("vehicle"),
+      v.literal("ui"),
+      v.literal("sound"),
+      v.literal("documentation"),
+      v.literal("other")
+    ),
+    filePath: v.string(),
+    fileSize: v.number(),
+    mimeType: v.string(),
+    dimensions: v.optional(v.object({
+      width: v.number(),
+      height: v.number()
+    })),
+    metadata: v.optional(v.any()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+  .index("by_asset_id", ["assetId"])
+  .index("by_type", ["type"])
+  .index("by_category", ["category"])
+  .index("by_is_active", ["isActive"])
+  .index("by_created_at", ["createdAt"]),
 });

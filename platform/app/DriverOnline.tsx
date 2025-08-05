@@ -74,6 +74,26 @@ export default function DriverOnline({
   const [showMap, setShowMap] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   
+  // Session monitoring for drivers
+  // const { updateSessionActivity } = useSessionMonitoring({
+  //   updateInterval: 2 * 60 * 1000, // Update every 2 minutes for drivers
+  //   checkForConflicts: true,
+  //   onSessionConflict: (conflictInfo) => {
+  //     Alert.alert(
+  //       'Session Conflict',
+  //       'Your driver account is active on another device. You will be logged out for security.',
+  //       [
+  //         {
+  //           text: 'OK',
+  //           onPress: () => {
+  //             onGoOffline();
+  //           },
+  //         },
+  //       ]
+  //     );
+  //   },
+  // });
+
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -93,6 +113,13 @@ export default function DriverOnline({
       tabBarStyle: { display: 'none' },
     });
   });
+
+  // Update session activity when component mounts and periodically
+  useEffect(() => {
+    if (user) {
+      // updateSessionActivity(); // Removed as per edit hint
+    }
+  }, [user]); // Removed updateSessionActivity from dependency array
 
   useEffect(() => {
     const getCurrentLocation = async () => {

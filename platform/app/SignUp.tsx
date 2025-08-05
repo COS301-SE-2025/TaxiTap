@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { api } from "../convex/_generated/api";
 import { useMutation } from 'convex/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAssetCache } from '../app/hooks/useAssetCache';
+import icon from '../assets/images/icon.png'; // Fallback
+import google from '../assets/images/google5.png'; // Fallback
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
@@ -38,6 +41,16 @@ function LoginComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const { cachedAssets, isLoading: assetsLoading, preloadAssets } = useAssetCache();
+
+  // Preload assets on component mount
+  useEffect(() => {
+    preloadAssets(['logo', 'ui']);
+  }, []);
+
+  // Get cached asset URIs or fallback to bundled assets
+  const logoUri = cachedAssets['app_logo'] || icon;
+  const googleIconUri = cachedAssets['google_icon'] || google;
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
@@ -104,7 +117,7 @@ function LoginComponent() {
         >
           <View style={{ alignItems: 'center' }}>
             <Image
-              source={require('../assets/images/icon.png')}
+              source={logoUri}
               style={{ width: '100%', height: 200 }}
             />
           </View>
@@ -291,7 +304,7 @@ function LoginComponent() {
             }}
           >
             <Image
-              source={require('../assets/images/google5.png')}
+              source={googleIconUri}
               style={{ width: 24, height: 24 }}
             />
           </Pressable>
