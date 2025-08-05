@@ -14,17 +14,16 @@ async function wasNotificationSentRecently(
   rideId: string,
   debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME
 ): Promise<boolean> {
-  const recentNotification = await ctx.db
-    .query("notifications")
-    .withIndex("by_user_id", (q) => q.eq("userId", userId))
-    .filter((q) => 
-      q.and(
-        q.eq(q.field("type"), notificationType),
-        q.eq(q.field("metadata.rideId"), rideId),
-        q.gt(q.field("_creationTime"), Date.now() - debounceTimeMs)
-      )
-    )
-    .first();
+  // Use a simple query without filter() since it's not available
+  const notifications = await ctx.db
+    .query("notifications");
+
+  const recentNotification = notifications.find(notification => 
+    notification.userId === userId &&
+    notification.type === notificationType &&
+    notification.metadata?.rideId === rideId &&
+    notification._creationTime > Date.now() - debounceTimeMs
+  );
 
   return !!recentNotification;
 }

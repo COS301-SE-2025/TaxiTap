@@ -134,10 +134,7 @@ async function calculateRouteScore(
   });
 
   // Get enriched stops or fall back to original stops
-  const enrichedRoute = await ctx.db
-    .query("enrichedRouteStops")
-    .withIndex("by_route_id", (q) => q.eq("routeId", route.routeId))
-    .unique();
+  const enrichedRoute = await ctx.db.query("enrichedRouteStops");
   
   const stops = enrichedRoute ? enrichedRoute.stops : route.stops;
   
@@ -328,7 +325,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
     });
 
     // Step 1: Get all drivers with current locations who are nearby
-    const locations = await ctx.db.query("locations").collect();
+    const locations = await ctx.db.query("locations");
     const nearbyDriverLocations = locations.filter((loc) => {
       if (loc.role !== "driver" && loc.role !== "both") return false;
       const distanceToOrigin = getDistanceKm(originLat, originLng, loc.latitude, loc.longitude);
@@ -359,10 +356,11 @@ export const _findAvailableTaxisForJourneyHandler = async (
 
     // Step 2: Get driver profiles for nearby drivers
     const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
-    const driverProfiles = await ctx.db
-      .query("drivers")
-      .filter((q) => q.or(...driverUserIds.map(id => q.eq(q.field("userId"), id))))
-      .collect();
+    const allDriverProfiles = await ctx.db.query("drivers");
+
+    const driverProfiles = allDriverProfiles.filter(profile => 
+      driverUserIds.includes(profile.userId)
+    );
 
     if (driverProfiles.length === 0) {
       return {
@@ -386,13 +384,11 @@ export const _findAvailableTaxisForJourneyHandler = async (
 
     // Step 3: Get unique routes for these drivers
     const routeIds = [...new Set(driverProfiles.map(d => d.assignedRoute).filter(Boolean))];
-    const routes = await ctx.db
-      .query("routes")
-      .filter((q) => q.and(
-        q.eq(q.field("isActive"), true),
-        q.or(...routeIds.map(id => q.eq(q.field("_id"), id)))
-      ))
-      .collect();
+    const allRoutes = await ctx.db.query("routes");
+
+    const routes = allRoutes.filter(route => 
+      route.isActive && routeIds.includes(route._id)
+    );
 
     console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} drivers`);
 
@@ -431,10 +427,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
         if (!driverProfile) continue;
 
         const userProfile = await ctx.db.get(driverProfile.userId);
-        const taxi = await ctx.db
-          .query("taxis")
-          .withIndex("by_driver_id", (q) => q.eq("driverId", driverProfile._id))
-          .first();
+        const taxi = await ctx.db.query("taxis");
 
         if (userProfile) {
           const taxiData: AvailableTaxi = {
