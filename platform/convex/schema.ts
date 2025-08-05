@@ -120,14 +120,6 @@ export default defineSchema({
     
     // Trip relationship
     tripId: v.optional(v.id("trips")),
-    
-    // Payment fields
-    paymentDeepLink: v.optional(v.string()),
-    paymentInitiatedAt: v.optional(v.number()),
-    paymentInstructions: v.optional(v.array(v.string())),
-    paymentMethod: v.optional(v.string()),
-    paymentStatus: v.optional(v.string()),
-    paymentWebFallback: v.optional(v.string()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
