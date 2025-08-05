@@ -124,6 +124,9 @@ jest.mock('../../../convex/_generated/api', () => ({
         acceptRide: { acceptRide: 'acceptRide' },
         cancelRide: { cancelRide: 'cancelRide' },
         declineRide: { declineRide: 'declineRide' },
+        scheduledProximityCheck: { 
+          triggerProximityCheck: 'triggerProximityCheck' 
+        },
       },
     },
   },
