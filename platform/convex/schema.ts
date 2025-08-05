@@ -117,8 +117,6 @@ export default defineSchema({
     estimatedDistance: v.optional(v.number()),
     actualDistance: v.optional(v.number()),
     distance: v.optional(v.number()),
-    
-    // Trip relationship
     tripId: v.optional(v.id("trips")),
   })
     .index("by_ride_id", ["rideId"])
