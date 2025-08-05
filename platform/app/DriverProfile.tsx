@@ -59,6 +59,7 @@ export default function DriverProfile() {
     const handleVehicle = () => {
         router.push('../VehicleDriver');
     };
+    
     const handleEarnings = () => {
         router.push('../EarningsPage');
     };
@@ -70,6 +71,11 @@ export default function DriverProfile() {
     const handlePersonalInfo = () => {
         // Navigate to driver personal info edit screen
         router.push('../DriverEdit');
+    };
+
+    const handleNotificationSettings = () => {
+        // Navigate to driver notification settings screen
+        router.push('./DriverNotificationSettings');
     };
 
     const handleSignout = async () => {
@@ -352,7 +358,20 @@ export default function DriverProfile() {
                     </View>
                 </View>
 
-                {/* Section 3: Logout */}
+                {/* Section 3: Settings */}
+                <View style={dynamicStyles.section}>
+                    <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                        <View style={dynamicStyles.menuItemLeft}>
+                            <Ionicons name="notifications-outline" size={24} color={theme.text} />
+                            <Text style={dynamicStyles.menuItemText}>Notification Settings</Text>
+                        </View>
+                        <Pressable onPress={handleNotificationSettings}>
+                            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                        </Pressable>
+                    </View>
+                </View>
+
+                {/* Section 4: Logout */}
                 <View style={dynamicStyles.logoutSection}>
                     <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                         <Ionicons name="log-out-outline" size={24} color="#FF3B30" />

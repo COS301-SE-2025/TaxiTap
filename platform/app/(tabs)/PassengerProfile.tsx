@@ -175,6 +175,11 @@ export default function PassengerProfile() {
         router.push('../AddWorkAddress');
     };
 
+    const handleNotificationSettings = () => {
+        // Navigate to notification settings screen
+        router.push('./NotificationSettings');
+    };
+
     type MenuItemProps = {
         icon: keyof typeof Ionicons.glyphMap;
         title: string;
@@ -344,7 +349,20 @@ export default function PassengerProfile() {
                 </View>
             </View>
 
-            {/* Section 3: Logout */}
+            {/* Section 3: Settings */}
+            <View style={dynamicStyles.section}>
+                <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                    <View style={dynamicStyles.menuItemLeft}>
+                        <Ionicons name="notifications-outline" size={24} color={theme.text} />
+                        <Text style={dynamicStyles.menuItemText}>Notification Settings</Text>
+                    </View>
+                    <Pressable onPress={handleNotificationSettings}>
+                        <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                    </Pressable>
+                </View>
+            </View>
+
+            {/* Section 4: Logout */}
             <View style={dynamicStyles.logoutSection}>
                 <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                     <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
