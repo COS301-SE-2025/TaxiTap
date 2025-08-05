@@ -72,11 +72,21 @@ export default function DriverOffline({
   const assignedRoute = useQuery(
     api.functions.routes.queries.getDriverAssignedRoute,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+      user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+
+  // Get driver's assigned route from database
+  const assignedRoute = useQuery(
+    api.functions.routes.queries.getDriverAssignedRoute,
+    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
   if (!user) return;
   
   const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+  
+
   
 
   useLayoutEffect(() => {
@@ -92,14 +102,6 @@ export default function DriverOffline({
       router.replace('/DriverHomeScreen');
     }
   }, [onGoOnline, router]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowFullStatus(false);
-    }, 5000); // 5 seconds
-
-    return () => clearTimeout(timer); // Cleanup on unmount
-  }, []);
 
   // Helper function to parse route name
   const parseRouteName = (routeName: string) => {

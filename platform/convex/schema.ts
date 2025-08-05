@@ -112,16 +112,14 @@ export default defineSchema({
     estimatedFare: v.optional(v.number()),
     finalFare: v.optional(v.number()),
     
+
+    // Distance fields - keeping both for compatibility
+    estimatedDistance: v.optional(v.number()),
+    actualDistance: v.optional(v.number()),
     distance: v.optional(v.number()),
-    tripId: v.optional(v.id("trips")),
     
-    // Payment fields
-    paymentDeepLink: v.optional(v.string()),
-    paymentInitiatedAt: v.optional(v.number()),
-    paymentInstructions: v.optional(v.array(v.string())),
-    paymentMethod: v.optional(v.string()),
-    paymentStatus: v.optional(v.string()),
-    paymentWebFallback: v.optional(v.string()),
+    // Trip relationship
+    tripId: v.optional(v.id("trips")),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
