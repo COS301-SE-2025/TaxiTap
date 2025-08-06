@@ -16,6 +16,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
 import Icon from 'react-native-vector-icons/Ionicons';
 import loading from '../../assets/images/loading4.png';
 
@@ -23,6 +24,7 @@ export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { t } = useLanguage(); // Add this hook
 
   // Get route parameters
   const {
@@ -88,7 +90,7 @@ export default function TaxiInformation() {
           routeInfo: taxi.routeInfo,
           // Additional display fields
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
-          displayDistance: `${taxi.distanceToOrigin}km away`,
+          displayDistance: `${taxi.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
           routeName: taxi.routeInfo.routeName,
           fare: taxi.routeInfo.calculatedFare, // Use calculated fare
         })) || [];
@@ -103,7 +105,7 @@ export default function TaxiInformation() {
       console.log('⚠️ No enhanced data received, falling back to original query');
       setIsLoadingTaxis(false);
     }
-  }, [routeMatchDataString]);
+  }, [routeMatchDataString, t]);
 
   // Fallback query for backward compatibility
   const shouldUseOriginalQuery = !routeMatchDataString;
@@ -155,19 +157,19 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          Alert.alert('Error', 'Phone calls are not supported on this device');
+          Alert.alert(t('common:error'), t('taxiInfo:phoneNotSupported'));
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        Alert.alert('Error', 'Could not open phone app');
+        Alert.alert(t('common:error'), t('taxiInfo:couldNotOpenPhone'));
       });
   };
 
   // Handle ride booking using your existing requestRide function
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      Alert.alert('Error', 'Please select a taxi and ensure you are logged in');
+      Alert.alert(t('common:error'), t('taxiInfo:selectTaxiError'));
       return;
     }
 
@@ -200,11 +202,11 @@ export default function TaxiInformation() {
 
       if (result) {
         Alert.alert(
-          'Ride Request Sent',
-          `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
+          t('taxiInfo:rideRequestSent'),
+          t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
           [
             {
-              text: 'OK',
+              text: t('common:ok'),
               onPress: () => {
                 router.push({
                   pathname: './PassengerReservation',
@@ -229,9 +231,9 @@ export default function TaxiInformation() {
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
       Alert.alert(
-        'Booking Error',
-        'Failed to send ride request. Please try again.',
-        [{ text: 'OK' }]
+        t('taxiInfo:bookingError'),
+        t('taxiInfo:bookingErrorMessage'),
+        [{ text: t('common:ok') }]
       );
     } finally {
       setIsBooking(false);
@@ -255,12 +257,12 @@ export default function TaxiInformation() {
         <View style={dynamicStyles.taxiInfo}>
           <View style={dynamicStyles.taxiHeader}>
             <Text style={dynamicStyles.taxiName}>
-              {taxi.name || `Driver ${index + 1}`}
+              {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
             </Text>
             {isEnhanced && (
               <View style={dynamicStyles.distanceBadge}>
                 <Text style={dynamicStyles.distanceText}>
-                  {taxi.distanceToOrigin.toFixed(1)}km
+                  {taxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')}
                 </Text>
               </View>
             )}
@@ -268,34 +270,34 @@ export default function TaxiInformation() {
           
           <View style={dynamicStyles.taxiDetails}>
             <Text style={dynamicStyles.taxiDetailText}>
-              🚗 {taxi.vehicleModel || 'Vehicle info not available'}
+              🚗 {taxi.vehicleModel || t('taxiInfo:vehicleInfoNotAvailable')}
             </Text>
             <Text style={dynamicStyles.taxiDetailText}>
-              📋 {taxi.vehicleRegistration || 'Registration not available'}
+              📋 {taxi.vehicleRegistration || t('taxiInfo:registrationNotAvailable')}
             </Text>
             
             {isEnhanced && taxi.routeInfo && (
               <>
                 <Text style={dynamicStyles.routeInfoText}>
-                  🛣️ Route: {taxi.routeInfo.routeName}
+                  🛣️ {t('taxiInfo:route')} {taxi.routeInfo.routeName}
                 </Text>
                 <Text style={dynamicStyles.fareText}>
-                  💰 Fare: R{(taxi.routeInfo.calculatedFare || taxi.routeInfo.fare || 0).toFixed(2)}
+                  💰 {t('taxiInfo:fare')} R{(taxi.routeInfo.calculatedFare || taxi.routeInfo.fare || 0).toFixed(2)}
                 </Text>
                 <Text style={dynamicStyles.routeInfoText}>
-                  📏 Distance: {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}km
+                  📏 {t('taxiInfo:distance')} {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}{t('taxiInfo:km')}
                 </Text>
                 
                 {taxi.routeInfo.closestStartStop && (
                   <Text style={dynamicStyles.stopInfoText}>
-                    📍 Pickup near: {taxi.routeInfo.closestStartStop.name}
-                    ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}km)
+                    📍 {t('taxiInfo:pickupNear')} {taxi.routeInfo.closestStartStop.name}
+                    ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}{t('taxiInfo:km')})
                   </Text>
                 )}
                 {taxi.routeInfo.closestEndStop && (
                   <Text style={dynamicStyles.stopInfoText}>
-                    🏁 Drop-off near: {taxi.routeInfo.closestEndStop.name}
-                    ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}km)
+                    🏁 {t('taxiInfo:dropOffNear')} {taxi.routeInfo.closestEndStop.name}
+                    ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}{t('taxiInfo:km')})
                   </Text>
                 )}
               </>
@@ -307,7 +309,7 @@ export default function TaxiInformation() {
                 onPress={() => handleCallDriver(taxi.phoneNumber)}
               >
                 <Icon name="call" size={16} color="#4CAF50" />
-                <Text style={dynamicStyles.callButtonText}>Call Driver</Text>
+                <Text style={dynamicStyles.callButtonText}>{t('taxiInfo:callDriver')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -318,7 +320,7 @@ export default function TaxiInformation() {
             dynamicStyles.selectText,
             isSelected && { color: theme.primary }
           ]}>
-            {isSelected ? '✓ Selected' : 'Select'}
+            {isSelected ? t('taxiInfo:selected') : t('taxiInfo:select')}
           </Text>
         </View>
       </TouchableOpacity>
@@ -333,39 +335,39 @@ export default function TaxiInformation() {
     
     return (
       <View style={dynamicStyles.journeySummaryCard}>
-        <Text style={dynamicStyles.journeySummaryTitle}>Journey Summary</Text>
+        <Text style={dynamicStyles.journeySummaryTitle}>{t('taxiInfo:journeySummary')}</Text>
         
         <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Driver:</Text>
+          <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:driver')}</Text>
           <Text style={dynamicStyles.summaryValue}>{selectedTaxi.name}</Text>
         </View>
         
         <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Vehicle:</Text>
+          <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:vehicle')}</Text>
           <Text style={dynamicStyles.summaryValue}>{selectedTaxi.vehicleModel}</Text>
         </View>
         
         {selectedTaxiRoute && (
           <>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Route:</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:route')}</Text>
               <Text style={dynamicStyles.summaryValue}>{selectedTaxiRoute.routeName}</Text>
             </View>
             
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Taxi Association:</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:taxiAssociation')}</Text>
               <Text style={dynamicStyles.summaryValue}>{selectedTaxiRoute.taxiAssociation}</Text>
             </View>
             
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Distance:</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:distance')}</Text>
               <Text style={dynamicStyles.summaryValue}>
-                {(selectedTaxiRoute.passengerDisplacement || 0).toFixed(1)}km
+                {(selectedTaxiRoute.passengerDisplacement || 0).toFixed(1)}{t('taxiInfo:km')}
               </Text>
             </View>
             
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Fare:</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:fare')}</Text>
               <Text style={[dynamicStyles.summaryValue, { color: theme.primary, fontWeight: 'bold' }]}>
                 R{(selectedTaxiRoute.calculatedFare || selectedTaxiRoute.fare || 0).toFixed(2)}
               </Text>
@@ -374,8 +376,8 @@ export default function TaxiInformation() {
         )}
         
         <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Driver Distance:</Text>
-          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.distanceToOrigin.toFixed(1)}km away</Text>
+          <Text style={dynamicStyles.summaryLabel}>{t('taxiInfo:driverDistance')}</Text>
+          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')} {t('taxiInfo:away')}</Text>
         </View>
       </View>
     );
@@ -640,9 +642,9 @@ export default function TaxiInformation() {
 
       {/* Header */}
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>Available Taxis</Text>
+        <Text style={dynamicStyles.headerTitle}>{t('taxiInfo:availableTaxis')}</Text>
         <Text style={dynamicStyles.headerSubtitle}>
-          From {currentName} to {destinationName}
+          {t('taxiInfo:from')} {currentName} {t('taxiInfo:to')} {destinationName}
         </Text>
       </View>
 
@@ -652,7 +654,7 @@ export default function TaxiInformation() {
           {isLoadingTaxis ? (
             <View style={dynamicStyles.loadingContainer}>
               <Image source={loading} style={{ width: 80, height: 80 }} resizeMode="contain" />
-              <Text style={dynamicStyles.loadingText}>Finding available taxis...</Text>
+              <Text style={dynamicStyles.loadingText}>{t('taxiInfo:findingAvailableTaxis')}</Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (
             <>
@@ -660,10 +662,10 @@ export default function TaxiInformation() {
               {routeMatchData && (
                 <View style={dynamicStyles.matchSummaryCard}>
                   <Text style={dynamicStyles.matchSummaryTitle}>
-                    Found {routeMatchData.availableTaxis.length} Available Taxis
+                    {t('taxiInfo:foundTaxisOnRoutes').replace('{count}', routeMatchData.availableTaxis.length.toString())}
                   </Text>
                   <Text style={dynamicStyles.matchSummaryText}>
-                    on {routeMatchData.matchingRoutes.length} matching routes
+                    {t('taxiInfo:onMatchingRoutes').replace('{count}', routeMatchData.matchingRoutes.length.toString())}
                   </Text>
                 </View>
               )}
@@ -679,12 +681,12 @@ export default function TaxiInformation() {
             </>
           ) : (
             <View style={dynamicStyles.noTaxisContainer}>
-              <Text style={dynamicStyles.noTaxisTitle}>No Available Taxis</Text>
+              <Text style={dynamicStyles.noTaxisTitle}>{t('taxiInfo:noAvailableTaxis')}</Text>
               <Text style={dynamicStyles.noTaxisText}>
-                {routeMatchData?.message || 'No taxis found on routes connecting your origin and destination.'}
+                {routeMatchData?.message || t('taxiInfo:noTaxisMessage')}
               </Text>
               <Text style={dynamicStyles.noTaxisSubtext}>
-                Try adjusting your pickup location or check again later.
+                {t('taxiInfo:tryAdjustingLocation')}
               </Text>
             </View>
           )}
@@ -700,7 +702,7 @@ export default function TaxiInformation() {
             disabled={isBooking}
           >
             <Text style={dynamicStyles.bookButtonText}>
-              {isBooking ? 'Booking Ride...' : `Book Ride with ${selectedTaxi.name}`}
+              {isBooking ? t('taxiInfo:bookingRide') : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)}
             </Text>
           </TouchableOpacity>
         </Animated.View>
