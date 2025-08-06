@@ -20,28 +20,7 @@ export const requestRideHandler = async (
       endLocation: args.endLocation
     });
 
-    // Check for existing pending ride request between this passenger and driver
-  const rides = await ctx.db
-    .query("rides")
-    .collect();
-
-  const existingRide = rides.find(ride => 
-    ride.passengerId === args.passengerId &&
-    ride.driverId === args.driverId &&
-    ride.status === "requested"
-  );
-
-  if (existingRide) {
-    console.log(`Duplicate ride request detected for passenger ${args.passengerId} and driver ${args.driverId}`);
-    return {
-      _id: existingRide._id,
-      rideId: existingRide.rideId,
-      message: `Ride request already exists from ${args.startLocation.address} to ${args.endLocation.address}`,
-      isDuplicate: true
-    };
-  }
-
-  const rideId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const rideId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Calculate route distance using the enhanced taxi matching system
     let routeDistance = args.estimatedDistance || 0;
