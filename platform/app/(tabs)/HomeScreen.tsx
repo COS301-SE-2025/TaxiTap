@@ -16,7 +16,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { router, useNavigation, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
-import { useLanguage } from '../../contexts/LanguageContext';
 import loading from '../../assets/images/loading4.png';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -38,7 +37,6 @@ export default function HomeScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const role = user?.role || user?.accountType || 'passenger';
-  const { t } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
   const shouldRunQuery = !!userId;
@@ -57,7 +55,7 @@ export default function HomeScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
+        Alert.alert("Permission denied", "Location permission is required to find nearby taxis.");
         setIsLoadingCurrentLocation(false);
         return;
       }
@@ -68,7 +66,7 @@ export default function HomeScreen() {
         longitude: location.coords.longitude,
       });
     })();
-  }, [t]);
+  }, []);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -169,15 +167,15 @@ export default function HomeScreen() {
       if (!detectedLocation  && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
         Alert.alert(
-          t('home:locationError'), 
-          t('home:unableToGetLocation'),
-          [{ text: t('common:ok') }]
+          'Location Error', 
+          'Unable to get your current location. Please enter your address manually.',
+          [{ text: 'OK' }]
         );
       }
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [detectedLocation , isLoadingCurrentLocation, t]);
+  }, [detectedLocation , isLoadingCurrentLocation]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -275,13 +273,13 @@ export default function HomeScreen() {
   );
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: t('navigation:home') });
-  }, [navigation, t]);
+    navigation.setOptions({ title: 'Home' });
+  }, [navigation]);
 
   // Geocoding function
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
-      Alert.alert(t('common:error'), t('home:googleMapsNotConfigured'));
+      Alert.alert('Error', 'Google Maps API key is not configured');
       return null;
     }
 
@@ -301,7 +299,7 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      Alert.alert(t('common:error'), t('home:addressNotFound'));
+      Alert.alert('Error', 'Could not find the address. Please try again.');
       return null;
     }
   };
@@ -332,9 +330,9 @@ export default function HomeScreen() {
     } catch (error) {
       setIsSearchingTaxis(false);
       Alert.alert(
-        t('home:searchError'), 
-        t('home:unableToFindTaxis'),
-        [{ text: t('common:ok') }]
+        'Search Error', 
+        'Unable to find available taxis. Please try again.',
+        [{ text: 'OK' }]
       );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
@@ -420,21 +418,21 @@ export default function HomeScreen() {
 
   const handleReserveSeat = async () => {
     if (!destination || !origin) {
-      Alert.alert(t('common:error'), t('home:pleaseEnterAddresses'));
+      Alert.alert('Error', 'Please enter both origin and destination addresses');
       return;
     }
 
     if (!selectedRouteId) {
-      Alert.alert(t('common:error'), t('home:routeNotSelected'));
+      Alert.alert('Error', 'Route not selected');
       return;
     }
 
     // Check if we have available taxis
     if (availableTaxis.length === 0) {
       Alert.alert(
-        t('home:noTaxisAvailableAlert'), 
-        t('home:noTaxisAvailableMessage'),
-        [{ text: t('common:ok') }]
+        'No Taxis Available', 
+        'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
+        [{ text: 'OK' }]
       );
       return;
     }
@@ -534,7 +532,7 @@ export default function HomeScreen() {
       searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
-      Alert.alert(t('home:routeError'), err instanceof Error ? err.message : t('home:unknownError'));
+      Alert.alert('Route Error', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoadingRoute(false);
     }
@@ -832,17 +830,17 @@ export default function HomeScreen() {
       {/* Live Location Streaming Status */}
       <View style={{ padding: 8, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
         {locationStreamError ? (
-          <Text style={{ color: 'red' }}>{t('home:locationStreamingError')} {locationStreamError}</Text>
+          <Text style={{ color: 'red' }}>Location Streaming Error: {locationStreamError}</Text>
         ) : streamedLocation ? (
-          <Text style={{ color: 'green' }}>{t('home:liveLocationStreaming')} {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}</Text>
+          <Text style={{ color: 'green' }}>Live Location Streaming: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}</Text>
         ) : (
-          <Text>{t('home:streamingLocation')}</Text>
+          <Text>Streaming location...</Text>
         )}
       </View>
       {isLoadingCurrentLocation ? (
         <View style={[dynamicStyles.map, { justifyContent: 'center', alignItems: 'center' }]}>
           <Image source={loading} style={{ width: 120, height: 120 }} resizeMode="contain" />
-          <Text style={{ color: theme.textSecondary, marginTop: 10 }}>{t('home:gettingLocation')}</Text>
+          <Text style={{ color: theme.textSecondary, marginTop: 10 }}>Getting your location...</Text>
         </View>
       ) : (
         <MapView
@@ -910,7 +908,7 @@ export default function HomeScreen() {
           <View style={dynamicStyles.locationTextContainer}>
             <TextInput
               style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-              placeholder={origin ? origin.name : t('home:enterOriginAddress')}
+              placeholder={origin ? origin.name : "Enter origin address..."}
               value={originAddress}
               onChangeText={setOriginAddress}
               onSubmitEditing={handleOriginSubmit}
@@ -919,17 +917,17 @@ export default function HomeScreen() {
               editable={!isLoadingCurrentLocation}
             />
             {isGeocodingOrigin && (
-              <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
+              <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
             )}
             {isLoadingCurrentLocation && (
-              <Text style={dynamicStyles.geocodingText}>{t('home:gettingCurrentLocation')}</Text>
+              <Text style={dynamicStyles.geocodingText}>Getting current location...</Text>
             )}
             
             <View style={dynamicStyles.locationSeparator} />
             
             <TextInput
               style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
-              placeholder={t('home:enterDestinationAddress')}
+              placeholder="Enter destination address..."
               value={destinationAddress}
               onChangeText={setDestinationAddress}
               onSubmitEditing={handleDestinationSubmit}
@@ -937,22 +935,22 @@ export default function HomeScreen() {
               placeholderTextColor={theme.textSecondary}
             />
             {isGeocodingDestination && (
-              <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
+              <Text style={dynamicStyles.geocodingText}>Finding address...</Text>
             )}
             
             {isLoadingRoute && (
               <Text style={dynamicStyles.routeLoadingText}>
-                {t('home:loadingRoute')}
+                Loading route...
               </Text>
             )}
             {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
               <Text style={[dynamicStyles.routeLoadingText, { color: theme.primary }]}>
-                {t('home:routeLoaded')}
+                Route loaded ✓
               </Text>
             )}
             {isSearchingTaxis && (
               <Text style={dynamicStyles.routeLoadingText}>
-                {t('home:searchingTaxis')}
+                Searching for available taxis...
               </Text>
             )}
           </View>
@@ -962,30 +960,30 @@ export default function HomeScreen() {
         {routeMatchResults && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
-              {t('home:journeyStatus')}
+              Journey Status
             </Text>
             <View style={dynamicStyles.searchResultsCard}>
               <Text style={dynamicStyles.searchResultsText}>
-                📍 {t('home:availableTaxis')} {routeMatchResults.availableTaxis?.length || 0}
+                📍 Available taxis: {routeMatchResults.availableTaxis?.length || 0}
               </Text>
               <Text style={dynamicStyles.searchResultsText}>
-                🛣 {t('home:matchingRoutes')} {routeMatchResults.matchingRoutes?.length || 0}
+                🛣 Matching routes: {routeMatchResults.matchingRoutes?.length || 0}
               </Text>
               {(routeMatchResults.availableTaxis?.length || 0) > 0 && (
                 <Text style={[dynamicStyles.searchResultsText, { color: theme.primary }]}>
-                  {t('home:readyToBook')}
+                  ✅ Ready to book your ride!
                 </Text>
               )}
               {(routeMatchResults.availableTaxis?.length || 0) === 0 && (
                 <Text style={[dynamicStyles.searchResultsText, { color: theme.textSecondary }]}>
-                  {t('home:noTaxisAvailable')}
+                  ⚠ No taxis available on this route
                 </Text>
               )}
             </View>
           </View>
         )}
 
-        <Text style={dynamicStyles.savedRoutesTitle}>{t('home:recentlyUsedRanks')}</Text>
+        <Text style={dynamicStyles.savedRoutesTitle}>Recently Used Taxi Ranks</Text>
         <ScrollView style={{ marginTop: 10 }}>
           {displayRoutes.length > 0 ? (
             displayRoutes.map((route, index) => (
@@ -1015,14 +1013,14 @@ export default function HomeScreen() {
                     {route.routeName || 'Saved Route'}
                   </Text>
                   <Text style={dynamicStyles.routeSubtitle}>
-                    {t('home:usedTimes').replace('{count}', route.usageCount.toString())}
+                    Used {route.usageCount} times
                   </Text>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
-              {t('home:noRecentRoutes')}
+              No recently used routes yet.
             </Text>
           )}
         </ScrollView>
@@ -1034,15 +1032,15 @@ export default function HomeScreen() {
           <TouchableOpacity style={dynamicStyles.reserveButton} onPress={handleReserveSeat}>
             <Text style={dynamicStyles.reserveButtonText}>
               {isSearchingTaxis 
-                ? t('home:findingTaxis')
+                ? 'Finding Taxis...' 
                 : availableTaxis.length > 0 
-                  ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
-                  : t('home:reserveSeat')
+                  ? `Reserve a Seat (${availableTaxis.length} taxis available)`
+                  : 'Reserve a Seat'
               }
             </Text>
             {isSearchingTaxis && (
               <Text style={dynamicStyles.reserveButtonSubtext}>
-                {t('home:searchingDrivers')}
+                Searching for available drivers...
               </Text>
             )}
           </TouchableOpacity>
