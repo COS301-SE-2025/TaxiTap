@@ -14,16 +14,16 @@ async function wasNotificationSentRecently(
   rideId: string,
   debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME,
 ): Promise<boolean> {
-  // Use a simple query without filter() since it's not available
-  const notifications = await ctx.db.query('notifications').collect(); // <-- get array
+  const notifications = await ctx.db
+  .query("notifications")
+  .collect(); // collect() returns a Promise<Array>
 
-  const recentNotification = notifications.find(
-    (notification: any) =>
-      notification.userId === userId &&
-      notification.type === notificationType &&
-      notification.metadata?.rideId === rideId &&
-      notification._creationTime > Date.now() - debounceTimeMs,
-  );
+const recentNotification = notifications.find(notification =>
+  notification.userId === userId &&
+  notification.type === notificationType &&
+  notification.metadata?.rideId === rideId &&
+  notification._creationTime > Date.now() - debounceTimeMs
+);
 
   return !!recentNotification;
 }
