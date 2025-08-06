@@ -1,0 +1,235 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+// English translations
+const englishTranslations = {
+  // Authentication & Onboarding
+  auth: {
+    welcome: "Welcome to Taxi Tap",
+    login: "Login",
+    signup: "Sign Up",
+    phoneNumber: "Phone Number",
+    password: "Password",
+    forgotPassword: "Forgot Password?",
+    createAccount: "Create Account",
+    alreadyHaveAccount: "Already have an account?",
+    dontHaveAccount: "Don't have an account?",
+    nameAndSurname: "Name and Surname",
+    selectRole: "Select Role",
+    confirmPassword: "Confirm Password",
+    signUp: "Sign Up",
+    or: "Or",
+  },
+
+  // Landing page content
+  landing: {
+    skipThe: "Skip the ",
+    wait: "Wait",
+    reserveA: ", \nReserve a ",
+    seat: "Seat",
+    description: "Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests.",
+    letsGetStarted: "Let's get started",
+    alreadyHaveAccount: "Already have an account? ",
+    signIn: "Sign in",
+  },
+
+  // Common UI elements
+  common: {
+    cancel: "Cancel",
+    confirm: "Confirm",
+    save: "Save",
+    loading: "Loading...",
+    error: "Error",
+    success: "Success",
+    retry: "Retry",
+    back: "Back",
+    next: "Next",
+    done: "Done",
+    yes: "Yes",
+    no: "No",
+    search: "Search",
+    filter: "Filter",
+    pleaseFillAllFields: "Please fill all fields",
+    pleaseSelectRole: "Please select a role",
+    invalidNumber: "Please enter a valid number",
+    passwordMismatch: "Passwords do not match",
+    phoneNumberInUse: "This phone number is already registered. Try logging in or use a different number.",
+    phoneNumberOrPasswordIncorrect: "Phone number or password is incorrect",
+  },
+
+  // Booking flow
+  booking: {
+    selectRoute: "Select Route",
+    availableSeats: "Available Seats",
+    reserveSeat: "Reserve Seat",
+    bookingConfirmed: "Booking Confirmed",
+    myBookings: "My Bookings",
+    paymentMethod: "Payment Method",
+    totalAmount: "Total Amount",
+    pickupTime: "Pickup Time",
+    destination: "Destination",
+    origin: "Origin",
+  },
+
+  // Navigation & Tabs
+  navigation: {
+    home: "Home",
+    bookings: "Bookings",
+    profile: "Profile",
+    settings: "Settings",
+    history: "History",
+    wallet: "Wallet",
+    routes: "Routes",
+    feedback: "Feedback",
+    help: "Help",
+  },
+
+  // Settings
+  settings: {
+    language: "Language",
+    theme: "Theme",
+    notifications: "Notifications",
+    support: "Support",
+    aboutApp: "About App",
+    privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service",
+    logout: "Logout",
+  },
+
+  // Notifications
+  notifications: {
+    rideDeclined: "Ride Declined",
+    rideAccepted: "Ride Accepted",
+    rideCancelled: "Ride Cancelled",
+    rideDeclinedMessage: "Your ride request was declined.",
+    ok: "OK",
+  },
+};
+
+// Zulu translations
+const zuluTranslations = {
+  // Authentication & Onboarding
+  auth: {
+    welcome: "Siyakwamukela ku-Taxi Tap",
+    login: "Ngena",
+    signup: "Bhalisa",
+    phoneNumber: "Inombolo Yefoni",
+    password: "Iphasiwedi",
+    forgotPassword: "Ukhohlwe Iphasiwedi?",
+    createAccount: "Dala I-akhawunti",
+    alreadyHaveAccount: "Usenayo i-akhawunti?",
+    dontHaveAccount: "Awunayo i-akhawunti?",
+    nameAndSurname: "Igama Nefani",
+    selectRole: "Khetha Indima",
+    confirmPassword: "Qinisekisa Iphasiwedi",
+    signUp: "Bhalisa",
+    or: "Noma",
+  },
+
+  // Landing page content
+  landing: {
+    skipThe: "Yeqa uku",
+    wait: "linda",
+    reserveA: ", \nbuka i",
+    seat: "sihlalo",
+    description: "I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babuka izihlalo, babelane ngezindawo, futhi balandele ukufika, kanti abashayeli babeka imizila, baphatha ukutholakala, futhi baphathe izicelo zokugibela.",
+    letsGetStarted: "Ake siqale",
+    alreadyHaveAccount: "Usunalo i-akhawunti? ",
+    signIn: "Ngena",
+  },
+
+  // Common UI elements
+  common: {
+    cancel: "Khansela",
+    confirm: "Qinisekisa",
+    save: "Londoloza",
+    loading: "Iyalayisha...",
+    error: "Iphutha",
+    success: "Impumelelo",
+    retry: "Zama Futhi",
+    back: "Emuva",
+    next: "Olandelayo",
+    done: "Kwenziwe",
+    yes: "Yebo",
+    no: "Cha",
+    search: "Sesha",
+    filter: "Hlunga",
+    pleaseFillAllFields: "Sicela ugcwalise wonke amasimu",
+    pleaseSelectRole: "Sicela ukhethe indima",
+    invalidNumber: "Sicela ufake inombolo elungile",
+    passwordMismatch: "Amaphasiwedi awafani",
+    phoneNumberInUse: "Le nombolo yefoni ibhalisiwe kakade. Zama ukungena noma usebenzise enye inombolo.",
+    phoneNumberOrPasswordIncorrect: "Inombolo yefoni noma iphasiwedi ayilungile",
+  },
+
+  // Booking flow
+  booking: {
+    selectRoute: "Khetha Indlela",
+    availableSeats: "Izihlalo Ezitholakalayo",
+    reserveSeat: "Beka Isihlalo",
+    bookingConfirmed: "Ukubhukha Kuqinisekisiwe",
+    myBookings: "Izibhukho Zami",
+    paymentMethod: "Indlela Yokukhokha",
+    totalAmount: "Isamba Soholo",
+    pickupTime: "Isikhathi Sokuthatha",
+    destination: "Indawo Yokugcina",
+    origin: "Indawo Yokuqala",
+  },
+
+  // Navigation & Tabs
+  navigation: {
+    home: "Ikhaya",
+    bookings: "Izibhukho",
+    profile: "Iphrofayili",
+    settings: "Izilungiselelo",
+    history: "Umlando",
+    wallet: "Iwalethi",
+    routes: "Izindlela",
+    feedback: "Impendulo",
+    help: "Usizo",
+  },
+
+  // Settings
+  settings: {
+    language: "Ulimi",
+    theme: "Itimu",
+    notifications: "Izaziso",
+    support: "Ukusekela",
+    aboutApp: "Mayelana Ne-App",
+    privacyPolicy: "Inqubomgomo Yobumfihlo",
+    termsOfService: "Imigomo Yesevisi",
+    logout: "Phuma",
+  },
+
+  // Notifications
+  notifications: {
+    rideDeclined: "Ukuya Kwenqatshelwe",
+    rideAccepted: "Ukuya Kwamukelwe",
+    rideCancelled: "Ukuya Kukhanselwe",
+    rideDeclinedMessage: "Isicelo sakho sokuya senqatshelwe.",
+    ok: "Kulungile",
+  },
+};
+
+// i18n configuration for English and Zulu
+i18n
+  .use(initReactI18next)
+  .init({
+    lng: 'en', // Default language
+    fallbackLng: 'en',
+    debug: __DEV__, // Enable debug in development
+    
+    resources: {
+      en: englishTranslations,
+      zu: zuluTranslations,
+    },
+    
+    interpolation: {
+      escapeValue: false, // React already escapes values
+    },
+    
+    // Default namespace
+    defaultNS: 'common',
+  });
+
+export default i18n;
