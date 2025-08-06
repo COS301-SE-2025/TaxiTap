@@ -211,7 +211,112 @@ const zuluTranslations = {
   },
 };
 
-// i18n configuration for English and Zulu
+// Tswana translations
+const tswanaTranslations = {
+  // Authentication & Onboarding
+  auth: {
+    welcome: "Re amogela mo go Taxi Tap",
+    login: "Tsena",
+    signup: "Ikwadise",
+    phoneNumber: "Nomoro ya Mogala",
+    password: "Lefoko la sephiri",
+    forgotPassword: "O lebetse lefoko la sephiri?",
+    createAccount: "Dira akhaonte",
+    alreadyHaveAccount: "O nale akhaonte?",
+    dontHaveAccount: "Ga o na le akhaonte?",
+    nameAndSurname: "Leina le Sefane",
+    selectRole: "Tlhopha seabe",
+    confirmPassword: "Netefatsa lefoko la sephiri",
+    signUp: "Ikwadise",
+    or: "Kgotsa",
+  },
+
+  // Landing page content
+  landing: {
+    skipThe: "Tlola ",
+    wait: "go leta",
+    reserveA: ", \nbea ",
+    seat: "setulo",
+    description: "Taxi Tap e kopanya bapalami le bakgweetsi. Bapalami ba bea ditulo, ba abelana mafelo a ba yang teng, le go sala morago phitlhelo, fa bakgweetsi ba bea ditsela, ba laola go nna teng, le go tshwara dikopo tsa dinamelwa.",
+    letsGetStarted: "A re simolole",
+    alreadyHaveAccount: "O nale akhaonte? ",
+    signIn: "Tsena",
+  },
+
+  // Common UI elements
+  common: {
+    cancel: "Khansela",
+    confirm: "Netefatsa",
+    save: "Boloka",
+    loading: "E a tsaya...",
+    error: "Phoso",
+    success: "Katlego",
+    retry: "Leka gape",
+    back: "Morago",
+    next: "Latelang",
+    done: "Dirile",
+    yes: "Ee",
+    no: "Nnyaa",
+    search: "Batla",
+    filter: "Kgaoganya",
+    pleaseFillAllFields: "Tshwanetse o tlatse mafelo otlhe",
+    pleaseSelectRole: "Tshwanetse o tlhophe seabe",
+    invalidNumber: "Tshwanetse o tsenya nomoro e e siameng",
+    passwordMismatch: "Mafoko a sephiri ga a tshwane",
+    phoneNumberInUse: "Nomoro eno ya mogala e setse e ngodisitswe. Leka go tsena kgotsa dirisa nomoro e nngwe.",
+    phoneNumberOrPasswordIncorrect: "Nomoro ya mogala kgotsa lefoko la sephiri ga di siame",
+  },
+
+  // Booking flow
+  booking: {
+    selectRoute: "Tlhopha Tsela",
+    availableSeats: "Ditulo Tse di Leng Teng",
+    reserveSeat: "Bea Setulo",
+    bookingConfirmed: "Kopo e Netefaditswe",
+    myBookings: "Dikopo Tsame",
+    paymentMethod: "Mokgwa wa Tefo",
+    totalAmount: "Palomoka ya Madi",
+    pickupTime: "Nako ya go Tsaya",
+    destination: "Lefelo la Bofelo",
+    origin: "Lefelo la Tshimologo",
+  },
+
+  // Navigation & Tabs
+  navigation: {
+    home: "Gae",
+    bookings: "Dikopo",
+    profile: "Tshwantsho",
+    settings: "Dithulaganyo",
+    history: "Histori",
+    wallet: "Mokotla wa Madi",
+    routes: "Ditsela",
+    feedback: "Dikakanyo",
+    help: "Thuso",
+  },
+
+  // Settings
+  settings: {
+    language: "Puo",
+    theme: "Setlhogo",
+    notifications: "Dikitsiso",
+    support: "Tshegetso",
+    aboutApp: "Ka ga Lenaneo",
+    privacyPolicy: "Melawana ya Sephiri",
+    termsOfService: "Melawana ya Tirelo",
+    logout: "Tswa",
+  },
+
+  // Notifications
+  notifications: {
+    rideDeclined: "Loeto lo Ganetswe",
+    rideAccepted: "Loeto lo Amogetse",
+    rideCancelled: "Loeto lo Khanseletswe",
+    rideDeclinedMessage: "Kopo ya gago ya loeto e ganetswe.",
+    ok: "Go siame",
+  },
+};
+
+// i18n configuration for English, Zulu, and Tswana
 i18n
   .use(initReactI18next)
   .init({
@@ -222,6 +327,7 @@ i18n
     resources: {
       en: englishTranslations,
       zu: zuluTranslations,
+      tn: tswanaTranslations,
     },
     
     interpolation: {
