@@ -446,7 +446,6 @@ export default function SeatReserved() {
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
-			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			if (!currentLocation || !destination) {
 				return;
 			}
