@@ -16,8 +16,15 @@ import { useConvex } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { ConvexProvider } from 'convex/react';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Dropdown } from 'react-native-element-dropdown';
 import icon from '../assets/images/icon.png';
 import google from '../assets/images/google5.png';
+
+const languageOptions = [
+  { label: 'English', value: 'en' },
+  { label: 'isiZulu', value: 'zu' },
+];
 
 export default function Login() {
   const [number, setNumber] = useState('');
@@ -26,15 +33,16 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
+  const { t, currentLanguage, changeLanguage } = useLanguage();
 
   const handleLogin = async () => {
     if (!number || !password) {
-      Alert.alert('Error', 'Please enter both phone number and password');
+      Alert.alert(t('common:error'), t('common:pleaseFillAllFields'));
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert('Invalid number', 'Please enter a valid number');
+      Alert.alert(t('common:error'), t('common:invalidNumber'));
       return;
     }
     try {
@@ -58,7 +66,7 @@ export default function Login() {
       });
       }
     } catch {
-      Alert.alert("Phone number or password is incorrect");
+      Alert.alert(t('common:error'), t('common:phoneNumberOrPasswordIncorrect'));
     }
   };
 
@@ -72,6 +80,28 @@ export default function Login() {
             backgroundColor: '#fff',
           }}
         >
+          {/* Language Selector */}
+          <View style={{ marginTop: 40, marginBottom: 20 }}>
+            <Dropdown
+              data={languageOptions}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Language"
+              placeholderStyle={{ color: '#999' }}
+              style={{
+                backgroundColor: '#f5f5f5',
+                borderRadius: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderColor: '#ddd',
+                borderWidth: 1,
+              }}
+              selectedTextStyle={{ fontSize: 16, color: '#000' }}
+              value={currentLanguage}
+              onChange={(item) => changeLanguage(item.value)}
+            />
+          </View>
+
           <View style={{ alignItems: 'center' }}>
             <Image
               source={icon}
@@ -93,13 +123,13 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Cellphone number
+              {t('auth:phoneNumber')}
           </Text>
 
           <TextInput
             value={number}
             onChangeText={setNumber}
-            placeholder="Cellphone number"
+            placeholder={t('auth:phoneNumber')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -113,7 +143,7 @@ export default function Login() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Password
+              {t('auth:password')}
           </Text>
 
           <View
@@ -130,7 +160,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth:password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -149,7 +179,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>Forgot Password?</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -165,13 +195,15 @@ export default function Login() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              Login
+              {t('auth:login')}
             </Text>
           </Pressable>
 
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
-            <Text style={{ color: '#fff', fontSize: 18 }}>Or</Text>
+            <Text style={{ color: '#fff', fontSize: 18 }}>
+              {currentLanguage === 'zu' ? 'Noma' : 'Or'}
+            </Text>
           </View>
 
           {/* Google Sign-In Button */}
