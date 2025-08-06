@@ -1,9 +1,18 @@
 import React from "react";
 import { SafeAreaView, View, ScrollView, Image, Text, TouchableOpacity, } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
+import { useLanguage } from '../contexts/LanguageContext'; // Assuming you have this context
+
+const languageOptions = [
+  { label: 'English', value: 'en' },
+  { label: 'isiZulu', value: 'zu' },
+];
 
 export default () => {
 	const navigation = useNavigation<any>();
+	const { t, currentLanguage, changeLanguage } = useLanguage(); // Assuming you have this context
+
 	return (
 		<View 
 			style={{
@@ -19,11 +28,50 @@ export default () => {
 					flexGrow: 1,
 				}}
 				showsVerticalScrollIndicator={false}>
+				
+				{/* Language Selector */}
+				<View style={{ 
+					marginTop: 50, 
+					marginBottom: 20,
+					marginHorizontal: 20,
+				}}>
+					<Dropdown
+						data={languageOptions}
+						labelField="label"
+						valueField="value"
+						placeholder="Select Language"
+						placeholderStyle={{ color: '#999' }}
+						style={{
+							backgroundColor: '#fff',
+							borderRadius: 10,
+							paddingHorizontal: 16,
+							paddingVertical: 12,
+							borderColor: '#ddd',
+							borderWidth: 1,
+						}}
+						selectedTextStyle={{ 
+							fontSize: 16, 
+							color: '#232F3E',
+							fontWeight: '500'
+						}}
+						containerStyle={{
+							borderRadius: 10,
+							borderColor: '#ddd',
+						}}
+						itemTextStyle={{
+							color: '#232F3E',
+							fontSize: 16,
+						}}
+						value={currentLanguage}
+						onChange={(item) => changeLanguage(item.value)}
+					/>
+				</View>
+
 				<View 
 					style={{
 						flexDirection: "row",
 						alignItems: "flex-start",
-						marginTop: 44,
+						marginTop: 20,
 						marginBottom: 46,
 						marginLeft: 47,
 					}}>
@@ -68,10 +116,18 @@ export default () => {
 						marginLeft: 36,
 						width: 272,
 					}}>
-					<Text style={{color: "#FFFFFF"}}>{"Skip the "}</Text>
-					<Text style={{color: "#FF9900"}}>{"Wait"}</Text>
-					<Text style={{color: "#FFFFFF"}}>{", \nReserve a "}</Text>
-					<Text style={{color: "#FF9900"}}>{"Seat"}</Text>
+					<Text style={{color: "#FFFFFF"}}>
+						{currentLanguage === 'zu' ? "Yeqa " : "Skip the "}
+					</Text>
+					<Text style={{color: "#FF9900"}}>
+						{currentLanguage === 'zu' ? "Ukulinda" : "Wait"}
+					</Text>
+					<Text style={{color: "#FFFFFF"}}>
+						{currentLanguage === 'zu' ? ", \nBeka " : ", \nReserve a "}
+					</Text>
+					<Text style={{color: "#FF9900"}}>
+						{currentLanguage === 'zu' ? "Isihlalo" : "Seat"}
+					</Text>
 				</Text>
 				<Text 
 					style={{
@@ -82,7 +138,10 @@ export default () => {
 						marginBottom: 49,
 						marginHorizontal: 29,
 					}}>
-					{"Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests."}
+					{currentLanguage === 'zu' 
+						? "I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babeka izihlalo, babelane ngezindawo abaya kuzo, futhi balandelele ukufika, kanti abashayeli besetha imizila, baphathe ukutholakala, futhi baphathe izicelo zokugibela."
+						: "Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests."
+					}
 				</Text>
 				<View 
 					style={{
@@ -100,7 +159,7 @@ export default () => {
 						}} 
 						onPress={() => navigation.navigate('SignUp')}
 						accessible={true}
-						accessibilityLabel="Get started with Taxi Tap"
+						accessibilityLabel={currentLanguage === 'zu' ? "Qalisa nge-Taxi Tap" : "Get started with Taxi Tap"}
 						accessibilityRole="button">
 						<Text 
 							style={{
@@ -109,7 +168,7 @@ export default () => {
 								fontWeight: "600",
 								textAlign: "center",
 							}}>
-							{"Let's get started"}
+							{currentLanguage === 'zu' ? "Ake siqale" : "Let's get started"}
 						</Text>
 					</TouchableOpacity>
 				</View>
@@ -121,7 +180,7 @@ export default () => {
 					<TouchableOpacity
 						onPress={() => navigation.navigate('Login')}
 						accessible={true}
-						accessibilityLabel="Sign in to existing account"
+						accessibilityLabel={currentLanguage === 'zu' ? "Ngena ku-akhawunti ekhona" : "Sign in to existing account"}
 						accessibilityRole="button">
 						<Text 
 							style={{
@@ -129,8 +188,12 @@ export default () => {
 								fontWeight: "normal",
 								textDecorationLine: "underline",
 							}}>
-							<Text style={{color: "#FFFFFF"}}>{"Already have an account? "}</Text>
-							<Text style={{color: "#FF9900"}}>{"Sign in"}</Text>
+							<Text style={{color: "#FFFFFF"}}>
+								{currentLanguage === 'zu' ? "Usunayo i-akhawunti? " : "Already have an account? "}
+							</Text>
+							<Text style={{color: "#FF9900"}}>
+								{currentLanguage === 'zu' ? "Ngena" : "Sign in"}
+							</Text>
 						</Text>
 					</TouchableOpacity>
 				</View>
