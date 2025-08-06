@@ -2,16 +2,24 @@ import React from "react";
 import { SafeAreaView, View, ScrollView, Image, Text, TouchableOpacity, } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { useLanguage } from '../contexts/LanguageContext'; // Assuming you have this context
+import { useLanguage } from '../contexts/LanguageContext';
 
 const languageOptions = [
   { label: 'English', value: 'en' },
   { label: 'isiZulu', value: 'zu' },
+  { label: 'Setswana', value: 'tn' },
 ];
 
 export default () => {
 	const navigation = useNavigation<any>();
-	const { t, currentLanguage, changeLanguage } = useLanguage(); // Assuming you have this context
+	const { t, currentLanguage, changeLanguage } = useLanguage();
+
+	// Helper function to get text based on language
+	const getText = (en: string, zu: string, tn: string): string => {
+		if (currentLanguage === 'zu') return zu;
+		if (currentLanguage === 'tn') return tn;
+		return en;
+	};
 
 	return (
 		<View 
@@ -39,7 +47,7 @@ export default () => {
 						data={languageOptions}
 						labelField="label"
 						valueField="value"
-						placeholder="Select Language"
+						placeholder={getText("Select Language", "Khetha Ulimi", "Tlhopha Puo")}
 						placeholderStyle={{ color: '#999' }}
 						style={{
 							backgroundColor: '#fff',
@@ -117,16 +125,16 @@ export default () => {
 						width: 272,
 					}}>
 					<Text style={{color: "#FFFFFF"}}>
-						{currentLanguage === 'zu' ? "Yeqa " : "Skip the "}
+						{getText("Skip the ", "Yeqa ", "Tlola ")}
 					</Text>
 					<Text style={{color: "#FF9900"}}>
-						{currentLanguage === 'zu' ? "Ukulinda" : "Wait"}
+						{getText("Wait", "Ukulinda", "go leta")}
 					</Text>
 					<Text style={{color: "#FFFFFF"}}>
-						{currentLanguage === 'zu' ? ", \nBeka " : ", \nReserve a "}
+						{getText(", \nReserve a ", ", \nBeka ", ", \nbea ")}
 					</Text>
 					<Text style={{color: "#FF9900"}}>
-						{currentLanguage === 'zu' ? "Isihlalo" : "Seat"}
+						{getText("Seat", "Isihlalo", "setulo")}
 					</Text>
 				</Text>
 				<Text 
@@ -138,10 +146,11 @@ export default () => {
 						marginBottom: 49,
 						marginHorizontal: 29,
 					}}>
-					{currentLanguage === 'zu' 
-						? "I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babeka izihlalo, babelane ngezindawo abaya kuzo, futhi balandelele ukufika, kanti abashayeli besetha imizila, baphathe ukutholakala, futhi baphathe izicelo zokugibela."
-						: "Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests."
-					}
+					{getText(
+						"Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests.",
+						"I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babeka izihlalo, babelane ngezindawo abaya kuzo, futhi balandelele ukufika, kanti abashayeli besetha imizila, baphathe ukutholakala, futhi baphathe izicelo zokugibela.",
+						"Taxi Tap e kopanya bapalami le bakgweetsi. Bapalami ba bea ditulo, ba abelana mafelo a ba yang teng, le go sala morago phitlhelo, fa bakgweetsi ba bea ditsela, ba laola go nna teng, le go tshwara dikopo tsa dinamelwa."
+					)}
 				</Text>
 				<View 
 					style={{
@@ -159,7 +168,7 @@ export default () => {
 						}} 
 						onPress={() => navigation.navigate('SignUp')}
 						accessible={true}
-						accessibilityLabel={currentLanguage === 'zu' ? "Qalisa nge-Taxi Tap" : "Get started with Taxi Tap"}
+						accessibilityLabel={getText("Get started with Taxi Tap", "Qalisa nge-Taxi Tap", "A re simolole ka Taxi Tap")}
 						accessibilityRole="button">
 						<Text 
 							style={{
@@ -168,7 +177,7 @@ export default () => {
 								fontWeight: "600",
 								textAlign: "center",
 							}}>
-							{currentLanguage === 'zu' ? "Ake siqale" : "Let's get started"}
+							{getText("Let's get started", "Ake siqale", "A re simolole")}
 						</Text>
 					</TouchableOpacity>
 				</View>
@@ -180,7 +189,7 @@ export default () => {
 					<TouchableOpacity
 						onPress={() => navigation.navigate('Login')}
 						accessible={true}
-						accessibilityLabel={currentLanguage === 'zu' ? "Ngena ku-akhawunti ekhona" : "Sign in to existing account"}
+						accessibilityLabel={getText("Sign in to existing account", "Ngena ku-akhawunti ekhona", "Tsena mo akhaonteng e e leng teng")}
 						accessibilityRole="button">
 						<Text 
 							style={{
@@ -189,10 +198,10 @@ export default () => {
 								textDecorationLine: "underline",
 							}}>
 							<Text style={{color: "#FFFFFF"}}>
-								{currentLanguage === 'zu' ? "Usunayo i-akhawunti? " : "Already have an account? "}
+								{getText("Already have an account? ", "Usunayo i-akhawunti? ", "O nale akhaonte? ")}
 							</Text>
 							<Text style={{color: "#FF9900"}}>
-								{currentLanguage === 'zu' ? "Ngena" : "Sign in"}
+								{getText("Sign in", "Ngena", "Tsena")}
 							</Text>
 						</Text>
 					</TouchableOpacity>
