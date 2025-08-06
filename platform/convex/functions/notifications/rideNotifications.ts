@@ -1,7 +1,7 @@
-import { v } from "convex/values";
-import { mutation, internalMutation, MutationCtx } from "../../_generated/server";
-import { internal } from "../../_generated/api";
-import { Id } from "../../_generated/dataModel";
+import { v } from 'convex/values';
+import { mutation, internalMutation, MutationCtx } from '../../_generated/server';
+import { internal } from '../../_generated/api';
+import { Id } from '../../_generated/dataModel';
 
 // Debounce time for notifications (5 minutes)
 const NOTIFICATION_DEBOUNCE_TIME = 300000; // 5 minutes in milliseconds
@@ -9,20 +9,20 @@ const NOTIFICATION_DEBOUNCE_TIME = 300000; // 5 minutes in milliseconds
 // Helper function to check if a notification was sent recently
 async function wasNotificationSentRecently(
   ctx: MutationCtx,
-  userId: Id<"taxiTap_users">,
+  userId: Id<'taxiTap_users'>,
   notificationType: string,
   rideId: string,
-  debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME
+  debounceTimeMs: number = NOTIFICATION_DEBOUNCE_TIME,
 ): Promise<boolean> {
   // Use a simple query without filter() since it's not available
-  const notifications = await ctx.db
-    .query("notifications");
+  const notifications = await ctx.db.query('notifications').collect(); // <-- get array
 
-  const recentNotification = notifications.find(notification => 
-    notification.userId === userId &&
-    notification.type === notificationType &&
-    notification.metadata?.rideId === rideId &&
-    notification._creationTime > Date.now() - debounceTimeMs
+  const recentNotification = notifications.find(
+    (notification: any) =>
+      notification.userId === userId &&
+      notification.type === notificationType &&
+      notification.metadata?.rideId === rideId &&
+      notification._creationTime > Date.now() - debounceTimeMs,
   );
 
   return !!recentNotification;
@@ -34,13 +34,13 @@ export const sendRideNotificationHandler = async (
   args: {
     rideId: string;
     type: string;
-    passengerId?: Id<"taxiTap_users">;
-    driverId?: Id<"taxiTap_users">;
-  }
+    passengerId?: Id<'taxiTap_users'>;
+    driverId?: Id<'taxiTap_users'>;
+  },
 ) => {
   const ride = await ctx.db
-    .query("rides")
-    .withIndex("by_ride_id", (q) => q.eq("rideId", args.rideId))
+    .query('rides')
+    .withIndex('by_ride_id', (q) => q.eq('rideId', args.rideId))
     .first();
 
   if (!ride) return;
@@ -48,172 +48,186 @@ export const sendRideNotificationHandler = async (
   const notifications = [];
 
   switch (args.type) {
-    case "ride_requested":
+    case 'ride_requested':
       if (args.driverId) {
         // Check if this notification was already sent recently
         const wasRecentlySent = await wasNotificationSentRecently(
-          ctx, 
-          args.driverId, 
-          "ride_request", 
-          args.rideId
+          ctx,
+          args.driverId,
+          'ride_request',
+          args.rideId,
         );
 
         if (!wasRecentlySent) {
           notifications.push({
             userId: args.driverId,
-            type: "ride_request",
-            title: "New Ride Request",
+            type: 'ride_request',
+            title: 'New Ride Request',
             message: `New ride request from ${ride.startLocation.address} to ${ride.endLocation.address}`,
-            priority: "high",
-            metadata: { rideId: args.rideId, passengerId: ride.passengerId }
+            priority: 'high',
+            metadata: { rideId: args.rideId, passengerId: ride.passengerId },
           });
         } else {
-          console.log(`Skipping duplicate ride request notification for driver ${args.driverId} and ride ${args.rideId}`);
+          console.log(
+            `Skipping duplicate ride request notification for driver ${args.driverId} and ride ${args.rideId}`,
+          );
         }
       }
       break;
 
-    case "ride_accepted":
+    case 'ride_accepted':
       // Check if this notification was already sent recently
       const wasAcceptedRecentlySent = await wasNotificationSentRecently(
-        ctx, 
-        ride.passengerId, 
-        "ride_accepted", 
-        args.rideId
+        ctx,
+        ride.passengerId,
+        'ride_accepted',
+        args.rideId,
       );
 
       if (!wasAcceptedRecentlySent) {
         notifications.push({
           userId: ride.passengerId,
-          type: "ride_accepted",
-          title: "Ride Accepted",
-          message: "Your ride has been accepted. Driver is on the way!",
-          priority: "high",
-          metadata: { rideId: args.rideId, driverId: args.driverId }
+          type: 'ride_accepted',
+          title: 'Ride Accepted',
+          message: 'Your ride has been accepted. Driver is on the way!',
+          priority: 'high',
+          metadata: { rideId: args.rideId, driverId: args.driverId },
         });
       } else {
-        console.log(`Skipping duplicate ride accepted notification for passenger ${ride.passengerId} and ride ${args.rideId}`);
+        console.log(
+          `Skipping duplicate ride accepted notification for passenger ${ride.passengerId} and ride ${args.rideId}`,
+        );
       }
       break;
 
-    case "driver_arrived":
+    case 'driver_arrived':
       // Check if this notification was already sent recently
       const wasArrivedRecentlySent = await wasNotificationSentRecently(
-        ctx, 
-        ride.passengerId, 
-        "driver_arrived", 
-        args.rideId
+        ctx,
+        ride.passengerId,
+        'driver_arrived',
+        args.rideId,
       );
 
       if (!wasArrivedRecentlySent) {
         notifications.push({
           userId: ride.passengerId,
-          type: "driver_arrived",
-          title: "Driver Arrived",
-          message: "Your driver has arrived at the pickup location.",
-          priority: "urgent",
-          metadata: { rideId: args.rideId, driverId: ride.driverId }
+          type: 'driver_arrived',
+          title: 'Driver Arrived',
+          message: 'Your driver has arrived at the pickup location.',
+          priority: 'urgent',
+          metadata: { rideId: args.rideId, driverId: ride.driverId },
         });
       } else {
-        console.log(`Skipping duplicate driver arrived notification for passenger ${ride.passengerId} and ride ${args.rideId}`);
+        console.log(
+          `Skipping duplicate driver arrived notification for passenger ${ride.passengerId} and ride ${args.rideId}`,
+        );
       }
       break;
 
-    case "ride_started":
+    case 'ride_started':
       // Check if this notification was already sent recently
       const wasStartedRecentlySent = await wasNotificationSentRecently(
-        ctx, 
-        ride.passengerId, 
-        "ride_started", 
-        args.rideId
+        ctx,
+        ride.passengerId,
+        'ride_started',
+        args.rideId,
       );
 
       if (!wasStartedRecentlySent) {
         notifications.push({
           userId: ride.passengerId,
-          type: "ride_started",
-          title: "Ride Started",
-          message: "Your ride has started. Enjoy your journey!",
-          priority: "medium",
-          metadata: { rideId: args.rideId }
+          type: 'ride_started',
+          title: 'Ride Started',
+          message: 'Your ride has started. Enjoy your journey!',
+          priority: 'medium',
+          metadata: { rideId: args.rideId },
         });
       } else {
-        console.log(`Skipping duplicate ride started notification for passenger ${ride.passengerId} and ride ${args.rideId}`);
+        console.log(
+          `Skipping duplicate ride started notification for passenger ${ride.passengerId} and ride ${args.rideId}`,
+        );
       }
       break;
 
-    case "ride_completed":
+    case 'ride_completed':
       // Check if this notification was already sent recently
       const wasCompletedRecentlySent = await wasNotificationSentRecently(
-        ctx, 
-        ride.passengerId, 
-        "ride_completed", 
-        args.rideId
+        ctx,
+        ride.passengerId,
+        'ride_completed',
+        args.rideId,
       );
 
       if (!wasCompletedRecentlySent) {
         notifications.push({
           userId: ride.passengerId,
-          type: "ride_completed",
-          title: "Ride Completed",
-          message: "Your ride has been completed. Thank you for using TaxiTap!",
-          priority: "medium",
-          metadata: { rideId: args.rideId, amount: ride.finalFare }
+          type: 'ride_completed',
+          title: 'Ride Completed',
+          message: 'Your ride has been completed. Thank you for using TaxiTap!',
+          priority: 'medium',
+          metadata: { rideId: args.rideId, amount: ride.finalFare },
         });
       } else {
-        console.log(`Skipping duplicate ride completed notification for passenger ${ride.passengerId} and ride ${args.rideId}`);
+        console.log(
+          `Skipping duplicate ride completed notification for passenger ${ride.passengerId} and ride ${args.rideId}`,
+        );
       }
-      
+
       // Also notify driver
       if (ride.driverId) {
         const wasDriverCompletedRecentlySent = await wasNotificationSentRecently(
-          ctx, 
-          ride.driverId, 
-          "ride_completed", 
-          args.rideId
+          ctx,
+          ride.driverId,
+          'ride_completed',
+          args.rideId,
         );
 
         if (!wasDriverCompletedRecentlySent) {
           notifications.push({
             userId: ride.driverId,
-            type: "ride_completed",
-            title: "Ride Completed",
+            type: 'ride_completed',
+            title: 'Ride Completed',
             message: `Ride completed successfully. Fare: R${ride.finalFare}`,
-            priority: "medium",
-            metadata: { rideId: args.rideId, amount: ride.finalFare }
+            priority: 'medium',
+            metadata: { rideId: args.rideId, amount: ride.finalFare },
           });
         } else {
-          console.log(`Skipping duplicate ride completed notification for driver ${ride.driverId} and ride ${args.rideId}`);
+          console.log(
+            `Skipping duplicate ride completed notification for driver ${ride.driverId} and ride ${args.rideId}`,
+          );
         }
       }
       break;
 
-    case "ride_cancelled":
+    case 'ride_cancelled':
       const cancelledByDriver = args.driverId && ride.driverId === args.driverId;
       const targetUserId = cancelledByDriver ? ride.passengerId : ride.driverId;
-      
+
       if (targetUserId) {
         // Check if this notification was already sent recently
         const wasCancelledRecentlySent = await wasNotificationSentRecently(
-          ctx, 
-          targetUserId, 
-          "ride_cancelled", 
-          args.rideId
+          ctx,
+          targetUserId,
+          'ride_cancelled',
+          args.rideId,
         );
 
         if (!wasCancelledRecentlySent) {
           notifications.push({
             userId: targetUserId,
-            type: "ride_cancelled",
-            title: "Ride Cancelled",
-            message: cancelledByDriver 
-              ? "Your ride has been cancelled by the driver." 
-              : "The ride has been cancelled by the passenger.",
-            priority: "high",
-            metadata: { rideId: args.rideId }
+            type: 'ride_cancelled',
+            title: 'Ride Cancelled',
+            message: cancelledByDriver
+              ? 'Your ride has been cancelled by the driver.'
+              : 'The ride has been cancelled by the passenger.',
+            priority: 'high',
+            metadata: { rideId: args.rideId },
           });
         } else {
-          console.log(`Skipping duplicate ride cancelled notification for user ${targetUserId} and ride ${args.rideId}`);
+          console.log(
+            `Skipping duplicate ride cancelled notification for user ${targetUserId} and ride ${args.rideId}`,
+          );
         }
       }
       break;
@@ -221,7 +235,10 @@ export const sendRideNotificationHandler = async (
 
   // Send all notifications using the internal mutation
   for (const notification of notifications) {
-    await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, notification);
+    await ctx.runMutation(
+      internal.functions.notifications.sendNotifications.sendNotificationInternal,
+      notification,
+    );
   }
 };
 
@@ -230,8 +247,8 @@ export const sendRideNotification = internalMutation({
   args: {
     rideId: v.string(),
     type: v.string(),
-    passengerId: v.optional(v.id("taxiTap_users")),
-    driverId: v.optional(v.id("taxiTap_users"))
+    passengerId: v.optional(v.id('taxiTap_users')),
+    driverId: v.optional(v.id('taxiTap_users')),
   },
-  handler: sendRideNotificationHandler
+  handler: sendRideNotificationHandler,
 });
