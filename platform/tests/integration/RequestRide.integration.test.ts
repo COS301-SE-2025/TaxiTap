@@ -18,6 +18,9 @@ describe('RequestRide Integration', () => {
     // Override the db.query mock to return the proper chain
     ctx.db.query = jest.fn().mockReturnValue(mockQueryChain);
 
+    // Mock db.insert for Jest call tracking
+    ctx.db.insert = jest.fn();
+
     // Add the missing runQuery method to the mock context
     ctx.runQuery = jest.fn().mockResolvedValue({
       availableTaxis: [
@@ -87,6 +90,9 @@ describe('RequestRide Integration', () => {
 
     ctx.db.query = jest.fn().mockReturnValue(mockQueryChain);
 
+    // Mock db.insert for Jest call tracking
+    ctx.db.insert = jest.fn();
+
     const args = {
       passengerId: 'user1',
       driverId: 'user2',
@@ -124,6 +130,9 @@ describe('RequestRide Integration', () => {
     };
 
     ctx.db.query = jest.fn().mockReturnValue(mockQueryChain);
+
+    // Mock db.insert for Jest call tracking
+    ctx.db.insert = jest.fn();
 
     // Mock runQuery to return no matching driver
     ctx.runQuery = jest.fn().mockResolvedValue({

@@ -1,6 +1,24 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { sendRideNotificationHandler } from "../../convex/functions/notifications/rideNotifications";
 
+// Helper for consistent db.query mock
+function mockDbQuery(mockRide: any, notifications: any[] = []) {
+  return (table: string) => {
+    if (table === "rides") {
+      return {
+        withIndex: () => ({
+          first: () => Promise.resolve(mockRide)
+        })
+      };
+    }
+    if (table === "notifications") {
+      return {
+        collect: jest.fn().mockResolvedValue(notifications)
+      };
+    }
+  };
+}
+
 describe("sendRideNotificationHandler", () => {
   let ctx: any;
 
@@ -29,18 +47,7 @@ describe("sendRideNotificationHandler", () => {
   describe("ride_requested", () => {
     it("sends notification to driver when ride is requested", async () => {
       // Mock the ride query
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -58,16 +65,7 @@ describe("sendRideNotificationHandler", () => {
     });
 
     it("does not send notification if no driverId provided", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        return Promise.resolve([]);
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -83,18 +81,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("ride_accepted", () => {
     it("sends notification to passenger when ride is accepted", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -114,18 +101,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("driver_arrived", () => {
     it("sends urgent notification to passenger when driver arrives", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -145,18 +121,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("ride_started", () => {
     it("sends notification to passenger when ride starts", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -175,18 +140,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("ride_completed", () => {
     it("sends notifications to both passenger and driver when ride completes", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -206,18 +160,7 @@ describe("sendRideNotificationHandler", () => {
     it("only sends passenger notification when no driver is assigned", async () => {
       const rideWithoutDriver = { ...mockRide, driverId: undefined };
       
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(rideWithoutDriver)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(rideWithoutDriver, []);
 
       const args = {
         rideId: "RIDE123",
@@ -235,18 +178,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("ride_cancelled", () => {
     it("notifies passenger when driver cancels ride", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -264,18 +196,7 @@ describe("sendRideNotificationHandler", () => {
     });
 
     it("notifies driver when passenger cancels ride", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -295,18 +216,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("edge cases", () => {
     it("handles notification sending failures", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       ctx.runMutation.mockRejectedValue(new Error("Notification failed"));
 
@@ -322,18 +232,7 @@ describe("sendRideNotificationHandler", () => {
 
   describe("multiple notifications", () => {
     it("sends all notifications in sequence", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       const args = {
         rideId: "RIDE123",
@@ -346,18 +245,7 @@ describe("sendRideNotificationHandler", () => {
     });
 
     it("stops execution if first notification fails", async () => {
-      ctx.db.query.mockImplementation((table: string) => {
-        if (table === "rides") {
-          return {
-            withIndex: () => ({
-              first: () => Promise.resolve(mockRide)
-            })
-          };
-        }
-        if (table === "notifications") {
-          return Promise.resolve([]); // No recent notifications
-        }
-      });
+      ctx.db.query = mockDbQuery(mockRide, []);
 
       ctx.runMutation.mockRejectedValueOnce(new Error("First notification failed"));
 

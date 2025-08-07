@@ -4,6 +4,7 @@ import { createMockCtx } from './ridesTestUtils';
 describe('completeRide Integration', () => {
   it('should complete a ride and update its status', async () => {
     const { ctx, db } = createMockCtx();
+    ctx.runMutation = jest.fn();
     db.insert('rides', 'ride6', { rideId: 'ride6', status: 'accepted', passengerId: 'user1', driverId: 'user2' });
     const result = await completeRideHandler(ctx, { rideId: 'ride6', driverId: 'user2' });
     expect(result.message).toBe('Ride marked as completed.');

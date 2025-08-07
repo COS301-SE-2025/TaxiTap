@@ -4,6 +4,7 @@ import { createMockCtx } from './ridesTestUtils';
 describe('cancelRide Integration', () => {
   it('should allow a passenger to cancel a ride', async () => {
     const { ctx, db } = createMockCtx();
+    ctx.runMutation = jest.fn();
     db.insert('rides', 'ride3', { rideId: 'ride3', status: 'accepted', passengerId: 'user1', driverId: 'user2' });
     const result = await cancelRideHandler(ctx, { rideId: 'ride3', userId: 'user1' });
     expect(result.message).toBe('Ride cancelled successfully');
@@ -13,6 +14,7 @@ describe('cancelRide Integration', () => {
   });
   it('should allow a driver to cancel a ride', async () => {
     const { ctx, db } = createMockCtx();
+    ctx.runMutation = jest.fn();
     db.insert('rides', 'ride4', { rideId: 'ride4', status: 'accepted', passengerId: 'user1', driverId: 'user2' });
     const result = await cancelRideHandler(ctx, { rideId: 'ride4', userId: 'user2' });
     expect(result.message).toBe('Ride cancelled successfully');

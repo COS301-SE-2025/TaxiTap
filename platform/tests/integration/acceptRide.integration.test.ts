@@ -4,6 +4,8 @@ import { createMockCtx } from './ridesTestUtils';
 describe('acceptRide Integration', () => {
   it('should accept a ride and update its status', async () => {
     const { ctx, db } = createMockCtx();
+    // Ensure runMutation is a mock for Jest call tracking
+    ctx.runMutation = jest.fn();
     db.insert('rides', 'ride1', {
       rideId: 'ride1',
       status: 'requested',
