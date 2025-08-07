@@ -6,8 +6,7 @@ export const storeRouteForPassenger = mutation({
     passengerId: v.id("taxiTap_users"),
     routeId: v.string(),
   },
-  handler: async (ctx, { passengerId, routeId }) => {
-    // Check if route already exists for the passenger
+  handler: async (ctx, { passengerId, routeId}) => {
     const existing = await ctx.db
       .query("passengerRoutes")
       .withIndex("by_passenger_and_route", q =>
@@ -16,13 +15,11 @@ export const storeRouteForPassenger = mutation({
       .first();
 
     if (existing) {
-      // If it exists, increment usageCount and update lastUsedAt
       await ctx.db.patch(existing._id, {
         usageCount: (existing.usageCount ?? 0) + 1,
         lastUsedAt: Date.now(),
       });
     } else {
-      // If not, create a new record
       await ctx.db.insert("passengerRoutes", {
         passengerId,
         routeId,
