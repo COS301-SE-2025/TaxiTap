@@ -435,6 +435,35 @@ taxiInfo: {
   phoneNotSupported: "Megala ga e a tshegediwa mo sesebedisweng seno",
   couldNotOpenPhone: "Ga re kgone go bula lenaneo la megala",
 },
+
+// Tswana translations for PassengerReservation component
+passengerReservation: {
+  loading: "Go tsaya...",
+  driverDetails: "Dintlha tsa Mokgweetsi",
+  youAreHere: "O fa",
+  loadingRoute: "Go tsaya tsela...",
+  cancelRequest: "Khansela Kopo",
+  startRide: "Simolola Loeto",
+  endRide: "Fetsa Loeto",
+  rideStarted: "Loeto lo Simologile",
+  rideDeclined: "Loeto lo Ganetswe",
+  rideDeclinedMessage: "Kopo ya gago ya loeto e ganetswe.",
+  noActiveReservation: "Ga go na kopo e e dirang. Loeto la gago lo ka tswa lo khanseletswe kgotsa lwa ganwa.",
+  error: "Phoso",
+  noRideInfo: "Ga go na tshedimosetso ya loeto kgotsa modirisi.",
+  failedToStartRide: "Go paletse go simolola loeto.",
+  failedToEndRide: "Go paletse go fetsa loeto.",
+  failedToCancelRide: "Go paletse go khansela loeto.",
+  success: "Katlego",
+  rideCancelled: "Loeto lo khanseletswe.",
+  rideEnded: "Loeto lo fedile!",
+  fare: "Tefo",
+  ok: "Go siame",
+  defaultDriverName: "Tshepo Mthembu",
+  defaultVehicleModel: "Hiace-Sesfikile",
+  currentLocation: "Lefelo la Gona Jaanong",
+  unknown: "E sa itsiweng",
+}
 };
 
 // i18n configuration for English, Zulu, and Tswana
