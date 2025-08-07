@@ -128,7 +128,7 @@ export default function SeatReserved() {
 				name: getParamAsString(params.destinationName, "")
 			});
 		}
-	}, [useLiveLocation, params, t, setCurrentLocation, setDestination]);
+	}, [useLiveLocation, params.currentLat, params.currentLng, params.destinationLat, params.destinationLng, params.currentName, params.destinationName]); // Remove setCurrentLocation and setDestination from dependencies
 
 	const vehicleInfo = {
 		plate: getParamAsString(params.plate, t('passengerReservation:unknown')),
