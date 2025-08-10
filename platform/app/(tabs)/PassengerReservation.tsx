@@ -434,6 +434,14 @@ export default function SeatReserved() {
 				driverId: driverId as Id<'taxiTap_users'>,
 				reservation: true,
 			});
+			router.push({
+				pathname: './Payments',
+				params: {
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+        			licensePlate: taxiInfo?.taxi?.plate || 'Unknown Plate',
+					fare: taxiInfo?.taxi?.fare || 'Unknown Fare',
+				},
+			});
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to start ride.');
 		}

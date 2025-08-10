@@ -59,5 +59,7 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     rideId: ride.rideId,
     rideDocId: ride._id,
     status: ride.status,
+    plate: taxi.licensePlate,
+    fare: ride.estimatedFare,
   };
 } 
