@@ -141,7 +141,11 @@ export default function HomeScreen() {
   const { location: streamedLocation, error: locationStreamError } =
     useThrottledLocationStreaming(userId, safeRole, true);
 
-  const storeManualDestination = async (routeId: string, destination: any) => {
+  const storeManualDestination = async (
+    routeId: string, 
+    destination: any, 
+    origin?: any
+  ) => {
     try {
       const existingData = await AsyncStorage.getItem('manualDestinations');
       const destinations = existingData ? JSON.parse(existingData) : {};
@@ -149,8 +153,13 @@ export default function HomeScreen() {
       destinations[routeId] = {
         latitude: destination.latitude,
         longitude: destination.longitude,
-        name: destination.name, // This will now be the user input, not geocoded address
-        timestamp: Date.now()
+        name: destination.name,
+        timestamp: Date.now(),
+        ...(origin && {
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          originName: origin.name,
+        })
       };
       
       await AsyncStorage.setItem('manualDestinations', JSON.stringify(destinations));
@@ -182,11 +191,10 @@ export default function HomeScreen() {
         if (parsed?.latitude && parsed?.longitude && parsed?.name) {
           const routeId = `manual-${parsed.latitude.toFixed(5)}-${parsed.longitude.toFixed(5)}`;
           
-          // During migration, if we have a name field, preserve it as user input
           const destinationToStore = {
             latitude: parsed.latitude,
             longitude: parsed.longitude,
-            name: parsed.name, // Keep the original name from the old storage
+            name: parsed.name,
           };
           
           await storeManualDestination(routeId, destinationToStore);
@@ -267,9 +275,13 @@ export default function HomeScreen() {
           return {
             ...recent,
             _id: recent._id,
-            routeName: manualDestination.name, // This is now the user input
+            routeName: manualDestination.name,
             destinationLat: manualDestination.latitude,
             destinationLng: manualDestination.longitude,
+            startName: recent.startName || 'Current Location',
+            startLat: recent.startLat,
+            startLng: recent.startLng,
+            isManualRoute: true,
           };
         } else {
           return {
@@ -278,19 +290,27 @@ export default function HomeScreen() {
             routeName: 'Location Unavailable',
             destinationLat: null,
             destinationLng: null,
+            startName: recent.startName,
+            startLat: recent.startLat,
+            startLng: recent.startLng,
+            isManualRoute: true,
           };
         }
       }
 
-      // Handle predetermined routes
       const fullRoute = routes.find(r => r.routeId === recent.routeId);
       if (fullRoute && fullRoute.destinationCoords) {
         return {
           ...recent,
           _id: fullRoute._id,
-          routeName: `${fullRoute.start} → ${fullRoute.destination}`,
+          routeName: fullRoute.destination,
+          routeDisplayName: `${fullRoute.start} → ${fullRoute.destination}`,
           destinationLat: fullRoute.destinationCoords.latitude,
           destinationLng: fullRoute.destinationCoords.longitude,
+          startName: recent.startName || fullRoute.start,
+          startLat: recent.startLat || fullRoute.startCoords?.latitude,
+          startLng: recent.startLng || fullRoute.startCoords?.longitude,
+          isManualRoute: false,
         };
       }
 
@@ -300,6 +320,10 @@ export default function HomeScreen() {
         routeName: 'Unknown Route',
         destinationLat: null,
         destinationLng: null,
+        startName: recent.startName,
+        startLat: recent.startLat,
+        startLng: recent.startLng,
+        isManualRoute: false,
       };
     }).filter(route => route !== null);
   }, [recentRoutes, routes, manualDestinations]);
@@ -466,12 +490,10 @@ export default function HomeScreen() {
       setDestination(destinationWithUserName);
       setSelectedRouteId(uniqueRouteId);
       
-      // Store with user input as name
       await storeManualDestination(uniqueRouteId, destinationWithUserName);
     }
   };
 
-  // Updated handleReserveSeat with proper route ID handling
   const handleReserveSeat = async () => {
     if (!destination || !origin) {
       Alert.alert('Error', 'Please enter both origin and destination addresses');
@@ -483,7 +505,6 @@ export default function HomeScreen() {
       return;
     }
 
-    // Check if we have available taxis
     if (availableTaxis.length === 0) {
       Alert.alert(
         'No Taxis Available', 
@@ -497,14 +518,19 @@ export default function HomeScreen() {
       let routeIdToStore = selectedRouteId;
       
       if (selectedRouteId.startsWith('manual-')) {
-        await storeManualDestination(selectedRouteId, destination);
+        await storeManualDestination(selectedRouteId, destination, origin);
         routeIdToStore = selectedRouteId;
       }
-      
+
       await storeRouteForPassenger({
         passengerId: userId as Id<"taxiTap_users">,
         routeId: routeIdToStore,
-        
+        name: destination.name,
+        startName: origin.name,
+        startLat: origin.latitude,
+        startLng: origin.longitude,
+        destinationLat: destination.latitude,
+        destinationLng: destination.longitude,
       });
     } catch (err) {
       console.error("Failed to store route:", err);
@@ -520,7 +546,6 @@ export default function HomeScreen() {
         currentLat: origin.latitude.toString(),
         currentLng: origin.longitude.toString(),
         routeId: selectedRouteId,
-        // Pass the available taxis data
         availableTaxisCount: availableTaxis.length.toString(),
         routeMatchData: JSON.stringify(routeMatchResults),
       },
@@ -539,7 +564,6 @@ export default function HomeScreen() {
     }
   }, [routeLoaded]);
 
-  // Auto-route loading effect
   useEffect(() => {
     if (origin && destination) {
       getRoute(origin, destination);
@@ -569,7 +593,6 @@ export default function HomeScreen() {
 
     setIsLoadingRoute(true);
     setRouteLoaded(false);
-    // FIXED: Reset search state when starting new route
     setIsSearchingTaxis(false);
     setAvailableTaxis([]);
     setRouteMatchResults(null);
@@ -633,19 +656,21 @@ export default function HomeScreen() {
     return pts;
   };
 
-  // Updated handleDestinationSelect to use the stored user input name
   const handleDestinationSelect = async (route: {
     _id: Id<"routes">;
     routeId: string;
     destination: string;
     destinationCoords: { latitude: number; longitude: number } | null;
     routeName?: string;
+    // Add these new properties for start location
+    startName?: string;
+    startLat?: number;
+    startLng?: number;
   }) => {
     if (
       !route.destinationCoords || 
       typeof route.destinationCoords.latitude !== 'number' ||
       typeof route.destinationCoords.longitude !== 'number' ||
-      !origin || 
       !userId
     ) return;
 
@@ -660,8 +685,29 @@ export default function HomeScreen() {
       name: displayName, // This will show user input for manual routes
     };
 
+    // Set destination
     setDestination(dest);
     setDestinationAddress(displayName); // Update the input field with the stored name
+    
+    // Set origin/start location if available
+    if (route.startLat && route.startLng && route.startName) {
+      const startLocation = {
+        latitude: route.startLat,
+        longitude: route.startLng,
+        name: route.startName,
+      };
+      
+      setOrigin(startLocation);
+      setOriginAddress(route.startName); // Update the origin input field
+    } else if (detectedLocation) {
+      // Fallback to current location if no start location is stored
+      setOrigin({
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        name: 'Current Location'
+      });
+      setOriginAddress('Current Location');
+    }
     
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
     setSelectedRouteId(routeIdToUse);
@@ -811,10 +857,6 @@ export default function HomeScreen() {
       fontWeight: 'bold',
       fontSize: 14,
       color: theme.text,
-    },
-    routeSubtitle: {
-      fontSize: 12,
-      color: theme.textSecondary,
     },
     routeLoadingText: {
       color: theme.textSecondary,
@@ -1060,6 +1102,10 @@ export default function HomeScreen() {
                       latitude: route.destinationLat!,
                       longitude: route.destinationLng!,
                     },
+                    routeName: route.routeName,
+                    startName: route.startName,
+                    startLat: route.startLat,
+                    startLng: route.startLng,
                   })
                 }
               >
@@ -1071,12 +1117,17 @@ export default function HomeScreen() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={dynamicStyles.routeTitle}>
-                    {route.routeName || 'Saved Route'}
-                  </Text>
-                  <Text style={dynamicStyles.routeSubtitle}>
-                    Used {route.usageCount} times
+                    {route.startName && route.routeName 
+                      ? `${route.startName} → ${route.routeName}`
+                      : route.routeName || 'Saved Route'
+                    }
                   </Text>
                 </View>
+                <Icon
+                  name="chevron-forward"
+                  size={16}
+                  color={theme.textSecondary}
+                />
               </TouchableOpacity>
             ))
           ) : (
