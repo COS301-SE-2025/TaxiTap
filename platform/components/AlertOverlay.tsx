@@ -342,7 +342,7 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
     }
   };
 
-  return (
+  const renderAlert = () => (
     <Animated.View
       style={[
         styles.alertContainer,
@@ -429,6 +429,33 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       </TouchableOpacity>
     </Animated.View>
   );
+
+  // Render with backdrop for center positioned alerts
+  if (alert.position === 'center') {
+    return (
+      <Animated.View
+        style={[
+          styles.backdrop,
+          {
+            zIndex: isGlobal ? 1100 : 1000,
+            opacity: opacityValue,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.backdropTouchable}
+          onPress={handleDismiss}
+          activeOpacity={1}
+        >
+          <View style={styles.backdropContent} onStartShouldSetResponder={() => true}>
+            {renderAlert()}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  return renderAlert();
 };
 
 export const AlertOverlay: React.FC = () => {
@@ -552,5 +579,25 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: '#8E8E93',
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backdropTouchable: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backdropContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
