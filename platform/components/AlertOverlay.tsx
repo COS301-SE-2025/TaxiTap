@@ -253,8 +253,9 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   const finalStyle = { ...defaultStyle, ...customStyle };
 
   const getPositionStyle = (): any => {
-    const baseOffset = isGlobal ? 60 : 20;
-    const spacing = 80;
+    // Global alerts have slightly more spacing from edges and between each other
+    const baseOffset = isGlobal ? 70 : 20;
+    const spacing = isGlobal ? 90 : 80;
     const topOffset = baseOffset + (index * spacing);
 
     switch (alert.position) {
@@ -359,6 +360,13 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
           shadowOpacity: finalStyle.shadowOpacity,
           shadowRadius: finalStyle.shadowRadius,
           elevation: finalStyle.elevation,
+          // Global alerts get additional visual emphasis
+          ...(isGlobal && {
+            borderLeftWidth: 4,
+            borderLeftColor: '#FFD700',
+            elevation: finalStyle.elevation + 2,
+            shadowOpacity: (finalStyle.shadowOpacity || 0.25) + 0.1,
+          }),
         },
       ]}
     >
@@ -368,10 +376,18 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         activeOpacity={0.9}
       >
         <View style={styles.alertHeader}>
-          <View style={styles.iconContainer}>
+          <View style={[
+            styles.iconContainer,
+            isGlobal && styles.globalIconContainer
+          ]}>
             <Text style={[styles.icon, { color: finalStyle.textColor }]}>
               {getAlertIcon()}
             </Text>
+            {isGlobal && (
+              <View style={styles.globalIndicator}>
+                <Text style={styles.globalIndicatorText}>●</Text>
+              </View>
+            )}
           </View>
           
           <View style={styles.textContainer}>
@@ -615,5 +631,24 @@ const styles = StyleSheet.create({
   backdropContent: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  globalIconContainer: {
+    position: 'relative',
+  },
+  globalIndicator: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  globalIndicatorText: {
+    fontSize: 6,
+    color: '#000',
+    fontWeight: 'bold',
   },
 });
