@@ -9,6 +9,7 @@ import {
   Platform,
   SafeAreaView,
 } from 'react-native';
+import { usePathname } from 'expo-router';
 import { useAlerts, Alert, AlertPosition, AlertAnimation, AlertType } from '../contexts/AlertContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -485,7 +486,19 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
 };
 
 export const AlertOverlay: React.FC = () => {
-  const { globalAlerts, localAlerts, dismissGlobalAlert, dismissLocalAlert } = useAlerts();
+  const { globalAlerts, localAlerts, dismissGlobalAlert, dismissLocalAlert, dismissAllLocalAlerts } = useAlerts();
+  const pathname = usePathname();
+  const currentRoute = useRef<string>('');
+
+  // Navigation listener to dismiss local alerts on route change
+  useEffect(() => {
+    // If route changed and we have local alerts, dismiss them
+    if (currentRoute.current && currentRoute.current !== pathname && localAlerts.length > 0) {
+      dismissAllLocalAlerts();
+    }
+    
+    currentRoute.current = pathname;
+  }, [pathname, localAlerts.length, dismissAllLocalAlerts]);
 
   const allAlerts = [...globalAlerts, ...localAlerts];
 
