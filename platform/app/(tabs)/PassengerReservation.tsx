@@ -43,7 +43,7 @@ export default function SeatReserved() {
 	const mapRef = useRef<MapView | null>(null);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; plate?: string, fare?: string } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -438,8 +438,8 @@ export default function SeatReserved() {
 				pathname: './Payments',
 				params: {
 					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
-        			licensePlate: taxiInfo?.taxi?.plate || 'Unknown Plate',
-					fare: taxiInfo?.taxi?.fare || 'Unknown Fare',
+        			licensePlate: taxiInfo?.plate || 'Unknown Plate',
+					fare: taxiInfo?.fare,
 				},
 			});
 		} catch (error: any) {

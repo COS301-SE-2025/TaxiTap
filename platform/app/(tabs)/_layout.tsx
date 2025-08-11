@@ -184,6 +184,13 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
+        name="Payments"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="index"
         options={{
           href: null,

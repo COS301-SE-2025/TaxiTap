@@ -13,11 +13,6 @@ export default function PaymentConfirmation() {
   const userId = user?.id;
   const { driverName, licensePlate, fare } = useLocalSearchParams();
 
-//   const fare = useQuery(
-//     api.functions.payments.tripFare.getFareForLatestTrip,
-//     userId ? { userId: userId as Id<"taxiTap_users"> } : "skip"
-//   );
-
   const handlePaid = () => {
     console.log("Payment marked as paid");
     // Add your backend call here
@@ -36,6 +31,8 @@ export default function PaymentConfirmation() {
       <View style={styles.content}>
         <Text style={styles.paymentText}>
           <Text>Paying driver: {driverName}</Text>
+        </Text>
+        <Text style={styles.paymentText}>
           <Text>License Plate: {licensePlate}</Text>
         </Text>
         <Text style={styles.amount}>R{(fare ?? 0)}</Text>
