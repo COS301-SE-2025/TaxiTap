@@ -6,7 +6,6 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Platform,
   Animated,
   TextInput,
@@ -26,6 +25,7 @@ import * as Location from "expo-location";
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -46,6 +46,8 @@ export default function HomeScreen() {
     shouldRunQuery ? { passengerId: userId as Id<"taxiTap_users"> } : "skip"
   );
 
+  const { showGlobalError, showGlobalAlert } = useAlertHelpers();
+
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -55,7 +57,15 @@ export default function HomeScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission denied", "Location permission is required to find nearby taxis.");
+        showGlobalError(
+          "Permission denied", 
+          "Location permission is required to find nearby taxis.",
+          {
+            duration: 5000,
+            position: 'top',
+            animation: 'slide-down',
+          }
+        );
         setIsLoadingCurrentLocation(false);
         return;
       }
@@ -66,7 +76,7 @@ export default function HomeScreen() {
         longitude: location.coords.longitude,
       });
     })();
-  }, []);
+  }, [showGlobalError]);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -166,16 +176,27 @@ export default function HomeScreen() {
     const timeout = setTimeout(() => {
       if (!detectedLocation  && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
-        Alert.alert(
+        showGlobalError(
           'Location Error', 
           'Unable to get your current location. Please enter your address manually.',
-          [{ text: 'OK' }]
+          {
+            duration: 0,
+            actions: [
+              {
+                label: 'OK',
+                onPress: () => console.log('Location error acknowledged'),
+                style: 'default',
+              }
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [detectedLocation , isLoadingCurrentLocation]);
+  }, [detectedLocation , isLoadingCurrentLocation, showGlobalError]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -279,7 +300,11 @@ export default function HomeScreen() {
   // Geocoding function
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
-      Alert.alert('Error', 'Google Maps API key is not configured');
+      showGlobalError('Error', 'Google Maps API key is not configured', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return null;
     }
 
@@ -299,7 +324,11 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      Alert.alert('Error', 'Could not find the address. Please try again.');
+      showGlobalError('Error', 'Could not find the address. Please try again.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return null;
     }
   };
@@ -329,10 +358,21 @@ export default function HomeScreen() {
       
     } catch (error) {
       setIsSearchingTaxis(false);
-      Alert.alert(
+      showGlobalError(
         'Search Error', 
         'Unable to find available taxis. Please try again.',
-        [{ text: 'OK' }]
+        {
+          duration: 4000,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('Search error acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
       );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
@@ -418,22 +458,40 @@ export default function HomeScreen() {
 
   const handleReserveSeat = async () => {
     if (!destination || !origin) {
-      Alert.alert('Error', 'Please enter both origin and destination addresses');
+      showGlobalError('Error', 'Please enter both origin and destination addresses', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
     if (!selectedRouteId) {
-      Alert.alert('Error', 'Route not selected');
+      showGlobalError('Error', 'Route not selected', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
     // Check if we have available taxis
     if (availableTaxis.length === 0) {
-      Alert.alert(
-        'No Taxis Available', 
-        'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
-        [{ text: 'OK' }]
-      );
+      showGlobalAlert({
+        title: 'No Taxis Available',
+        message: 'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
+        type: 'warning',
+        duration: 0,
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => console.log('No taxis acknowledged'),
+            style: 'default',
+          }
+        ],
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -532,7 +590,11 @@ export default function HomeScreen() {
       searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
-      Alert.alert('Route Error', err instanceof Error ? err.message : 'Unknown error');
+      showGlobalError('Route Error', err instanceof Error ? err.message : 'Unknown error', {
+        duration: 5000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     } finally {
       setIsLoadingRoute(false);
     }
