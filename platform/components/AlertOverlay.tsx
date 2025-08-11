@@ -348,6 +348,7 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         styles.alertContainer,
         getPositionStyle(),
         {
+          zIndex: isGlobal ? 1100 : 1000,
           opacity: opacityValue,
           backgroundColor: finalStyle.backgroundColor,
           borderColor: finalStyle.borderColor,
@@ -475,7 +476,6 @@ const styles = StyleSheet.create({
   },
   alertContainer: {
     position: 'absolute',
-    zIndex: 1000,
   },
   alertContent: {
     padding: 16,
