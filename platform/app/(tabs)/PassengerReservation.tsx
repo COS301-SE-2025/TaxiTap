@@ -440,6 +440,7 @@ export default function SeatReserved() {
 					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
         			licensePlate: taxiInfo?.plate || 'Unknown Plate',
 					fare: taxiInfo?.fare,
+					rideId: taxiInfo?.rideId,
 				},
 			});
 		} catch (error: any) {

@@ -1,5 +1,5 @@
 import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from '../../contexts/UserContext';
@@ -11,17 +11,25 @@ export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
   const userId = user?.id;
-  const { driverName, licensePlate, fare } = useLocalSearchParams();
+  const { driverName, licensePlate, fare, rideId } = useLocalSearchParams();
+
+  const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
 
   const handlePaid = () => {
-    console.log("Payment marked as paid");
-    // Add your backend call here
+    markTripPaid({
+        rideId: rideId as string,
+        userId: userId as Id<"taxiTap_users">,
+        paid: true,
+    });
     router.push('/PassengerReservation');
   };
 
   const handleNotPaid = () => {
-    console.log("Payment marked as not paid");
-    // Add your backend call here
+    markTripPaid({
+        rideId: rideId as string,
+        userId: userId as Id<"taxiTap_users">,
+        paid: false,
+    });
     router.push('/PassengerReservation');
   };
 
