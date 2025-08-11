@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Animated,
   Linking,
   Image,
@@ -18,11 +17,13 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import loading from '../../assets/images/loading4.png';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
   // Get route parameters
   const {
@@ -155,19 +156,31 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          Alert.alert('Error', 'Phone calls are not supported on this device');
+          showGlobalError('Error', 'Phone calls are not supported on this device', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        Alert.alert('Error', 'Could not open phone app');
+        showGlobalError('Error', 'Could not open phone app', {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        });
       });
   };
 
   // Handle ride booking using your existing requestRide function
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      Alert.alert('Error', 'Please select a taxi and ensure you are logged in');
+      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -199,39 +212,56 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
-        Alert.alert(
+        showGlobalSuccess(
           'Ride Request Sent',
           `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                router.push({
-                  pathname: './PassengerReservation',
-                  params: {
-                    currentLat,
-                    currentLng,
-                    currentName,
-                    destinationLat,
-                    destinationLng,
-                    destinationName,
-                    driverId: selectedTaxi.userId,
-                    driverName: selectedTaxi.name,
-                    fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
-                    rideId: result.rideId,
-                  },
-                });
+          {
+            duration: 0,
+            actions: [
+              {
+                label: 'OK',
+                onPress: () => {
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: {
+                      currentLat,
+                      currentLng,
+                      currentName,
+                      destinationLat,
+                      destinationLng,
+                      destinationName,
+                      driverId: selectedTaxi.userId,
+                      driverName: selectedTaxi.name,
+                      fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
+                      rideId: result.rideId,
+                    },
+                  });
+                },
+                style: 'default',
               },
-            },
-          ]
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
-      Alert.alert(
+      showGlobalError(
         'Booking Error',
         'Failed to send ride request. Please try again.',
-        [{ text: 'OK' }]
+        {
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('Booking error acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
       );
     } finally {
       setIsBooking(false);
