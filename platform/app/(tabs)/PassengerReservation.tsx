@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -12,6 +12,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -39,6 +40,7 @@ export default function SeatReserved() {
 		setCachedRoute
 	} = useMapContext();
 	const { notifications, markAsRead } = useNotifications();
+	const { showGlobalAlert, showGlobalError } = useAlertHelpers();
 
 	const mapRef = useRef<MapView | null>(null);
 	
@@ -347,18 +349,20 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, rideStatus, isFollowing]);
 
-	// Handle notifications effect
+	// MIGRATED: Handle notifications effect using new alert system
 	useEffect(() => {
 		const rideStarted = notifications.find(
 			n => n.type === 'ride_started' && !n.isRead
 		);
 		if (rideStarted) {
-			Alert.alert(
-				'Ride Started',
-				rideStarted.message,
-				[
+			showGlobalAlert({
+				title: 'Ride Started',
+				message: rideStarted.message,
+				type: 'success',
+				duration: 0,
+				actions: [
 					{
-						text: 'OK',
+						label: 'OK',
 						onPress: () => {
 							markAsRead(rideStarted._id);
 							if (!currentLocation || !destination) {
@@ -368,8 +372,9 @@ export default function SeatReserved() {
 						style: 'default',
 					},
 				],
-				{ cancelable: false }
-			);
+				position: 'top',
+				animation: 'slide-down',
+			});
 			return;
 		} 
 
@@ -377,49 +382,61 @@ export default function SeatReserved() {
 			n => n.type === 'ride_declined' && !n.isRead
 		);
 		if (rideDeclined) {
-			Alert.alert(
+			showGlobalError(
 				'Ride Declined',
 				rideDeclined.message || 'Your ride request was declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							markAsRead(rideDeclined._id);
-							router.push('/HomeScreen');
+				{
+					duration: 0,
+					actions: [
+						{
+							label: 'OK',
+							onPress: () => {
+								markAsRead(rideDeclined._id);
+								router.push('/HomeScreen');
+							},
+							style: 'default',
 						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
+					],
+					position: 'top',
+					animation: 'slide-down',
+				}
 			);
 		}
-	}, [notifications, markAsRead, router]);
+	}, [notifications, markAsRead, router, showGlobalAlert, showGlobalError]);
 
 	useEffect(() => {
 		if (rideJustEnded) return;
 		
 		if (taxiInfoError && !hasShownDeclinedAlert) {
-			Alert.alert(
+			showGlobalError(
 				'Ride Declined',
 				'No active reservation found. Your ride may have been cancelled or declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							setHasShownDeclinedAlert(true);
-							router.push('/HomeScreen');
+				{
+					duration: 0,
+					actions: [
+						{
+							label: 'OK',
+							onPress: () => {
+								setHasShownDeclinedAlert(true);
+								router.push('/HomeScreen');
+							},
+							style: 'default',
 						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
+					],
+					position: 'top',
+					animation: 'slide-down',
+				}
 			);
 		}
-	}, [taxiInfoError, hasShownDeclinedAlert]);
+	}, [taxiInfoError, hasShownDeclinedAlert, showGlobalError]);
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			showGlobalError('Error', 'No ride or user information available.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 			return;
 		}
 		try {
@@ -430,23 +447,49 @@ export default function SeatReserved() {
 				reservation: true,
 			});
 		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to start ride.');
+			showGlobalError('Error', error?.message || 'Failed to start ride.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 		}
 	};
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			showGlobalError('Error', 'No ride or user information available.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 			return;
 		}
 		try {
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert('Success', 'Ride ended!');
+			
+			showGlobalAlert({
+				title: 'Success',
+				message: 'Ride ended!',
+				type: 'success',
+				duration: 3000,
+				position: 'top',
+				animation: 'slide-down',
+			});
+			
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
-			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			
+			showGlobalAlert({
+				title: 'Ride Ended',
+				message: `Fare: R${result.fare}`,
+				type: 'info',
+				duration: 5000,
+				position: 'top',
+				animation: 'slide-down',
+			});
+			
 			if (!currentLocation || !destination) {
 				return;
 			}
@@ -462,22 +505,43 @@ export default function SeatReserved() {
 			});
 			setRideJustEnded(true);
 		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to end ride.');
+			showGlobalError('Error', error?.message || 'Failed to end ride.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 		}
 	};
 
 	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			showGlobalError('Error', 'No ride or user information available.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 			return;
 		}
 		try {
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert('Success', 'Ride cancelled.');
+			
+			showGlobalAlert({
+				title: 'Success',
+				message: 'Ride cancelled.',
+				type: 'success',
+				duration: 3000,
+				position: 'top',
+				animation: 'slide-down',
+			});
+			
 			router.push('/HomeScreen');
 		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
+			showGlobalError('Error', error?.message || 'Failed to cancel ride.', {
+				duration: 4000,
+				position: 'top',
+				animation: 'slide-down',
+			});
 		}
 	};
 
