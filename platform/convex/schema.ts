@@ -114,6 +114,7 @@ export default defineSchema({
     
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
+    tripPaid: v.optional(v.boolean()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
