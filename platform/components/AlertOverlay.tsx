@@ -402,28 +402,38 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
 
         {alert.actions && alert.actions.length > 0 && (
           <View style={styles.actionsContainer}>
-            {alert.actions.map((action, actionIndex) => (
-              <TouchableOpacity
-                key={actionIndex}
-                style={[
-                  styles.actionButton,
-                  action.style === 'destructive' && styles.destructiveAction,
-                  action.style === 'cancel' && styles.cancelAction,
-                ]}
-                onPress={() => handleActionPress(action)}
-              >
-                <Text
+            {alert.actions.map((action, actionIndex) => {
+              const actionCount = alert.actions?.length || 0;
+              return (
+                <TouchableOpacity
+                  key={actionIndex}
                   style={[
-                    styles.actionText,
-                    { color: finalStyle.textColor },
-                    action.style === 'destructive' && styles.destructiveText,
-                    action.style === 'cancel' && styles.cancelText,
+                    styles.actionButton,
+                    {
+                      minWidth: actionCount === 1 ? 100 : 80,
+                      flex: actionCount <= 2 ? 1 : 0,
+                      marginHorizontal: actionCount > 2 ? 4 : 0,
+                    },
+                    action.style === 'destructive' && styles.destructiveAction,
+                    action.style === 'cancel' && styles.cancelAction,
                   ]}
+                  onPress={() => handleActionPress(action)}
                 >
-                  {action.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: finalStyle.textColor },
+                      action.style === 'destructive' && styles.destructiveText,
+                      action.style === 'cancel' && styles.cancelText,
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {action.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </TouchableOpacity>
@@ -554,15 +564,21 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
+    alignItems: 'center',
     marginTop: 12,
     gap: 8,
+    minHeight: 36,
   },
   actionButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    maxWidth: '48%',
   },
   destructiveAction: {
     backgroundColor: 'rgba(255, 59, 48, 0.2)',
