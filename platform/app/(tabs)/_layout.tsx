@@ -260,6 +260,7 @@ export default function TabLayout() {
     destination = undefined;
   }
   
+  // Ride declined notification handler
   useEffect(() => {
     const rideDeclined = notifications.find(
       n => n.type === 'ride_declined' && !n.isRead
@@ -280,13 +281,14 @@ export default function TabLayout() {
               style: 'default',
             },
           ],
-          position: 'center',
-          animation: 'scale',
+          position: 'top',
+          animation: 'slide-down',
         }
       );
     }
   }, [notifications, markAsRead, showGlobalError]);
 
+  // Ride accepted notification handler  
   useEffect(() => {
     const rideAccepted = notifications.find(
       n => n.type === 'ride_accepted' && !n.isRead
@@ -317,13 +319,14 @@ export default function TabLayout() {
               style: 'default',
             },
           ],
-          position: 'center',
-          animation: 'scale',
+          position: 'top',
+          animation: 'slide-down',
         }
       );
     }
   }, [notifications, markAsRead, currentLocation, destination, showGlobalSuccess]);
 
+  // Ride cancelled notification handler
   useEffect(() => {
     const rideCancelled = notifications.find(
       n => n.type === 'ride_cancelled' && !n.isRead
@@ -341,8 +344,8 @@ export default function TabLayout() {
             style: 'default',
           },
         ],
-        position: 'center',
-        animation: 'scale',
+        position: 'top',
+        animation: 'slide-down',
       });
     }
   }, [notifications, markAsRead, showGlobalAlert]);
