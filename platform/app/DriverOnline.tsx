@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Dimensions,
   Modal,
-  Alert,
   StatusBar,
   SafeAreaView,
 } from 'react-native';
@@ -21,6 +20,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -73,6 +73,7 @@ export default function DriverOnline({
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
+  const { showError, showSuccess, showModal } = useAlertHelpers();
   
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -150,26 +151,26 @@ export default function DriverOnline({
       n => n.type === "ride_request" && !n.isRead
     );
     if (rideRequest) {
-      Alert.alert(
+      showModal(
         "New Ride Request",
         rideRequest.message,
         [
           {
-            text: "Decline",
+            label: "Decline",
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
                 markAsRead(rideRequest._id);
               } catch (error) {
                 console.error(error);
-                Alert.alert("Error", "Failed to decline ride or update seats.");
+                showError("Error", "Failed to decline ride or update seats.");
               }
               markAsRead(rideRequest._id);
             },
             style: "destructive"
           },
           {
-            text: "Accept",
+            label: "Accept",
             onPress: async () => {
               try {
                 await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
@@ -183,14 +184,13 @@ export default function DriverOnline({
                 // });
               } catch (error) {
                 console.error(error);
-                Alert.alert("Error", "Failed to accept ride or update seats.");
+                showError("Error", "Failed to accept ride or update seats.");
               }
               markAsRead(rideRequest._id);
             },
             style: "default"
           }
-        ],
-        { cancelable: false }
+        ]
       );
     }
   }, [notifications, user]);
@@ -200,17 +200,16 @@ export default function DriverOnline({
       n => n.type === 'ride_cancelled' && !n.isRead
     );
     if (rideCancelled) {
-      Alert.alert(
+      showModal(
         'Ride Cancelled',
         rideCancelled.message,
         [
           {
-            text: 'OK',
+            label: 'OK',
             onPress: () => markAsRead(rideCancelled._id),
             style: 'default',
           },
-        ],
-        { cancelable: false }
+        ]
       );
     }
   }, [notifications, markAsRead]);
@@ -220,17 +219,16 @@ export default function DriverOnline({
       n => n.type === 'ride_started' && !n.isRead
     );
     if (rideStarted) {
-      Alert.alert(
+      showModal(
         'Ride Started',
         rideStarted.message,
         [
           {
-            text: 'OK',
+            label: 'OK',
             onPress: () => markAsRead(rideStarted._id),
             style: 'default',
           },
-        ],
-        { cancelable: false }
+        ]
       );
     }
   }, [notifications, markAsRead]);
@@ -249,18 +247,22 @@ export default function DriverOnline({
   };
 
   const handleEmergency = () => {
-    Alert.alert(
+    showModal(
       "Emergency Alert",
       "This will contact emergency services (112)",
       [
-        { text: "Cancel", style: "cancel" },
         { 
-          text: "Yes, Get Help", 
-          style: "destructive", 
+          label: "Yes, Get Help", 
           onPress: () => {
-            Alert.alert("Emergency Alert Sent", "Emergency services contacted.");
+            showSuccess("Emergency Alert Sent", "Emergency services contacted.");
             setShowSafetyMenu(false);
-          }
+          },
+          style: "destructive"
+        },
+        { 
+          label: "Cancel", 
+          onPress: () => setShowSafetyMenu(false),
+          style: "cancel"
         }
       ]
     );
@@ -577,7 +579,7 @@ export default function DriverOnline({
 
   async function increaseSeats() {
     if (!user) {
-      Alert.alert("You must be logged in");
+      showError("validation error", "You must be logged in");
       return;
     }
     try {
@@ -589,7 +591,7 @@ export default function DriverOnline({
 
   async function decreaseSeats() {
     if (!user) {
-      Alert.alert("You must be logged in");
+      showError("validation error", "You must be logged in");
       return;
     }
     try {
