@@ -45,13 +45,13 @@ export default function WaitingPayments() {
         );
     }
 
-    const waitingPayments = activeTrips?.passengers?.filter((p) => p.tripPaid === null) ?? [];
+    const unpaid = activeTrips.passengersUnpaid;
 
-    if (!waitingPayments.length) {
+    if (!unpaid.length) {
         return (
         <View style={dynamicStyles.container}>
             <Text style={{ fontSize: 24, fontWeight: "bold", textAlign: "center" }}>
-            All users have responded.
+            All users have paid.
             </Text>
         </View>
         );
@@ -59,18 +59,23 @@ export default function WaitingPayments() {
 
     return (
         <ScrollView style={dynamicStyles.container}>
-        {waitingPayments.map((p, idx) => (
-            <View key={idx} style={dynamicStyles.passengerCard}>
-            <Text style={dynamicStyles.name}>{p.name}</Text>
-            <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>
-            <Text style={dynamicStyles.info}>💰 Fare: R{p.fare.toFixed(2)}</Text>
-            <Text
-                style={ dynamicStyles.noResponse }
-            >
-                ⌛ Waiting for Payment
-            </Text>
-            </View>
-        ))}
+            {unpaid.map((p, idx) => {
+                const date = new Date(p.requestedAt);
+                const dateString = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+                return (
+                    <View key={idx} style={dynamicStyles.passengerCard}>
+                        <Text style={dynamicStyles.name}>{p.name}</Text>
+                        <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>
+                        <Text style={dynamicStyles.info}>💰 Fare: R{p.fare.toFixed(2)}</Text>
+                        <Text style={dynamicStyles.info}>📅 Requested at: {dateString}</Text> 
+                        <Text
+                            style={ dynamicStyles.unpaid }
+                        >
+                            ❌ Not Paid
+                        </Text>
+                    </View>
+                );
+            })}
         </ScrollView>
     );
 }

@@ -24,6 +24,7 @@ export const getActiveTrips = query({
     let paidCount = 0;
     let noResponseCount = 0;
     const passengers = [];
+    const passengersUnpaid = [];
 
     for (const ride of activeRides) {
       if (ride.tripPaid === true) paidCount++;
@@ -40,12 +41,26 @@ export const getActiveTrips = query({
       }
     }
 
+    for (const ride of unpaidRides) {
+      const passengerUnpaid = await ctx.db.get(ride.passengerId);
+      if (passengerUnpaid) {
+        passengersUnpaid.push({
+          name: passengerUnpaid.name,
+          phoneNumber: passengerUnpaid.phoneNumber,
+          fare: ride.finalFare ?? ride.estimatedFare ?? 0,
+          tripPaid: ride.tripPaid ?? null,
+          requestedAt: ride.requestedAt,
+        });
+      }
+    }
+
     return {
       activeCount,
       paidCount,
       unpaidCount: unpaidRides.length,
       noResponseCount,
       passengers,
+      passengersUnpaid,
     };
   },
 });
