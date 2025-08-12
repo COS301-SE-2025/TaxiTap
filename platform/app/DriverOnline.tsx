@@ -87,6 +87,8 @@ export default function DriverOnline({
 
   const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
 
+  const activeTrips = useQuery(api.functions.rides.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
@@ -573,6 +575,46 @@ export default function DriverOnline({
       fontWeight: 'bold',
       marginLeft: 8,
     },
+    buttonRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingHorizontal: 10,
+      marginTop: 15,
+    },
+    card: {
+      flex: 1,
+      marginHorizontal: 5,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      paddingHorizontal: 10,
+    },
+    paid: {
+      backgroundColor: "#2ECC71",
+    },
+    waiting: {
+      backgroundColor: "#FF9900",
+    },
+    notPaid: {
+      backgroundColor: "#E74C3C",
+    },
+    cardNumber: {
+      fontSize: 22,
+      fontWeight: "bold",
+      color: "#fff",
+      marginBottom: 5,
+    },
+    cardLabel: {
+      fontSize: 14,
+      color: "#fff",
+      textAlign: "center",
+    },
   });
 
   async function increaseSeats() {
@@ -681,7 +723,7 @@ export default function DriverOnline({
                   style={{
                     backgroundColor: '#fff',
                     alignItems: 'center',
-                    marginTop: 80,
+                    marginTop: 30,
                   }}
                 >
                   <TouchableOpacity
@@ -731,6 +773,23 @@ export default function DriverOnline({
                   >
                     <Text style={{ fontSize: 60, color: '#fff' }}>−</Text>
                   </TouchableOpacity>
+                  
+                  <View style={dynamicStyles.buttonRow}>
+                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.paid]} onPress={() => router.push("/ActiveRides")}>
+                      <Text style={dynamicStyles.cardNumber}>{activeTrips?.activeCount}</Text>
+                      <Text style={dynamicStyles.cardLabel}>Active Rides</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.waiting]}>
+                      <Text style={dynamicStyles.cardNumber}>{activeTrips?.noResponseCount}</Text>
+                      <Text style={dynamicStyles.cardLabel}>Waiting Payments</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.notPaid]}>
+                      <Text style={dynamicStyles.cardNumber}>{activeTrips?.unpaidCount}</Text>
+                      <Text style={dynamicStyles.cardLabel}>Unpaid Accounts</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               )}
 
@@ -746,7 +805,7 @@ export default function DriverOnline({
 
                   <TouchableOpacity
                     style={dynamicStyles.actionButton}
-                    onPress={() => setMapExpanded(prev => !prev)} // Toggle mapExpanded
+                    onPress={() => setMapExpanded(prev => !prev)}
                   >
                     <Icon name="map" size={20} color="#fff" />
                     <Text style={dynamicStyles.actionButtonText}>

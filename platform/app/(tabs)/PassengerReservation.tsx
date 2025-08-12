@@ -600,23 +600,6 @@ export default function SeatReserved() {
 			fontWeight: "bold",
 			marginRight: 3,
 		},
-		licensePlateSection: {
-			flexDirection: "row",
-			marginBottom: 26,
-			width: '100%',
-			paddingHorizontal: 35,
-			justifyContent: 'space-between',
-		},
-		licensePlateLabel: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
-		},
-		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
-		},
 		locationBox: {
 			flexDirection: "row",
 			alignItems: "center",
