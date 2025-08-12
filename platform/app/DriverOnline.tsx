@@ -780,12 +780,12 @@ export default function DriverOnline({
                       <Text style={dynamicStyles.cardLabel}>Active Rides</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.waiting]}>
+                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.waiting]} onPress={() => router.push("/WaitingPayments")}>
                       <Text style={dynamicStyles.cardNumber}>{activeTrips?.noResponseCount}</Text>
                       <Text style={dynamicStyles.cardLabel}>Waiting Payments</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.notPaid]}>
+                    <TouchableOpacity style={[dynamicStyles.card, dynamicStyles.notPaid]} onPress={() => router.push("/UnpaidPayments")}>
                       <Text style={dynamicStyles.cardNumber}>{activeTrips?.unpaidCount}</Text>
                       <Text style={dynamicStyles.cardLabel}>Unpaid Accounts</Text>
                     </TouchableOpacity>
