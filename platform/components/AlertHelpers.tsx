@@ -145,6 +145,7 @@ export const useAlertHelpers = () => {
     return showLocalAlert({
       title: '',
       message,
+      type: 'toast' as AlertType,
       ...AlertPresets.toast,
       ...options,
     });
@@ -155,6 +156,7 @@ export const useAlertHelpers = () => {
     return showGlobalAlert({
       title,
       message,
+      type: 'banner' as AlertType, // or another valid AlertType, e.g. 'banner' if defined
       ...AlertPresets.banner,
       ...options,
     });
@@ -171,6 +173,7 @@ export const useAlertHelpers = () => {
       title,
       message,
       actions,
+      type: 'modal' as AlertType,
       ...AlertPresets.modal,
       ...options,
     });
