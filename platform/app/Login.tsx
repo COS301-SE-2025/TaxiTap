@@ -17,14 +17,8 @@ import { api } from "../convex/_generated/api";
 import { ConvexProvider } from 'convex/react';
 import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Dropdown } from 'react-native-element-dropdown';
 import icon from '../assets/images/icon.png';
 import google from '../assets/images/google5.png';
-
-const languageOptions = [
-  { label: 'English', value: 'en' },
-  { label: 'isiZulu', value: 'zu' },
-];
 
 export default function Login() {
   const [number, setNumber] = useState('');
@@ -33,7 +27,7 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
-  const { t, currentLanguage, changeLanguage } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   const handleLogin = async () => {
     if (!number || !password) {
@@ -80,29 +74,7 @@ export default function Login() {
             backgroundColor: '#fff',
           }}
         >
-          {/* Language Selector */}
-          <View style={{ marginTop: 40, marginBottom: 20 }}>
-            <Dropdown
-              data={languageOptions}
-              labelField="label"
-              valueField="value"
-              placeholder="Select Language"
-              placeholderStyle={{ color: '#999' }}
-              style={{
-                backgroundColor: '#f5f5f5',
-                borderRadius: 10,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderColor: '#ddd',
-                borderWidth: 1,
-              }}
-              selectedTextStyle={{ fontSize: 16, color: '#000' }}
-              value={currentLanguage}
-              onChange={(item) => changeLanguage(item.value)}
-            />
-          </View>
-
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Image
               source={icon}
               style={{ width: '100%', height: 200 }}
@@ -202,7 +174,7 @@ export default function Login() {
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
             <Text style={{ color: '#fff', fontSize: 18 }}>
-              {currentLanguage === 'zu' ? 'Noma' : 'Or'}
+              {t('auth:or')}
             </Text>
           </View>
 
