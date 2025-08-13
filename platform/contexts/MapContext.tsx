@@ -8,12 +8,14 @@ interface Location {
 
 interface MapContextType {
   currentLocation: Location | null;
+  origin: Location | null;
   destination: Location | null;
   routeCoordinates: { latitude: number; longitude: number }[];
   isLoadingRoute: boolean;
   routeLoaded: boolean;
   
   setCurrentLocation: (location: Location | null) => void;
+  setOrigin: (origin: Location | null) => void;
   setDestination: (destination: Location | null) => void;
   setRouteCoordinates: (coords: { latitude: number; longitude: number }[]) => void;
   setIsLoadingRoute: (loading: boolean) => void;
@@ -29,6 +31,7 @@ const MapContext = createContext<MapContextType | undefined>(undefined);
 
 export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [origin, setOrigin] = useState<Location | null>(null);
   const [destination, setDestination] = useState<Location | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
@@ -45,11 +48,13 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const value: MapContextType = {
     currentLocation,
+    origin,
     destination,
     routeCoordinates,
     isLoadingRoute,
     routeLoaded,
     setCurrentLocation,
+    setOrigin,
     setDestination,
     setRouteCoordinates,
     setIsLoadingRoute,

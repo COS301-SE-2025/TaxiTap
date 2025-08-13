@@ -116,8 +116,8 @@ export default defineSchema({
     estimatedFare: v.optional(v.number()),
     finalFare: v.optional(v.number()),
     
-    estimatedDistance: v.optional(v.number()),
-    actualDistance: v.optional(v.number()),
+    distance: v.optional(v.number()),
+    tripId: v.optional(v.id("trips")),
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
@@ -345,6 +345,12 @@ routes: defineTable({
     passengerId: v.id("taxiTap_users"),
     routeId: v.string(),
     usageCount: v.number(),
+    name: v.optional(v.string()),
+    startName: v.optional(v.string()),
+    startLat: v.optional(v.number()),
+    startLng: v.optional(v.number()),
+    destinationLat: v.optional(v.number()),
+    destinationLng: v.optional(v.number()),
     lastUsedAt: v.number(),
     // Additional fields for route details
     name: v.optional(v.string()),

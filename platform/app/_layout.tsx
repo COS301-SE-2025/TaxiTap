@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import React from 'react';
 import regular from '../assets/fonts/Amazon_Ember_Display.otf';
 import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
@@ -23,13 +23,13 @@ import { Id } from '../convex/_generated/dataModel';
 
 export { ErrorBoundary } from 'expo-router';
 
+// Use same initial route for both platforms
 export const unstable_settings = {
   initialRouteName: 'LandingPage',
 };
 
 SplashScreen.preventAutoHideAsync();
 
-// Initialize Convex client with your deployment URL
 const convex = new ConvexReactClient('https://affable-goose-538.convex.cloud');
 
 export default function RootLayout() {
@@ -59,13 +59,11 @@ export default function RootLayout() {
     <ConvexProvider client={convex}>
       <ThemeProvider>
         <UserProvider>
-          <NotificationProvider>
           <MapProvider>
             <RouteProvider>
               <RootLayoutNav />
             </RouteProvider>
           </MapProvider>
-          </NotificationProvider>
         </UserProvider>
       </ThemeProvider>
     </ConvexProvider>
@@ -74,9 +72,8 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
-  const { user } = useUser();
+  const { user, loading } = useUser();
  
-  // Create navigation theme based on our custom theme
   const navigationTheme = {
     dark: isDark,
     colors: {
@@ -90,129 +87,91 @@ function RootLayoutNav() {
     fonts: DefaultTheme.fonts,
   };
 
+  // iOS: Wait for loading to complete before rendering navigation
+  if (Platform.OS === 'ios' && loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        {/* iOS loading state */}
+      </View>
+    );
+  }
+
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <NotificationProvider userId={user?.id as Id<"taxiTap_users">}>
+        {/* Only add NotificationProvider when safe */}
+        <NotificationProvider userId={user?.id as Id<"taxiTap_users"> | undefined}>
           <InAppNotificationOverlay />
-            <Stack
-              screenOptions={{
-                headerStyle: {
-                  backgroundColor: theme.headerBackground,
-                },
-                headerTitleStyle: {
-                  fontFamily: 'AmazonEmber-Medium',
-                  fontSize: 18,
-                  color: theme.text,
-                },
-                headerTitleAlign: 'center',
-                headerTintColor: theme.text,
-              }}
-            >
-              <Stack.Screen
-                name="LandingPage"
-                options={{
-                  headerShown: false
-                }}
-              />
-            
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverProfile"
-                options={{
-                  headerShown: true,
-                  title: "Driver Profile"
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverRequestPage"
-                options={{
-                  headerShown: true,
-                  title: "My Taxi & Route"
-                }}
-              />
-              
-              <Stack.Screen
-                name="EarningsPage"
-                options={{
-                  headerShown: true,
-                  title: "Earnings"
-                }}
-              />
-              
-              <Stack.Screen
-                name="SetRoute"
-                options={{
-                  headerShown: true,
-                  title: "Set Route"
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverOffline"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverOnline"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="Login"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="SignUp"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverHomeScreen"
-                options={{
-                  headerShown: false
-                }}
-              />
-              
-              <Stack.Screen
-                name="DriverPassengerInfo"
-                options={{
-                  headerShown: true,
-                  title: "Passenger Info"
-                }}
-              />
-              
-              <Stack.Screen
-                name="VehicleDriver"
-                options={{
-                  headerShown: true,
-                  title: "Vehicle Details"
-                }}
-              />
-              <Stack.Screen
-              name="NotificationsScreen"
-              options={{
-                headerShown: true,
-                title: "Notifications" 
-                }}
-              />
+          <StackNavigator />
+        </NotificationProvider>
+      </View>
+    </NavigationThemeProvider>
+  );
+}
+
+function StackNavigator() {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.headerBackground,
+        },
+        headerTitleStyle: {
+          fontFamily: 'AmazonEmber-Medium',
+          fontSize: 18,
+          color: theme.text,
+        },
+        headerTitleAlign: 'center',
+        headerTintColor: theme.text,
+      }}
+    >
+      {/* Always register LandingPage first for iOS */}
+      <Stack.Screen
+        name="LandingPage"
+        options={{ headerShown: false }}
+      />
+      
+      {/* Register other auth screens */}
+      <Stack.Screen
+        name="Login"
+        options={{ headerShown: false }}
+      />
+      
+      <Stack.Screen
+        name="SignUp"
+        options={{ headerShown: false }}
+      />
+
+      {/* iOS: Only register tabs after auth screens */}
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+      />
+      
+      {/* Android: Keep index for compatibility */}
+      {Platform.OS === 'android' && (
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false }}
+        />
+      )}
+      
+      {/* Other screens */}
+      <Stack.Screen
+        name="DriverHomeScreen"
+        options={{ headerShown: false }}
+      />
+      
+      <Stack.Screen
+        name="NotificationsScreen"
+        options={{
+          headerShown: true,
+          title: "Notifications" 
+        }}
+      />
               
               <Stack.Screen
                 name="DriverPinEntry"
@@ -220,9 +179,6 @@ function RootLayoutNav() {
                   headerShown: false
                 }}
               />
-            </Stack>
-        </NotificationProvider>
-      </View>
-    </NavigationThemeProvider>
+    </Stack>
   );
 }

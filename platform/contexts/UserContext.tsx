@@ -1,8 +1,8 @@
-// contexts/UserContext.tsx
+// contexts/UserContext.tsx - Simple version without auto-navigation
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Type definitions
+// Type definitions (keep your existing types)
 interface User {
   id: string;
   name: string;
@@ -64,10 +64,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           id: userId,
           name: userName || '',
           role: userRole || '',
-          accountType: userAccountType as "passenger" | "driver" | "both",
+          accountType: userAccountType as "passenger" | "driver" | "both" || 'passenger',
           phoneNumber: userNumber || '',
         });
       }
+      // REMOVED: Automatic navigation - let components handle navigation
     } catch (error) {
       console.error('Error loading user from storage:', error);
     } finally {
@@ -94,11 +95,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       ['userAccountType', userInfo.accountType],
       ['userNumber', userInfo.phoneNumber],
     ]);
+
+    // REMOVED: Automatic navigation - let Login component handle navigation
   };
 
   const logout = async (): Promise<void> => {
-    setUser(null);
-    await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber' ]);
+    try {
+      // Clear user state
+      setUser(null);
+      
+      // Clear AsyncStorage
+      await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber']);
+      
+      // REMOVED: Automatic navigation - let Logout component handle navigation
+      
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const updateUserRole = async (newRole: string | undefined): Promise<void> => {
