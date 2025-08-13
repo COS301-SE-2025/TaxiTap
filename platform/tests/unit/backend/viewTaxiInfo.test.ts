@@ -56,6 +56,9 @@ describe('viewTaxiInfoHandler', () => {
         }),
         get: jest.fn(() => Promise.resolve(driverUsr)),
       },
+      auth: {},
+      storage: {},
+      runQuery: jest.fn(),
     } as any;
   };
 

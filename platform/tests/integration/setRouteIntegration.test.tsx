@@ -124,7 +124,8 @@ const setupDefaultMocks = () => {
     updateUserRole: jest.fn(),
     updateUserName: jest.fn(),
     updateNumber: jest.fn(),
-    updateAccountType: jest.fn()
+    updateAccountType: jest.fn(),
+    setUserId: jest.fn()
   });
 
   mockUseMutation.mockReturnValue(mockAssignRandomRoute as any);
@@ -327,7 +328,8 @@ describe('SetRoute Integration Tests - No Assigned Route', () => {
         updateUserRole: jest.fn(),
         updateUserName: jest.fn(),
         updateNumber: jest.fn(),
-        updateAccountType: jest.fn()
+        updateAccountType: jest.fn(),
+        setUserId: jest.fn()
       });
       
       // Mock queries for no assigned route scenario

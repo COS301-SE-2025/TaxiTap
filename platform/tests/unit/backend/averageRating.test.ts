@@ -1,6 +1,6 @@
-import { getAverageRatingHandler } from "../../../convex/functions/feedback/averageRating";
+import { getAverageRating } from "../../../convex/functions/feedback/averageRating";
 
-describe("getAverageRatingHandler", () => {
+describe("getAverageRating", () => {
   const mockCollect = jest.fn();
 
   const mockCtx = {
@@ -11,6 +11,9 @@ describe("getAverageRatingHandler", () => {
         })),
       })),
     },
+    auth: {},
+    storage: {},
+    runQuery: jest.fn(),
   };
 
   beforeEach(() => {
@@ -20,7 +23,7 @@ describe("getAverageRatingHandler", () => {
   it("returns 0 if there are no feedbacks", async () => {
     mockCollect.mockResolvedValueOnce([]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(0);
   });
 
@@ -33,7 +36,7 @@ describe("getAverageRatingHandler", () => {
       { rating: 4 },
     ]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.5); // (5 + 4) / 2
   });
 
@@ -44,18 +47,18 @@ describe("getAverageRatingHandler", () => {
       { rating: 5 },
     ]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.0); // (3 + 4 + 5) / 3
   });
 
   it("returns correct average with one rating", async () => {
     mockCollect.mockResolvedValueOnce([{ rating: 4 }]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.0);
   });
 
-    it("ignores ratings that are 0 or negative", async () => {
+  it("ignores ratings that are 0 or negative", async () => {
     mockCollect.mockResolvedValueOnce([
       { rating: 0 },
       { rating: -2 },
@@ -63,7 +66,7 @@ describe("getAverageRatingHandler", () => {
       { rating: 4 },
     ]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.0);
   });
 
@@ -71,7 +74,7 @@ describe("getAverageRatingHandler", () => {
     const ratings = Array(1000).fill({ rating: 4 });
     mockCollect.mockResolvedValueOnce(ratings);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.0);
   });
 
@@ -83,7 +86,7 @@ describe("getAverageRatingHandler", () => {
       { rating: 3 },
     ]); // avg = 2.25 → rounded to 2.3
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(2.3);
   });
 
@@ -95,7 +98,7 @@ describe("getAverageRatingHandler", () => {
       { rating: {} },
     ]);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(0);
   });
 });
