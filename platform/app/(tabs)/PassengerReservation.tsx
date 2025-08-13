@@ -56,7 +56,6 @@ export default function SeatReserved() {
 	}
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
-	const endRide = useMutation(api.functions.rides.endRide.endRide);
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
@@ -64,10 +63,9 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
-	const [currentPin, setCurrentPin] = useState<string | null>(null);
 
 	const passengerId = user?.id;
-	const rideId = taxiInfo?.rideDocId;
+	const rideId = taxiInfo?.rideId;
 	const driverId = taxiInfo?.driver?.userId;
 
 	// Remove averageRating usage if not available
@@ -77,20 +75,15 @@ export default function SeatReserved() {
 	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
 
+	// Define missing functions
+	const startRide = useMutation(api.functions.rides.startRide.startRide);
+	const endRide = useMutation(api.functions.rides.endRide.endRide);
+
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
 		});
 	}, [navigation]);
-
-	// Simple PIN generation for demo purposes
-	useEffect(() => {
-		if (rideStatus === 'accepted' && !currentPin) {
-			// Get PIN from ride data or use demo PIN
-			const ridePin = taxiInfo?.ridePin || "1234";
-			setCurrentPin(ridePin);
-		}
-	}, [rideStatus, currentPin, taxiInfo?.ridePin]);
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -440,16 +433,12 @@ export default function SeatReserved() {
 		}
 		try {
 			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await startTripConvex({
-				passengerId: passengerId as Id<'taxiTap_users'>,
-				driverId: driverId as Id<'taxiTap_users'>,
-				reservation: true,
-			});
+			// Note: Trip is now automatically created when PIN is verified
+			// No need to call startTripConvex here to avoid duplicate trip creation
 		} catch (error: any) {
 			Alert.alert(t('passengerReservation:error'), error?.message || t('passengerReservation:failedToStartRide'));
 		}
 	};
-	}, [taxiInfoError, hasShownDeclinedAlert]);
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -458,13 +447,18 @@ export default function SeatReserved() {
 		}
 		try {
 			setRideJustEnded(true);
-			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert(t('passengerReservation:success'), t('passengerReservation:rideEnded'));
+			
+			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
+			
+			// Then end the ride and update seat availability
+			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			
 			Alert.alert(t('passengerReservation:rideEnded'), `${t('passengerReservation:fare')}: R${result.fare}`);
+			
 			if (!currentLocation || !destination) {
 				return;
 			}
@@ -474,7 +468,7 @@ export default function SeatReserved() {
 					startName: currentLocation.name,
 					endName: destination.name,
 					passengerId: passengerId,
-    				rideId: rideId,
+					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
 				},
 			});
@@ -704,57 +698,6 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
-		pinContainer: {
-			alignItems: "center",
-			marginBottom: 15,
-			padding: 12,
-			backgroundColor: "transparent",
-			borderRadius: 8,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-			borderStyle: "dashed",
-			width: '90%',
-			alignSelf: 'center',
-		},
-		pinLabel: {
-			fontSize: 12,
-			fontWeight: "500",
-			color: "#666666",
-			marginBottom: 8,
-			textAlign: "center",
-			textTransform: "uppercase",
-			letterSpacing: 0.5,
-		},
-		pinDisplay: {
-			flexDirection: "row",
-			justifyContent: "center",
-			marginBottom: 6,
-			alignItems: "center",
-		},
-		pinDigit: {
-			width: 28,
-			height: 32,
-			backgroundColor: "#121212",
-			borderRadius: 4,
-			justifyContent: "center",
-			alignItems: "center",
-			marginHorizontal: 2,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-		},
-		pinDigitText: {
-			fontSize: 16,
-			fontWeight: "bold",
-			color: "#FF9900",
-			fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-		},
-		pinInstruction: {
-			fontSize: 10,
-			color: "#888888",
-			textAlign: "center",
-			fontStyle: "normal",
-			fontWeight: "400",
-		},
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -779,6 +722,21 @@ export default function SeatReserved() {
 			color: "#FFFFFF",
 			fontSize: 20,
 			fontWeight: "bold",
+		},
+		verifyPinButton: {
+			alignItems: "center",
+			backgroundColor: theme.primary,
+			borderRadius: 30,
+			paddingVertical: 12,
+			paddingHorizontal: 20,
+			marginTop: 10,
+			flexDirection: 'row', // Added for icon alignment
+		},
+		verifyPinButtonText: {
+			color: isDark ? "#121212" : "#FFFFFF",
+			fontSize: 16,
+			fontWeight: "bold",
+			marginLeft: 10, // Added for icon spacing
 		},
 	});
 
@@ -947,29 +905,21 @@ export default function SeatReserved() {
 									</Text>
 								</TouchableOpacity>
 							)}
-							{/* When ride is accepted: show PIN and Cancel Request */}
+							{/* When ride is accepted: show PIN verification button and Cancel Request */}
 							{rideStatus === 'accepted' && (
 								<>
-									{/* PIN Display */}
-									{currentPin && (
-	<View style={dynamicStyles.pinContainer}>
-		<Text style={dynamicStyles.pinLabel}>Safety PIN</Text>
-		<View style={dynamicStyles.pinDisplay}>
-			{currentPin.split('').map((digit, index) => (
-				<View key={index} style={dynamicStyles.pinDigit}>
-					<Text style={dynamicStyles.pinDigitText}>{digit}</Text>
-				</View>
-			))}
-		</View>
-		<Text style={dynamicStyles.pinInstruction}>
-			Show to driver
-		</Text>
-		<TouchableOpacity 
-		>
-			
-		</TouchableOpacity>
-	</View>
-)}
+									{/* PIN Verification Button - Passenger doesn't see the PIN, just the button */}
+									<TouchableOpacity 
+										style={dynamicStyles.verifyPinButton}
+										onPress={() => router.push({
+											pathname: '/PassengerPinEntry',
+											params: { rideId: rideId || '' }
+										})}
+									>
+										<Icon name="shield-checkmark" size={20} color={isDark ? "#121212" : "#FFFFFF"} />
+										<Text style={dynamicStyles.verifyPinButtonText}>Verify Driver PIN</Text>
+									</TouchableOpacity>
+									
 									<TouchableOpacity 
 										style={dynamicStyles.startRideButton} 
 										onPress={handleStartRide}>

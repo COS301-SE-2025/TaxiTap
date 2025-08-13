@@ -68,7 +68,7 @@ export default function SeatReserved() {
 	const [showPinEntry, setShowPinEntry] = useState(false);
 
 	const passengerId = user?.id;
-	const rideId = taxiInfo?.rideDocId;
+	const rideId = taxiInfo?.rideId;
 	const driverId = taxiInfo?.driver?.userId;
 
 	// Remove averageRating usage if not available
@@ -529,13 +529,17 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
-			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert('Success', 'Ride ended!');
+			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
+			
+			// Then end the ride and update seat availability
+			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			
 			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			
 			if (!currentLocation || !destination) {
 				return;
 			}
@@ -545,7 +549,7 @@ export default function SeatReserved() {
 					startName: currentLocation.name,
 					endName: destination.name,
 					passengerId: passengerId,
-    				rideId: rideId,
+					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
 				},
 			});
