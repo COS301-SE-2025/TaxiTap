@@ -135,9 +135,10 @@ export default function SubmitFeedbackScreen() {
           borderRadius: 12,
           borderWidth: 1,
           borderColor: theme.primary,
+          marginTop: 8,
         }}
       >
-        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center' }}>
+        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center'}}>
           Skip Feedback
         </Text>
       </TouchableOpacity>

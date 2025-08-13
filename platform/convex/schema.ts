@@ -114,6 +114,7 @@ export default defineSchema({
     
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
+    tripPaid: v.optional(v.boolean()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
@@ -235,6 +236,7 @@ routes: defineTable({
     v.literal("ride_cancelled"),
     v.literal("ride_declined"),
     v.literal("driver_arrived"),
+    v.literal("driver_5min_away"),
     v.literal("payment_received"),
     v.literal("rating_request"),
     v.literal("route_update"),
@@ -313,7 +315,7 @@ routes: defineTable({
       v.literal("driver"),
       v.literal("both")
     ),
-    updatedAt: v.string(),
+    updatedAt: v.number(),
   }).index("by_user", ["userId"]),
   feedback: defineTable({
     rideId: v.id("rides"),
@@ -332,6 +334,12 @@ routes: defineTable({
     passengerId: v.id("taxiTap_users"),
     routeId: v.string(),
     usageCount: v.number(),
+    name: v.optional(v.string()),
+    startName: v.optional(v.string()),
+    startLat: v.optional(v.number()),
+    startLng: v.optional(v.number()),
+    destinationLat: v.optional(v.number()),
+    destinationLng: v.optional(v.number()),
     lastUsedAt: v.number(),
   })
     .index("by_passenger", ["passengerId"])

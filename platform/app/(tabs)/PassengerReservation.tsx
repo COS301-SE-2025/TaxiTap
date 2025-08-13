@@ -465,6 +465,7 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			setRideJustEnded(true);
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			
