@@ -400,22 +400,27 @@ export default function SeatReserved() {
 	useEffect(() => {
 		if (rideJustEnded) return;
 		
-		if (taxiInfoError && !hasShownDeclinedAlert) {
-			Alert.alert(
-				t('passengerReservation:rideDeclined'),
-				t('passengerReservation:noActiveReservation'),
-				[
-					{
-						text: t('passengerReservation:ok'),
-						onPress: () => {
-							setHasShownDeclinedAlert(true);
-							router.push('/HomeScreen');
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
+		if (taxiInfoError && !hasShownDeclinedAlert && !rideStatus) {
+			const timer = setTimeout(() => {
+      			if (!rideJustEnded) {
+					Alert.alert(
+						t('passengerReservation:rideDeclined'),
+						t('passengerReservation:noActiveReservation'),
+						[
+							{
+								text: t('passengerReservation:ok'),
+								onPress: () => {
+									setHasShownDeclinedAlert(true);
+									router.push('/HomeScreen');
+								},
+								style: 'default',
+							},
+						],
+						{ cancelable: false }
+					);
+				}
+			}, 1000);
+			return () => clearTimeout(timer);
 		}
 	}, [taxiInfoError, hasShownDeclinedAlert, rideJustEnded, t, router]);
 
@@ -442,6 +447,7 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			setRideJustEnded(true);
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			Alert.alert(t('passengerReservation:success'), t('passengerReservation:rideEnded'));

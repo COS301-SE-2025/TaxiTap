@@ -334,6 +334,12 @@ routes: defineTable({
     passengerId: v.id("taxiTap_users"),
     routeId: v.string(),
     usageCount: v.number(),
+    name: v.optional(v.string()),
+    startName: v.optional(v.string()),
+    startLat: v.optional(v.number()),
+    startLng: v.optional(v.number()),
+    destinationLat: v.optional(v.number()),
+    destinationLng: v.optional(v.number()),
     lastUsedAt: v.number(),
     // Additional fields for route details
     name: v.optional(v.string()),

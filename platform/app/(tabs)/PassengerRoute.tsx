@@ -252,9 +252,13 @@ export default function RouteSelectionScreen() {
     try {
       await storeRouteForPassenger({
         passengerId: userId as Id<"taxiTap_users">,
-        routeId: route.routeId === "manual-route"
-          ? "manual-route"
-          : route.routeId,
+        routeId: route.routeId === "manual-route" ? "manual-route" : route.routeId,
+        name: route.destination,
+        startName: route.start,
+        startLat: route.startCoords?.latitude,
+        startLng: route.startCoords?.longitude,
+        destinationLat: route.destinationCoords.latitude,
+        destinationLng: route.destinationCoords.longitude,
       });
     } catch (err) {
       console.error("Failed to store route:", err);

@@ -69,7 +69,7 @@ function calculateFare(passengerDisplacement: number): number {
   const overageBlocks = Math.ceil(overageDistance / OVERAGE_BLOCK);
   const overageFee = overageBlocks * OVERAGE_RATE;
   
-  return BASE_FARE + overageFee;
+  return Math.ceil(BASE_FARE + overageFee);
 }
 
 type RouteStop = {
