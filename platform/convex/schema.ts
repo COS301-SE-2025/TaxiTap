@@ -124,7 +124,6 @@ export default defineSchema({
     ridePin: v.optional(v.string()),
     pinRegeneratedAt: v.optional(v.number()),
     pinVerifiedAt: v.optional(v.number()),
-    tripPaid: v.optional(v.boolean()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])

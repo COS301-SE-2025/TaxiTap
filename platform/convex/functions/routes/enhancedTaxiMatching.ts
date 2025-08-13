@@ -453,7 +453,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
             currentLocation: {
               latitude: driverLocation.latitude,
               longitude: driverLocation.longitude,
-              lastUpdated: new Date(driverLocation.updatedAt).toISOString()
+              lastUpdated: driverLocation.updatedAt
             },
             distanceToOrigin: Math.round(getDistanceKm(originLat, originLng, driverLocation.latitude, driverLocation.longitude) * 100) / 100,
             routeInfo: {

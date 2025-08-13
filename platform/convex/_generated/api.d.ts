@@ -50,6 +50,7 @@ import type * as functions_rides_declineRideHandler from "../functions/rides/dec
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
 import type * as functions_rides_generatePin from "../functions/rides/generatePin.js";
+import type * as functions_rides_getActiveRideByDriver from "../functions/rides/getActiveRideByDriver.js";
 import type * as functions_rides_getDriverPin from "../functions/rides/getDriverPin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
 import type * as functions_rides_getRidePin from "../functions/rides/getRidePin.js";
@@ -138,6 +139,7 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
   "functions/rides/generatePin": typeof functions_rides_generatePin;
+  "functions/rides/getActiveRideByDriver": typeof functions_rides_getActiveRideByDriver;
   "functions/rides/getDriverPin": typeof functions_rides_getDriverPin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/getRidePin": typeof functions_rides_getRidePin;

@@ -34,16 +34,8 @@ export const verifyDriverPin = mutation({
       throw new Error(`Cannot start ride. Current status: ${ride.status}`);
     }
 
-    // Get the driver's PIN from their profile
-    const driver = await ctx.db.get(driverId);
-    if (!driver) {
-      throw new Error("Driver not found");
-    }
-
-    const driverPin = driver.driverPin || "1234"; // Fallback PIN
-
-    // Verify the PIN
-    if (enteredPin !== driverPin) {
+    // Verify against the ridePin stored in the ride document
+    if (!ride.ridePin || ride.ridePin !== enteredPin) {
       return {
         success: false,
         message: "Invalid PIN. Please check with the driver.",
@@ -51,11 +43,25 @@ export const verifyDriverPin = mutation({
       };
     }
 
-    // PIN is correct, start the ride
+    // PIN is correct, start the ride and create trip record
+    const startTime = Date.now();
+    
+    // Create trip record
+    const tripId = await ctx.db.insert("trips", {
+      driverId,
+      passengerId,
+      startTime,
+      endTime: 0,
+      fare: 0,
+      reservation: true,
+    });
+
+    // Update ride status and link to trip
     await ctx.db.patch(ride._id, {
       status: 'in_progress',
-      startedAt: Date.now(),
-      pinVerifiedAt: Date.now()
+      startedAt: startTime,
+      pinVerifiedAt: startTime,
+      tripId: tripId, // Link the trip to the ride
     });
 
     // Get updated ride information
@@ -64,7 +70,8 @@ export const verifyDriverPin = mutation({
     return {
       success: true,
       message: "PIN verified successfully! Ride started.",
-      ride: updatedRide
+      ride: updatedRide,
+      tripId: tripId,
     };
   },
 });
