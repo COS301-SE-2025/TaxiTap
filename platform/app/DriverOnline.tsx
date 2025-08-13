@@ -89,8 +89,6 @@ export default function DriverOnline({
 
   const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
 
-  const activeTrips = useQuery(api.functions.rides.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
-
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,

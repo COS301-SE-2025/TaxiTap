@@ -194,7 +194,7 @@ describe("switchActiveRoleHandler", () => {
       latitude: 0,
       longitude: 0,
       role: "driver",
-      updatedAt: expect.any(String),
+      updatedAt: expect.any(Number),
     }));
 
     expect(result).toEqual({
