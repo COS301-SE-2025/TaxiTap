@@ -64,7 +64,10 @@ export default function RootLayout() {
           <UserProvider>
             <MapProvider>
               <RouteProvider>
-                <RootLayoutNav />
+                <NotificationProvider>
+                  <InAppNotificationOverlay />
+                  <RootLayoutNav />
+                </NotificationProvider>
               </RouteProvider>
             </MapProvider>
           </UserProvider>
@@ -94,9 +97,12 @@ function RootLayoutNav() {
   // iOS: Wait for loading to complete before rendering navigation
   if (Platform.OS === 'ios' && loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* iOS loading state */}
-      </View>
+      <Stack>
+        <Stack.Screen
+          name="Loading"
+          options={{ headerShown: false }}
+        />
+      </Stack>
     );
   }
 
@@ -104,11 +110,7 @@ function RootLayoutNav() {
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* Only add NotificationProvider when safe */}
-        <NotificationProvider userId={user?.id as Id<"taxiTap_users"> | undefined}>
-          <InAppNotificationOverlay />
-          <StackNavigator />
-        </NotificationProvider>
+        <StackNavigator />
       </View>
     </NavigationThemeProvider>
   );

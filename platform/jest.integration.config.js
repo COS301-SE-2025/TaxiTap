@@ -12,7 +12,10 @@ module.exports = {
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/tests/__mocks__/fileMock.js',
     '\\.(css|less)$': '<rootDir>/tests/__mocks__/styleMock.js',
-    '^react-native/Libraries/Animated/NativeAnimatedHelper$': '<rootDir>/tests/mocks/NativeAnimatedHelper.ts'
+    '^react-native/Libraries/Animated/NativeAnimatedHelper$': '<rootDir>/tests/mocks/NativeAnimatedHelper.ts',
+    '^../../_generated/server$': '<rootDir>/tests/mocks/convex-server.ts',
+    '^convex/values$': '<rootDir>/tests/mocks/convex-values.ts',
+    '^../../convex/functions/(.*)$': '<rootDir>/tests/mocks/convex-functions/$1'
   },
   moduleDirectories: ['node_modules', 'tests/mocks'],
   testMatch: ['**/tests/integration/**/*.test.[jt]s?(x)'],

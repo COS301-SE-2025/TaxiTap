@@ -7,6 +7,7 @@ import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, router } from "expo-router";
 
@@ -18,6 +19,7 @@ export default function DriverProfile() {
     const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
     const { updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
 
     // Initialize name from user context
@@ -80,19 +82,19 @@ export default function DriverProfile() {
     const handleSwitchToPassenger = async () => {
         try {
             if (!user?.id) {
-                Alert.alert('Not Found', 'User data not found');
+                Alert.alert(t('common:error'), t('driver:userNotLoaded'));
                 return;
             }
 
             // First time switching - user is currently driver only
             if ((convexUser?.accountType || user.accountType) === 'driver') {
                 Alert.alert(
-                    'First Time Switching',
-                    'This is your first time switching to passenger mode. Your account will be upgraded to support both driver and passenger roles.',
+                    t('driver:firstTimeSwitchingToPassenger'),
+                    t('driver:firstTimeSwitchingToPassengerMessage'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common:cancel'), style: 'cancel' },
                         {
-                            text: 'Continue',
+                            text: t('common:continue'),
                             onPress: async () => {
                                 try {
                                     // Upgrade driver to both first
@@ -110,7 +112,7 @@ export default function DriverProfile() {
                                     await updateAccountType('both');
                                     await updateUserRole('passenger');
                                     
-                                    Alert.alert('Success', 'Successfully switched to passenger mode!', [
+                                    Alert.alert(t('common:success'), t('driver:successfullySwitchedToPassenger'), [
                                         {
                                             text: 'OK',
                                             onPress: () => {
@@ -134,12 +136,12 @@ export default function DriverProfile() {
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 Alert.alert(
-                    'Switch Profile',
-                    'Are you sure you want to switch to the passenger profile?',
+                    t('driver:switchProfile'),
+                    t('driver:switchProfileMessage'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common:cancel'), style: 'cancel' },
                         {
-                            text: 'Yes',
+                            text: t('common:yes'),
                             onPress: async () => {
                                 try {
                                     // Switch active role to passenger
@@ -151,31 +153,31 @@ export default function DriverProfile() {
                                     // Update context
                                     await updateUserRole('passenger');
                                     
-                                    Alert.alert('Success', 'Switched to passenger mode!', [
+                                    Alert.alert(t('common:success'), t('driver:switchedToPassenger'), [
                                         {
-                                            text: 'OK',
+                                            text: t('common:ok'),
                                             onPress: () => {
                                                 try {
                                                     router.push('../HomeScreen');
                                                 } catch (navError) {
                                                     console.error('Navigation error:', navError);
-                                                    Alert.alert('Navigation Error', 'Failed to navigate to home screen');
+                                                    Alert.alert(t('driver:navigationError'), t('driver:failedToNavigate'));
                                                 }
                                             }
                                         }
                                     ]);
                                 } catch (error: any) {
-                                    Alert.alert('Error', error.message || 'Failed to switch to passenger mode');
+                                    Alert.alert(t('common:error'), error.message || t('driver:failedToSwitch'));
                                 }
                             },
                         },
                     ]
                 );
             } else {
-                Alert.alert('Error', 'Invalid account type for switching to passenger mode');
+                Alert.alert(t('common:error'), t('driver:invalidAccountType'));
             }
         } catch (error: any) {
-            Alert.alert('Error', 'An unexpected error occurred');
+            Alert.alert(t('common:error'), t('driver:unexpectedError'));
         }
     };
 
@@ -285,7 +287,7 @@ export default function DriverProfile() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text>Loading user data...</Text>
+                    <Text>{t('driver:loadingUserData')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -307,21 +309,21 @@ export default function DriverProfile() {
                             <Ionicons name="person-circle" size={80} color={theme.text} />
                         )}
                     </Pressable>
-                    <Text style={dynamicStyles.userName}>{name || 'Your Name'}</Text>
-                    <Text style={dynamicStyles.userRole}>Driver</Text>
+                    <Text style={dynamicStyles.userName}>{name || t('personalInfo:yourName')}</Text>
+                    <Text style={dynamicStyles.userRole}>{t('driver:driver')}</Text>
                 </View>
 
                 {/* Section 1: Personal Info & Passenger Switch */}
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="person-outline"
-                        title="Personal Info"
+                        title={t('personalInfo:personalInformation')}
                         onPress={handlePersonalInfo}
                     />
                     <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                         <View style={dynamicStyles.menuItemLeft}>
                             <Ionicons name="walk-outline" size={24} color={theme.text} />
-                            <Text style={dynamicStyles.menuItemText}>Switch to Passenger Profile</Text>
+                            <Text style={dynamicStyles.menuItemText}>{t('driver:switchToPassengerProfile')}</Text>
                         </View>
                         <Pressable onPress={handleSwitchToPassenger}>
                             <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -333,18 +335,18 @@ export default function DriverProfile() {
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="car-outline"
-                        title="Vehicle"
+                        title={t('driver:vehicleInfo')}
                         onPress={handleVehicle}
                     />
                     <MenuItemComponent
                         icon="cash-outline"
-                        title="Weekly Earnings"
+                        title={t('driver:earningsPage')}
                         onPress={handleEarnings}
                     />
                     <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                         <View style={dynamicStyles.menuItemLeft}>
                             <Ionicons name="map-outline" size={24} color={theme.text} />
-                            <Text style={dynamicStyles.menuItemText}>Routes</Text>
+                            <Text style={dynamicStyles.menuItemText}>{t('driver:manageRoutes')}</Text>
                         </View>
                         <Pressable onPress={handleRoutes}>
                             <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -356,7 +358,7 @@ export default function DriverProfile() {
                 <View style={dynamicStyles.logoutSection}>
                     <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                         <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-                        <Text style={dynamicStyles.logoutText}>Log Out</Text>
+                        <Text style={dynamicStyles.logoutText}>{t('profile:logOut')}</Text>
                     </Pressable>
                 </View>
             </ScrollView>

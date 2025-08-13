@@ -5,12 +5,14 @@ import DriverOnline from './DriverOnline';
 import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import type { Id } from '../convex/_generated/dataModel';
 
 export default function DriverHomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [todaysEarnings] = useState(0.00); 
   const { user, updateUserRole } = useUser();
+  const { t } = useLanguage();
   const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
   const startWorkSession = useMutation(api.functions.work_sessions.startWorkSession.startWorkSession);
   const endWorkSession = useMutation(api.functions.work_sessions.endWorkSession.endWorkSession);
@@ -33,7 +35,7 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(true);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to go online as driver.');
+      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOnline'));
     }
   };
 
@@ -46,7 +48,7 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(false);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to go offline.');
+      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOffline'));
     }
   };
 
