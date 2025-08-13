@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -8,6 +8,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default function DriverPersonalInfoEdit() {
     const [name, setName] = useState('');
@@ -22,6 +23,7 @@ export default function DriverPersonalInfoEdit() {
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const [imageUri, setImageUri] = useState<string | null>(null);
+    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
     // Initialize form data from user context
     useEffect(() => {
@@ -76,18 +78,30 @@ export default function DriverPersonalInfoEdit() {
     const handleSave = async () => {
         try {
             if (!user?.id) {
-                Alert.alert('Error', 'User not found');
+                showGlobalError('Error', 'User not found', {
+                    duration: 3000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
                 return;
             }
 
             // Validation
             if (!name.trim()) {
-                Alert.alert('Error', 'Name is required');
+                showGlobalError('Error', 'Name is required', {
+                    duration: 3000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
                 return;
             }
 
             if (!number.trim()) {
-                Alert.alert('Error', 'Phone number is required');
+                showGlobalError('Error', 'Phone number is required', {
+                    duration: 3000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
                 return;
             }
 
@@ -119,15 +133,25 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            Alert.alert('Success', 'Driver profile updated successfully!', [
-                {
-                    text: 'OK',
-                    onPress: () => router.push('../DriverProfile')
-                }
-            ]);
+            showGlobalSuccess('Success', 'Driver profile updated successfully!', {
+                duration: 0,
+                position: 'top',
+                animation: 'slide-down',
+                actions: [
+                    {
+                        label: 'OK',
+                        onPress: () => router.push('../DriverProfile'),
+                        style: 'default',
+                    },
+                ],
+            });
 
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to update driver profile');
+            showGlobalError('Error', error.message || 'Failed to update driver profile', {
+                duration: 5000,
+                position: 'top',
+                animation: 'slide-down',
+            });
         }
     };
 

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import React, { useEffect } from 'react';
-import { TouchableOpacity, Image, View, Alert } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { TouchableOpacity, Image, View } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -12,8 +12,8 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
 import { MapProvider } from '../../contexts/MapContext';
 import { FeedbackProvider } from '../../contexts/FeedbackContext';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
-// Notification Button Component
 const NotificationButton: React.FC = () => {
   const { theme, isDark } = useTheme();
 
@@ -43,7 +43,6 @@ const NotificationButton: React.FC = () => {
   );
 };
 
-// Theme Toggle Button Component (inline)
 const ThemeToggleButton: React.FC = () => {
   const { isDark, setThemeMode } = useTheme();
 
@@ -72,7 +71,6 @@ const ThemeToggleButton: React.FC = () => {
   );
 };
 
-// Header Right Component with both buttons
 const HeaderRightButtons: React.FC = () => {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -82,14 +80,12 @@ const HeaderRightButtons: React.FC = () => {
   );
 };
 
-// Tab Navigation Component (separated for cleaner structure)
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        // Tab Bar Styling with Theme
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
@@ -104,8 +100,6 @@ const TabNavigation: React.FC = () => {
           fontSize: 12,
           marginBottom: 4,
         },
-        
-        // Header Styling with Theme
         headerTitle: () => (
           <Image
             source={isDark 
@@ -128,11 +122,9 @@ const TabNavigation: React.FC = () => {
           borderBottomWidth: 1,
         },
         headerTintColor: theme.text,
-        // Add both notification and theme toggle buttons to all tab headers
         headerRight: () => <HeaderRightButtons />,
       }}
     >
-      {/* Home Tab */}
       <Tabs.Screen
         name="HomeScreen"
         options={{
@@ -258,94 +250,129 @@ const TabNavigation: React.FC = () => {
 
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
   let currentLocation, destination;
+  
   try {
-    // Try to get map context if available
     ({ currentLocation, destination } = useMapContext());
   } catch (e) {
-    // MapProvider may not be present yet
     currentLocation = undefined;
     destination = undefined;
   }
+
+  const processedNotificationsRef = useRef(new Set<string>());
   
+  // Ride declined notification handler
   useEffect(() => {
-    const rideDeclined = notifications.find(
-      n => n.type === 'ride_declined' && !n.isRead
-    );
+
+   const rideDeclined = notifications.find(
+			n => n.type === 'ride_declined' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+        );
+
     if (rideDeclined) {
-      Alert.alert(
+
+      processedNotificationsRef.current.add(rideDeclined._id);// Mark as processed
+
+      showGlobalError(
         'Ride Declined',
         rideDeclined.message || 'Your ride request was declined.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              markAsRead(rideDeclined._id);
-              // FIXED: Navigate to HomeScreen tab, not root HomeScreen
-              router.push('./HomeScreen');
+        {
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => {
+                markAsRead(rideDeclined._id);
+                router.push('./HomeScreen');
+              },
+              style: 'default',
             },
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
+    }
+  }, [notifications, markAsRead, showGlobalError]);
+
+  // Ride accepted notification handler  
+  useEffect(() => {
+
+   const rideAccepted = notifications.find(
+			n => n.type === 'ride_accepted' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+		);
+
+    
+    if (rideAccepted) {
+
+      processedNotificationsRef.current.add(rideAccepted._id);// Mark as processed
+
+      showGlobalSuccess(
+        'Ride Accepted',
+        rideAccepted.message,
+        {
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => {
+                markAsRead(rideAccepted._id);
+                router.push({
+                  pathname: './PassengerReservation',
+                  params: currentLocation && destination ? {
+                    currentLat: currentLocation.latitude.toString(),
+                    currentLng: currentLocation.longitude.toString(),
+                    currentName: currentLocation.name,
+                    destinationLat: destination.latitude.toString(),
+                    destinationLng: destination.longitude.toString(),
+                    destinationName: destination.name,
+                  } : undefined
+                });
+              },
+              style: 'default',
+            },
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
+    }
+  }, [notifications, markAsRead, currentLocation, destination, showGlobalSuccess]);
+
+  // Ride cancelled notification handler
+  useEffect(() => {
+
+   const rideCancelled = notifications.find(
+			n => n.type === 'ride_cancelled' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+		);
+
+    if (rideCancelled) {
+
+      processedNotificationsRef.current.add(rideCancelled._id);// Mark as processed
+
+      showGlobalAlert({
+        title: 'Ride Cancelled',
+        message: rideCancelled.message,
+        type: 'warning',
+        duration: 0,
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => markAsRead(rideCancelled._id),
             style: 'default',
           },
         ],
-        { cancelable: false }
-      );
+        position: 'top',
+        animation: 'slide-down',
+      });
     }
-  }, [notifications, markAsRead]);
-
-  // Global handler for ride_accepted notifications
-  useEffect(() => {
-    const rideAccepted = notifications.find(
-      n => n.type === 'ride_accepted' && !n.isRead
-    );
-    if (rideAccepted) {
-      Alert.alert(
-        'Ride Accepted',
-        rideAccepted.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              markAsRead(rideAccepted._id);
-              router.push({
-                pathname: './PassengerReservation',
-                params: currentLocation && destination ? {
-                  currentLat: currentLocation.latitude.toString(),
-                  currentLng: currentLocation.longitude.toString(),
-                  currentName: currentLocation.name,
-                  destinationLat: destination.latitude.toString(),
-                  destinationLng: destination.longitude.toString(),
-                  destinationName: destination.name,
-                } : undefined
-              });
-            },
-            style: 'default'
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead, currentLocation, destination]);
-
-  // Global handler for ride_cancelled notifications
-  useEffect(() => {
-    const rideCancelled = notifications.find(
-      n => n.type === 'ride_cancelled' && !n.isRead
-    );
-    if (rideCancelled) {
-      Alert.alert(
-        'Ride Cancelled',
-        rideCancelled.message,
-        [
-          {
-            text: 'OK',
-            onPress: () => markAsRead(rideCancelled._id),
-            style: 'default'
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
+  }, [notifications, markAsRead, showGlobalAlert]);
 
   return (
     <SafeAreaProvider>
