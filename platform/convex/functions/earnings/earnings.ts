@@ -1,3 +1,4 @@
+import { Id } from "../../_generated/dataModel";
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
 
@@ -18,9 +19,8 @@ function startOfToday(): number {
   return now.getTime();
 }
 
-export const getWeeklyEarnings = query({
-  args: { driverId: v.id("taxiTap_users") },
-  handler: async (ctx, { driverId }) => {
+export const earningsHandler = async (ctx: any, args: { driverId: Id<"taxiTap_users"> }) => {
+    const { driverId } = args;
     const now = Date.now();
     const weeks: any[] = [];
 
@@ -34,19 +34,19 @@ export const getWeeklyEarnings = query({
 
       const trips = await ctx.db
         .query("trips")
-        .withIndex("by_driver_and_startTime", (q) =>
+        .withIndex("by_driver_and_startTime", (q: any) =>
           q.eq("driverId", driverId).gt("startTime", from).lt("startTime", to)
         )
         .collect();
 
       const sessions = await ctx.db
         .query("work_sessions")
-        .withIndex("by_driver_and_start", (q) =>
+        .withIndex("by_driver_and_start", (q: any) =>
           q.eq("driverId", driverId).gt("startTime", from).lt("startTime", to)
         )
         .collect();
 
-      const hoursOnline = sessions.reduce((sum, session) => {
+      const hoursOnline = sessions.reduce((sum: any, session: any) => {
         if (session.endTime !== undefined) {
           const duration = (session.endTime - session.startTime) / (1000 * 60 * 60); // hours
           return sum + duration;
@@ -54,16 +54,16 @@ export const getWeeklyEarnings = query({
         return sum;
       }, 0);
 
-      const earnings = trips.reduce((sum, trip) => sum + trip.fare, 0);
-      const reservations = trips.filter((t) => t.reservation).length;
+      const earnings = trips.reduce((sum: any, trip: any) => sum + trip.fare, 0);
+      const reservations = trips.filter((t: any) => t.reservation).length;
 
       const dailyData = Array.from({ length: 7 }, (_, dayOffset) => {
         const dayStart = from + dayOffset * MILLIS_PER_DAY;
         const dayEnd = dayStart + MILLIS_PER_DAY;
 
         const dayEarnings = trips
-          .filter((t) => t.startTime >= dayStart && t.startTime < dayEnd)
-          .reduce((sum, t) => sum + t.fare, 0);
+          .filter((t: any) => t.startTime >= dayStart && t.startTime < dayEnd)
+          .reduce((sum: any, t: any) => sum + t.fare, 0);
 
         return {
           day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][dayOffset],
@@ -73,8 +73,8 @@ export const getWeeklyEarnings = query({
 
       const todayEarnings = i === 0
         ? trips
-            .filter((t) => t.startTime >= todayStart && t.startTime < todayEnd)
-            .reduce((sum, t) => sum + t.fare, 0)
+            .filter((t: any) => t.startTime >= todayStart && t.startTime < todayEnd)
+            .reduce((sum: any, t: any) => sum + t.fare, 0)
         : 0;
 
       weeks.push({
@@ -89,5 +89,9 @@ export const getWeeklyEarnings = query({
     }
 
     return weeks;
-  },
+};
+
+export const getWeeklyEarnings = query({
+  args: { driverId: v.string() },
+  handler: earningsHandler,
 });

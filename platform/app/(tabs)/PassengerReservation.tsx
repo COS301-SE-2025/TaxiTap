@@ -468,6 +468,15 @@ export default function SeatReserved() {
 				driverId: driverId as Id<'taxiTap_users'>,
 				reservation: true,
 			});
+			router.push({
+				pathname: './Payments',
+				params: {
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+        			licensePlate: taxiInfo?.plate || 'Unknown Plate',
+					fare: taxiInfo?.fare,
+					rideId: taxiInfo?.rideId,
+				},
+			});
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to start ride.', {
 				duration: 4000,
@@ -672,23 +681,6 @@ export default function SeatReserved() {
 			fontSize: 12,
 			fontWeight: "bold",
 			marginRight: 3,
-		},
-		licensePlateSection: {
-			flexDirection: "row",
-			marginBottom: 26,
-			width: '100%',
-			paddingHorizontal: 35,
-			justifyContent: 'space-between',
-		},
-		licensePlateLabel: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
-		},
-		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
 		},
 		locationBox: {
 			flexDirection: "row",

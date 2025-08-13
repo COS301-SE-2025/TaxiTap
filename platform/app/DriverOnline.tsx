@@ -509,6 +509,26 @@ export default function DriverOnline({
       color: '#FFFFFF',
       marginLeft: 8,
     },
+    statsButton: {
+      height: 56,
+      borderRadius: 30,
+      backgroundColor: '#343a40',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 4,
+      flexDirection: 'row',
+      marginTop: 20,
+    },
+    statsButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      marginLeft: 8,
+    },
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -739,7 +759,7 @@ export default function DriverOnline({
                   style={{
                     backgroundColor: '#fff',
                     alignItems: 'center',
-                    marginTop: 80,
+                    marginTop: 45,
                   }}
                 >
                   <TouchableOpacity
@@ -804,7 +824,7 @@ export default function DriverOnline({
 
                   <TouchableOpacity
                     style={dynamicStyles.actionButton}
-                    onPress={() => setMapExpanded(prev => !prev)} // Toggle mapExpanded
+                    onPress={() => setMapExpanded(prev => !prev)}
                   >
                     <Icon name="map" size={20} color="#fff" />
                     <Text style={dynamicStyles.actionButtonText}>
@@ -820,6 +840,15 @@ export default function DriverOnline({
                   accessibilityLabel="Go offline"
                 >
                   <Text style={dynamicStyles.offlineButtonText}>GO OFFLINE</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={dynamicStyles.statsButton}
+                  onPress={() => router.push('/StatsPage')}
+                  activeOpacity={0.8}
+                  accessibilityLabel="Ride and Payment Stats"
+                >
+                  <Text style={dynamicStyles.statsButtonText}>Ride and Payment Stats</Text>
                 </TouchableOpacity>
               </View>
 

@@ -165,6 +165,7 @@ jest.mock('../../../convex/_generated/api', () => ({
         earnings: { getWeeklyEarnings: 'getWeeklyEarnings' },
       },
       rides: {
+        getActiveTrips: { getActiveTrips: 'getActiveTrips' },
         acceptRide: { acceptRide: 'acceptRide' },
         cancelRide: { cancelRide: 'cancelRide' },
         declineRide: { declineRide: 'declineRide' },
