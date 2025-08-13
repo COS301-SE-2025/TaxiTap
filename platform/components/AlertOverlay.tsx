@@ -197,7 +197,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
     );
 
     Animated.parallel(animations).start(() => {
-      onDismiss(alert.id);
+      // Defer dismiss to next tick to avoid scheduling state updates during render/commit
+      requestAnimationFrame(() => onDismiss(alert.id));
     });
   };
 
