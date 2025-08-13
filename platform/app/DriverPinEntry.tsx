@@ -55,15 +55,15 @@ export default function DriverPinEntry() {
 
   const startRide = useMutation(api.functions.rides.startRide.startRide);
 
-  // Set driver pin when driver data is loaded
+  // Set driver pin when ride data is loaded
   useEffect(() => {
-    if (driverData && 'driverPin' in driverData && driverData.driverPin) {
-      setDriverPin(driverData.driverPin as string);
+    if (ride?.ridePin) {
+      setDriverPin(ride.ridePin);
     } else {
-      // Fallback: generate a simple 4-digit pin for demo
-      setDriverPin('1234');
+      // Generate a fallback PIN if none exists
+      setDriverPin(Math.floor(1000 + Math.random() * 9000).toString());
     }
-  }, [driverData]);
+  }, [ride?.ridePin]);
 
   // Function to decode Google's polyline format
   const decodePolyline = (encoded: string) => {

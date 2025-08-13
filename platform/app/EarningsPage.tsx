@@ -212,7 +212,21 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
     },
     summaryLabel: { fontSize: 16, color: theme.textSecondary },
     summaryValue: { fontSize: 16, fontWeight: 'bold', color: theme.text },
-
+    activeRideButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      marginTop: 10,
+    },
+    activeRideButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
   });
 
   return (
@@ -253,6 +267,21 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
               </View>
             )}
           </View>
+
+          {/* Active Ride Status */}
+          {user?.accountType === 'driver' && (
+            <View style={dynamicStyles.card}>
+              <Text style={dynamicStyles.sectionTitle}>Active Ride Status</Text>
+              <TouchableOpacity
+                style={dynamicStyles.activeRideButton}
+                onPress={() => navigation.navigate('DriverOnline' as never)}
+                activeOpacity={0.8}
+              >
+                <Icon name="car" size={20} color="#FFFFFF" />
+                <Text style={dynamicStyles.activeRideButtonText}>Go Online</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Earnings Card */}
           <View style={dynamicStyles.card}>

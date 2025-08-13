@@ -45,11 +45,8 @@ export default () => {
                     result = await acceptRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
                     Alert.alert('Success', 'Ride accepted! The passenger has been notified.');
                     
-                    // Navigate to PIN entry screen after accepting ride
-                    router.push({
-                        pathname: '/DriverPinEntry',
-                        params: { rideId: ride.rideId }
-                    });
+                    // Note: Removed navigation to DriverPinEntry page as requested
+                    // The driver can now see the PIN directly on the DriverOnline page
                     break;
                 case 'decline':
                     result = await declineRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
