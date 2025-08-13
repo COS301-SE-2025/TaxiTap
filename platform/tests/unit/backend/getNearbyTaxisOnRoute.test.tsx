@@ -26,6 +26,9 @@ function createMockQueryCtx(mockRoutes: any[], mockDrivers: any[], mockLocations
         throw new Error(`Unknown table: ${tableName}`);
       }),
     },
+    auth: {},
+    storage: {},
+    runQuery: jest.fn(),
   } as unknown as QueryCtx;
 }
 

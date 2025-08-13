@@ -1,5 +1,8 @@
 import { getTaxiForDriverHandler } from '../../../platform/convex/functions/taxis/getTaxiForDriverHandler';
 
+// Mock Id type for testing
+type MockId<T> = string & { __tableName: T };
+
 describe('getTaxiForDriver (integration)', () => {
   let ctx: any;
 
@@ -23,7 +26,7 @@ describe('getTaxiForDriver (integration)', () => {
       }
       return { withIndex: () => ({ unique: () => Promise.resolve(null) }) };
     });
-    const args = { userId: 'user1' };
+    const args = { userId: 'user1' as MockId<"taxiTap_users"> };
     const result = await getTaxiForDriverHandler(ctx, args);
     expect(result).toEqual(taxi);
   });
@@ -32,7 +35,7 @@ describe('getTaxiForDriver (integration)', () => {
     ctx.db.query.mockImplementation((table: string) => {
       return { withIndex: () => ({ unique: () => Promise.resolve(null) }) };
     });
-    const args = { userId: 'user1' };
+    const args = { userId: 'user1' as MockId<"taxiTap_users"> };
     const result = await getTaxiForDriverHandler(ctx, args);
     expect(result).toBeNull();
   });
@@ -48,7 +51,7 @@ describe('getTaxiForDriver (integration)', () => {
       }
       return { withIndex: () => ({ unique: () => Promise.resolve(null) }) };
     });
-    const args = { userId: 'user1' };
+    const args = { userId: 'user1' as MockId<"taxiTap_users"> };
     const result = await getTaxiForDriverHandler(ctx, args);
     expect(result).toBeNull();
   });

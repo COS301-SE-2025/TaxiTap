@@ -17,6 +17,9 @@ const createMockQueryCtx = () => ({
     query: jest.fn(),
     get: jest.fn(),
   },
+  auth: {},
+  storage: {},
+  runQuery: jest.fn(),
 });
 
 describe('getAvailableTaxis', () => {

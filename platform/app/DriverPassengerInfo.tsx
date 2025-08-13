@@ -4,11 +4,13 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default () => {
 	const params = useLocalSearchParams();
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
+	const { t } = useLanguage();
 	
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -27,7 +29,7 @@ export default () => {
 	const currentLocation = {
 		latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
 		longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-		name: getParamAsString(params.currentName, "Current Location")
+		name: getParamAsString(params.currentName, t('common:currentLocation'))
 	};
 
 	const destination = {

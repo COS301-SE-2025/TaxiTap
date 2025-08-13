@@ -20,6 +20,8 @@ import { RouteProvider } from '../contexts/RouteContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { InAppNotificationOverlay } from '../components/InAppNotificationOverlay';
 import { Id } from '../convex/_generated/dataModel';
+import '../src/i18n/i18n'; // Initialize i18n - MUST be imported before any components
+import { LanguageProvider } from '../contexts/LanguageContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -58,13 +60,18 @@ export default function RootLayout() {
   return (
     <ConvexProvider client={convex}>
       <ThemeProvider>
-        <UserProvider>
-          <MapProvider>
-            <RouteProvider>
-              <RootLayoutNav />
-            </RouteProvider>
-          </MapProvider>
-        </UserProvider>
+        <LanguageProvider>
+          <UserProvider>
+            <MapProvider>
+              <RouteProvider>
+                <NotificationProvider>
+                  <InAppNotificationOverlay />
+                  <RootLayoutNav />
+                </NotificationProvider>
+              </RouteProvider>
+            </MapProvider>
+          </UserProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </ConvexProvider>
   );
@@ -90,9 +97,12 @@ function RootLayoutNav() {
   // iOS: Wait for loading to complete before rendering navigation
   if (Platform.OS === 'ios' && loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* iOS loading state */}
-      </View>
+      <Stack>
+        <Stack.Screen
+          name="Loading"
+          options={{ headerShown: false }}
+        />
+      </Stack>
     );
   }
 
@@ -100,11 +110,7 @@ function RootLayoutNav() {
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* Only add NotificationProvider when safe */}
-        <NotificationProvider userId={user?.id as Id<"taxiTap_users"> | undefined}>
-          <InAppNotificationOverlay />
-          <StackNavigator />
-        </NotificationProvider>
+        <StackNavigator />
       </View>
     </NavigationThemeProvider>
   );

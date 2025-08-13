@@ -27,6 +27,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -74,6 +75,9 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   const { theme, isDark } = useTheme();
   const { setCurrentRoute } = useRouteContext();
   const { user } = useUser();
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -81,6 +85,78 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   
   const [isAssigning, setIsAssigning] = useState(false);
   const [taxiAssociation, setTaxiAssociation] = useState<string>('');
+  
+  // ============================================================================
+  // LANGUAGE CONTEXT
+  // ============================================================================
+  
+  const { currentLanguage, changeLanguage } = useLanguage();
+  
+  // ============================================================================
+  // HARDCODED TRANSLATIONS
+  // ============================================================================
+  
+  const translations = {
+    en: {
+      yourAssignedRoute: "Your Assigned Route",
+      yourAssignedRouteMessage: "You already have a route assigned. Tap activate to start using it.",
+      currentRoute: "Current Route",
+      activateRoute: "Activate Route",
+      getYourRoute: "Get Your Route",
+      routeAssignment: "Route Assignment",
+      selectTaxiAssociation: "Select Taxi Association",
+      selectTaxiAssociationMessage: "Choose your taxi association to get assigned a route for today.",
+      selectTaxiAssociationFirst: "Select Taxi Association First",
+      selectTaxiAssociationFirstMessage: "Please select a taxi association to get your route assignment.",
+      userNotFound: "User Not Found",
+      userNotFoundMessage: "Please log in again to continue.",
+      noRouteAssigned: "No route could be assigned at this time",
+      assignmentFailed: "Assignment Failed",
+      assignmentFailedMessage: "Unable to assign route. Please try again.",
+      routeAssignedSuccessfully: "Route Assigned Successfully!",
+      routeAssignedMessage: "You have been assigned to:\n\n{route}\n\nAssociation: {association}\n\nThis is now your active route.",
+      routeActivated: "Route Activated!",
+      routeActivatedMessage: "Your route is now active:\n\n{route}",
+      getMyRoute: "Get My Route",
+      assigningRoute: "Assigning Route...",
+      ok: "OK"
+    },
+    zu: {
+      yourAssignedRoute: "Indlela Yakho Ebekelwe",
+      yourAssignedRouteMessage: "Lena indlela yakho ebekelwe yaphelele. Yenza isebenze ukuze uqale ukuthola abagibeli.",
+      currentRoute: "Indlela Yamanje",
+      activateRoute: "Yenza Indlela Isebenze",
+      getYourRoute: "Thola Indlela Yakho",
+      routeAssignment: "Ukubekwa Kwendlela",
+      selectTaxiAssociation: "Khetha Inhlangano YamaTekisi",
+      selectTaxiAssociationMessage: "Khetha inhlangano yakho yamaTekisi futhi sizokubekela indlela ngokuzenzakalela. Lokhu kuzoba indlela yakho yaphelele.",
+      selectTaxiAssociationFirst: "Khetha Inhlangano YamaTekisi",
+      selectTaxiAssociationFirstMessage: "Sicela ukhethe inhlangano yakho yamaTekisi kuqala.",
+      userNotFound: "Umsebenzisi Akatholakali",
+      userNotFoundMessage: "Kufanele ungene njengomshayeli.",
+      noRouteAssigned: "Akukho indlela ebekelwe. Sicela uzame futhi.",
+      assignmentFailed: "Ukubekwa Kuhlulekile",
+      assignmentFailedMessage: "Kuhlulekile ukubeka indlela. Sicela uzame futhi.",
+      routeAssignedSuccessfully: "Indlela Ibekwe Ngempumelelo!",
+      routeAssignedMessage: "Ubhekwe ku:\n\n{route}\n\nInhlangano: {association}\n\nLena manje indlela yakho yaphelele.",
+      routeActivated: "Indlela Iyasebenza",
+      routeActivatedMessage: "Indlela yakho iyasebenza:\n\n{route}",
+      getMyRoute: "Thola Indlela Yami",
+      assigningRoute: "Kubekwa Indlela...",
+      ok: "Kulungile"
+    }
+  };
+  
+  const t = (key: string, params?: any) => {
+    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    const translation = translations[lang][key as keyof typeof translations[typeof lang]];
+    if (translation && params) {
+      return Object.keys(params).reduce((str, param) => {
+        return str.replace(`{${param}}`, params[param]);
+      }, translation);
+    }
+    return translation || key;
+  };
 
   // ============================================================================
   // DATA FETCHING
@@ -129,15 +205,15 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   const handleAssignRoute = async () => {
     if (!taxiAssociation) {
       Alert.alert(
-        "Select Taxi Association",
-        "Please select your taxi association first.",
-        [{ text: "OK" }]
+        t('driver.selectTaxiAssociationFirst'),
+        t('driver.selectTaxiAssociationFirstMessage'),
+        [{ text: t('common.ok') }]
       );
       return;
     }
 
     if (!user?.id) {
-      Alert.alert("User not found", "You must be logged in as a driver.");
+      Alert.alert(t('driver.userNotFound'), t('driver.userNotFoundMessage'));
       return;
     }
 
@@ -151,7 +227,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
       // Check if result and assignedRoute exist
       if (!result || !result.assignedRoute) {
-        throw new Error("No route was assigned. Please try again.");
+        throw new Error(t('driver.noRouteAssigned'));
       }
 
       const { start, destination } = parseRouteName(result.assignedRoute.name);
@@ -163,18 +239,18 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       }
 
       Alert.alert(
-        "Route Assigned Successfully!",
-        `You have been assigned to:\n\n${routeString}\n\nAssociation: ${taxiAssociation}\n\nThis is now your permanent route.`,
+        t('driver.routeAssignedSuccessfully'),
+        t('driver.routeAssignedMessage', { route: routeString, association: taxiAssociation }),
         [{
-          text: "OK",
+          text: t('common.ok'),
           onPress: () => navigation.goBack(),
         }]
       );
     } catch (error) {
       console.error("Error assigning route:", error);
       Alert.alert(
-        "Assignment Failed", 
-        error instanceof Error ? error.message : "Failed to assign route. Please try again."
+        t('driver.assignmentFailed'), 
+        error instanceof Error ? error.message : t('driver.assignmentFailedMessage')
       );
     } finally {
       setIsAssigning(false);
@@ -197,10 +273,10 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     }
 
     Alert.alert(
-      "Route Activated",
-      `Your route has been activated:\n\n${routeString}`,
+      t('driver.routeActivated'),
+      t('driver.routeActivatedMessage', { route: routeString }),
       [{
-        text: "OK",
+        text: t('common.ok'),
         onPress: () => navigation.goBack(),
       }]
     );
@@ -385,6 +461,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       color: theme.textSecondary,
       marginLeft: 12,
     },
+
   });
 
   // ============================================================================
@@ -413,20 +490,21 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
               >
                 <Icon name="arrow-back" size={24} color={isDark ? "#121212" : "#FF9900"} />
               </TouchableOpacity>
-              <Text style={dynamicStyles.headerTitle}>Your Route</Text>
+              <Text style={dynamicStyles.headerTitle}>{t('yourAssignedRoute')}</Text>
             </View>
+
           </View>
 
           {/* Content */}
           <View style={dynamicStyles.content}>
-            <Text style={dynamicStyles.sectionTitle}>Your Assigned Route</Text>
+            <Text style={dynamicStyles.sectionTitle}>{t('yourAssignedRoute')}</Text>
             <Text style={dynamicStyles.sectionSubtitle}>
-              This is your permanent route assignment. Activate it to start receiving passengers.
+              {t('yourAssignedRouteMessage')}
             </Text>
 
             {/* Route Information Card */}
             <View style={dynamicStyles.routeCard}>
-              <Text style={dynamicStyles.routeCardTitle}>Current Route</Text>
+              <Text style={dynamicStyles.routeCardTitle}>{t('currentRoute')}</Text>
               <Text style={dynamicStyles.routeText}>{start} → {destination}</Text>
               <Text style={dynamicStyles.associationText}>{assignedRoute.taxiAssociation}</Text>
             </View>
@@ -436,7 +514,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
               style={dynamicStyles.primaryButton}
               onPress={handleActivateExistingRoute}
             >
-              <Text style={dynamicStyles.primaryButtonText}>Activate Route</Text>
+              <Text style={dynamicStyles.primaryButtonText}>{t('activateRoute')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -464,20 +542,21 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
             >
               <Icon name="arrow-back" size={24} color={isDark ? "#121212" : "#FF9900"} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.headerTitle}>Get Your Route</Text>
+                          <Text style={dynamicStyles.headerTitle}>{t('getYourRoute')}</Text>
           </View>
+
         </View>
 
         {/* Content */}
         <View style={dynamicStyles.content}>
-          <Text style={dynamicStyles.sectionTitle}>Route Assignment</Text>
+          <Text style={dynamicStyles.sectionTitle}>{t('routeAssignment')}</Text>
           <Text style={dynamicStyles.sectionSubtitle}>
-            Select your taxi association and we'll assign you a route automatically. This will be your permanent route.
+            {t('selectTaxiAssociationMessage')}
           </Text>
 
           {/* Taxi Association Selection */}
           <View style={dynamicStyles.selectionCard}>
-            <Text style={dynamicStyles.selectionTitle}>Select Your Taxi Association</Text>
+            <Text style={dynamicStyles.selectionTitle}>{t('selectTaxiAssociation')}</Text>
             
             {allTaxiAssociations?.map((association: string, index: number) => (
               <TouchableOpacity
@@ -508,14 +587,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
             {isAssigning ? (
               <View style={dynamicStyles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.text} />
-                <Text style={dynamicStyles.loadingText}>Assigning Route...</Text>
+                <Text style={dynamicStyles.loadingText}>{t('assigningRoute')}</Text>
               </View>
             ) : (
               <Text style={[
                 dynamicStyles.primaryButtonText,
                 (!taxiAssociation || isAssigning) && dynamicStyles.primaryButtonTextDisabled
               ]}>
-                Get My Route
+                {t('getMyRoute')}
               </Text>
             )}
           </TouchableOpacity>

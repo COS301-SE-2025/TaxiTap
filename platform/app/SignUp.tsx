@@ -18,17 +18,29 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { api } from "../convex/_generated/api";
 import { useMutation } from 'convex/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
-const data = [
+const roleData = [
   { label: 'Passenger', value: 'passenger' },
   { label: 'Driver', value: 'driver' },
+];
+
+const roleDataZulu = [
+  { label: 'Umgibeli', value: 'passenger' },
+  { label: 'Umshayeli', value: 'driver' },
+];
+
+const languageOptions = [
+  { label: 'English', value: 'en' },
+  { label: 'isiZulu', value: 'zu' },
 ];
 
 function LoginComponent() {
   // Move useMutation inside the component that's wrapped by ConvexProvider
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
+  const { t, currentLanguage, changeLanguage } = useLanguage();
   
   const [nameSurname, setNameSurname] = useState('');
   const [number, setNumber] = useState('');
@@ -41,20 +53,20 @@ function LoginComponent() {
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
-      Alert.alert('Error', 'Please fill all fields');
+      Alert.alert(t('common:error'), t('common:pleaseFillAllFields'));
       return;
     }
     if (!selectedRole) {
-      Alert.alert('Error', 'Please select a role');
+      Alert.alert(t('common:error'), t('common:pleaseSelectRole'));
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert('Invalid number', 'Please enter a valid number');
+      Alert.alert(t('common:error'), t('common:invalidNumber'));
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match');
+      Alert.alert(t('common:error'), t('common:passwordMismatch'));
       return;
     }
 
@@ -85,12 +97,14 @@ function LoginComponent() {
     } catch (err: any) {
       const message = (err?.data?.message) || (err?.message) || "Something went wrong";
       if (message.includes("Phone number already exists")) {
-        Alert.alert("Phone Number In Use", "This phone number is already registered. Try logging in or use a different number.");
+        Alert.alert(t('common:error'), t('common:phoneNumberInUse'));
       } else {
         console.log("Signup Error", message);
       }
     }
   };
+
+  const currentRoleData = currentLanguage === 'zu' ? roleDataZulu : roleData;
 
   return (
     <ScrollView>
@@ -102,6 +116,28 @@ function LoginComponent() {
             backgroundColor: '#fff',
           }}
         >
+          {/* Language Selector */}
+          <View style={{ marginTop: 40, marginBottom: 20 }}>
+            <Dropdown
+              data={languageOptions}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Language"
+              placeholderStyle={{ color: '#999' }}
+              style={{
+                backgroundColor: '#f5f5f5',
+                borderRadius: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderColor: '#ddd',
+                borderWidth: 1,
+              }}
+              selectedTextStyle={{ fontSize: 16, color: '#000' }}
+              value={currentLanguage}
+              onChange={(item) => changeLanguage(item.value)}
+            />
+          </View>
+
           <View style={{ alignItems: 'center' }}>
             <Image
               source={require('../assets/images/icon.png')}
@@ -123,13 +159,13 @@ function LoginComponent() {
         >
           {/* Name and surname */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Name and Surname
+            {t('auth:nameAndSurname')}
           </Text>
 
           <TextInput
             value={nameSurname}
             onChangeText={setNameSurname}
-            placeholder="Name and Surname"
+            placeholder={t('auth:nameAndSurname')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -143,13 +179,13 @@ function LoginComponent() {
 
           {/* Phone Number */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Cellphone number
+            {t('auth:phoneNumber')}
           </Text>
 
           <TextInput
             value={number}
             onChangeText={setNumber}
-            placeholder="Cellphone number"
+            placeholder={t('auth:phoneNumber')}
             placeholderTextColor="#999"
             keyboardType="phone-pad"
             style={{
@@ -164,14 +200,14 @@ function LoginComponent() {
 
           {/* Dropdown for Role */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Select Role
+            {t('auth:selectRole')}
           </Text>
 
           <Dropdown
-            data={data}
+            data={currentRoleData}
             labelField="label"
             valueField="value"
-            placeholder="Select role"
+            placeholder={t('auth:selectRole')}
             placeholderStyle={{ color: '#999' }}
             style={{
               backgroundColor: '#fff',
@@ -187,7 +223,7 @@ function LoginComponent() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Password
+            {t('auth:password')}
           </Text>
 
           <View
@@ -204,7 +240,7 @@ function LoginComponent() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth:password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -223,7 +259,7 @@ function LoginComponent() {
 
           {/* Confirm Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Confirm Password
+            {t('auth:confirmPassword')}
           </Text>
 
           <View
@@ -240,7 +276,7 @@ function LoginComponent() {
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Confirm Password"
+              placeholder={t('auth:confirmPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showConfirmPassword}
               style={{
@@ -270,13 +306,15 @@ function LoginComponent() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              Sign Up
+              {t('auth:signUp')}
             </Text>
           </Pressable>
 
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
-            <Text style={{ color: '#fff', fontSize: 18 }}>Or</Text>
+            <Text style={{ color: '#fff', fontSize: 18 }}>
+              {currentLanguage === 'zu' ? 'Noma' : 'Or'}
+            </Text>
           </View>
 
           {/* Google Sign-In Button */}

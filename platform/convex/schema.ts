@@ -124,6 +124,7 @@ export default defineSchema({
     ridePin: v.optional(v.string()),
     pinRegeneratedAt: v.optional(v.number()),
     pinVerifiedAt: v.optional(v.number()),
+    tripPaid: v.optional(v.boolean()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
@@ -350,6 +351,13 @@ routes: defineTable({
     destinationLat: v.optional(v.number()),
     destinationLng: v.optional(v.number()),
     lastUsedAt: v.number(),
+    // Additional fields for route details
+    name: v.optional(v.string()),
+    startLat: v.optional(v.number()),
+    startLng: v.optional(v.number()),
+    startName: v.optional(v.string()),
+    destinationLat: v.optional(v.number()),
+    destinationLng: v.optional(v.number()),
   })
     .index("by_passenger", ["passengerId"])
     .index("by_passenger_and_route", ["passengerId", "routeId"])
