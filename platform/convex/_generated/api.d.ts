@@ -18,6 +18,7 @@ import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.
 import type * as functions_earnings_fare from "../functions/earnings/fare.js";
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
+import type * as functions_feedback_index from "../functions/feedback/index.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
@@ -98,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   "functions/earnings/fare": typeof functions_earnings_fare;
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
+  "functions/feedback/index": typeof functions_feedback_index;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
