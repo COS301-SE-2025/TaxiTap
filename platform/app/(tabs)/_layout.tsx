@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, Image, View } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -252,13 +252,22 @@ export default function TabLayout() {
     currentLocation = undefined;
     destination = undefined;
   }
+
+  const processedNotificationsRef = useRef(new Set<string>());
   
   // Ride declined notification handler
   useEffect(() => {
-    const rideDeclined = notifications.find(
-      n => n.type === 'ride_declined' && !n.isRead
-    );
+
+   const rideDeclined = notifications.find(
+			n => n.type === 'ride_declined' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+        );
+
     if (rideDeclined) {
+
+      processedNotificationsRef.current.add(rideDeclined._id);// Mark as processed
+
       showGlobalError(
         'Ride Declined',
         rideDeclined.message || 'Your ride request was declined.',
@@ -283,10 +292,18 @@ export default function TabLayout() {
 
   // Ride accepted notification handler  
   useEffect(() => {
-    const rideAccepted = notifications.find(
-      n => n.type === 'ride_accepted' && !n.isRead
-    );
+
+   const rideAccepted = notifications.find(
+			n => n.type === 'ride_accepted' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+		);
+
+    
     if (rideAccepted) {
+
+      processedNotificationsRef.current.add(rideAccepted._id);// Mark as processed
+
       showGlobalSuccess(
         'Ride Accepted',
         rideAccepted.message,
@@ -321,10 +338,17 @@ export default function TabLayout() {
 
   // Ride cancelled notification handler
   useEffect(() => {
-    const rideCancelled = notifications.find(
-      n => n.type === 'ride_cancelled' && !n.isRead
-    );
+
+   const rideCancelled = notifications.find(
+			n => n.type === 'ride_cancelled' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
+		);
+
     if (rideCancelled) {
+
+      processedNotificationsRef.current.add(rideCancelled._id);// Mark as processed
+
       showGlobalAlert({
         title: 'Ride Cancelled',
         message: rideCancelled.message,
