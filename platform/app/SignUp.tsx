@@ -22,25 +22,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
-const roleData = [
-  { label: 'Passenger', value: 'passenger' },
-  { label: 'Driver', value: 'driver' },
-];
-
-const roleDataZulu = [
-  { label: 'Umgibeli', value: 'passenger' },
-  { label: 'Umshayeli', value: 'driver' },
-];
-
-const languageOptions = [
-  { label: 'English', value: 'en' },
-  { label: 'isiZulu', value: 'zu' },
-];
-
-function LoginComponent() {
+function SignUpComponent() {
   // Move useMutation inside the component that's wrapped by ConvexProvider
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
-  const { t, currentLanguage, changeLanguage } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   
   const [nameSurname, setNameSurname] = useState('');
   const [number, setNumber] = useState('');
@@ -50,6 +35,32 @@ function LoginComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+
+  // Dynamic role data based on current language
+  const getRoleData = () => {
+    switch(currentLanguage) {
+      case 'zu':
+        return [
+          { label: 'Umgibeli', value: 'passenger' },
+          { label: 'Umshayeli', value: 'driver' },
+        ];
+      case 'tn':
+        return [
+          { label: 'Mopalami', value: 'passenger' },
+          { label: 'Mokgweetsi', value: 'driver' },
+        ];
+      case 'af':
+        return [
+          { label: 'Passasier', value: 'passenger' },
+          { label: 'Bestuurder', value: 'driver' },
+        ];
+      default:
+        return [
+          { label: 'Passenger', value: 'passenger' },
+          { label: 'Driver', value: 'driver' },
+        ];
+    }
+  };
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
@@ -104,7 +115,7 @@ function LoginComponent() {
     }
   };
 
-  const currentRoleData = currentLanguage === 'zu' ? roleDataZulu : roleData;
+  const currentRoleData = getRoleData();
 
   return (
     <ScrollView>
@@ -116,29 +127,7 @@ function LoginComponent() {
             backgroundColor: '#fff',
           }}
         >
-          {/* Language Selector */}
-          <View style={{ marginTop: 40, marginBottom: 20 }}>
-            <Dropdown
-              data={languageOptions}
-              labelField="label"
-              valueField="value"
-              placeholder="Select Language"
-              placeholderStyle={{ color: '#999' }}
-              style={{
-                backgroundColor: '#f5f5f5',
-                borderRadius: 10,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderColor: '#ddd',
-                borderWidth: 1,
-              }}
-              selectedTextStyle={{ fontSize: 16, color: '#000' }}
-              value={currentLanguage}
-              onChange={(item) => changeLanguage(item.value)}
-            />
-          </View>
-
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Image
               source={require('../assets/images/icon.png')}
               style={{ width: '100%', height: 200 }}
@@ -313,7 +302,7 @@ function LoginComponent() {
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
             <Text style={{ color: '#fff', fontSize: 18 }}>
-              {currentLanguage === 'zu' ? 'Noma' : 'Or'}
+              {t('auth:or')}
             </Text>
           </View>
 
@@ -340,10 +329,10 @@ function LoginComponent() {
 }
 
 // Wrap the component with ConvexProvider
-export default function Login() {
+export default function SignUp() {
   return (
     <ConvexProvider client={convex}>
-      <LoginComponent />
+      <SignUpComponent />
     </ConvexProvider>
   );
 }

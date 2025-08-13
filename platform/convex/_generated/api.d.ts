@@ -88,6 +88,7 @@ import type * as functions_users_UserManagement_switchPassengertoBoth from "../f
 import type * as functions_users_UserManagement_updateHomeAddress from "../functions/users/UserManagement/updateHomeAddress.js";
 import type * as functions_users_UserManagement_updateUserProfile from "../functions/users/UserManagement/updateUserProfile.js";
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
+import type * as functions_users_updateLocationSchema from "../functions/users/updateLocationSchema.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
 
@@ -175,6 +176,7 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/updateHomeAddress": typeof functions_users_UserManagement_updateHomeAddress;
   "functions/users/UserManagement/updateUserProfile": typeof functions_users_UserManagement_updateUserProfile;
   "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
+  "functions/users/updateLocationSchema": typeof functions_users_updateLocationSchema;
   "functions/work_sessions/endWorkSession": typeof functions_work_sessions_endWorkSession;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;
 }>;

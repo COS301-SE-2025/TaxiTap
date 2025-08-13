@@ -76,6 +76,8 @@ export default function DriverOnline({
   const [showMap, setShowMap] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   
+  const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
+  
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -590,6 +592,35 @@ export default function DriverOnline({
       fontWeight: 'bold',
       marginLeft: 8,
     },
+    locationStreamingStatus: {
+      position: 'absolute',
+      top: 120,
+      left: 20,
+      right: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 8,
+      padding: 8,
+      alignItems: 'center',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 4,
+      zIndex: 998,
+    },
+    locationStreamingText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    locationStreamingSuccess: {
+      color: '#4CAF50',
+    },
+    locationStreamingError: {
+      color: '#F44336',
+    },
+    locationStreamingLoading: {
+      color: theme.textSecondary,
+    },
   });
 
   async function increaseSeats() {
@@ -693,6 +724,23 @@ export default function DriverOnline({
                 </TouchableOpacity>
               </View>
               
+              {/* Live Location Streaming Status for Drivers */}
+              <View style={dynamicStyles.locationStreamingStatus}>
+                {locationStreamError ? (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
+                    Location Error: {locationStreamError}
+                  </Text>
+                ) : streamedLocation ? (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
+                    Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
+                  </Text>
+                ) : (
+                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
+                    Starting location streaming...
+                  </Text>
+                )}
+              </View>
+
               {!mapExpanded && (
                 <View
                   style={{

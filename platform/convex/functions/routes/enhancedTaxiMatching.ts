@@ -227,7 +227,7 @@ type AvailableTaxi = {
   currentLocation: {
     latitude: number;
     longitude: number;
-    lastUpdated: string;
+    lastUpdated: number;
   };
   distanceToOrigin: number;
   routeInfo: {

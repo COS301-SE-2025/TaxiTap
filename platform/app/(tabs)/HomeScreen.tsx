@@ -860,6 +860,11 @@ export default function HomeScreen() {
       fontSize: 14,
       color: theme.text,
     },
+    routeSubtitle: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
+    },
     routeLoadingText: {
       color: theme.textSecondary,
       fontSize: 12,
@@ -1119,6 +1124,10 @@ export default function HomeScreen() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={dynamicStyles.routeTitle}>
+                    {route.routeName || 'Saved Route'}
+                  </Text>
+                  <Text style={dynamicStyles.routeSubtitle}>
+                    {t('home:usedTimes').replace('{count}', route.usageCount.toString())}
                     {route.startName && route.routeName 
                       ? `${route.startName} → ${route.routeName}`
                       : route.routeName || 'Saved Route'
