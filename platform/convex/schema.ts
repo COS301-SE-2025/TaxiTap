@@ -315,7 +315,7 @@ routes: defineTable({
       v.literal("driver"),
       v.literal("both")
     ),
-    updatedAt: v.string(),
+    updatedAt: v.number(),
   }).index("by_user", ["userId"]),
   feedback: defineTable({
     rideId: v.id("rides"),

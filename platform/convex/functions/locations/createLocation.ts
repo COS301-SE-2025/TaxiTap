@@ -18,7 +18,7 @@ export const createLocation = mutation({
         userId,
         latitude,
         longitude,
-        updatedAt: new Date().toISOString(),
+        updatedAt: Date.now(),
         role,
       });
     }
