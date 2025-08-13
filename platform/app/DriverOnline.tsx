@@ -20,6 +20,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+//import LocationSpoofer from '../components/LocationSpoofer';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
 
@@ -70,6 +71,7 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
@@ -308,6 +310,15 @@ export default function DriverOnline({
       onPress: () => {
         setShowMenu(false);
         handleToggleTheme();
+      }
+    },
+    { 
+      icon: "location-outline", 
+      title: "Location Spoofer", 
+      subtitle: "Set custom location for testing",
+      onPress: () => {
+        setShowMenu(false);
+        setShowLocationSpoofer(true);
       }
     },
     { 
@@ -879,6 +890,11 @@ export default function DriverOnline({
                   </View>
                 </TouchableOpacity>
               )}
+
+              <LocationSpoofer 
+                isVisible={showLocationSpoofer}
+                onClose={() => setShowLocationSpoofer(false)}
+              />
             </>
           )}
         </View>

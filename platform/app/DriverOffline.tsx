@@ -73,7 +73,11 @@ export default function DriverOffline({
   const assignedRoute = useQuery(
     api.functions.routes.queries.getDriverAssignedRoute,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+
   );
+
+
+
 
   if (!user) return;
   

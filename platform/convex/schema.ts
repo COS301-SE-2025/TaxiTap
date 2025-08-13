@@ -112,9 +112,23 @@ export default defineSchema({
     estimatedFare: v.optional(v.number()),
     finalFare: v.optional(v.number()),
     
+
+    // Distance fields - keeping both for compatibility
+    estimatedDistance: v.optional(v.number()),
+    actualDistance: v.optional(v.number()),
     distance: v.optional(v.number()),
+    
+    // Trip relationship
     tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
+    
+    // PIN verification fields
+    ridePin: v.optional(v.string()),
+    pinRegeneratedAt: v.optional(v.number()),
+    pinVerifiedAt: v.optional(v.number()),
+    rideStartedAt: v.optional(v.number()),
+
+
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
