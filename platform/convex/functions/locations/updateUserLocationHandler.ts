@@ -35,6 +35,6 @@ export const updateUserLocationHandler = async (
     latitude,
     longitude,
     role,
-    updatedAt: new Date().toISOString(), // Store the update timestamp
+    updatedAt: Date.now(), // Store the update timestamp
   });
 };
