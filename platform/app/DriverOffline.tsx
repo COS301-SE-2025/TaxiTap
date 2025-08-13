@@ -112,17 +112,7 @@ export default function DriverOffline({
     return () => clearTimeout(timer); // Cleanup on unmount
   }, []);
 
-  // Helper function to parse route name
-  const parseRouteName = (routeName: string) => {
-    const parts = routeName?.split(" to ").map(part => part.trim()) ?? ["Unknown", "Unknown"];
-    return {
-      start: parts[0] ?? "Unknown",
-      destination: parts[1] ?? "Unknown"
-    };
-  };
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFullStatus(false);
@@ -130,16 +120,6 @@ export default function DriverOffline({
 
     return () => clearTimeout(timer); // Cleanup on unmount
   }, []);
-
->>>>>>> 46f79bfb026a583a7b9f480ec69bbc6245e582d0
-  // Helper function to parse route name
-  const parseRouteName = (routeName: string) => {
-    const parts = routeName?.split(" to ").map(part => part.trim()) ?? ["Unknown", "Unknown"];
-    return {
-      start: parts[0] ?? "Unknown",
-      destination: parts[1] ?? "Unknown"
-    };
-  };
 
   const handleSetRoute = () => {
     router.push('/SetRoute');
@@ -223,18 +203,10 @@ export default function DriverOffline({
     return `${start} → ${destination}`;
   };
 
-  // Get route display string from database
-  const getRouteDisplayString = () => {
-    if (!assignedRoute) return "Not Set";
-    const { start, destination } = parseRouteName(assignedRoute.name);
-    return `${start} → ${destination}`;
-  };
-
   const quickActions: QuickActionType[] = [
     {
       icon: "location-outline",
       title: "Current Route",
-      value: getRouteDisplayString(),
       value: getRouteDisplayString(),
       subtitle: "Tap to set route",
       color: getRouteDisplayString() === "Not Set" ? "#FF9900" : "#00A591",

@@ -118,8 +118,6 @@ export default defineSchema({
     
     distance: v.optional(v.number()),
     tripId: v.optional(v.id("trips")),
-    distance: v.optional(v.number()),
-    tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
     
     // PIN verification fields
@@ -352,13 +350,6 @@ routes: defineTable({
     destinationLat: v.optional(v.number()),
     destinationLng: v.optional(v.number()),
     lastUsedAt: v.number(),
-    // Additional fields for route details
-    name: v.optional(v.string()),
-    startLat: v.optional(v.number()),
-    startLng: v.optional(v.number()),
-    startName: v.optional(v.string()),
-    destinationLat: v.optional(v.number()),
-    destinationLng: v.optional(v.number()),
   })
     .index("by_passenger", ["passengerId"])
     .index("by_passenger_and_route", ["passengerId", "routeId"])
