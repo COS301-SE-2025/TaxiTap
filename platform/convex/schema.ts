@@ -64,6 +64,10 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
+    
+    // Driver PIN for ride verification
+    driverPin: v.optional(v.string()),
+    pinUpdatedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phoneNumber"])
@@ -114,12 +118,22 @@ export default defineSchema({
     
     estimatedDistance: v.optional(v.number()),
     actualDistance: v.optional(v.number()),
+    distance: v.optional(v.number()),
+    tripId: v.optional(v.id("trips")),
+    tripPaid: v.optional(v.boolean()),
+    
+    // PIN verification fields
+    ridePin: v.optional(v.string()),
+    pinRegeneratedAt: v.optional(v.number()),
+    pinVerifiedAt: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
     .index("by_driver", ["driverId"])
     .index("by_status", ["status"])
-    .index("by_requested_at", ["requestedAt"]),
+    .index("by_requested_at", ["requestedAt"])
+    .index("by_trip_id", ["tripId"])
+    .index("by_passenger_and_driver", ["passengerId", "driverId"]),
 
   //passenger table
   passengers: defineTable({
@@ -181,6 +195,7 @@ routes: defineTable({
     })),
     fare: v.number(),
     estimatedDuration: v.number(),
+    estimatedDistance: v.optional(v.number()), // Added estimated distance field
     isActive: v.boolean(),
     taxiAssociation: v.string(),
     taxiAssociationRegistrationNumber: v.string()
@@ -232,6 +247,7 @@ routes: defineTable({
     v.literal("ride_cancelled"),
     v.literal("ride_declined"),
     v.literal("driver_arrived"),
+    v.literal("driver_5min_away"),
     v.literal("payment_received"),
     v.literal("rating_request"),
     v.literal("route_update"),
@@ -310,7 +326,7 @@ routes: defineTable({
       v.literal("driver"),
       v.literal("both")
     ),
-    updatedAt: v.string(),
+    updatedAt: v.number(),
   }).index("by_user", ["userId"]),
   feedback: defineTable({
     rideId: v.id("rides"),
@@ -330,6 +346,13 @@ routes: defineTable({
     routeId: v.string(),
     usageCount: v.number(),
     lastUsedAt: v.number(),
+    // Additional fields for route details
+    name: v.optional(v.string()),
+    startLat: v.optional(v.number()),
+    startLng: v.optional(v.number()),
+    startName: v.optional(v.string()),
+    destinationLat: v.optional(v.number()),
+    destinationLng: v.optional(v.number()),
   })
     .index("by_passenger", ["passengerId"])
     .index("by_passenger_and_route", ["passengerId", "routeId"])

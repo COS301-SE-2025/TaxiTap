@@ -116,7 +116,7 @@ export const signUpSMSHandler = async (
       role: locationRole,
       latitude: 0,
       longitude: 0,
-      updatedAt: ""
+      updatedAt: Date.now()
     });
 
     return { success: true, userId };

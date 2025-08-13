@@ -59,7 +59,7 @@ export const switchPassengerToBothHandler = async (
       userId: args.userId,
       latitude: 0,
       longitude: 0,
-      updatedAt: new Date().toISOString(),
+      updatedAt: Date.now(),
       role: "driver",
     });
   }
