@@ -21,6 +21,7 @@ import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { AlertType } from '@/contexts/AlertContext';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -73,7 +74,7 @@ export default function DriverOnline({
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
-  const { showError, showSuccess, showModal } = useAlertHelpers();
+  const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
   
   const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
   
@@ -153,47 +154,43 @@ export default function DriverOnline({
       n => n.type === "ride_request" && !n.isRead
     );
     if (rideRequest) {
-      showModal(
-        "New Ride Request",
-        rideRequest.message,
-        [
+      showGlobalAlert({
+        title: "New Ride Request",
+        message: rideRequest.message,
+        position: 'top',
+        animation: 'slide-down',
+        duration: 0,
+        type: 'info',
+        actions: [
           {
-            label: "Decline",
+            label: 'Decline',
+            style: 'destructive',
             onPress: async () => {
               try {
-                await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
-                markAsRead(rideRequest._id);
+                await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
                 console.error(error);
-                showError("Error", "Failed to decline ride or update seats.");
+                showGlobalError('Error', 'Failed to decline ride or update seats.', { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
-            style: "destructive"
           },
           {
-            label: "Accept",
+            label: 'Accept',
+            style: 'default',
             onPress: async () => {
               try {
-                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
-                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
-                markAsRead(rideRequest._id);
-                
-                // Navigate to PIN entry screen after accepting ride
-                // router.push({
-                //   pathname: '/DriverPinEntry',
-                //   params: { rideId: rideRequest.metadata.rideId }
-                // });
+                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<'taxiTap_users'> });
+                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: 'decrease' });
               } catch (error) {
                 console.error(error);
-                showError("Error", "Failed to accept ride or update seats.");
+                showGlobalError('Error', 'Failed to accept ride or update seats.', { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
-            style: "default"
-          }
-        ]
-      );
+          },
+        ],
+      });
     }
   }, [notifications, user]);
 
@@ -202,17 +199,17 @@ export default function DriverOnline({
       n => n.type === 'ride_cancelled' && !n.isRead
     );
     if (rideCancelled) {
-      showModal(
-        'Ride Cancelled',
-        rideCancelled.message,
-        [
-          {
-            label: 'OK',
-            onPress: () => markAsRead(rideCancelled._id),
-            style: 'default',
-          },
-        ]
-      );
+      showGlobalAlert({
+        title: 'Ride Cancelled',
+        message: rideCancelled.message,
+        type: 'warning',
+        position: 'top',
+        animation: 'slide-down',
+        duration: 0,
+        actions: [
+          { label: 'OK', onPress: () => markAsRead(rideCancelled._id), style: 'default' },
+        ],
+      });
     }
   }, [notifications, markAsRead]);
 
@@ -221,17 +218,17 @@ export default function DriverOnline({
       n => n.type === 'ride_started' && !n.isRead
     );
     if (rideStarted) {
-      showModal(
-        'Ride Started',
-        rideStarted.message,
-        [
-          {
-            label: 'OK',
-            onPress: () => markAsRead(rideStarted._id),
-            style: 'default',
-          },
-        ]
-      );
+      showGlobalAlert({
+        title: 'Ride Started',
+        message: rideStarted.message,
+        type: 'info',
+        position: 'top',
+        animation: 'slide-down',
+        duration: 0,
+        actions: [
+          { label: 'OK', onPress: () => markAsRead(rideStarted._id), style: 'default' },
+        ],
+      });
     }
   }, [notifications, markAsRead]);
 
@@ -249,25 +246,25 @@ export default function DriverOnline({
   };
 
   const handleEmergency = () => {
-    showModal(
-      "Emergency Alert",
-      "This will contact emergency services (112)",
-      [
-        { 
-          label: "Yes, Get Help", 
+    showGlobalAlert({
+      title: 'Emergency Alert',
+      message: 'This will contact emergency services (112)',
+      type: 'Emergency  Alert' as AlertType,
+      position: 'top',
+      animation: 'slide-down',
+      duration: 0,
+      actions: [
+        {
+          label: 'Yes, Get Help',
+          style: 'destructive',
           onPress: () => {
-            showSuccess("Emergency Alert Sent", "Emergency services contacted.");
+            showGlobalSuccess('Emergency Alert Sent', 'Emergency services contacted.', { position: 'top', animation: 'slide-down', duration: 3000 });
             setShowSafetyMenu(false);
           },
-          style: "destructive"
         },
-        { 
-          label: "Cancel", 
-          onPress: () => setShowSafetyMenu(false),
-          style: "cancel"
-        }
-      ]
-    );
+        { label: 'Cancel', style: 'cancel', onPress: () => setShowSafetyMenu(false) },
+      ],
+    });
   };
 
   const menuItems: MenuItem[] = [
@@ -608,11 +605,11 @@ export default function DriverOnline({
     },
   });
 
-  async function increaseSeats() {
-    if (!user) {
-      showError("validation error", "You must be logged in");
-      return;
-    }
+    async function increaseSeats() {
+      if (!user) {
+        showGlobalError('Validation error', 'You must be logged in', { position: 'top', animation: 'slide-down', duration: 4000 });
+        return;
+      }
     try {
       await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "increase" });
     } catch (e) {
@@ -620,11 +617,11 @@ export default function DriverOnline({
     }
   }
 
-  async function decreaseSeats() {
-    if (!user) {
-      showError("validation error", "You must be logged in");
-      return;
-    }
+    async function decreaseSeats() {
+      if (!user) {
+        showGlobalError('Validation error', 'You must be logged in', { position: 'top', animation: 'slide-down', duration: 4000 });
+        return;
+      }
     try {
       await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "decrease" });
     } catch (e) {

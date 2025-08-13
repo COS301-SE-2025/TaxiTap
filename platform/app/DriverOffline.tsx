@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   StatusBar,
   SafeAreaView,
@@ -18,6 +17,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@/contexts/UserContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 interface DriverOfflineProps {
   onGoOnline: () => void;
@@ -61,6 +61,7 @@ export default function DriverOffline({
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
   const [showFullStatus, setShowFullStatus] = useState(true);
+  const { showGlobalSuccess, showModal } = useAlertHelpers();
 
   const taxiInfo = useQuery(
       api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
@@ -128,15 +129,27 @@ export default function DriverOffline({
   };
 
   const handleEmergency = () => {
-    Alert.alert(
+    showModal(
       "Emergency Alert",
       "This will contact emergency services (112)",
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Yes, Get Help", style: "destructive", onPress: () => {
-          Alert.alert("Emergency Alert Sent", "Emergency services contacted.");
-          setShowSafetyMenu(false);
-        }}
+        {
+          label: "Yes, Get Help",
+          onPress: () => {
+            showGlobalSuccess("Emergency Alert Sent", "Emergency services contacted.", {
+              duration: 3000,
+              position: 'top',
+              animation: 'slide-down',
+            });
+            setShowSafetyMenu(false);
+          },
+          style: "destructive"
+        },
+        {
+          label: "Cancel",
+          onPress: () => setShowSafetyMenu(false),
+          style: "cancel"
+        }
       ]
     );
   };
