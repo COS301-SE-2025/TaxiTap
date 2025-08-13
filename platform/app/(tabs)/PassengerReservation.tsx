@@ -43,6 +43,8 @@ export default function SeatReserved() {
 	const { showGlobalAlert, showGlobalError } = useAlertHelpers();
 
 	const mapRef = useRef<MapView | null>(null);
+
+	const processedNotificationsRef = useRef(new Set<string>()); // ref for processing used notification
 	
 	// Fetch taxi and driver info for the current reservation using Convex
 	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
@@ -352,9 +354,14 @@ export default function SeatReserved() {
 	// MIGRATED: Handle notifications effect using new alert system
 	useEffect(() => {
 		const rideStarted = notifications.find(
-			n => n.type === 'ride_started' && !n.isRead
+			n => n.type === 'ride_started' && 
+				!n.isRead && 
+				!processedNotificationsRef.current.has(n._id) // Add this check
 		);
 		if (rideStarted) {
+
+			processedNotificationsRef.current.add(rideStarted._id);
+
 			showGlobalAlert({
 				title: 'Ride Started',
 				message: rideStarted.message,
@@ -379,9 +386,15 @@ export default function SeatReserved() {
 		} 
 
 		const rideDeclined = notifications.find(
-			n => n.type === 'ride_declined' && !n.isRead
+		n => n.type === 'ride_declined' && 
+			!n.isRead && 
+			!processedNotificationsRef.current.has(n._id) // Add this check
 		);
+
 		if (rideDeclined) {
+
+			processedNotificationsRef.current.add(rideDeclined._id);
+			
 			showGlobalError(
 				'Ride Declined',
 				rideDeclined.message || 'Your ride request was declined.',
