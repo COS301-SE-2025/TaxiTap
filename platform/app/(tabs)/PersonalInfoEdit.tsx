@@ -7,6 +7,7 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function PersonalInfoEdit() {
@@ -22,6 +23,7 @@ export default function PersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -67,21 +69,21 @@ export default function PersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            Alert.alert('Error', 'Failed to upload image');
+            Alert.alert(t('personalInfo:error'), t('personalInfo:failedToUploadImage'));
         }
     };
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            Alert.alert(t('personalInfo:error'), t('personalInfo:userNotLoaded'));
             return;
         }
         if (!name.trim()) {
-            Alert.alert('Error', 'Name is required');
+            Alert.alert(t('personalInfo:error'), t('personalInfo:nameRequired'));
             return;
         }
         if (!phoneNumber.trim()) {
-            Alert.alert('Error', 'Phone number is required');
+            Alert.alert(t('personalInfo:error'), t('personalInfo:phoneNumberRequired'));
             return;
         }
         
@@ -109,12 +111,12 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            Alert.alert('Success', 'Profile updated successfully!', [
+            Alert.alert(t('personalInfo:success'), t('personalInfo:changesSaved'), [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } catch (error: any) {
             console.error('Update error:', error);
-            Alert.alert('Error', error.message || 'Failed to update profile');
+            Alert.alert(t('personalInfo:error'), error.message || t('personalInfo:failedToSaveChanges'));
         } finally {
             setIsLoading(false);
         }
@@ -219,7 +221,7 @@ export default function PersonalInfoEdit() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>Loading...</Text>
+                    <Text style={{ color: theme.text }}>{t('personalInfo:loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -233,7 +235,7 @@ export default function PersonalInfoEdit() {
                     <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>Personal Information</Text>
+                    <Text style={dynamicStyles.headerTitle}>{t('personalInfo:personalInformation')}</Text>
                 </View>
 
                 {/* Profile Photo Section */}
@@ -257,38 +259,38 @@ export default function PersonalInfoEdit() {
 
                 {/* Basic Information */}
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
+                    <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:personalInformation')}</Text>
                     
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Full Name</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder="Enter your full name"
+                            placeholder={t('personalInfo:namePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Phone Number</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            placeholder="Enter your phone number"
+                            placeholder={t('personalInfo:phoneNumberPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Email</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder="Enter your email"
+                            placeholder={t('personalInfo:emailPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -298,38 +300,38 @@ export default function PersonalInfoEdit() {
 
                 {/* Emergency Contact */}
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
+                    <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:emergencyContact')}</Text>
                     
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Contact Name</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder="Enter emergency contact name"
+                            placeholder={t('personalInfo:emergencyContactNamePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Contact Phone</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactPhone}
                             onChangeText={setEmergencyContactPhone}
-                            placeholder="Enter emergency contact phone"
+                            placeholder={t('personalInfo:emergencyContactPhonePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Relationship</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder="e.g., Mother, Father, Spouse"
+                            placeholder={t('personalInfo:emergencyContactRelationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -342,7 +344,7 @@ export default function PersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? 'Saving...' : 'Save Changes'}
+                        {isLoading ? t('personalInfo:saving') : t('personalInfo:saveChanges')}
                     </Text>
                 </Pressable>
             </ScrollView>

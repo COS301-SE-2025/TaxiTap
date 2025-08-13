@@ -7,6 +7,7 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function PassengerProfile() {
@@ -16,6 +17,7 @@ export default function PassengerProfile() {
     const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
     const { updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
 
     // Initialize name from user context
@@ -69,12 +71,12 @@ export default function PassengerProfile() {
             // First time switching - user is currently passenger only
             if ((convexUser?.accountType || user.accountType) === 'passenger') {
                 Alert.alert(
-                    'First Time Switching',
-                    'This is your first time switching to driver mode. Your account will be upgraded to support both passenger and driver roles.',
+                    t('profile:firstTimeSwitching'),
+                    t('profile:firstTimeSwitchingMessage'),
                     [
                         { text: 'Cancel', style: 'cancel' },
                         {
-                            text: 'Continue',
+                            text: t('profile:continue'),
                             onPress: async () => {
                                 try {
                                     // Upgrade passenger to both first
@@ -92,7 +94,7 @@ export default function PassengerProfile() {
                                     await updateAccountType('both');
                                     await updateUserRole('driver');
                                     
-                                    Alert.alert('Success', 'Successfully switched to driver mode!', [
+                                    Alert.alert(t('profile:success'), t('profile:successfullySwitched'), [
                                         {
                                             text: 'OK',
                                             onPress: () => {
@@ -100,13 +102,13 @@ export default function PassengerProfile() {
                                                     router.push('../DriverOffline');
                                                 } catch (navError) {
                                                     console.error('Navigation error:', navError);
-                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                    Alert.alert(t('profile:navigationError'), t('profile:failedToNavigate'));
                                                 }
                                             }
                                         }
                                     ]);
                                 } catch (error: any) {
-                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert(t('profile:error'), error.message || t('profile:failedToSwitch'));
                                 }
                             },
                         },
@@ -116,8 +118,8 @@ export default function PassengerProfile() {
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 Alert.alert(
-                    'Switch Profile',
-                    'Are you sure you want to switch to the driver profile?',
+                    t('profile:switchProfile'),
+                    t('profile:switchProfileMessage'),
                     [
                         { text: 'Cancel', style: 'cancel' },
                         {
@@ -133,7 +135,7 @@ export default function PassengerProfile() {
                                     // Update context
                                     await updateUserRole('driver');
                                     
-                                    Alert.alert('Success', 'Switched to driver mode!', [
+                                    Alert.alert(t('profile:success'), t('profile:switchedToDriver'), [
                                         {
                                             text: 'OK',
                                             onPress: () => {
@@ -141,23 +143,23 @@ export default function PassengerProfile() {
                                                     router.push('../DriverOffline');
                                                 } catch (navError) {
                                                     console.error('Navigation error:', navError);
-                                                    Alert.alert('Navigation Error', 'Failed to navigate to driver screen');
+                                                    Alert.alert(t('profile:navigationError'), t('profile:failedToNavigate'));
                                                 }
                                             }
                                         }
                                     ]);
                                 } catch (error: any) {
-                                    Alert.alert('Error', error.message || 'Failed to switch to driver mode');
+                                    Alert.alert(t('profile:error'), error.message || t('profile:failedToSwitch'));
                                 }
                             },
                         },
                     ]
                 );
             } else {
-                Alert.alert('Error', 'Invalid account type for switching to driver mode');
+                Alert.alert(t('profile:error'), t('profile:invalidAccountType'));
             }
         } catch (error: any) {
-            Alert.alert('Error', 'An unexpected error occurred');
+            Alert.alert(t('profile:error'), t('profile:unexpectedError'));
         }
     };
 
@@ -282,7 +284,7 @@ export default function PassengerProfile() {
         return (
           <SafeAreaView style={dynamicStyles.safeArea}>
             <View style={dynamicStyles.container}>
-                <Text>Loading user data...</Text>
+                <Text>{t('profile:loadingUserData')}</Text>
             </View>
           </SafeAreaView>
         );
@@ -304,21 +306,21 @@ export default function PassengerProfile() {
                         <Ionicons name="person-circle" size={80} color={theme.text} />
                     )}
                 </Pressable>
-                <Text style={dynamicStyles.userName}>{name || 'Your Name'}</Text>
-                <Text style={dynamicStyles.userRole}>Passenger</Text>
+                <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
+                <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
             </View>
 
             {/* Section 1: Personal Info & Driver Switch */}
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
-                    title="Personal Info"
+                    title={t('profile:personalInfo')}
                     onPress={handlePersonalInfo}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
                         <Ionicons name="car-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Switch to Driver Profile</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:switchToDriverProfile')}</Text>
                     </View>
                     <Pressable onPress={handleSwitchToDriver}>
                         <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -330,13 +332,13 @@ export default function PassengerProfile() {
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
-                    title="Add Home Address"
+                    title={t('profile:addHomeAddress')}
                     onPress={handleAddHomeAddress}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
                         <Ionicons name="briefcase-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Add Work Address</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:addWorkAddress')}</Text>
                     </View>
                     <Pressable onPress={handleAddWorkAddress}>
                         <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -348,7 +350,7 @@ export default function PassengerProfile() {
             <View style={dynamicStyles.logoutSection}>
                 <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                     <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-                    <Text style={dynamicStyles.logoutText}>Log Out</Text>
+                    <Text style={dynamicStyles.logoutText}>{t('profile:logOut')}</Text>
                 </Pressable>
             </View>
         </ScrollView>

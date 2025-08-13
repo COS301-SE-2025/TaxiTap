@@ -147,7 +147,7 @@ export default function HomeScreen() {
       setCurrentLocation({
         latitude: detectedLocation .latitude,
         longitude: detectedLocation .longitude,
-        name: 'Current Location'
+        name: t('common:currentLocation')
       });
       setIsLoadingCurrentLocation(false);
     }
@@ -159,7 +159,7 @@ export default function HomeScreen() {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: 'Current Location'
+        name: t('common:currentLocation')
       });
     }
   }, [detectedLocation, origin]);
@@ -240,7 +240,7 @@ export default function HomeScreen() {
 
       return {
         ...recent,
-        routeName: 'Unknown Route',
+        routeName: t('home:unknownRoute'),
         destinationLat: null,
         destinationLng: null,
       };

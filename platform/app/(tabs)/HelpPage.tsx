@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, Linking } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function HelpScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useLanguage();
 
   const handleContactSupport = () => {
-    Alert.alert("Support", "You can contact support at: gititdone.2025@gmail.com");
+    Alert.alert(t('help:support'), t('help:supportEmail'));
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -64,47 +66,47 @@ export default function HelpScreen() {
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
       <ScrollView contentContainerStyle={dynamicStyles.container}>
-          <Text style={dynamicStyles.sectionTitle}>User Manual</Text>
+          <Text style={dynamicStyles.sectionTitle}>{t('help:userManual')}</Text>
 
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.question}>How to navigate the app?</Text>
+          <Text style={dynamicStyles.question}>{t('help:howToNavigateApp')}</Text>
           <TouchableOpacity onPress={() => Linking.openURL('https://raw.githubusercontent.com/COS301-SE-2025/Taxi-Tap/main/docs/Taxi%20Tap%20User%20Manual.pdf')}>
             <Text style={dynamicStyles.answer}>
-              Link to manual
+              {t('help:linkToManual')}
             </Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={dynamicStyles.sectionTitle}>Frequently Asked Questions</Text>
+        <Text style={dynamicStyles.sectionTitle}>{t('help:frequentlyAskedQuestions')}</Text>
 
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.question}>How do I book a ride?</Text>
+          <Text style={dynamicStyles.question}>{t('help:howToBookRide')}</Text>
           <Text style={dynamicStyles.answer}>
-            Go to the home screen, select your destination and reserve a seat, select your taxi.
+            {t('help:bookRideAnswer')}
           </Text>
         </View>
 
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.question}>How do I switch between passenger and driver roles?</Text>
+          <Text style={dynamicStyles.question}>{t('help:howToSwitchRoles')}</Text>
           <Text style={dynamicStyles.answer}>
-            You can change your active role from your profile settings if your account supports both roles.
+            {t('help:switchRolesAnswer')}
           </Text>
         </View>
 
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.question}>I forgot my password. What do I do?</Text>
+          <Text style={dynamicStyles.question}>{t('help:forgotPassword')}</Text>
           <Text style={dynamicStyles.answer}>
-            On the login screen, select "Forgot Password" to reset your password via SMS verification.
+            {t('help:forgotPasswordAnswer')}
           </Text>
         </View>
 
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.question}>How do I contact support?</Text>
+          <Text style={dynamicStyles.question}>{t('help:howToContactSupport')}</Text>
           <Text style={dynamicStyles.answer}>
-            If you have any issues, feel free to contact us directly.
+            {t('help:contactSupportAnswer')}
           </Text>
           <TouchableOpacity style={dynamicStyles.supportButton} onPress={handleContactSupport}>
-            <Text style={dynamicStyles.supportButtonText}>Contact Support</Text>
+            <Text style={dynamicStyles.supportButtonText}>{t('help:contactSupport')}</Text>
           </TouchableOpacity>
         </View>
 
