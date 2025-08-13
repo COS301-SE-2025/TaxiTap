@@ -48,8 +48,10 @@ import type * as functions_rides_declineRide from "../functions/rides/declineRid
 import type * as functions_rides_declineRideHandler from "../functions/rides/declineRideHandler.js";
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
+import type * as functions_rides_getActiveTrips from "../functions/rides/getActiveTrips.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
+import type * as functions_rides_tripPaid from "../functions/rides/tripPaid.js";
 import type * as functions_routes_calculateRoute from "../functions/routes/calculateRoute.js";
 import type * as functions_routes_displayRoutes from "../functions/routes/displayRoutes.js";
 import type * as functions_routes_enhancedTaxiMatching from "../functions/routes/enhancedTaxiMatching.js";
@@ -128,8 +130,10 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/declineRideHandler": typeof functions_rides_declineRideHandler;
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
+  "functions/rides/getActiveTrips": typeof functions_rides_getActiveTrips;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/startRide": typeof functions_rides_startRide;
+  "functions/rides/tripPaid": typeof functions_rides_tripPaid;
   "functions/routes/calculateRoute": typeof functions_routes_calculateRoute;
   "functions/routes/displayRoutes": typeof functions_routes_displayRoutes;
   "functions/routes/enhancedTaxiMatching": typeof functions_routes_enhancedTaxiMatching;

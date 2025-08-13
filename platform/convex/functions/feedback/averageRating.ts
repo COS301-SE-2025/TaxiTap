@@ -1,4 +1,3 @@
-// averageRating.ts
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
 
@@ -16,7 +15,6 @@ export const getAverageRatingHandler = async (ctx: any, args: any) => {
   return parseFloat(avg.toFixed(1));
 };
 
-// Export query only if Convex is running
 let getAverageRating;
 if (typeof query === "function" && v?.id) {
   getAverageRating = query({

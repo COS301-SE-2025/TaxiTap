@@ -43,7 +43,7 @@ export default function SeatReserved() {
 	const mapRef = useRef<MapView | null>(null);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; plate?: string, fare?: string } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -434,6 +434,15 @@ export default function SeatReserved() {
 				driverId: driverId as Id<'taxiTap_users'>,
 				reservation: true,
 			});
+			router.push({
+				pathname: './Payments',
+				params: {
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+        			licensePlate: taxiInfo?.plate || 'Unknown Plate',
+					fare: taxiInfo?.fare,
+					rideId: taxiInfo?.rideId,
+				},
+			});
 		} catch (error: any) {
 			Alert.alert('Error', error?.message || 'Failed to start ride.');
 		}
@@ -590,23 +599,6 @@ export default function SeatReserved() {
 			fontSize: 12,
 			fontWeight: "bold",
 			marginRight: 3,
-		},
-		licensePlateSection: {
-			flexDirection: "row",
-			marginBottom: 26,
-			width: '100%',
-			paddingHorizontal: 35,
-			justifyContent: 'space-between',
-		},
-		licensePlateLabel: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
-		},
-		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
 		},
 		locationBox: {
 			flexDirection: "row",
