@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
@@ -8,6 +8,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default () => {
     const params = useLocalSearchParams();
@@ -15,6 +16,7 @@ export default () => {
     const { theme, isDark } = useTheme();
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
+    const { showError, showSuccess } = useAlertHelpers();
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -32,32 +34,27 @@ export default () => {
         });
     });
 
-    const handleAction = async (action: 'accept' | 'decline' | 'complete') => {
-        if (!user || !ride) {
-            Alert.alert('Error', 'User or ride data is not available.');
+    const handleRideAction = async (action: 'accept' | 'decline' | 'complete') => {
+        if (!user?.id || !rideId) {
+            showError('Error', 'User or ride data is not available.');
             return;
         }
 
         try {
-            let result;
-            switch (action) {
-                case 'accept':
-                    result = await acceptRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
-                    Alert.alert('Success', 'Ride accepted! The passenger has been notified.');
-                    break;
-                case 'decline':
-                    result = await declineRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
-                    Alert.alert('Success', 'Ride declined.');
-                    break;
-                case 'complete':
-                    result = await completeRide({ rideId: ride.rideId, driverId: user.id as Id<"taxiTap_users"> });
-                    Alert.alert('Success', 'Ride marked as completed!');
-                    break;
+            if (action === 'accept') {
+                await acceptRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
+                showSuccess('Success', 'Ride accepted! The passenger has been notified.');
+            } else if (action === 'decline') {
+                await declineRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
+                showSuccess('Success', 'Ride declined.');
+            } else if (action === 'complete') {
+                await completeRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
+                showSuccess('Success', 'Ride marked as completed!');
             }
+            
             router.back();
         } catch (err: any) {
-            console.error(`Failed to ${action} ride:`, err);
-            Alert.alert('Error', err.message || `Failed to ${action} ride. Please try again.`);
+            showError('Error', err.message || `Failed to ${action} ride. Please try again.`);
         }
     };
     
@@ -255,17 +252,17 @@ export default () => {
             case 'requested':
                 return (
                     <>
-                        <TouchableOpacity style={dynamicStyles.acceptButton} onPress={() => handleAction('accept')}>
+                        <TouchableOpacity style={dynamicStyles.acceptButton} onPress={() => handleRideAction('accept')}>
                             <Text style={dynamicStyles.acceptButtonText}>Accept</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={dynamicStyles.declineButton} onPress={() => handleAction('decline')}>
+                        <TouchableOpacity style={dynamicStyles.declineButton} onPress={() => handleRideAction('decline')}>
                             <Text style={dynamicStyles.declineButtonText}>Decline</Text>
                         </TouchableOpacity>
                     </>
                 );
             case 'accepted':
                 return (
-                    <TouchableOpacity style={dynamicStyles.completeButton} onPress={() => handleAction('complete')}>
+                    <TouchableOpacity style={dynamicStyles.completeButton} onPress={() => handleRideAction('complete')}>
                         <Text style={dynamicStyles.completeButtonText}>Complete Ride</Text>
                     </TouchableOpacity>
                 );
