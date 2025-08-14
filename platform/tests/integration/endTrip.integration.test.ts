@@ -31,20 +31,26 @@ describe("endTripHandler", () => {
       estimatedFare: 50,
     });
 
-    const result = await endTripHandler(ctx, { passengerId });
+    try {
+      const result = await endTripHandler(ctx, { passengerId });
 
-    expect(result.fare).toBe(50);
-    expect(result.endTime).toBeGreaterThan(0);
+      expect(result).toBeDefined();
+      expect(result.fare).toBe(50);
+      expect(result.endTime).toBeGreaterThan(0);
 
-    const updatedTrip = await ctx.db.get(tripId);
-    expect(updatedTrip?.fare).toBe(50);
-    expect(updatedTrip?.endTime).toBe(result.endTime);
+      const updatedTrip = await ctx.db.get(tripId);
+      expect(updatedTrip?.fare).toBe(50);
+      expect(updatedTrip?.endTime).toBe(result.endTime);
+    } catch (error) {
+      console.error('Handler error:', error);
+      throw error;
+    }
   });
 
   it("throws error if no ongoing trip is found", async () => {
-    await expect(endTripHandler(ctx, { passengerId })).rejects.toThrow(
-      "No ongoing trip found."
-    );
+    const promise = endTripHandler(ctx, { passengerId });
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("No ongoing trip found.");
   });
 
   it("throws error if ride has no estimated fare", async () => {
@@ -64,9 +70,9 @@ describe("endTripHandler", () => {
       estimatedFare: null,
     });
 
-    await expect(endTripHandler(ctx, { passengerId })).rejects.toThrow(
-      "Estimated fare not found for this trip."
-    );
+    const promise = endTripHandler(ctx, { passengerId });
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Estimated fare not found for this trip.");
   });
 });
 
