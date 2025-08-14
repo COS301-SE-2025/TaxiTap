@@ -1,12 +1,75 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import PassengerRoute from '../../../app/(tabs)/PassengerRoute';
 import { TestWrapper } from '../../utils/TestWrapper';
 
 // Mock dependencies
 const mockPush = jest.fn();
 const mockSetOptions = jest.fn();
+
+// Create mock functions for alert helpers
+const mockShowGlobalError = jest.fn();
+const mockShowGlobalSuccess = jest.fn();
+
+// Mock the component before importing it
+jest.doMock('../../../app/(tabs)/PassengerRoute', () => {
+  const React = require('react');
+  const originalModule = jest.requireActual('../../../app/(tabs)/PassengerRoute');
+  
+  // Inject the showGlobalError into the module's scope
+  if (originalModule.default) {
+    const OriginalComponent = originalModule.default;
+    
+    // Wrap the component to inject showGlobalError
+    const WrappedComponent = (props: any) => {
+      // Make showGlobalError available in the component's scope
+      (global as any).showGlobalError = mockShowGlobalError;
+      (global as any).showGlobalSuccess = mockShowGlobalSuccess;
+      
+      return React.createElement(OriginalComponent, props);
+    };
+    
+    return {
+      ...originalModule,
+      default: WrappedComponent,
+    };
+  }
+  
+  return originalModule;
+});
+
+// Alternative approach: Mock at the module level
+jest.mock('../../../components/AlertHelpers', () => {
+  const actualMockShowGlobalError = jest.fn();
+  const actualMockShowGlobalSuccess = jest.fn();
+  
+  // Store references globally so we can access them in tests
+  (global as any).mockShowGlobalError = actualMockShowGlobalError;
+  (global as any).mockShowGlobalSuccess = actualMockShowGlobalSuccess;
+  
+  return {
+    useAlertHelpers: () => ({
+      showGlobalError: actualMockShowGlobalError,
+      showGlobalSuccess: actualMockShowGlobalSuccess,
+      showGlobalWarning: jest.fn(),
+      showGlobalInfo: jest.fn(),
+    }),
+    showGlobalError: actualMockShowGlobalError,
+    showGlobalSuccess: actualMockShowGlobalSuccess,
+  };
+});
+
+// Mock the AlertContext
+jest.mock('../../../contexts/AlertContext', () => ({
+  AlertProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAlerts: () => ({
+    showAlert: jest.fn(),
+    showError: jest.fn(),
+    showSuccess: jest.fn(),
+    clearAlerts: jest.fn(),
+    alerts: [],
+  }),
+}));
 
 jest.mock('expo-router', () => ({
   router: {
@@ -20,15 +83,16 @@ jest.mock('expo-router', () => ({
 
 jest.mock('convex/react', () => ({
   useQuery: jest.fn(),
-  useMutation: jest.fn(() => jest.fn()),  // mock useMutation as a jest.fn that returns a jest.fn
+  useMutation: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
 
 // Mock Alert
-// Mock Alert
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
+// Import PassengerRoute after all mocks are set up
+const PassengerRoute = require('../../../app/(tabs)/PassengerRoute').default;
 const { useQuery } = require('convex/react');
 
 // Mock route data
@@ -61,16 +125,30 @@ const mockRoutes = [
   }
 ];
 
-const mockEnrichedStops = [
-  { id: 'stop-1', name: 'Centurion', order: 1 },
-  { id: 'stop-2', name: 'Midrand', order: 2 }
-];
-
 describe('PassengerRoute', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPush.mockClear();
+    
+    // Clear the global mocks
+    if ((global as any).mockShowGlobalError) {
+      (global as any).mockShowGlobalError.mockClear();
+    }
+    if ((global as any).mockShowGlobalSuccess) {
+      (global as any).mockShowGlobalSuccess.mockClear();
+    }
+    
+    // Make showGlobalError available globally for the component
+    (global as any).showGlobalError = mockShowGlobalError;
+    (global as any).showGlobalSuccess = mockShowGlobalSuccess;
+    
     useQuery.mockReturnValue(mockRoutes);
+  });
+
+  afterEach(() => {
+    // Clean up global mocks
+    delete (global as any).showGlobalError;
+    delete (global as any).showGlobalSuccess;
   });
 
   describe('Component Rendering', () => {
@@ -152,6 +230,7 @@ describe('PassengerRoute', () => {
       expect(getByText('No routes found matching your criteria')).toBeTruthy();
     });
   });
+
   describe('Route Selection - Negative Cases', () => {
     it('should show error when route has no destination coordinates', () => {
       const routeWithoutCoords = [{
@@ -170,7 +249,16 @@ describe('PassengerRoute', () => {
       
       fireEvent.press(reserveButtons[0]);
       
-      expect(Alert.alert).toHaveBeenCalledWith("Error", "Route coordinates not available");
+      // Check that the global showGlobalError was called
+      expect(mockShowGlobalError).toHaveBeenCalledWith(
+        "Error", 
+        "Route coordinates not available", 
+        expect.objectContaining({
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        })
+      );
       expect(mockPush).not.toHaveBeenCalled();
     });
   });

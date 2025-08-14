@@ -2,6 +2,28 @@ import React from 'react';
 import { render, cleanup } from '@testing-library/react-native';
 import { TestWrapper } from '../../utils/TestWrapper';
 
+// Mock the AlertContext provider
+jest.mock('../../../contexts/AlertContext', () => ({
+  AlertProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAlerts: () => ({
+    showAlert: jest.fn(),
+    showError: jest.fn(),
+    showSuccess: jest.fn(),
+    clearAlerts: jest.fn(),
+    alerts: [],
+  }),
+}));
+
+// Mock the AlertHelpers
+jest.mock('../../../components/AlertHelpers', () => ({
+  useAlertHelpers: () => ({
+    showGlobalError: jest.fn(),
+    showGlobalSuccess: jest.fn(),
+    showGlobalWarning: jest.fn(),
+    showGlobalInfo: jest.fn(),
+  }),
+}));
+
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
   return {
