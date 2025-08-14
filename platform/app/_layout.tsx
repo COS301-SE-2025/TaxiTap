@@ -64,12 +64,12 @@ export default function RootLayout() {
           <UserProvider>
             <MapProvider>
               <RouteProvider>
-                <NotificationProvider>
-                  <AlertProvider>
+                <AlertProvider>
+                  <NotificationProvider>
                     <RootLayoutNav />
                     <AlertOverlay />
-                  </AlertProvider>
-                </NotificationProvider>
+                  </NotificationProvider>
+                </AlertProvider>
               </RouteProvider>
             </MapProvider>
           </UserProvider>
@@ -111,133 +111,131 @@ function RootLayoutNav() {
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <NotificationProvider>
-          <Stack
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: theme.headerBackground,
-              },
-              headerTitleStyle: {
-                fontFamily: 'AmazonEmber-Medium',
-                fontSize: 18,
-                color: theme.text,
-              },
-              headerTitleAlign: 'center',
-              headerTintColor: theme.text,
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: theme.headerBackground,
+            },
+            headerTitleStyle: {
+              fontFamily: 'AmazonEmber-Medium',
+              fontSize: 18,
+              color: theme.text,
+            },
+            headerTitleAlign: 'center',
+            headerTintColor: theme.text,
+          }}
+        >
+          <Stack.Screen
+            name="LandingPage"
+            options={{
+              headerShown: false
             }}
-          >
-            <Stack.Screen
-              name="LandingPage"
-              options={{
-                headerShown: false
-              }}
-            />
+          />
+        
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+            }}
+          />
           
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverProfile"
-              options={{
-                headerShown: true,
-                title: "Driver Profile"
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverRequestPage"
-              options={{
-                headerShown: true,
-                title: "My Taxi & Route"
-              }}
-            />
-            
-            <Stack.Screen
-              name="EarningsPage"
-              options={{
-                headerShown: true,
-                title: "Earnings"
-              }}
-            />
-            
-            <Stack.Screen
-              name="SetRoute"
-              options={{
-                headerShown: true,
-                title: "Set Route"
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverOffline"
-              options={{
-                headerShown: false
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverOnline"
-              options={{
-                headerShown: false
-              }}
-            />
-            
-            <Stack.Screen
-              name="Login"
-              options={{
-                headerShown: false
-              }}
-            />
-            
-            <Stack.Screen
-              name="SignUp"
-              options={{
-                headerShown: false
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverHomeScreen"
-              options={{
-                headerShown: false
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverPassengerInfo"
-              options={{
-                headerShown: true,
-                title: "Passenger Info"
-              }}
-            />
-            
-            <Stack.Screen
-              name="VehicleDriver"
-              options={{
-                headerShown: true,
-                title: "Vehicle Details"
-              }}
-            />
-            <Stack.Screen
-            name="NotificationsScreen"
+          <Stack.Screen
+            name="DriverProfile"
             options={{
               headerShown: true,
-              title: "Notifications" 
-              }}
-            />
-            
-            <Stack.Screen
-              name="DriverPinEntry"
-              options={{
-                headerShown: false
-              }}
-            />
-          </Stack>
-        </NotificationProvider>
+              title: "Driver Profile"
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverRequestPage"
+            options={{
+              headerShown: true,
+              title: "My Taxi & Route"
+            }}
+          />
+          
+          <Stack.Screen
+            name="EarningsPage"
+            options={{
+              headerShown: true,
+              title: "Earnings"
+            }}
+          />
+          
+          <Stack.Screen
+            name="SetRoute"
+            options={{
+              headerShown: true,
+              title: "Set Route"
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverOffline"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverOnline"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
+            name="Login"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
+            name="SignUp"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverHomeScreen"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverPassengerInfo"
+            options={{
+              headerShown: true,
+              title: "Passenger Info"
+            }}
+          />
+          
+          <Stack.Screen
+            name="VehicleDriver"
+            options={{
+              headerShown: true,
+              title: "Vehicle Details"
+            }}
+          />
+          <Stack.Screen
+          name="NotificationsScreen"
+          options={{
+            headerShown: true,
+            title: "Notifications" 
+            }}
+          />
+          
+          <Stack.Screen
+            name="DriverPinEntry"
+            options={{
+              headerShown: false
+            }}
+          />
+        </Stack>
       </View>
     </NavigationThemeProvider>
   );

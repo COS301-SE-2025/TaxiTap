@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -14,11 +14,19 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import * as Location from 'expo-location';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
   ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+
+// Debug API key configuration
+console.log('Google Maps API Key configured:', {
+  platform: Platform.OS,
+  hasApiKey: !!GOOGLE_MAPS_API_KEY,
+  keyLength: GOOGLE_MAPS_API_KEY?.length || 0
+});
 
 export default function SeatReserved() {
 	const [useLiveLocation, setUseLiveLocation] = useState(false);
@@ -42,14 +50,14 @@ export default function SeatReserved() {
 		setCachedRoute
 	} = useMapContext();
 	const { notifications, markAsRead } = useNotifications();
-	const { showGlobalAlert, showGlobalError } = useAlertHelpers();
+	const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
 	const mapRef = useRef<MapView | null>(null);
 
 	const processedNotificationsRef = useRef(new Set<string>()); // ref for processing used notification
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -61,6 +69,7 @@ export default function SeatReserved() {
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
+	const startRide = useMutation(api.functions.rides.startRide.startRide);
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
@@ -68,7 +77,8 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
-	const [currentPin, setCurrentPin] = useState<string | null>(null);
+	const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+	// Removed pin state - no longer needed
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
@@ -87,14 +97,34 @@ export default function SeatReserved() {
 		});
 	}, [navigation]);
 
-	// Simple PIN generation for demo purposes
+	// Check location permissions
 	useEffect(() => {
-		if (rideStatus === 'accepted' && !currentPin) {
-			// Get PIN from ride data or use demo PIN
-			const ridePin = taxiInfo?.ridePin || "1234";
-			setCurrentPin(ridePin);
-		}
-	}, [rideStatus, currentPin, taxiInfo?.ridePin]);
+		const checkLocationPermission = async () => {
+			try {
+				const { status } = await Location.getForegroundPermissionsAsync();
+				setLocationPermission(status === 'granted');
+				
+				if (status !== 'granted') {
+					console.warn('Location permission not granted:', status);
+					Alert.alert(
+						'Location Permission Required',
+						'This app needs location access to show your ride on the map.',
+						[
+							{ text: 'Cancel', style: 'cancel' },
+							{ text: 'Settings', onPress: () => Location.requestForegroundPermissionsAsync() }
+						]
+					);
+				}
+			} catch (error) {
+				console.error('Error checking location permission:', error);
+				setLocationPermission(false);
+			}
+		};
+
+		checkLocationPermission();
+	}, []);
+
+	// Removed PIN generation - no longer needed
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -115,7 +145,7 @@ export default function SeatReserved() {
 			const rawDestLat = getParamAsString(params.destinationLat);
 			const rawDestLng = getParamAsString(params.destinationLng);
 
-			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+			console.log('Location params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
 			const currentLat = parseFloat(rawCurrentLat);
 			const currentLng = parseFloat(rawCurrentLng);
@@ -129,6 +159,8 @@ export default function SeatReserved() {
 				console.warn('Skipping update due to invalid coordinates.');
 				return;
 			}
+
+			console.log('Setting locations:', { currentLat, currentLng, destLat, destLng });
 
 			setCurrentLocation({
 				latitude: currentLat,
@@ -312,6 +344,16 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, destination, routeLoaded, isLoadingRoute]);
 
+	// Debug map rendering
+	useEffect(() => {
+		console.log('Map state changed:', { 
+			currentLocation, 
+			destination, 
+			routeCoordinates: routeCoordinates.length,
+			hasApiKey: !!GOOGLE_MAPS_API_KEY 
+		});
+	}, [currentLocation, destination, routeCoordinates.length]);
+
 	// Initial fit to route when route or destination changes
 	useEffect(() => {
 		if (
@@ -464,18 +506,27 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			// Start the trip
 			await startTripConvex({
 				passengerId: passengerId as Id<'taxiTap_users'>,
 				driverId: driverId as Id<'taxiTap_users'>,
 				reservation: true,
 			});
+			
+			// Start the ride directly (no PIN needed)
+			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			
+			// Redirect to payment screen after starting ride
 			router.push({
 				pathname: './Payments',
 				params: {
 					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
-        			licensePlate: taxiInfo?.taxi?.plate || 'Unknown Plate',
-					fare: taxiInfo?.taxi?.fare || '0',
+					licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+					fare: taxiInfo?.fare?.toString() || '0',
 					rideId: taxiInfo?.rideId,
+					startName: currentLocation?.name || 'Current Location',
+					endName: destination?.name || 'Destination',
+					driverId: driverId || '',
 				},
 			});
 		} catch (error: any) {
@@ -500,41 +551,34 @@ export default function SeatReserved() {
 			setRideJustEnded(true);
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+			});
+			
 			showGlobalAlert({
-				title: 'Success',
-				message: 'Ride ended!',
+				title: 'Ride Ended Successfully',
+				message: `Ride ended! Fare: R${result.fare}`,
 				type: 'success',
 				duration: 3000,
 				position: 'top',
 				animation: 'slide-down',
 			});
 			
-			const result = await endTripConvex({
-				passengerId: user.id as Id<'taxiTap_users'>,
-			});
-			showGlobalAlert({
-				title: 'Ride Ended',
-				message: `Fare: R${result.fare}`,
-				type: 'info',
-				duration: 5000,
-				position: 'top',
-				animation: 'slide-down',
-			});
-			
-			if (!currentLocation || !destination) {
-				return;
-			}
-			router.push({
-				pathname: './SubmitFeedback',
-				params: {
-					startName: currentLocation.name,
-					endName: destination.name,
-					passengerId: passengerId,
-    				rideId: rideId,
-					driverId: driverId,
-				},
-			});
-			setRideJustEnded(true);
+			// Add a small delay before navigation to ensure the alert is shown
+			setTimeout(() => {
+				// Redirect to feedback screen after ride ends
+				router.push({
+					pathname: '/SubmitFeedback',
+					params: {
+						rideId: taxiInfo.rideDocId,
+						startName: currentLocation?.name || 'Current Location',
+						endName: destination?.name || 'Destination',
+						passengerId: user.id,
+						driverId: driverId || '',
+					},
+				});
+			}, 1000);
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to end ride.', {
 				duration: 4000,
@@ -763,57 +807,7 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
-		pinContainer: {
-			alignItems: "center",
-			marginBottom: 15,
-			padding: 12,
-			backgroundColor: "transparent",
-			borderRadius: 8,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-			borderStyle: "dashed",
-			width: '90%',
-			alignSelf: 'center',
-		},
-		pinLabel: {
-			fontSize: 12,
-			fontWeight: "500",
-			color: "#666666",
-			marginBottom: 8,
-			textAlign: "center",
-			textTransform: "uppercase",
-			letterSpacing: 0.5,
-		},
-		pinDisplay: {
-			flexDirection: "row",
-			justifyContent: "center",
-			marginBottom: 6,
-			alignItems: "center",
-		},
-		pinDigit: {
-			width: 28,
-			height: 32,
-			backgroundColor: "#121212",
-			borderRadius: 4,
-			justifyContent: "center",
-			alignItems: "center",
-			marginHorizontal: 2,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-		},
-		pinDigitText: {
-			fontSize: 16,
-			fontWeight: "bold",
-			color: "#FF9900",
-			fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-		},
-		pinInstruction: {
-			fontSize: 10,
-			color: "#888888",
-			textAlign: "center",
-			fontStyle: "normal",
-			fontWeight: "400",
-		},
+		// Removed PIN-related styles - no longer needed
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -839,15 +833,59 @@ export default function SeatReserved() {
 			fontSize: 20,
 			fontWeight: "bold",
 		},
+		endRideButton: {
+			alignItems: "center",
+			backgroundColor: isDark ? "#28a745" : "#28a745",
+			borderRadius: 30,
+			paddingVertical: 24,
+			width: 330,
+			marginBottom: 15,
+		},
+		endRideButtonText: {
+			color: "#FFFFFF",
+			fontSize: 20,
+			fontWeight: "bold",
+		},
 	});
 
-	// Early return for loading state - but ensure all hooks are called first
+	// Show loading state but still render the map container
 	if (!currentLocation || !destination) {
+		console.log('Map not rendering - missing locations:', { currentLocation, destination });
+		console.log('Params received:', params);
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
-				<View style={dynamicStyles.loadingContainer}>
-					<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
-				</View>
+				<ScrollView style={dynamicStyles.scrollView}>
+					<View>
+						{/* Map Section - Show placeholder when no coordinates */}
+						<View style={{ height: 300, position: 'relative' }}>
+							<MapView
+								ref={mapRef}
+								style={{ flex: 1 }}
+								provider={PROVIDER_GOOGLE}
+								initialRegion={{
+									latitude: -25.7479, // Default to Pretoria
+									longitude: 28.2293,
+									latitudeDelta: 0.1,
+									longitudeDelta: 0.1,
+								}}
+								customMapStyle={isDark ? darkMapStyle : []}
+							>
+								<Text style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.8)', padding: 10, borderRadius: 5 }}>
+									{t('passengerReservation:loading')}
+								</Text>
+							</MapView>
+						</View>
+						
+						<View style={dynamicStyles.bottomSection}>
+							<View style={dynamicStyles.loadingContainer}>
+								<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
+								<Text style={dynamicStyles.loadingText}>
+									Current: {currentLocation ? '✓' : '✗'}, Destination: {destination ? '✓' : '✗'}
+								</Text>
+							</View>
+						</View>
+					</View>
+				</ScrollView>
 			</SafeAreaView>
 		);
 	}
@@ -857,10 +895,10 @@ export default function SeatReserved() {
 			<ScrollView style={dynamicStyles.scrollView}>
 				<View>
 					{/* Map Section with Route */}
-					<View style={{ height: 300, position: 'relative' }}>
+					<View style={{ height: 300, position: 'relative', backgroundColor: '#f0f0f0' }}>
 						<MapView
 							ref={mapRef}
-							style={{ flex: 1 }}
+							style={{ width: '100%', height: '100%' }}
 							provider={PROVIDER_GOOGLE}
 							initialRegion={{
 								latitude: (currentLocation.latitude + destination.latitude) / 2,
@@ -871,6 +909,9 @@ export default function SeatReserved() {
 							customMapStyle={isDark ? darkMapStyle : []}
 							onPanDrag={() => setIsFollowing(false)}
 							onRegionChangeComplete={() => setIsFollowing(false)}
+							onMapReady={() => console.log('Map is ready')}
+							showsUserLocation={true}
+							showsMyLocationButton={false}
 						>
 							<Marker
 								coordinate={currentLocation}
@@ -1016,26 +1057,7 @@ export default function SeatReserved() {
 											{t('passengerReservation:startRide')}
 										</Text>
 									</TouchableOpacity>
-									{/* PIN Display */}
-									{currentPin && (
-	<View style={dynamicStyles.pinContainer}>
-		<Text style={dynamicStyles.pinLabel}>Safety PIN</Text>
-		<View style={dynamicStyles.pinDisplay}>
-			{currentPin.split('').map((digit, index) => (
-				<View key={index} style={dynamicStyles.pinDigit}>
-					<Text style={dynamicStyles.pinDigitText}>{digit}</Text>
-				</View>
-			))}
-		</View>
-		<Text style={dynamicStyles.pinInstruction}>
-			Show to driver
-		</Text>
-		<TouchableOpacity 
-		>
-			
-		</TouchableOpacity>
-	</View>
-)}
+									{/* PIN Display removed - no longer needed */}
 									<TouchableOpacity 
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
@@ -1048,9 +1070,9 @@ export default function SeatReserved() {
 							{/* Only show End Ride when ride is started or in progress */}
 							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
 								<TouchableOpacity 
-									style={dynamicStyles.cancelButton} 
+									style={dynamicStyles.endRideButton} 
 									onPress={handleEndRide}>
-									<Text style={dynamicStyles.cancelButtonText}>
+									<Text style={dynamicStyles.endRideButtonText}>
 										{t('passengerReservation:endRide')}
 									</Text>
 								</TouchableOpacity>

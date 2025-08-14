@@ -71,7 +71,7 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
-  const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
+
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
@@ -109,11 +109,31 @@ export default function DriverOnline({
           return;
         }
 
+        // Check if location services are enabled
+        const isLocationEnabled = await Location.hasServicesEnabledAsync();
+        if (!isLocationEnabled) {
+          console.warn('Location services are disabled');
+          return;
+        }
+
         const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Highest,
+          accuracy: Location.Accuracy.Balanced, // Use balanced accuracy to avoid spoofer detection
         });
 
         const { latitude, longitude } = location.coords;
+        
+        // Validate location coordinates
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          console.warn('Invalid location coordinates received');
+          return;
+        }
+        
+        // Check for suspicious coordinates (0,0 is common for mock locations)
+        if (latitude === 0 && longitude === 0) {
+          console.warn('Suspicious location coordinates (0,0) detected');
+          return;
+        }
+
         const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
         const placeName = `${place.name || ''} ${place.street || ''}, ${place.city || place.region || ''}`.trim();
 
@@ -134,8 +154,13 @@ export default function DriverOnline({
           },
           1000
         );
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting location:', error);
+        
+        // Handle specific location errors
+        if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
+          console.warn('Location spoofer detected, using fallback location');
+        }
       }
     };
 
@@ -312,15 +337,7 @@ export default function DriverOnline({
         handleToggleTheme();
       }
     },
-    { 
-      icon: "location-outline", 
-      title: "Location Spoofer", 
-      subtitle: "Set custom location for testing",
-      onPress: () => {
-        setShowMenu(false);
-        setShowLocationSpoofer(true);
-      }
-    },
+
     { 
       icon: "help-outline", 
       title: "Help", 
@@ -920,10 +937,7 @@ export default function DriverOnline({
                 </TouchableOpacity>
               )}
 
-              <LocationSpoofer 
-                isVisible={showLocationSpoofer}
-                onClose={() => setShowLocationSpoofer(false)}
-              />
+              {/* Location spoofer component removed - not needed */}
             </>
           )}
         </View>

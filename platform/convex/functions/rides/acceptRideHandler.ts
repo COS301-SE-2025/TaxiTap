@@ -18,16 +18,11 @@ export const acceptRideHandler = async (
     throw new Error("Ride is not available for acceptance");
   }
 
-  // Generate a 4-digit PIN for verification
-  const ridePin = Math.floor(1000 + Math.random() * 9000).toString();
-
   // Update the ride
   const updatedRideId = await ctx.db.patch(ride._id, {
     status: "accepted",
     driverId: args.driverId,
     acceptedAt: Date.now(),
-    ridePin: ridePin,
-    pinRegeneratedAt: Date.now(),
   });
 
   // Notify the passenger using the internal ride notification system

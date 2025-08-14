@@ -2,16 +2,12 @@ import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, Image, View } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
-import { UserProvider } from '../../contexts/UserContext';
 import { router } from 'expo-router';
 import dark from '../../assets/images/icon-dark.png';
 import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
-import { MapProvider } from '../../contexts/MapContext';
-import { FeedbackProvider } from '../../contexts/FeedbackContext';
 import { useTranslation } from 'react-i18next';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 
@@ -378,14 +374,6 @@ export default function TabLayout() {
   }, [notifications, markAsRead, showGlobalAlert]);
 
   return (
-    <SafeAreaProvider>
-      <UserProvider>
-        <MapProvider>
-          <FeedbackProvider>
-            <TabNavigation />
-          </FeedbackProvider>
-        </MapProvider>
-      </UserProvider>
-    </SafeAreaProvider>
+    <TabNavigation />
   );
 }

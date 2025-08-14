@@ -15,8 +15,11 @@ import type {
 } from "convex/server";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
+import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
 import type * as functions_earnings_fare from "../functions/earnings/fare.js";
+import type * as functions_earnings_fareHandler from "../functions/earnings/fareHandler.js";
 import type * as functions_earnings_startTrip from "../functions/earnings/startTrip.js";
+import type * as functions_earnings_startTripHandler from "../functions/earnings/startTripHandler.js";
 import type * as functions_feedback_averageRating from "../functions/feedback/averageRating.js";
 import type * as functions_feedback_index from "../functions/feedback/index.js";
 import type * as functions_feedback_saveFeedback from "../functions/feedback/saveFeedback.js";
@@ -50,17 +53,16 @@ import type * as functions_rides_declineRideHandler from "../functions/rides/dec
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
 import type * as functions_rides_getActiveTrips from "../functions/rides/getActiveTrips.js";
-import type * as functions_rides_generatePin from "../functions/rides/generatePin.js";
+import type * as functions_rides_getActiveTripsHandler from "../functions/rides/getActiveTripsHandler.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
-import type * as functions_rides_getRidePin from "../functions/rides/getRidePin.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
 import type * as functions_rides_tripPaid from "../functions/rides/tripPaid.js";
-import type * as functions_rides_verifyPin from "../functions/rides/verifyPin.js";
-import type * as functions_rides_verifyPinSimple from "../functions/rides/verifyPinSimple.js";
+import type * as functions_rides_tripPaidHandler from "../functions/rides/tripPaidHandler.js";
 import type * as functions_routes_calculateRoute from "../functions/routes/calculateRoute.js";
 import type * as functions_routes_displayRoutes from "../functions/routes/displayRoutes.js";
 import type * as functions_routes_enhancedTaxiMatching from "../functions/routes/enhancedTaxiMatching.js";
 import type * as functions_routes_getRecentRoutes from "../functions/routes/getRecentRoutes.js";
+import type * as functions_routes_getRecentRoutesHandler from "../functions/routes/getRecentRoutesHandler.js";
 import type * as functions_routes_insertRoute_internal from "../functions/routes/insertRoute_internal.js";
 import type * as functions_routes_mutations from "../functions/routes/mutations.js";
 import type * as functions_routes_queries from "../functions/routes/queries.js";
@@ -90,7 +92,9 @@ import type * as functions_users_UserManagement_updateUserProfile from "../funct
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_users_updateLocationSchema from "../functions/users/updateLocationSchema.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
+import type * as functions_work_sessions_endWorkSessionHandler from "../functions/work_sessions/endWorkSessionHandler.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
+import type * as functions_work_sessions_startWorkSessionHandler from "../functions/work_sessions/startWorkSessionHandler.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -103,8 +107,11 @@ import type * as functions_work_sessions_startWorkSession from "../functions/wor
 declare const fullApi: ApiFromModules<{
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
+  "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;
   "functions/earnings/fare": typeof functions_earnings_fare;
+  "functions/earnings/fareHandler": typeof functions_earnings_fareHandler;
   "functions/earnings/startTrip": typeof functions_earnings_startTrip;
+  "functions/earnings/startTripHandler": typeof functions_earnings_startTripHandler;
   "functions/feedback/averageRating": typeof functions_feedback_averageRating;
   "functions/feedback/index": typeof functions_feedback_index;
   "functions/feedback/saveFeedback": typeof functions_feedback_saveFeedback;
@@ -138,17 +145,16 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
   "functions/rides/getActiveTrips": typeof functions_rides_getActiveTrips;
-  "functions/rides/generatePin": typeof functions_rides_generatePin;
+  "functions/rides/getActiveTripsHandler": typeof functions_rides_getActiveTripsHandler;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
-  "functions/rides/getRidePin": typeof functions_rides_getRidePin;
   "functions/rides/startRide": typeof functions_rides_startRide;
   "functions/rides/tripPaid": typeof functions_rides_tripPaid;
-  "functions/rides/verifyPin": typeof functions_rides_verifyPin;
-  "functions/rides/verifyPinSimple": typeof functions_rides_verifyPinSimple;
+  "functions/rides/tripPaidHandler": typeof functions_rides_tripPaidHandler;
   "functions/routes/calculateRoute": typeof functions_routes_calculateRoute;
   "functions/routes/displayRoutes": typeof functions_routes_displayRoutes;
   "functions/routes/enhancedTaxiMatching": typeof functions_routes_enhancedTaxiMatching;
   "functions/routes/getRecentRoutes": typeof functions_routes_getRecentRoutes;
+  "functions/routes/getRecentRoutesHandler": typeof functions_routes_getRecentRoutesHandler;
   "functions/routes/insertRoute_internal": typeof functions_routes_insertRoute_internal;
   "functions/routes/mutations": typeof functions_routes_mutations;
   "functions/routes/queries": typeof functions_routes_queries;
@@ -178,7 +184,9 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
   "functions/users/updateLocationSchema": typeof functions_users_updateLocationSchema;
   "functions/work_sessions/endWorkSession": typeof functions_work_sessions_endWorkSession;
+  "functions/work_sessions/endWorkSessionHandler": typeof functions_work_sessions_endWorkSessionHandler;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;
+  "functions/work_sessions/startWorkSessionHandler": typeof functions_work_sessions_startWorkSessionHandler;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

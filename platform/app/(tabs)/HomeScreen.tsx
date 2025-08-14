@@ -58,27 +58,91 @@ export default function HomeScreen() {
 
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
-        showGlobalError(
-          "Permission denied", 
-          "Location permission is required to find nearby taxis.",
-          {
-            duration: 5000,
-            position: 'top',
-            animation: 'slide-down',
-          }
-        );
-        setIsLoadingCurrentLocation(false);
-        return;
-      }
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
+          showGlobalError(
+            "Permission denied", 
+            "Location permission is required to find nearby taxis.",
+            {
+              duration: 5000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
+          setIsLoadingCurrentLocation(false);
+          return;
+        }
 
-      const location = await Location.getCurrentPositionAsync({});
-      setDetectedLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+        // Check if location services are enabled
+        const isLocationEnabled = await Location.hasServicesEnabledAsync();
+        if (!isLocationEnabled) {
+          showGlobalError(
+            "Location services disabled", 
+            "Please enable location services in your device settings.",
+            {
+              duration: 5000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
+          setIsLoadingCurrentLocation(false);
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, // Use balanced accuracy to avoid spoofer detection
+        });
+
+        const { latitude, longitude } = location.coords;
+        
+        // Validate location coordinates
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          console.warn('Invalid location coordinates received');
+          setIsLoadingCurrentLocation(false);
+          return;
+        }
+        
+        // Check for suspicious coordinates (0,0 is common for mock locations)
+        if (latitude === 0 && longitude === 0) {
+          console.warn('Suspicious location coordinates (0,0) detected');
+          setIsLoadingCurrentLocation(false);
+          return;
+        }
+
+        setDetectedLocation({
+          latitude: latitude,
+          longitude: longitude,
+        });
+      } catch (error: any) {
+        console.error('Error getting location:', error);
+        
+        // Handle specific location errors
+        if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
+          showGlobalError(
+            "Location spoofer detected", 
+            "Please disable any location spoofing apps and use real GPS location.",
+            {
+              duration: 5000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
+        } else {
+          showGlobalError(
+            "Location error", 
+            "Unable to get your current location. Please enter your address manually.",
+            {
+              duration: 5000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
+        }
+        
+        setIsLoadingCurrentLocation(false);
+      }
     })();
   }, [showGlobalError]);
 
