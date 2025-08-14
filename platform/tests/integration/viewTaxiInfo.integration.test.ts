@@ -1,4 +1,4 @@
-import { viewTaxiInfoHandler } from '../../../platform/convex/functions/taxis/viewTaxiInfoHandler';
+import { viewTaxiInfoHandler } from '../../convex/functions/taxis/viewTaxiInfoHandler';
 
 describe('viewTaxiInfo (integration)', () => {
   // Create proper Convex ID types for testing

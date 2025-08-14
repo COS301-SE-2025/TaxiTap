@@ -15,7 +15,8 @@ module.exports = {
     '^react-native/Libraries/Animated/NativeAnimatedHelper$': '<rootDir>/tests/mocks/NativeAnimatedHelper.ts',
     '^../../_generated/server$': '<rootDir>/tests/mocks/convex-server.ts',
     '^convex/values$': '<rootDir>/tests/mocks/convex-values.ts',
-    '^../../convex/functions/(.*)$': '<rootDir>/tests/mocks/convex-functions/$1'
+    '^../../convex/functions/(.*)$': '<rootDir>/tests/mocks/convex-functions/$1',
+    '^../../convex/_generated/(.*)$': '<rootDir>/tests/mocks/convex/_generated/$1'
   },
   moduleDirectories: ['node_modules', 'tests/mocks'],
   testMatch: ['**/tests/integration/**/*.test.[jt]s?(x)'],

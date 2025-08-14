@@ -221,11 +221,12 @@ function RootLayoutNav() {
               title: "Vehicle Details"
             }}
           />
+          
           <Stack.Screen
-          name="NotificationsScreen"
-          options={{
-            headerShown: true,
-            title: "Notifications" 
+            name="NotificationsScreen"
+            options={{
+              headerShown: true,
+              title: "Notifications" 
             }}
           />
           
@@ -235,77 +236,22 @@ function RootLayoutNav() {
               headerShown: false
             }}
           />
+          
+          <Stack.Screen
+            name="PassengerPinEntry"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          {Platform.OS === 'android' && (
+            <Stack.Screen
+              name="index"
+              options={{ headerShown: false }}
+            />
+          )}
         </Stack>
-        <StackNavigator />
       </View>
     </NavigationThemeProvider>
-  );
-}
-
-function StackNavigator() {
-  const { theme } = useTheme();
-  
-  return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.headerBackground,
-        },
-        headerTitleStyle: {
-          fontFamily: 'AmazonEmber-Medium',
-          fontSize: 18,
-          color: theme.text,
-        },
-        headerTitleAlign: 'center',
-        headerTintColor: theme.text,
-      }}
-    >
-      <Stack.Screen
-        name="LandingPage"
-        options={{ headerShown: false }}
-      />
-      
-      <Stack.Screen
-        name="Login"
-        options={{ headerShown: false }}
-      />
-      
-      <Stack.Screen
-        name="SignUp"
-        options={{ headerShown: false }}
-      />
-
-      <Stack.Screen
-        name="(tabs)"
-        options={{ headerShown: false }}
-      />
-      
-      {Platform.OS === 'android' && (
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false }}
-        />
-      )}
-      
-      <Stack.Screen
-        name="DriverHomeScreen"
-        options={{ headerShown: false }}
-      />
-      
-      <Stack.Screen
-        name="NotificationsScreen"
-        options={{
-          headerShown: true,
-          title: "Notifications" 
-        }}
-      />
-              
-              <Stack.Screen
-                name="DriverPinEntry"
-                options={{
-                  headerShown: false
-                }}
-              />
-    </Stack>
   );
 }

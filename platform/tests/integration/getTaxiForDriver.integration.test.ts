@@ -1,4 +1,4 @@
-import { getTaxiForDriverHandler } from '../../../platform/convex/functions/taxis/getTaxiForDriverHandler';
+import { getTaxiForDriverHandler } from '../../convex/functions/taxis/getTaxiForDriverHandler';
 
 // Mock Id type for testing
 type MockId<T> = string & { __tableName: T };

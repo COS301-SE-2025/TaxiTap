@@ -1,4 +1,4 @@
-import { updateTaxiInfoHandler } from '../../../platform/convex/functions/taxis/updateTaxiInfoHandler';
+import { updateTaxiInfoHandler } from '../../convex/functions/taxis/updateTaxiInfoHandler';
 
 // Mock Id type for testing
 type MockId<T> = string & { __tableName: T };

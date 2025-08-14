@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -14,19 +14,11 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { useAlertHelpers } from '../../components/AlertHelpers';
-import * as Location from 'expo-location';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
   ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
-
-// Debug API key configuration
-console.log('Google Maps API Key configured:', {
-  platform: Platform.OS,
-  hasApiKey: !!GOOGLE_MAPS_API_KEY,
-  keyLength: GOOGLE_MAPS_API_KEY?.length || 0
-});
 
 export default function SeatReserved() {
 	const [useLiveLocation, setUseLiveLocation] = useState(false);
@@ -69,7 +61,6 @@ export default function SeatReserved() {
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
-	const startRide = useMutation(api.functions.rides.startRide.startRide);
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
@@ -77,16 +68,15 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
-	const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+	// Removed pin state - no longer needed
 
 	const passengerId = user?.id;
-	const rideId = taxiInfo?.rideId;
+	const rideId = taxiInfo?.rideDocId;
 	const driverId = taxiInfo?.driver?.userId;
 
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 
-	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
 
 	useLayoutEffect(() => {
@@ -94,33 +84,6 @@ export default function SeatReserved() {
 			headerShown: false
 		});
 	}, [navigation]);
-
-	// Check location permissions
-	useEffect(() => {
-		const checkLocationPermission = async () => {
-			try {
-				const { status } = await Location.getForegroundPermissionsAsync();
-				setLocationPermission(status === 'granted');
-				
-				if (status !== 'granted') {
-					console.warn('Location permission not granted:', status);
-					Alert.alert(
-						'Location Permission Required',
-						'This app needs location access to show your ride on the map.',
-						[
-							{ text: 'Cancel', style: 'cancel' },
-							{ text: 'Settings', onPress: () => Location.requestForegroundPermissionsAsync() }
-						]
-					);
-				}
-			} catch (error) {
-				console.error('Error checking location permission:', error);
-				setLocationPermission(false);
-			}
-		};
-
-		checkLocationPermission();
-	}, []);
 
 	// Removed PIN generation - no longer needed
 
@@ -143,7 +106,7 @@ export default function SeatReserved() {
 			const rawDestLat = getParamAsString(params.destinationLat);
 			const rawDestLng = getParamAsString(params.destinationLng);
 
-			console.log('Location params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
 			const currentLat = parseFloat(rawCurrentLat);
 			const currentLng = parseFloat(rawCurrentLng);
@@ -157,8 +120,6 @@ export default function SeatReserved() {
 				console.warn('Skipping update due to invalid coordinates.');
 				return;
 			}
-
-			console.log('Setting locations:', { currentLat, currentLng, destLat, destLng });
 
 			setCurrentLocation({
 				latitude: currentLat,
@@ -342,16 +303,6 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, destination, routeLoaded, isLoadingRoute]);
 
-	// Debug map rendering
-	useEffect(() => {
-		console.log('Map state changed:', { 
-			currentLocation, 
-			destination, 
-			routeCoordinates: routeCoordinates.length,
-			hasApiKey: !!GOOGLE_MAPS_API_KEY 
-		});
-	}, [currentLocation, destination, routeCoordinates.length]);
-
 	// Initial fit to route when route or destination changes
 	useEffect(() => {
 		if (
@@ -503,37 +454,20 @@ export default function SeatReserved() {
 			});
 			return;
 		}
-		try {
-			// Start the trip
-			await startTripConvex({
-				passengerId: passengerId as Id<'taxiTap_users'>,
-				driverId: driverId as Id<'taxiTap_users'>,
-				reservation: true,
-			});
-			
-			// Start the ride directly (no PIN needed)
-			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			
-			// Redirect to payment screen after starting ride
-			router.push({
-				pathname: './Payments',
-				params: {
-					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
-					licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
-					fare: taxiInfo?.fare?.toString() || '0',
-					rideId: taxiInfo?.rideId,
-					startName: currentLocation?.name || 'Current Location',
-					endName: destination?.name || 'Destination',
-					driverId: driverId || '',
-				},
-			});
-		} catch (error: any) {
-			showGlobalError('Error', error?.message || 'Failed to start ride.', {
-				duration: 4000,
-				position: 'top',
-				animation: 'slide-down',
-			});
-		}
+		
+		// Redirect to PIN entry screen instead of directly starting the ride
+		router.push({
+			pathname: '/PassengerPinEntry',
+			params: {
+				driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+				licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+				fare: taxiInfo?.fare?.toString() || '0',
+				rideId: taxiInfo?.rideId,
+				startName: currentLocation?.name || 'Current Location',
+				endName: destination?.name || 'Destination',
+				driverId: driverId || '',
+			},
+		});
 	};
 
 	const handleEndRide = async () => {
@@ -844,61 +778,15 @@ export default function SeatReserved() {
 			fontSize: 20,
 			fontWeight: "bold",
 		},
-		verifyPinButton: {
-			alignItems: "center",
-			backgroundColor: theme.primary,
-			borderRadius: 30,
-			paddingVertical: 12,
-			paddingHorizontal: 20,
-			marginTop: 10,
-			flexDirection: 'row', // Added for icon alignment
-		},
-		verifyPinButtonText: {
-			color: isDark ? "#121212" : "#FFFFFF",
-			fontSize: 16,
-			fontWeight: "bold",
-			marginLeft: 10, // Added for icon spacing
-		},
 	});
 
-	// Show loading state but still render the map container
+	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
-		console.log('Map not rendering - missing locations:', { currentLocation, destination });
-		console.log('Params received:', params);
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
-				<ScrollView style={dynamicStyles.scrollView}>
-					<View>
-						{/* Map Section - Show placeholder when no coordinates */}
-						<View style={{ height: 300, position: 'relative' }}>
-							<MapView
-								ref={mapRef}
-								style={{ flex: 1 }}
-								provider={PROVIDER_GOOGLE}
-								initialRegion={{
-									latitude: -25.7479, // Default to Pretoria
-									longitude: 28.2293,
-									latitudeDelta: 0.1,
-									longitudeDelta: 0.1,
-								}}
-								customMapStyle={[]}
-							>
-								<Text style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.8)', padding: 10, borderRadius: 5 }}>
-									{t('passengerReservation:loading')}
-								</Text>
-							</MapView>
-						</View>
-						
-						<View style={dynamicStyles.bottomSection}>
-							<View style={dynamicStyles.loadingContainer}>
-								<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
-								<Text style={dynamicStyles.loadingText}>
-									Current: {currentLocation ? '✓' : '✗'}, Destination: {destination ? '✓' : '✗'}
-								</Text>
-							</View>
-						</View>
-					</View>
-				</ScrollView>
+				<View style={dynamicStyles.loadingContainer}>
+					<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
+				</View>
 			</SafeAreaView>
 		);
 	}
@@ -908,10 +796,10 @@ export default function SeatReserved() {
 			<ScrollView style={dynamicStyles.scrollView}>
 				<View>
 					{/* Map Section with Route */}
-					<View style={{ height: 300, position: 'relative', backgroundColor: '#f0f0f0' }}>
+					<View style={{ height: 300, position: 'relative' }}>
 						<MapView
 							ref={mapRef}
-							style={{ width: '100%', height: '100%' }}
+							style={{ flex: 1 }}
 							provider={PROVIDER_GOOGLE}
 							initialRegion={{
 								latitude: (currentLocation.latitude + destination.latitude) / 2,
@@ -919,12 +807,9 @@ export default function SeatReserved() {
 								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
 								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
 							}}
-							customMapStyle={[]}
+							customMapStyle={isDark ? darkMapStyle : []}
 							onPanDrag={() => setIsFollowing(false)}
 							onRegionChangeComplete={() => setIsFollowing(false)}
-							onMapReady={() => console.log('Map is ready')}
-							showsUserLocation={true}
-							showsMyLocationButton={false}
 						>
 							<Marker
 								coordinate={currentLocation}
@@ -993,24 +878,24 @@ export default function SeatReserved() {
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-									<Text style={dynamicStyles.ratingText}>
-										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
-									</Text>
+															<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+								<Text style={dynamicStyles.ratingText}>
+									{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+								</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-										{[1, 2, 3, 4, 5].map((star, index) => {
+									{[1, 2, 3, 4, 5].map((star, index) => {
 											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
-											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+										const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
 
 											return (
-												<FontAwesome
-													key={index}
-													name={full ? "star" : half ? "star-half-full" : "star-o"}
-													size={12}
-													color={theme.primary}
-													style={{ marginRight: 1 }}
-												/>
-											);
+													<FontAwesome
+														key={index}
+														name={full ? "star" : half ? "star-half-full" : "star-o"}
+														size={12}
+														color={theme.primary}
+														style={{ marginRight: 1 }}
+													/>
+										);
 										})}
 									</View>
 								</View>
@@ -1060,29 +945,16 @@ export default function SeatReserved() {
 									</Text>
 								</TouchableOpacity>
 							)}
-							{/* When ride is accepted: show PIN verification button and Cancel Request */}
+							{/* When ride is accepted: show PIN entry and Cancel Request */}
 							{rideStatus === 'accepted' && (
 								<>
-									{/* PIN Verification Button - Passenger doesn't see the PIN, just the button */}
-									<TouchableOpacity 
-										style={dynamicStyles.verifyPinButton}
-										onPress={() => router.push({
-											pathname: '/PassengerPinEntry' as any,
-											params: { rideId: rideId || '' }
-										})}
-									>
-										<Icon name="shield-checkmark" size={20} color={isDark ? "#121212" : "#FFFFFF"} />
-										<Text style={dynamicStyles.verifyPinButtonText}>Verify Driver PIN</Text>
-									</TouchableOpacity>
-									
 									<TouchableOpacity 
 										style={dynamicStyles.startRideButton} 
 										onPress={handleStartRide}>
 										<Text style={dynamicStyles.startRideButtonText}>
-											{t('passengerReservation:startRide')}
+											{t('passengerReservation:verifyPin')}
 										</Text>
 									</TouchableOpacity>
-									{/* PIN Display removed - no longer needed */}
 									<TouchableOpacity 
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
@@ -1105,7 +977,203 @@ export default function SeatReserved() {
 						</View>
 					</View>
 				</View>
-				</ScrollView>
-			</SafeAreaView>
-		);
-	}
+			</ScrollView>
+			{!isFollowing && (
+				<TouchableOpacity
+					style={{ position: 'absolute', bottom: 120, right: 30, backgroundColor: theme.primary, borderRadius: 25, padding: 12, zIndex: 10 }}
+					onPress={() => setIsFollowing(true)}
+				>
+					<Icon name="locate" size={24} color={isDark ? '#121212' : '#fff'} />
+				</TouchableOpacity>
+			)}
+		</SafeAreaView>
+	)
+}
+
+// Dark map style for better dark mode experience (same as HomeScreen)
+const darkMapStyle = [
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.country",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#181818"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1b1b1b"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#2c2c2c"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#8a8a8a"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#373737"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#3c3c3c"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#4e4e4e"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#000000"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#3d3d3d"
+      }
+    ]
+  }
+];

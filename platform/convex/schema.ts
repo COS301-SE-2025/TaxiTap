@@ -65,7 +65,8 @@ export default defineSchema({
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
     
-    // Driver PIN for ride verification
+    // Legacy fields - these should be removed in future versions
+    // TODO: Remove these fields after running cleanupLegacyFields migration
     driverPin: v.optional(v.string()),
     pinUpdatedAt: v.optional(v.number()),
   })
