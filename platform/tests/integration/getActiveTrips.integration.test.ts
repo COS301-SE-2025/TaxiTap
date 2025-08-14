@@ -1,4 +1,4 @@
-import { getActiveTripsHandler } from "../../convex/functions/rides/getActiveTripsHandler";
+import { getActiveTripsHandler } from "../../convex/functions/payments/getActiveTripsHandler";
 
 let dbData: any;
 

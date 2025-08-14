@@ -1,4 +1,4 @@
-import { tripPaidHandler } from "../../convex/functions/rides/tripPaidHandler";
+import { tripPaidHandler } from "../../convex/functions/payments/tripPaidHandler";
 
 describe("tripPaidHandler - integration style", () => {
   let dbData: any;

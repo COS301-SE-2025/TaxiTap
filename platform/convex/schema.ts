@@ -64,6 +64,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
+    driverPin: v.optional(v.string()),
+    pinUpdatedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phoneNumber"])

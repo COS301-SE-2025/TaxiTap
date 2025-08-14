@@ -13,7 +13,7 @@ export default function PaymentConfirmation() {
   const userId = user?.id;
   const { driverName, licensePlate, fare, rideId } = useLocalSearchParams();
 
-  const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
+  const markTripPaid = useMutation(api.functions.payments.tripPaid.tripPaid);
 
   const handlePaid = () => {
     markTripPaid({

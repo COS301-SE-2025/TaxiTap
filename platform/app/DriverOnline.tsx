@@ -71,7 +71,7 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
-  const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
+  // const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
@@ -318,7 +318,7 @@ export default function DriverOnline({
       subtitle: "Set custom location for testing",
       onPress: () => {
         setShowMenu(false);
-        setShowLocationSpoofer(true);
+        // setShowLocationSpoofer(true);
       }
     },
     { 
@@ -920,10 +920,10 @@ export default function DriverOnline({
                 </TouchableOpacity>
               )}
 
-              <LocationSpoofer 
+              {/* <LocationSpoofer 
                 isVisible={showLocationSpoofer}
                 onClose={() => setShowLocationSpoofer(false)}
-              />
+              /> */}
             </>
           )}
         </View>

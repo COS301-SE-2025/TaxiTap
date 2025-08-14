@@ -8,7 +8,7 @@ import { Id } from '../convex/_generated/dataModel';
 export default function PaymentConfirmation() {
     const { user } = useUser();
     if (!user) return;
-    const activeTrips = useQuery(api.functions.rides.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
+    const activeTrips = useQuery(api.functions.payments.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
 
     const dynamicStyles = StyleSheet.create({
         container: {

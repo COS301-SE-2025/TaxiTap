@@ -220,16 +220,10 @@ function RootLayoutNav() {
                 title: "Notifications" 
                 }}
               />
-              
-              <Stack.Screen
-                name="DriverPinEntry"
-                options={{
-                  headerShown: false
-                }}
-              />
+            
             </Stack>
 
-          <StackNavigator />
+          {/* <StackNavigator /> */}
 
         </NotificationProvider>
       </View>
