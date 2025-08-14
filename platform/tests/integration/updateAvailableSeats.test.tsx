@@ -51,6 +51,7 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
       action: "decrease",
     });
 
+    expect(result).toBeDefined();
     expect(result).toEqual({
       success: true,
       updatedSeats: 2,
@@ -68,6 +69,7 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
       action: "increase",
     });
 
+    expect(result).toBeDefined();
     expect(result).toEqual({
       success: true,
       updatedSeats: 4,
@@ -87,6 +89,7 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
       action: "decrease",
     });
 
+    expect(result).toBeDefined();
     expect(result.updatedSeats).toBe(0);
     expect(mockCtx.db.patch).toHaveBeenCalledWith("taxi789", expect.objectContaining({
       capacity: 0,
@@ -100,23 +103,25 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
       })),
     }));
 
-    await expect(
-      updateTaxiSeatAvailabilityHandler(mockCtx, {
-        rideId: "ride123",
-        action: "decrease",
-      })
-    ).rejects.toThrow("Ride not found");
+    const promise = updateTaxiSeatAvailabilityHandler(mockCtx, {
+      rideId: "ride123",
+      action: "decrease",
+    });
+
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Ride not found");
   });
 
   it("should throw if driver is missing", async () => {
     mockRide.driverId = null;
 
-    await expect(
-      updateTaxiSeatAvailabilityHandler(mockCtx, {
-        rideId: "ride123",
-        action: "increase",
-      })
-    ).rejects.toThrow("Ride has no assigned driver");
+    const promise = updateTaxiSeatAvailabilityHandler(mockCtx, {
+      rideId: "ride123",
+      action: "increase",
+    });
+
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Ride has no assigned driver");
   });
 
   it("should throw if driver profile not found", async () => {
@@ -125,16 +130,18 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
         first: jest.fn(() => {
           if (table === "rides") return Promise.resolve(mockRide);
           if (table === "drivers") return Promise.resolve(null); // simulate missing driver
+          return Promise.resolve(null);
         }),
       })),
     }));
 
-    await expect(
-      updateTaxiSeatAvailabilityHandler(mockCtx, {
-        rideId: "ride123",
-        action: "increase",
-      })
-    ).rejects.toThrow("Driver profile not found.");
+    const promise = updateTaxiSeatAvailabilityHandler(mockCtx, {
+      rideId: "ride123",
+      action: "increase",
+    });
+
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Driver profile not found.");
   });
 
   it("should throw if taxi not found", async () => {
@@ -144,15 +151,17 @@ describe("Integration: updateTaxiSeatAvailabilityHandler", () => {
           if (table === "rides") return Promise.resolve(mockRide);
           if (table === "drivers") return Promise.resolve(mockDriver);
           if (table === "taxis") return Promise.resolve(null); // simulate missing taxi
+          return Promise.resolve(null);
         }),
       })),
     }));
 
-    await expect(
-      updateTaxiSeatAvailabilityHandler(mockCtx, {
-        rideId: "ride123",
-        action: "increase",
-      })
-    ).rejects.toThrow("Taxi for driver not found.");
+    const promise = updateTaxiSeatAvailabilityHandler(mockCtx, {
+      rideId: "ride123",
+      action: "increase",
+    });
+
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Taxi for driver not found.");
   });
 });
