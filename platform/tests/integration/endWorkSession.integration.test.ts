@@ -21,23 +21,31 @@ describe("endWorkSessionHandler", () => {
   });
 
   it("should successfully end an active work session", async () => {
-    const result = await endWorkSessionHandler(ctx, { driverId });
-    expect(result).toEqual({ sessionId: "session1" });
-    expect(ctx.db.patch).toHaveBeenCalledWith("session1", expect.objectContaining({ endTime: expect.any(Number) }));
+    try {
+      const result = await endWorkSessionHandler(ctx, { driverId });
+      expect(result).toBeDefined();
+      expect(result).toEqual({ sessionId: "session1" });
+      expect(ctx.db.patch).toHaveBeenCalledWith("session1", expect.objectContaining({ endTime: expect.any(Number) }));
+    } catch (error) {
+      console.error('Handler error:', error);
+      throw error;
+    }
   });
 
   it("should throw an error if no active work session exists", async () => {
     ctx.db.first = jest.fn(() => Promise.resolve(null));
-    await expect(endWorkSessionHandler(ctx, { driverId })).rejects.toThrow(
-      "No active work session found."
-    );
+    
+    const promise = endWorkSessionHandler(ctx, { driverId });
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("No active work session found.");
   });
 
   it("should throw an error if latest session already ended", async () => {
     activeSession.endTime = Date.now();
     ctx.db.first = jest.fn(() => Promise.resolve(activeSession));
-    await expect(endWorkSessionHandler(ctx, { driverId })).rejects.toThrow(
-      "No active work session found."
-    );
+    
+    const promise = endWorkSessionHandler(ctx, { driverId });
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("No active work session found.");
   });
 });
