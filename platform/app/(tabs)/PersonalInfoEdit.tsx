@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -24,6 +25,7 @@ export default function PersonalInfoEdit() {
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
+    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -69,21 +71,37 @@ export default function PersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            Alert.alert(t('personalInfo:error'), t('personalInfo:failedToUploadImage'));
+            showGlobalError('Error', 'Failed to upload image', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         }
     };
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert(t('personalInfo:error'), t('personalInfo:userNotLoaded'));
+            showGlobalError('Error', 'User not loaded', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         if (!name.trim()) {
-            Alert.alert(t('personalInfo:error'), t('personalInfo:nameRequired'));
+            showGlobalError('Error', 'Name is required', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         if (!phoneNumber.trim()) {
-            Alert.alert(t('personalInfo:error'), t('personalInfo:phoneNumberRequired'));
+            showGlobalError('Error', 'Phone number is required', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         
@@ -111,12 +129,25 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            Alert.alert(t('personalInfo:success'), t('personalInfo:changesSaved'), [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
+            showGlobalSuccess('Success', 'Changes saved successfully', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+              actions: [
+                {
+                  label: 'OK',
+                  onPress: () => router.back(),
+                  style: 'default',
+                },
+              ],
+            });
         } catch (error: any) {
             console.error('Update error:', error);
-            Alert.alert(t('personalInfo:error'), error.message || t('personalInfo:failedToSaveChanges'));
+            showGlobalError('Error', error.message || 'Failed to save changes', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         } finally {
             setIsLoading(false);
         }

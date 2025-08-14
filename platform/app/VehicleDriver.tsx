@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, ScrollView } from 'react-native';
+import { useAlertHelpers } from '../components/AlertHelpers';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
@@ -8,6 +9,7 @@ import { Id } from '../convex/_generated/dataModel';
 
 export default function VehicleDriver() {
     const { user } = useUser();
+    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     const [vehicleType, setVehicleType] = useState('');
     const [licensePlate, setLicensePlate] =useState('');
     const [seats, setSeats] = useState('');
@@ -37,7 +39,11 @@ export default function VehicleDriver() {
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'We need access to your media library to upload a photo.');
+        showGlobalError('Permission Denied', 'We need access to your media library to upload a photo.', {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        });
       }
     })();
   }, []);
@@ -62,7 +68,11 @@ export default function VehicleDriver() {
 
     const handleSaveChanges = async () => {
         if (!user) {
-            Alert.alert("Not found", "User not loaded.");
+            showGlobalError("Not found", "User not loaded.", {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         try {
@@ -75,10 +85,18 @@ export default function VehicleDriver() {
                 color,
                 year: parseInt(year, 10)
             });
-            Alert.alert("Success", "Vehicle information updated successfully.");
+            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            Alert.alert("Error", "Failed to update vehicle information.");
+            showGlobalError("Error", "Failed to update vehicle information.", {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         }
     }
 

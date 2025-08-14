@@ -1,14 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
-export default function HelpScreen() {
+export default function HelpPage() {
+  const router = useRouter();
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
+  const { showInfo } = useAlertHelpers();
 
   const handleContactSupport = () => {
-    Alert.alert(t('help:support'), t('help:supportEmail'));
+    showInfo(t('help:support'), t('help:supportEmail'));
   };
 
   const dynamicStyles = StyleSheet.create({

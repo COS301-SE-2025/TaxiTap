@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  Alert,
   Image,
   TouchableOpacity,
   ScrollView,
@@ -19,14 +18,13 @@ import { api } from "../convex/_generated/api";
 import { useMutation } from 'convex/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
 function SignUpComponent() {
-  // Move useMutation inside the component that's wrapped by ConvexProvider
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
   const { t, currentLanguage } = useLanguage();
-  
   const [nameSurname, setNameSurname] = useState('');
   const [number, setNumber] = useState('');
   const [selectedRole, setSelectedRole] = useState<'passenger' | 'driver' | null>(null);
@@ -61,56 +59,43 @@ function SignUpComponent() {
         ];
     }
   };
+  const { showGlobalError } = useAlertHelpers();
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
-      Alert.alert(t('common:error'), t('common:pleaseFillAllFields'));
+      showGlobalError(t('common:error'), t('common:pleaseFillAllFields'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (!selectedRole) {
-      Alert.alert(t('common:error'), t('common:pleaseSelectRole'));
+      showGlobalError(t('common:error'), t('common:pleaseSelectRole'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert(t('common:error'), t('common:invalidNumber'));
+      showGlobalError(t('common:error'), t('common:invalidNumber'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert(t('common:error'), t('common:passwordMismatch'));
+      showGlobalError(t('common:error'), t('common:passwordMismatch'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     try {
       const accountType: 'passenger' | 'driver' | 'both' = selectedRole === 'driver' ? 'both' : selectedRole;
-
-      const result = await signUpWithSMS({
-        phoneNumber: number,
-        name: nameSurname,
-        password,
-        accountType: accountType,
-      });
-
-      // Store userId in AsyncStorage
+      const result = await signUpWithSMS({ phoneNumber: number, name: nameSurname, password, accountType });
       await AsyncStorage.setItem('userId', result.userId);
       const userId = await AsyncStorage.getItem('userId');
       if (selectedRole === 'driver') {
-        router.push({
-          pathname: '/DriverOffline',
-          params: { userId: result.userId }
-        });
+        router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
       } else if (selectedRole === 'passenger') {
-        router.push({
-          pathname: '/HomeScreen',
-          params: { userId: result.userId }
-        });
+        router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
       }
     } catch (err: any) {
       const message = (err?.data?.message) || (err?.message) || "Something went wrong";
-      if (message.includes("Phone number already exists")) {
-        Alert.alert(t('common:error'), t('common:phoneNumberInUse'));
+      if (message.includes('Phone number already exists')) {
+        showGlobalError('Phone Number In Use', 'This phone number is already registered. Try logging in or use a different number.', { duration: 5000, position: 'top', animation: 'slide-down' });
       } else {
-        console.log("Signup Error", message);
+        console.log('Signup Error', message);
       }
     }
   };
@@ -328,7 +313,6 @@ function SignUpComponent() {
   );
 }
 
-// Wrap the component with ConvexProvider
 export default function SignUp() {
   return (
     <ConvexProvider client={convex}>

@@ -13,7 +13,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
@@ -28,6 +27,7 @@ import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -78,6 +78,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -204,16 +205,20 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
    */
   const handleAssignRoute = async () => {
     if (!taxiAssociation) {
-      Alert.alert(
-        t('driver.selectTaxiAssociationFirst'),
-        t('driver.selectTaxiAssociationFirstMessage'),
-        [{ text: t('common.ok') }]
-      );
+      showGlobalError('Select Taxi Association', 'Please select your taxi association first.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
     if (!user?.id) {
-      Alert.alert(t('driver.userNotFound'), t('driver.userNotFoundMessage'));
+      showGlobalError('User not found', 'You must be logged in as a driver.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -222,7 +227,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     try {
       const result = await assignRandomRoute({
         userId: user.id as Id<'taxiTap_users'>,
-        taxiAssociation: taxiAssociation
+        taxiAssociation,
       });
 
       // Check if result and assignedRoute exist
@@ -234,24 +239,28 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       const routeString = `${start} → ${destination}`;
       
       setCurrentRoute(routeString);
-      if (onRouteSet) {
-        onRouteSet(routeString);
-      }
+      onRouteSet?.(routeString);
 
-      Alert.alert(
-        t('driver.routeAssignedSuccessfully'),
-        t('driver.routeAssignedMessage', { route: routeString, association: taxiAssociation }),
-        [{
-          text: t('common.ok'),
-          onPress: () => navigation.goBack(),
-        }]
-      );
+      showGlobalSuccess('Route Assigned Successfully!', `You have been assigned to: ${routeString}`, {
+        duration: 0,
+        position: 'top',
+        animation: 'slide-down',
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => navigation.goBack(),
+            style: 'default',
+          },
+        ],
+      });
     } catch (error) {
       console.error("Error assigning route:", error);
-      Alert.alert(
-        t('driver.assignmentFailed'), 
-        error instanceof Error ? error.message : t('driver.assignmentFailedMessage')
-      );
+      const message = error instanceof Error ? error.message : 'Failed to assign route. Please try again.';
+      showGlobalError('Assignment Failed', message, {
+        duration: 5000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     } finally {
       setIsAssigning(false);
     }
@@ -268,18 +277,20 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     const routeString = `${start} → ${destination}`;
     
     setCurrentRoute(routeString);
-    if (onRouteSet) {
-      onRouteSet(routeString);
-    }
+    onRouteSet?.(routeString);
 
-    Alert.alert(
-      t('driver.routeActivated'),
-      t('driver.routeActivatedMessage', { route: routeString }),
-      [{
-        text: t('common.ok'),
-        onPress: () => navigation.goBack(),
-      }]
-    );
+    showGlobalSuccess('Route Activated', `Route activated: ${routeString}`, {
+      duration: 0,
+      position: 'top',
+      animation: 'slide-down',
+      actions: [
+        {
+          label: 'OK',
+          onPress: () => navigation.goBack(),
+          style: 'default',
+        },
+      ],
+    });
   };
 
   // ============================================================================

@@ -6,10 +6,10 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Platform,
   Animated,
   TextInput,
+  Alert,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -27,6 +27,7 @@ import * as Location from "expo-location";
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -48,6 +49,8 @@ export default function HomeScreen() {
     shouldRunQuery ? { passengerId: userId as Id<"taxiTap_users"> } : "skip"
   );
 
+  const { showGlobalError, showGlobalAlert } = useAlertHelpers();
+
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -58,6 +61,15 @@ export default function HomeScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
+        showGlobalError(
+          "Permission denied", 
+          "Location permission is required to find nearby taxis.",
+          {
+            duration: 5000,
+            position: 'top',
+            animation: 'slide-down',
+          }
+        );
         setIsLoadingCurrentLocation(false);
         return;
       }
@@ -68,7 +80,7 @@ export default function HomeScreen() {
         longitude: location.coords.longitude,
       });
     })();
-  }, [t]);
+  }, [showGlobalError]);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -244,16 +256,27 @@ export default function HomeScreen() {
     const timeout = setTimeout(() => {
       if (!detectedLocation && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
-        Alert.alert(
-          t('home:locationError'), 
-          t('home:unableToGetLocation'),
-          [{ text: t('common:ok') }]
+        showGlobalError(
+          'Location Error', 
+          'Unable to get your current location. Please enter your address manually.',
+          {
+            duration: 0,
+            actions: [
+              {
+                label: 'OK',
+                onPress: () => console.log('Location error acknowledged'),
+                style: 'default',
+              }
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [detectedLocation, isLoadingCurrentLocation, t]);
+  }, [detectedLocation, isLoadingCurrentLocation, t, showGlobalError]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -269,7 +292,7 @@ export default function HomeScreen() {
   const fullRecentRoutes = React.useMemo(() => {
     if (!recentRoutes || !routes) return [];
 
-    return recentRoutes.map(recent => {
+    return recentRoutes.map((recent: any) => {
       if (recent.routeId.startsWith("manual-")) {
         const manualDestination = manualDestinations[recent.routeId];
         
@@ -327,11 +350,11 @@ export default function HomeScreen() {
         startLng: recent.startLng,
         isManualRoute: false,
       };
-    }).filter(route => route !== null);
+    }).filter((route: any) => route !== null);
   }, [recentRoutes, routes, manualDestinations]);
 
   const displayRoutes = fullRecentRoutes.filter(
-    (r): r is NonNullable<typeof r> => r !== null
+    (r: any): r is NonNullable<typeof r> => r !== null
   );
 
   // FIXED: Only clear state on first load, not every focus - this was causing the taxi search issue
@@ -362,7 +385,15 @@ export default function HomeScreen() {
   // Geocoding function
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
-      Alert.alert(t('common:error'), t('home:googleMapsNotConfigured'));
+      showGlobalError(
+        t('common:error'), 
+        t('home:googleMapsNotConfigured'),
+        {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
       return null;
     }
 
@@ -498,12 +529,28 @@ export default function HomeScreen() {
 
   const handleReserveSeat = async () => {
     if (!destination || !origin) {
-      Alert.alert(t('common:error'), t('home:pleaseEnterAddresses'));
+      showGlobalError(
+        t('common:error'), 
+        t('home:pleaseEnterAddresses'),
+        {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
       return;
     }
 
     if (!selectedRouteId) {
-      Alert.alert(t('common:error'), t('home:routeNotSelected'));
+      showGlobalError(
+        t('common:error'), 
+        t('home:routeNotSelected'),
+        {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
       return;
     }
 
@@ -513,6 +560,21 @@ export default function HomeScreen() {
         t('home:noTaxisAvailableMessage'),
         [{ text: t('common:ok') }]
       );
+      showGlobalAlert({
+        title: 'No Taxis Available',
+        message: 'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
+        type: 'warning',
+        duration: 0,
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => console.log('No taxis acknowledged'),
+            style: 'default',
+          }
+        ],
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -619,7 +681,15 @@ export default function HomeScreen() {
       searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
-      Alert.alert(t('home:routeError'), err instanceof Error ? err.message : t('home:unknownError'));
+      showGlobalError(
+        t('home:routeError'), 
+        err instanceof Error ? err.message : t('home:unknownError'),
+        {
+          duration: 5000,
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
     } finally {
       setIsLoadingRoute(false);
     }
@@ -1096,7 +1166,7 @@ export default function HomeScreen() {
         <Text style={dynamicStyles.savedRoutesTitle}>{t('home:recentlyUsedRanks')}</Text>
         <ScrollView style={{ marginTop: 10 }}>
           {displayRoutes.length > 0 ? (
-            displayRoutes.map((route, index) => (
+            displayRoutes.map((route: any, index: number) => (
               <TouchableOpacity
                 key={`${route.routeId}-${index}`}
                 style={dynamicStyles.routeCard}

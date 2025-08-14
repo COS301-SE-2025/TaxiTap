@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Animated,
   Linking,
   Image,
@@ -19,12 +18,14 @@ import { useUser } from '../../contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
 import Icon from 'react-native-vector-icons/Ionicons';
 import loading from '../../assets/images/loading4.png';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
   const { t } = useLanguage(); // Add this hook
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
   // Get route parameters
   const {
@@ -157,19 +158,31 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          Alert.alert(t('common:error'), t('taxiInfo:phoneNotSupported'));
+          showGlobalError('Error', 'Phone calls are not supported on this device', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        Alert.alert(t('common:error'), t('taxiInfo:couldNotOpenPhone'));
+        showGlobalError('Error', 'Could not open phone app', {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        });
       });
   };
 
   // Handle ride booking using your existing requestRide function
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      Alert.alert(t('common:error'), t('taxiInfo:selectTaxiError'));
+      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -201,39 +214,56 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
-        Alert.alert(
+        showGlobalSuccess(
           t('taxiInfo:rideRequestSent'),
           t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
-          [
-            {
-              text: t('common:ok'),
-              onPress: () => {
-                router.push({
-                  pathname: './PassengerReservation',
-                  params: {
-                    currentLat,
-                    currentLng,
-                    currentName,
-                    destinationLat,
-                    destinationLng,
-                    destinationName,
-                    driverId: selectedTaxi.userId,
-                    driverName: selectedTaxi.name,
-                    fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
-                    rideId: result.rideId,
-                  },
-                });
+          {
+            duration: 0,
+            actions: [
+              {
+                label: t('common:ok'),
+                onPress: () => {
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: {
+                      currentLat,
+                      currentLng,
+                      currentName,
+                      destinationLat,
+                      destinationLng,
+                      destinationName,
+                      driverId: selectedTaxi.userId,
+                      driverName: selectedTaxi.name,
+                      fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
+                      rideId: result.rideId,
+                    },
+                  });
+                },
+                style: 'default',
               },
-            },
-          ]
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
-      Alert.alert(
-        t('taxiInfo:bookingError'),
-        t('taxiInfo:bookingErrorMessage'),
-        [{ text: t('common:ok') }]
+      showGlobalError(
+        'Booking Error',
+        'Failed to send ride request. Please try again.',
+        {
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('Booking error acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
       );
     } finally {
       setIsBooking(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -9,6 +9,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -19,6 +20,7 @@ export default function PassengerProfile() {
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
+    const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
     // Initialize name from user context
     useEffect(() => {
@@ -30,136 +32,83 @@ export default function PassengerProfile() {
 
     const handleUploadPhoto = async () => {
       try {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: 'images',
-            allowsEditing: true,
-            quality: 1,
-        });
-
-          if (!result.canceled && result.assets && result.assets.length > 0) {
-            const uri = result.assets[0].uri;
-            console.log('Selected image URI:', uri);
-            setImageUri(uri);
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 1 });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          setImageUri(result.assets[0].uri);
         }
-      } catch (error) {
-          console.error('Image upload error:', error);
-      }
+      } catch {}
     };
 
     // Query user data from Convex using the user ID from context
     const convexUser = useQuery(
         api.functions.users.UserManagement.getUserById.getUserById, 
-        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+        user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
     );
 
     // Mutations for switching roles
     const switchPassengerToBoth = useMutation(api.functions.users.UserManagement.switchPassengertoBoth.switchPassengerToBoth);
     const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
 
-    const handleSignout = async () => {
-        await logout();
-        router.push('../LandingPage');
-    };
+    const handleSignout = async () => { await logout(); router.push('../LandingPage'); };
 
     const handleSwitchToDriver = async () => {
         try {
             if (!user?.id) {
-                Alert.alert('Not Found', 'User data not found');
+                showGlobalError('Not Found', 'User data not found', { duration: 4000, position: 'top', animation: 'slide-down' });
                 return;
             }
 
-            // First time switching - user is currently passenger only
             if ((convexUser?.accountType || user.accountType) === 'passenger') {
-                Alert.alert(
-                    t('profile:firstTimeSwitching'),
-                    t('profile:firstTimeSwitchingMessage'),
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: t('profile:continue'),
-                            onPress: async () => {
-                                try {
-                                    // Upgrade passenger to both first
-                                    await switchPassengerToBoth({ 
-                                        userId: user.id as Id<"taxiTap_users"> 
-                                    });
-                                    
-                                    // Then switch active role to driver
-                                    await switchActiveRole({ 
-                                        userId: user.id as Id<"taxiTap_users">, 
-                                        newRole: 'driver' as const
-                                    });
-                                    
-                                    // Update context
-                                    await updateAccountType('both');
-                                    await updateUserRole('driver');
-                                    
-                                    Alert.alert(t('profile:success'), t('profile:successfullySwitched'), [
-                                        {
-                                            text: 'OK',
-                                            onPress: () => {
-                                                try {
-                                                    router.push('../DriverOffline');
-                                                } catch (navError) {
-                                                    console.error('Navigation error:', navError);
-                                                    Alert.alert(t('profile:navigationError'), t('profile:failedToNavigate'));
-                                                }
-                                            }
-                                        }
-                                    ]);
-                                } catch (error: any) {
-                                    Alert.alert(t('profile:error'), error.message || t('profile:failedToSwitch'));
-                                }
-                            },
-                        },
-                    ]
-                );
-            }
-            // User already has both account types - just switch active role
-            else if ((convexUser?.accountType || user.accountType) === 'both') {
-                Alert.alert(
-                    t('profile:switchProfile'),
-                    t('profile:switchProfileMessage'),
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: 'Yes',
-                            onPress: async () => {
-                                try {
-                                    // Switch active role to driver
-                                    await switchActiveRole({ 
-                                        userId: user.id as Id<"taxiTap_users">, 
-                                        newRole: 'driver' as const
-                                    });
-                                    
-                                    // Update context
-                                    await updateUserRole('driver');
-                                    
-                                    Alert.alert(t('profile:success'), t('profile:switchedToDriver'), [
-                                        {
-                                            text: 'OK',
-                                            onPress: () => {
-                                                try {
-                                                    router.push('../DriverOffline');
-                                                } catch (navError) {
-                                                    console.error('Navigation error:', navError);
-                                                    Alert.alert(t('profile:navigationError'), t('profile:failedToNavigate'));
-                                                }
-                                            }
-                                        }
-                                    ]);
-                                } catch (error: any) {
-                                    Alert.alert(t('profile:error'), error.message || t('profile:failedToSwitch'));
-                                }
-                            },
-                        },
-                    ]
-                );
+                showGlobalAlert({
+                  title: 'First Time Switching',
+                  message: 'This will upgrade your account to support both passenger and driver roles.',
+                  type: 'info',
+                  duration: 0,
+                  position: 'top',
+                  animation: 'slide-down',
+                  actions: [
+                    { label: 'Cancel', onPress: () => {}, style: 'cancel' },
+                    { label: 'Continue', onPress: async () => {
+                        try {
+                          await switchPassengerToBoth({ userId: user.id as Id<'taxiTap_users'> });
+                          await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
+                          await updateAccountType('both');
+                          await updateUserRole('driver');
+                          showGlobalSuccess('Success', 'Successfully switched to driver mode!');
+                          router.push('../DriverOffline');
+                        } catch (error: any) {
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
+                        }
+                    }, style: 'default' },
+                  ],
+                });
+            } else if ((convexUser?.accountType || user.accountType) === 'both') {
+                showGlobalAlert({
+                  title: 'Switch Profile',
+                  message: 'Are you sure you want to switch to the driver profile?',
+                  type: 'info',
+                  duration: 0,
+                  position: 'top',
+                  animation: 'slide-down',
+                  actions: [
+                    { label: 'Cancel', onPress: () => {}, style: 'cancel' },
+                    { label: 'Yes', onPress: async () => {
+                        try {
+                          await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
+                          await updateUserRole('driver');
+                          showGlobalSuccess('Success', 'Switched to driver mode!');
+                          router.push('../DriverOffline');
+                        } catch (error: any) {
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
+                        }
+                    }, style: 'default' },
+                  ],
+                });
             } else {
-                Alert.alert(t('profile:error'), t('profile:invalidAccountType'));
+                showGlobalError('Error', 'Invalid account type for switching to driver mode');
             }
         } catch (error: any) {
-            Alert.alert(t('profile:error'), t('profile:unexpectedError'));
+            showGlobalError('Error', 'An unexpected error occurred');
         }
     };
 

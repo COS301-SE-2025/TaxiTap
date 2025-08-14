@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  Alert,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import icon from '../assets/images/icon.png';
 import google from '../assets/images/google5.png';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default function Login() {
   const [number, setNumber] = useState('');
@@ -28,15 +28,24 @@ export default function Login() {
   const convex = useConvex();
   const { login } = useUser();
   const { t, currentLanguage } = useLanguage();
+  const { showGlobalError } = useAlertHelpers();
 
   const handleLogin = async () => {
     if (!number || !password) {
-      Alert.alert(t('common:error'), t('common:pleaseFillAllFields'));
+      showGlobalError('Error', 'Please fill all fields', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert(t('common:error'), t('common:invalidNumber'));
+      showGlobalError('Error', 'Invalid number format', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
     try {
@@ -60,7 +69,11 @@ export default function Login() {
       });
       }
     } catch {
-      Alert.alert(t('common:error'), t('common:phoneNumberOrPasswordIncorrect'));
+      showGlobalError('Error', 'Phone number or password incorrect', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     }
   };
 

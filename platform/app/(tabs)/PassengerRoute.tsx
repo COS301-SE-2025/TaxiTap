@@ -245,7 +245,11 @@ export default function RouteSelectionScreen() {
    */
   const handleRouteSelect = async (route: RouteData) => {
     if (!route.destinationCoords) {
-      Alert.alert("Error", "Route coordinates not available");
+      showGlobalError("Error", "Route coordinates not available", {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 

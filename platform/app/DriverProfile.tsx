@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -9,10 +9,9 @@ import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, router } from "expo-router";
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default function DriverProfile() {
-    const { userId } = useLocalSearchParams<{ userId: string }>();
     const [name, setName] = useState('');
     const [number, setNumber] = useState('');
     const router = useRouter();
@@ -21,6 +20,7 @@ export default function DriverProfile() {
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
+    const { showError, showSuccess, showConfirm } = useAlertHelpers();
 
     // Initialize name from user context
     useEffect(() => {
@@ -82,102 +82,68 @@ export default function DriverProfile() {
     const handleSwitchToPassenger = async () => {
         try {
             if (!user?.id) {
-                Alert.alert(t('common:error'), t('driver:userNotLoaded'));
+                showError('Error', 'User data not loaded');
                 return;
             }
 
             // First time switching - user is currently driver only
             if ((convexUser?.accountType || user.accountType) === 'driver') {
-                Alert.alert(
-                    t('driver:firstTimeSwitchingToPassenger'),
-                    t('driver:firstTimeSwitchingToPassengerMessage'),
-                    [
-                        { text: t('common:cancel'), style: 'cancel' },
-                        {
-                            text: t('common:continue'),
-                            onPress: async () => {
-                                try {
-                                    // Upgrade driver to both first
-                                    await switchDriverToBoth({ 
-                                        userId: user.id as Id<"taxiTap_users"> 
-                                    });
-                                    
-                                    // Then switch active role to passenger
-                                    await switchActiveRole({ 
-                                        userId: user.id as Id<"taxiTap_users">, 
-                                        newRole: 'passenger' as const
-                                    });
-                                    
-                                    // Update context
-                                    await updateAccountType('both');
-                                    await updateUserRole('passenger');
-                                    
-                                    Alert.alert(t('common:success'), t('driver:successfullySwitchedToPassenger'), [
-                                        {
-                                            text: 'OK',
-                                            onPress: () => {
-                                                try {
-                                                    router.push('../HomeScreen');
-                                                } catch (navError) {
-                                                    console.error('Navigation error:', navError);
-                                                    Alert.alert('Navigation Error', 'Failed to navigate to home screen');
-                                                }
-                                            }
-                                        }
-                                    ]);
-                                } catch (error: any) {
-                                    Alert.alert('Error', error.message || 'Failed to switch to passenger mode');
-                                }
-                            },
-                        },
-                    ]
+                showConfirm(
+                    'First Time Switching to Passenger',
+                    'This will upgrade your account to support both passenger and driver roles.',
+                    async () => {
+                        try {
+                            // Upgrade driver to both first
+                            await switchDriverToBoth({ 
+                                userId: user.id as Id<"taxiTap_users"> 
+                            });
+                            
+                            // Then switch active role to passenger
+                            await switchActiveRole({ 
+                                userId: user.id as Id<"taxiTap_users">, 
+                                newRole: 'passenger' as const
+                            });
+                            
+                            // Update context
+                            await updateAccountType('both');
+                            await updateUserRole('passenger');
+                            
+                            showSuccess('Success', 'Successfully switched to passenger mode!');
+                            router.push('../HomeScreen');
+                        } catch (error: any) {
+                            showError('Error', error.message || 'Failed to switch to passenger mode');
+                        }
+                    }
                 );
             } 
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
-                Alert.alert(
-                    t('driver:switchProfile'),
-                    t('driver:switchProfileMessage'),
-                    [
-                        { text: t('common:cancel'), style: 'cancel' },
-                        {
-                            text: t('common:yes'),
-                            onPress: async () => {
-                                try {
-                                    // Switch active role to passenger
-                                    await switchActiveRole({ 
-                                        userId: user.id as Id<"taxiTap_users">, 
-                                        newRole: 'passenger' as const
-                                    });
-                                    
-                                    // Update context
-                                    await updateUserRole('passenger');
-                                    
-                                    Alert.alert(t('common:success'), t('driver:switchedToPassenger'), [
-                                        {
-                                            text: t('common:ok'),
-                                            onPress: () => {
-                                                try {
-                                                    router.push('../HomeScreen');
-                                                } catch (navError) {
-                                                    console.error('Navigation error:', navError);
-                                                    Alert.alert(t('driver:navigationError'), t('driver:failedToNavigate'));
-                                                }
-                                            }
-                                        }
-                                    ]);
-                                } catch (error: any) {
-                                    Alert.alert(t('common:error'), error.message || t('driver:failedToSwitch'));
-                                }
-                            },
-                        },
-                    ]
+                showConfirm(
+                    'Switch Profile',
+                    'Are you sure you want to switch to the passenger profile?',
+                    async () => {
+                        try {
+                            // Switch active role to passenger
+                            await switchActiveRole({ 
+                                userId: user.id as Id<"taxiTap_users">, 
+                                newRole: 'passenger' as const
+                            });
+                            
+                            // Update context
+                            await updateUserRole('passenger');
+                            
+                            showSuccess('Success', 'Switched to passenger mode!');
+                            router.push('../HomeScreen');
+                        } catch (error: any) {
+                            showError('Error', error.message || 'Failed to switch to passenger mode');
+                        }
+                    }
                 );
             } else {
-                Alert.alert(t('common:error'), t('driver:invalidAccountType'));
+                showError('Error', 'Invalid account type for switching to passenger mode');
             }
         } catch (error: any) {
-            Alert.alert(t('common:error'), t('driver:unexpectedError'));
+            showError('Error', 'An unexpected error occurred');
         }
     };
 
