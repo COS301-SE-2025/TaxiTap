@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, cleanup } from '@testing-library/react-native';
+import { TestWrapper } from '../../utils/TestWrapper';
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -103,6 +104,9 @@ jest.mock('convex/react', () => {
       if (queryFn === 'getTaxiForDriver') {
         return { capacity: 4 };
       }
+      if (queryFn === 'getActiveRideByDriver') {
+        return null;
+      }
       return null;
     }),
     useMutation: jest.fn(() => jest.fn(() => Promise.resolve())),
@@ -124,6 +128,7 @@ jest.mock('../../../convex/_generated/api', () => ({
         acceptRide: { acceptRide: 'acceptRide' },
         cancelRide: { cancelRide: 'cancelRide' },
         declineRide: { declineRide: 'declineRide' },
+        getActiveRideByDriver: { getActiveRideByDriver: 'getActiveRideByDriver' },
       },
     },
   },
@@ -144,11 +149,13 @@ describe('DriverOnline Component', () => {
 
     expect(() =>
       render(
-        <DriverOnline
-          onGoOffline={jest.fn()}
-          todaysEarnings={100}
-          currentRoute="Test Route"
-        />
+        <TestWrapper>
+          <DriverOnline
+            onGoOffline={jest.fn()}
+            todaysEarnings={100}
+            currentRoute="Test Route"
+          />
+        </TestWrapper>
       )
     ).not.toThrow();
   });

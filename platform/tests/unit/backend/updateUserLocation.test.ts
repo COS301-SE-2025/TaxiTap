@@ -77,7 +77,7 @@ jest.mock('convex/values', () => ({
         latitude,
         longitude,
         role,
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Number),
       });
     });
   
@@ -110,7 +110,7 @@ jest.mock('convex/values', () => ({
         latitude,
         longitude,
         role,
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Number),
       });
     });
   
@@ -139,7 +139,7 @@ jest.mock('convex/values', () => ({
         latitude,
         longitude,
         role: 'both',
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Number),
       });
     });
   

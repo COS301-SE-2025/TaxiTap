@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import SetRoute from '../../../app/SetRoute';
+import { TestWrapper } from '../../utils/TestWrapper';
 
 // Mock dependencies
 const mockGoBack = jest.fn();
@@ -66,11 +67,15 @@ describe('SetRoute', () => {
         .mockReturnValueOnce(null) // getDriverAssignedRoute
         .mockReturnValueOnce(['PUTCO', 'Golden Arrow', 'City Bus']); // getAllTaxiAssociations
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('Get Your Route')).toBeTruthy();
       expect(getByText('Route Assignment')).toBeTruthy();
-      expect(getByText('Select Your Taxi Association')).toBeTruthy();
+      expect(getByText('Select Taxi Association')).toBeTruthy();
       expect(getByText('PUTCO')).toBeTruthy();
       expect(getByText('Golden Arrow')).toBeTruthy();
       expect(getByText('City Bus')).toBeTruthy();
@@ -83,10 +88,16 @@ describe('SetRoute', () => {
         taxiAssociation: 'PUTCO',
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText, getAllByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
-      expect(getByText('Your Route')).toBeTruthy();
-      expect(getByText('Your Assigned Route')).toBeTruthy();
+      // Check that both "Your Assigned Route" elements are present (header and section title)
+      const assignedRouteElements = getAllByText('Your Assigned Route');
+      expect(assignedRouteElements).toHaveLength(2);
+      
       expect(getByText('Pretoria → Johannesburg')).toBeTruthy();
       expect(getByText('PUTCO')).toBeTruthy();
       expect(getByText('Activate Route')).toBeTruthy();
@@ -97,7 +108,11 @@ describe('SetRoute', () => {
     it('should call goBack when back button is pressed', () => {
       useQuery.mockReturnValue(null);
       
-      const { getByTestId } = render(<SetRoute />);
+      const { getByTestId } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       const backButton = getByTestId('back-button');
       
       fireEvent.press(backButton);
@@ -107,7 +122,11 @@ describe('SetRoute', () => {
     it('should set navigation options on mount', () => {
       useQuery.mockReturnValue(null);
       
-      render(<SetRoute />);
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       expect(mockSetOptions).toHaveBeenCalledWith({
         headerShown: false,
         tabBarStyle: { display: 'none' },
@@ -121,7 +140,11 @@ describe('SetRoute', () => {
         .mockReturnValueOnce(null) // getDriverAssignedRoute
         .mockReturnValueOnce(['PUTCO', 'Golden Arrow']); // getAllTaxiAssociations
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       expect(getByText('PUTCO')).toBeTruthy();
       expect(getByText('Golden Arrow')).toBeTruthy();
     });
@@ -131,7 +154,11 @@ describe('SetRoute', () => {
         .mockReturnValueOnce(null) // getDriverAssignedRoute
         .mockReturnValueOnce(['PUTCO', 'Golden Arrow']); // getAllTaxiAssociations
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       const putcoButton = getByText('PUTCO');
       fireEvent.press(putcoButton);
@@ -150,7 +177,11 @@ describe('SetRoute', () => {
         assignedRoute: { name: 'Cape Town - Stellenbosch' }
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       fireEvent.press(getByText('PUTCO'));
       fireEvent.press(getByText('Get My Route'));
@@ -169,7 +200,11 @@ describe('SetRoute', () => {
 
       mockAssignRandomRoute.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       fireEvent.press(getByText('PUTCO'));
       fireEvent.press(getByText('Get My Route'));
@@ -186,14 +221,18 @@ describe('SetRoute', () => {
 
       mockAssignRandomRoute.mockRejectedValue(new Error('Assignment failed'));
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       fireEvent.press(getByText('PUTCO'));
       fireEvent.press(getByText('Get My Route'));
       
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          "Assignment Failed",
+          "driver.assignmentFailed",
           "Assignment failed"
         );
       });
@@ -207,7 +246,11 @@ describe('SetRoute', () => {
         taxiAssociation: 'Golden Arrow',
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       const activateButton = getByText('Activate Route');
       
       fireEvent.press(activateButton);
@@ -221,7 +264,11 @@ describe('SetRoute', () => {
         taxiAssociation: 'Golden Arrow',
       });
 
-      const { getByText } = render(<SetRoute onRouteSet={mockOnRouteSet} />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute onRouteSet={mockOnRouteSet} />
+        </TestWrapper>
+      );
       
       fireEvent.press(getByText('Activate Route'));
       
@@ -234,16 +281,20 @@ describe('SetRoute', () => {
         taxiAssociation: 'Golden Arrow',
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       
       fireEvent.press(getByText('Activate Route'));
       
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          "Route Activated",
-          "Your route has been activated:\n\nBloemfontein → Kimberley",
+          "driver.routeActivated",
+          "driver.routeActivatedMessage",
           [{
-            text: "OK",
+            text: "common.ok",
             onPress: expect.any(Function),
           }]
         );
@@ -258,7 +309,11 @@ describe('SetRoute', () => {
         taxiAssociation: 'City Bus',
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       expect(getByText('Port Elizabeth → East London')).toBeTruthy();
     });
 
@@ -268,7 +323,11 @@ describe('SetRoute', () => {
         taxiAssociation: 'Test',
       });
 
-      const { getByText } = render(<SetRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
       expect(getByText('InvalidRouteName → Unknown')).toBeTruthy();
     });
   });
@@ -279,11 +338,19 @@ describe('SetRoute', () => {
     });
 
     it('should render with onRouteSet prop', () => {
-      expect(() => render(<SetRoute onRouteSet={mockOnRouteSet} />)).not.toThrow();
+      expect(() => render(
+        <TestWrapper>
+          <SetRoute onRouteSet={mockOnRouteSet} />
+        </TestWrapper>
+      )).not.toThrow();
     });
 
     it('should render without onRouteSet prop', () => {
-      expect(() => render(<SetRoute />)).not.toThrow();
+      expect(() => render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      )).not.toThrow();
     });
   });
 });

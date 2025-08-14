@@ -96,21 +96,12 @@ export default function DriverOnline({
 
   // Set driver PIN from active ride when available, or generate a new one if no active ride
   useEffect(() => {
-    console.log('🔐 DriverOnline PIN update:', { 
-      hasActiveRide: !!activeRide, 
-      ridePin: activeRide?.ridePin, 
-      currentDriverPin: driverPin,
-      rideStatus: activeRide?.status 
-    });
-    
     if (activeRide?.ridePin) {
       // Use the PIN from the active ride
-      console.log('✅ Setting PIN from active ride:', activeRide.ridePin);
       setDriverPin(activeRide.ridePin);
     } else if (user && !driverPin) {
       // Generate a new PIN only when driver goes online and no active ride
       const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-      console.log('🔄 Generating new PIN (no active ride):', newPin);
       setDriverPin(newPin);
     }
   }, [user, driverPin, activeRide?.ridePin]);
@@ -908,7 +899,7 @@ export default function DriverOnline({
               <View style={dynamicStyles.earningsContainer}>
                 <TouchableOpacity 
                   style={dynamicStyles.earningsCard}
-                  onPress={() => console.log('Earnings pressed!')}
+                  onPress={() => {}}
                   activeOpacity={0.8}
                 >
                   <Text style={dynamicStyles.earningsAmount}>
