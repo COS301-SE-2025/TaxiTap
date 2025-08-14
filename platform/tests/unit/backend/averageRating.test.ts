@@ -1,4 +1,4 @@
-import { getAverageRating } from "../../../convex/functions/feedback/averageRating";
+const { getAverageRating } = require("../../../convex/functions/feedback/averageRating");
 
 describe("getAverageRating", () => {
   const mockCollect = jest.fn();

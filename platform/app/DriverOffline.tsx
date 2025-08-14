@@ -78,13 +78,9 @@ export default function DriverOffline({
 
   );
 
-
-
-
   if (!user) return;
   
   const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
-  
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -116,6 +112,23 @@ export default function DriverOffline({
       destination: parts[1] ?? "Unknown"
     };
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
+
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
 
   const handleSetRoute = () => {
     router.push('/SetRoute');

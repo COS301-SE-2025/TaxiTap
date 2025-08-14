@@ -232,9 +232,19 @@ describe('SetRoute', () => {
           <SetRoute onRouteSet={mockOnRouteSet} />
         </TestWrapper>
       )).not.toThrow();
+      expect(() => render(
+        <TestWrapper>
+          <SetRoute onRouteSet={mockOnRouteSet} />
+        </TestWrapper>
+      )).not.toThrow();
     });
 
     it('should render without onRouteSet prop', () => {
+      expect(() => render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      )).not.toThrow();
       expect(() => render(
         <TestWrapper>
           <SetRoute />

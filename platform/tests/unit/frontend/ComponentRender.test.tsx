@@ -1,49 +1,6 @@
 import React from 'react';
 import { render, cleanup } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-
-// Properly suppress act warnings for this test file too
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('An update to DriverOnline inside a test was not wrapped in act') ||
-       args[0].includes('not wrapped in act'))
-    ) {
-      return; // Completely suppress these warnings
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});
-
-// Mock the AlertContext
-const ComponentRenderAlertProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
-};
-
-jest.mock('../../../contexts/AlertContext', () => ({
-  AlertProvider: ComponentRenderAlertProvider,
-  useAlerts: () => ({
-    alerts: [],
-    addAlert: jest.fn(),
-    removeAlert: jest.fn(),
-    clearAlerts: jest.fn(),
-  }),
-}));
-
-// Mock AlertHelpers
-jest.mock('../../../components/AlertHelpers', () => ({
-  useAlertHelpers: () => ({
-    showSuccessAlert: jest.fn(),
-    showErrorAlert: jest.fn(),
-    showInfoAlert: jest.fn(),
-  }),
-}));
+import { TestWrapper } from '../../utils/TestWrapper';
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -147,6 +104,9 @@ jest.mock('convex/react', () => {
       if (queryFn === 'getTaxiForDriver') {
         return { capacity: 4 };
       }
+      if (queryFn === 'getActiveRideByDriver') {
+        return null;
+      }
       return null;
     }),
     useMutation: jest.fn(() => jest.fn(() => Promise.resolve())),
@@ -165,10 +125,10 @@ jest.mock('../../../convex/_generated/api', () => ({
         earnings: { getWeeklyEarnings: 'getWeeklyEarnings' },
       },
       rides: {
-        getActiveTrips: { getActiveTrips: 'getActiveTrips' },
         acceptRide: { acceptRide: 'acceptRide' },
         cancelRide: { cancelRide: 'cancelRide' },
         declineRide: { declineRide: 'declineRide' },
+        getActiveRideByDriver: { getActiveRideByDriver: 'getActiveRideByDriver' },
       },
     },
   },
@@ -180,17 +140,6 @@ jest.mock('../../../app/hooks/useLocationStreaming', () => ({
     error: null,
   }),
 }));
-
-// Test wrapper with all necessary providers
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <NavigationContainer>
-      <ComponentRenderAlertProvider>
-        {children}
-      </ComponentRenderAlertProvider>
-    </NavigationContainer>
-  );
-};
 
 describe('DriverOnline Component', () => {
   afterEach(cleanup);

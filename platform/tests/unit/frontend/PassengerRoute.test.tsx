@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import PassengerRoute from '../../../app/(tabs)/PassengerRoute';
+import { TestWrapper } from '../../utils/TestWrapper';
 
 // Mock dependencies
 const mockPush = jest.fn();
@@ -74,7 +75,11 @@ describe('PassengerRoute', () => {
 
   describe('Component Rendering', () => {
     it('should render route selection screen with available routes', () => {
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('Available Routes (2)')).toBeTruthy();
       expect(getByText('Pretoria to Johannesburg')).toBeTruthy();
@@ -84,13 +89,21 @@ describe('PassengerRoute', () => {
     });
 
     it('should render search functionality', () => {
-      const { getByPlaceholderText } = render(<PassengerRoute />);
+      const { getByPlaceholderText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByPlaceholderText('Search routes or destinations...')).toBeTruthy();
     });
 
     it('should display route information correctly', () => {
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('60 min')).toBeTruthy(); // 3600 seconds / 60
       expect(getByText('40 min')).toBeTruthy(); // 2400 seconds / 60
@@ -99,7 +112,11 @@ describe('PassengerRoute', () => {
 
   describe('Search Functionality', () => {
     it('should filter routes by start location', () => {
-      const { getByPlaceholderText, getByText, queryByText } = render(<PassengerRoute />);
+      const { getByPlaceholderText, getByText, queryByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       const searchInput = getByPlaceholderText('Search routes or destinations...');
       fireEvent.changeText(searchInput, 'Pretoria');
@@ -109,7 +126,11 @@ describe('PassengerRoute', () => {
     });
 
     it('should filter routes by destination', () => {
-      const { getByPlaceholderText, getByText, queryByText } = render(<PassengerRoute />);
+      const { getByPlaceholderText, getByText, queryByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       const searchInput = getByPlaceholderText('Search routes or destinations...');
       fireEvent.changeText(searchInput, 'Stellenbosch');
@@ -119,7 +140,11 @@ describe('PassengerRoute', () => {
     });
 
     it('should show no results for invalid search', () => {
-      const { getByPlaceholderText, getByText } = render(<PassengerRoute />);
+      const { getByPlaceholderText, getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       const searchInput = getByPlaceholderText('Search routes or destinations...');
       fireEvent.changeText(searchInput, 'InvalidCity');
@@ -136,7 +161,11 @@ describe('PassengerRoute', () => {
       
       useQuery.mockReturnValue(routeWithoutCoords);
       
-      const { getAllByText } = render(<PassengerRoute />);
+      const { getAllByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       const reserveButtons = getAllByText('Reserve Seat');
       
       fireEvent.press(reserveButtons[0]);
@@ -157,7 +186,11 @@ describe('PassengerRoute', () => {
     it('should show pagination when routes exceed page limit', () => {
       useQuery.mockReturnValue(manyRoutes);
       
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('Page 1 of 3')).toBeTruthy();
       expect(getByText('Showing 1-10 of 25 routes')).toBeTruthy();
@@ -166,7 +199,11 @@ describe('PassengerRoute', () => {
     it('should navigate to next page', () => {
       useQuery.mockReturnValue(manyRoutes);
       
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       const nextButton = getByText('2');
       fireEvent.press(nextButton);
@@ -179,15 +216,23 @@ describe('PassengerRoute', () => {
     it('should show empty state when no routes available', () => {
       useQuery.mockReturnValue([]);
       
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
-      expect(getByText('No routes available')).toBeTruthy();
+      expect(getByText('No routes found')).toBeTruthy();
     });
 
     it('should show empty state with search results', () => {
       useQuery.mockReturnValue(mockRoutes);
       
-      const { getByPlaceholderText, getByText } = render(<PassengerRoute />);
+      const { getByPlaceholderText, getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       const searchInput = getByPlaceholderText('Search routes or destinations...');
       fireEvent.changeText(searchInput, 'NonExistentCity');
@@ -198,10 +243,14 @@ describe('PassengerRoute', () => {
 
   describe('Navigation Options', () => {
     it('should set navigation options on mount', () => {
-      render(<PassengerRoute />);
+      render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(mockSetOptions).toHaveBeenCalledWith({
-        title: "Select Route",
+        title: "booking:selectRoute",
         headerStyle: {
           backgroundColor: '#FFFFFF',
         },
@@ -219,7 +268,11 @@ describe('PassengerRoute', () => {
       
       useQuery.mockReturnValue(routeWith10MinDuration);
       
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('R15.00')).toBeTruthy(); // Minimum fare
     });
@@ -232,7 +285,11 @@ describe('PassengerRoute', () => {
       
       useQuery.mockReturnValue(routeWithInvalidDuration);
       
-      const { getByText } = render(<PassengerRoute />);
+      const { getByText } = render(
+        <TestWrapper>
+          <PassengerRoute />
+        </TestWrapper>
+      );
       
       expect(getByText('R15.00')).toBeTruthy(); // Default minimum fare
     });

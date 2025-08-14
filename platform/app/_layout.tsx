@@ -236,6 +236,7 @@ function RootLayoutNav() {
             }}
           />
         </Stack>
+        <StackNavigator />
       </View>
     </NavigationThemeProvider>
   );
@@ -298,6 +299,13 @@ function StackNavigator() {
           title: "Notifications" 
         }}
       />
+              
+              <Stack.Screen
+                name="DriverPinEntry"
+                options={{
+                  headerShown: false
+                }}
+              />
     </Stack>
   );
 }

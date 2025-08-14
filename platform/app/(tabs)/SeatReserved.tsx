@@ -1,21 +1,25 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { useUser } from '../../contexts/UserContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
+import { FontAwesome } from "@expo/vector-icons";
 
-const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
-	? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
-	: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+// Get platform-specific API key
+const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
+  ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
+  : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
+	const [useLiveLocation, setUseLiveLocation] = useState(false);
 	const params = useLocalSearchParams();
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
@@ -34,14 +38,58 @@ export default function SeatReserved() {
 		getCachedRoute,
 		setCachedRoute
 	} = useMapContext();
+	const { notifications, markAsRead } = useNotifications();
 
 	const mapRef = useRef<MapView | null>(null);
 	
+	// Fetch taxi and driver info for the current reservation using Convex
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
+	try {
+		taxiInfo = useQuery(
+			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+		);
+	} catch (err) {
+		taxiInfoError = err;
+	}
+
+	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
+	const endRide = useMutation(api.functions.rides.endRide.endRide);
+	const verifyDriverPin = useMutation(api.functions.rides.verifyDriverPin.verifyDriverPin);
+
+	// Helper to determine ride status
+	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+	const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
+
+	const [hasFittedRoute, setHasFittedRoute] = useState(false);
+	const [isFollowing, setIsFollowing] = useState(true);
+	const [pin, setPin] = useState(['', '', '', '']);
+	const [isVerifying, setIsVerifying] = useState(false);
+	const [showPinEntry, setShowPinEntry] = useState(false);
+
+	const passengerId = user?.id;
+	const rideId = taxiInfo?.rideId;
+	const driverId = taxiInfo?.driver?.userId;
+
+	// Remove averageRating usage if not available
+	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
+	const [rideJustEnded, setRideJustEnded] = useState(false);
+
+	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
+	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
+
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
 		});
-	}, []);
+	}, [navigation]);
+
+	// Show PIN entry when ride is accepted
+	useEffect(() => {
+		if (rideStatus === 'accepted') {
+			setShowPinEntry(true);
+		}
+	}, [rideStatus]);
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -50,40 +98,45 @@ export default function SeatReserved() {
 		return param || fallback;
 	}
 
-	// Simple deep equality check for location objects
-	function deepEqual(obj1: any, obj2: any): boolean {
-		if (obj1 === obj2) return true;
-		if (!obj1 || !obj2) return false;
-		const keys1 = Object.keys(obj1);
-		const keys2 = Object.keys(obj2);
-		if (keys1.length !== keys2.length) return false;
-		for (let key of keys1) {
-			if (obj1[key] !== obj2[key]) return false;
-		}
-		return true;
-	}
+	useEffect(() => {
+		setUseLiveLocation(false);
+	}, []);
 
 	// Parse location data from params and update context
 	useEffect(() => {
-		const newCurrentLocation = {
-			latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
-			longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-			name: getParamAsString(params.currentName, "")
-		};
+		if (!useLiveLocation) {
+			const rawCurrentLat = getParamAsString(params.currentLat);
+			const rawCurrentLng = getParamAsString(params.currentLng);
+			const rawDestLat = getParamAsString(params.destinationLat);
+			const rawDestLng = getParamAsString(params.destinationLng);
 
-		const newDestination = {
-			latitude: parseFloat(getParamAsString(params.destinationLat, "-25.7824")),
-			longitude: parseFloat(getParamAsString(params.destinationLng, "28.2753")),
-			name: getParamAsString(params.destinationName, "")
-		};
+			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
-		if (!deepEqual(currentLocation, newCurrentLocation)) {
-			setCurrentLocation(newCurrentLocation);
+			const currentLat = parseFloat(rawCurrentLat);
+			const currentLng = parseFloat(rawCurrentLng);
+			const destLat = parseFloat(rawDestLat);
+			const destLng = parseFloat(rawDestLng);
+
+			if (
+				isNaN(currentLat) || isNaN(currentLng) ||
+				isNaN(destLat) || isNaN(destLng)
+			) {
+				console.warn('Skipping update due to invalid coordinates.');
+				return;
+			}
+
+			setCurrentLocation({
+				latitude: currentLat,
+				longitude: currentLng,
+				name: getParamAsString(params.currentName, "Current Location")
+			});
+			setDestination({
+				latitude: destLat,
+				longitude: destLng,
+				name: getParamAsString(params.destinationName, "")
+			});
 		}
-		if (!deepEqual(destination, newDestination)) {
-			setDestination(newDestination);
-		}
-	}, [params, setCurrentLocation, setDestination]);
+	}, [useLiveLocation]);
 
 	const vehicleInfo = {
 		plate: getParamAsString(params.plate, "Unknown"),
@@ -254,67 +307,270 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, destination, routeLoaded, isLoadingRoute]);
 
-	// Fit map to show route when coordinates are available
+	// Initial fit to route when route or destination changes
 	useEffect(() => {
-		if (routeCoordinates.length > 0 && currentLocation && destination && mapRef.current) {
-			const coordinates = [
-				{ latitude: currentLocation.latitude, longitude: currentLocation.longitude },
-				{ latitude: destination.latitude, longitude: destination.longitude },
-				...routeCoordinates
-			];
-			
-			// Small delay to ensure map is ready
-			setTimeout(() => {
-				mapRef.current?.fitToCoordinates(coordinates, {
+		if (
+			routeCoordinates.length > 0 &&
+			currentLocation &&
+			destination &&
+			mapRef.current &&
+			!hasFittedRoute
+		) {
+			mapRef.current.fitToCoordinates(
+				[
+					{ latitude: currentLocation.latitude, longitude: currentLocation.longitude },
+					{ latitude: destination.latitude, longitude: destination.longitude },
+					...routeCoordinates,
+				],
+				{
 					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
 					animated: true,
-				});
-			}, 100);
+				}
+			);
+			setHasFittedRoute(true);
+			setIsFollowing(true);
 		}
-	}, [routeCoordinates, currentLocation, destination]);
+	}, [routeCoordinates, currentLocation, destination, hasFittedRoute]);
 
-	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any } | undefined, taxiInfoError: unknown;
-	try {
-		taxiInfo = useQuery(
-			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-		);
-	} catch (err) {
-		taxiInfoError = err;
-	}
+	// Reset fit when route or destination changes
+	useEffect(() => {
+		setHasFittedRoute(false);
+	}, [destination, routeCoordinates]);
 
-	const startRide = useMutation(api.functions.rides.startRide.startRide);
-	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
-
-	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
-	const showStartRide = rideStatus === 'accepted';
-	const showCancel = rideStatus === 'requested' || rideStatus === 'accepted';
-
-	const handleStartRide = async () => {
-		if (!taxiInfo?.rideId || !user?.id) {
-			alert('No ride or user information available.');
-			return;
+	// Live tracking: follow user when ride is started/in_progress and isFollowing
+	useEffect(() => {
+		if (
+			(rideStatus === 'started' || rideStatus === 'in_progress') &&
+			isFollowing &&
+			mapRef.current &&
+			currentLocation
+		) {
+			mapRef.current.animateToRegion(
+				{
+					latitude: currentLocation.latitude,
+					longitude: currentLocation.longitude,
+					latitudeDelta: 0.01,
+					longitudeDelta: 0.01,
+				},
+				500
+			);
 		}
-		try {
-			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			//alert('Ride started!');
-		} catch (error: any) {
-			alert(error?.message || 'Failed to start ride.');
+	}, [currentLocation, rideStatus, isFollowing]);
+
+	// PIN entry functions
+	const handleNumberPress = (number: string) => {
+		const emptyIndex = pin.findIndex(digit => digit === '');
+		if (emptyIndex !== -1) {
+			const newPin = [...pin];
+			newPin[emptyIndex] = number;
+			setPin(newPin);
+
+			// Auto-verify when all 4 digits are entered
+			if (emptyIndex === 3) {
+				verifyPinCode(newPin.join(''));
+			}
 		}
 	};
 
-	const handleCancelRequest = async () => {
+	const handleBackspace = () => {
+		const lastFilledIndex = pin.map((digit, index) => digit !== '' ? index : -1)
+			.filter(index => index !== -1)
+			.pop();
+		
+		if (lastFilledIndex !== undefined) {
+			const newPin = [...pin];
+			newPin[lastFilledIndex] = '';
+			setPin(newPin);
+		}
+	};
+
+	const verifyPinCode = async (enteredPin: string) => {
+		if (!user || !taxiInfo?.rideId || !driverId) {
+			Alert.alert('Error', 'Missing ride or user information.');
+			return;
+		}
+
+		setIsVerifying(true);
+		try {
+			const result = await verifyDriverPin({
+				rideId: taxiInfo.rideId,
+				passengerId: user.id as Id<'taxiTap_users'>,
+				driverId: driverId as Id<'taxiTap_users'>,
+				enteredPin: enteredPin,
+			});
+
+			if (result.success) {
+				Alert.alert('Success', 'Driver verified! Ride started.');
+				setShowPinEntry(false);
+				// The ride status should now change to 'in_progress' via the backend
+			} else {
+				Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+				setPin(['', '', '', '']);
+			}
+		} catch (error: any) {
+			Alert.alert('Error', 'Failed to verify PIN. Please try again.');
+			setPin(['', '', '', '']);
+		} finally {
+			setIsVerifying(false);
+		}
+	};
+
+	const renderNumberPad = () => {
+		const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'backspace'];
+		
+		return (
+			<View style={dynamicStyles.numberPad}>
+				{numbers.map((item, index) => {
+					if (item === '') {
+						return <View key={index} style={dynamicStyles.numberButtonEmpty} />;
+					}
+					
+					if (item === 'backspace') {
+						return (
+							<TouchableOpacity
+								key={index}
+								style={dynamicStyles.numberButton}
+								onPress={handleBackspace}
+								activeOpacity={0.7}
+							>
+								<Icon name="backspace-outline" size={24} color={theme.text} />
+							</TouchableOpacity>
+						);
+					}
+					
+					return (
+						<TouchableOpacity
+							key={index}
+							style={dynamicStyles.numberButton}
+							onPress={() => handleNumberPress(item)}
+							activeOpacity={0.7}
+						>
+							<Text style={dynamicStyles.numberButtonText}>{item}</Text>
+						</TouchableOpacity>
+					);
+				})}
+			</View>
+		);
+	};
+
+	// Handle notifications effect
+	useEffect(() => {
+		const rideStarted = notifications.find(
+			n => n.type === 'ride_started' && !n.isRead
+		);
+		if (rideStarted) {
+			Alert.alert(
+				'Ride Started',
+				rideStarted.message,
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							markAsRead(rideStarted._id);
+							if (!currentLocation || !destination) {
+								return;
+							}
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+			return;
+		} 
+
+		const rideDeclined = notifications.find(
+			n => n.type === 'ride_declined' && !n.isRead
+		);
+		if (rideDeclined) {
+			Alert.alert(
+				'Ride Declined',
+				rideDeclined.message || 'Your ride request was declined.',
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							markAsRead(rideDeclined._id);
+							router.push('/HomeScreen');
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+		}
+	}, [notifications, markAsRead, router]);
+
+	useEffect(() => {
+		if (rideJustEnded) return;
+		
+		if (taxiInfoError && !hasShownDeclinedAlert) {
+			Alert.alert(
+				'Ride Declined',
+				'No active reservation found. Your ride may have been cancelled or declined.',
+				[
+					{
+						text: 'OK',
+						onPress: () => {
+							setHasShownDeclinedAlert(true);
+							router.push('/HomeScreen');
+						},
+						style: 'default',
+					},
+				],
+				{ cancelable: false }
+			);
+		}
+	}, [taxiInfoError, hasShownDeclinedAlert]);
+
+	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			alert('No ride or user information available.');
+			Alert.alert('Error', 'No ride or user information available.');
+			return;
+		}
+		try {
+			// Call endTrip first to get the fare before the ride status changes
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+			});
+			
+			// Then end the ride and update seat availability
+			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			
+			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			
+			if (!currentLocation || !destination) {
+				return;
+			}
+			router.push({
+				pathname: './SubmitFeedback',
+				params: {
+					startName: currentLocation.name,
+					endName: destination.name,
+					passengerId: passengerId,
+					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
+					driverId: driverId,
+				},
+			});
+			setRideJustEnded(true);
+		} catch (error: any) {
+			Alert.alert('Error', error?.message || 'Failed to end ride.');
+		}
+	};
+
+	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
+		if (!taxiInfo?.rideId || !user?.id) {
+			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
 		try {
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			alert('Ride cancelled.');
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			Alert.alert('Success', 'Ride cancelled.');
 			router.push('/HomeScreen');
 		} catch (error: any) {
-			alert(error?.message || 'Failed to cancel ride.');
+			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
 		}
 	};
 
@@ -327,6 +583,14 @@ export default function SeatReserved() {
 		scrollView: {
 			flex: 1,
 			backgroundColor: theme.background,
+		},
+		loadingContainer: {
+			flex: 1, 
+			justifyContent: 'center', 
+			alignItems: 'center'
+		},
+		loadingText: {
+			color: theme.text
 		},
 		arrivalTimeOverlay: {
 			position: "absolute",
@@ -515,6 +779,100 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
+		// PIN entry styles
+		pinEntryOverlay: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
+			backgroundColor: 'rgba(0, 0, 0, 0.8)',
+			justifyContent: 'center',
+			alignItems: 'center',
+			zIndex: 1000,
+		},
+		pinEntryContainer: {
+			backgroundColor: theme.surface,
+			borderRadius: 20,
+			padding: 30,
+			width: '90%',
+			maxWidth: 350,
+			alignItems: 'center',
+		},
+		pinEntryHeader: {
+			alignItems: 'center',
+			marginBottom: 30,
+		},
+		pinEntryTitle: {
+			fontSize: 20,
+			fontWeight: '600',
+			color: theme.text,
+			marginTop: 12,
+			marginBottom: 8,
+		},
+		pinEntrySubtitle: {
+			fontSize: 14,
+			color: theme.textSecondary,
+			textAlign: 'center',
+		},
+		pinDisplay: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			marginBottom: 30,
+		},
+		pinDot: {
+			width: 16,
+			height: 16,
+			borderRadius: 8,
+			borderWidth: 2,
+			borderColor: theme.border,
+			marginHorizontal: 8,
+			backgroundColor: 'transparent',
+		},
+		pinDotFilled: {
+			backgroundColor: theme.primary,
+			borderColor: theme.primary,
+		},
+		numberPad: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			justifyContent: 'center',
+			width: 240,
+			marginBottom: 20,
+		},
+		numberButton: {
+			width: 70,
+			height: 70,
+			borderRadius: 35,
+			backgroundColor: isDark ? theme.background : '#F5F5F5',
+			justifyContent: 'center',
+			alignItems: 'center',
+			margin: 5,
+		},
+		numberButtonEmpty: {
+			width: 70,
+			height: 70,
+			margin: 5,
+		},
+		numberButtonText: {
+			fontSize: 24,
+			fontWeight: '600',
+			color: theme.text,
+		},
+		verifyingText: {
+			color: theme.primary,
+			fontSize: 16,
+			fontWeight: '500',
+			marginTop: 10,
+		},
+		pinCancelButton: {
+			paddingVertical: 12,
+			paddingHorizontal: 24,
+		},
+		pinCancelButtonText: {
+			color: theme.textSecondary,
+			fontSize: 16,
+		},
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -528,14 +886,26 @@ export default function SeatReserved() {
 			fontSize: 20,
 			fontWeight: "bold",
 		},
+		cancelButton: {
+			alignItems: "center",
+			backgroundColor: isDark ? "#FF4444" : "#FF6B6B",
+			borderRadius: 30,
+			paddingVertical: 24,
+			width: 330,
+		},
+		cancelButtonText: {
+			color: "#FFFFFF",
+			fontSize: 20,
+			fontWeight: "bold",
+		},
 	});
 
-	// Don't render until we have locations
+	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<Text style={{ color: theme.text }}>Loading...</Text>
+				<View style={dynamicStyles.loadingContainer}>
+					<Text style={dynamicStyles.loadingText}>Loading...</Text>
 				</View>
 			</SafeAreaView>
 		);
@@ -550,15 +920,16 @@ export default function SeatReserved() {
 						<MapView
 							ref={mapRef}
 							style={{ flex: 1 }}
-							provider={PROVIDER_GOOGLE} // Force Google Maps on all platforms
+							provider={PROVIDER_GOOGLE}
 							initialRegion={{
 								latitude: (currentLocation.latitude + destination.latitude) / 2,
 								longitude: (currentLocation.longitude + destination.longitude) / 2,
 								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
 								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
 							}}
-							// Use dark map style when in dark mode
 							customMapStyle={isDark ? darkMapStyle : []}
+							onPanDrag={() => setIsFollowing(false)}
+							onRegionChangeComplete={() => setIsFollowing(false)}
 						>
 							<Marker
 								coordinate={currentLocation}
@@ -611,11 +982,7 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{taxiInfoError ? (
-							<Text style={{ color: 'red', textAlign: 'center', marginTop: 20 }}>
-								No active reservation found. Your ride may have been cancelled or declined.
-							</Text>
-						) : (
+						{!taxiInfoError && (
 							<View style={dynamicStyles.driverInfoSection}>
 								<View style={dynamicStyles.driverAvatar}>
 									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
@@ -631,12 +998,27 @@ export default function SeatReserved() {
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-								<Text style={dynamicStyles.ratingText}>
-									{taxiInfo?.driver?.rating?.toFixed(1) || "5.0"}
-								</Text>
-								{[1, 2, 3, 4, 5].map((star, index) => (
-									<Icon key={index} name="star" size={12} color={theme.primary} style={{ marginRight: 1 }} />
-								))}
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={dynamicStyles.ratingText}>
+										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+									</Text>
+									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
+										{[1, 2, 3, 4, 5].map((star, index) => {
+											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
+											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+
+											return (
+												<FontAwesome
+													key={index}
+													name={full ? "star" : half ? "star-half-full" : "star-o"}
+													size={12}
+													color={theme.primary}
+													style={{ marginRight: 1 }}
+												/>
+											);
+										})}
+									</View>
+								</View>
 							</View>
 						)}
 						
@@ -673,21 +1055,38 @@ export default function SeatReserved() {
 						
 						{/* Action Buttons */}
 						<View style={dynamicStyles.actionButtonsContainer}>
-							{showStartRide && (
+							{/* Before ride is accepted: show only Cancel Request */}
+							{rideStatus === 'requested' && (
 								<TouchableOpacity 
-									style={dynamicStyles.startRideButton} 
-									onPress={handleStartRide}>
-									<Text style={dynamicStyles.startRideButtonText}>
-										{"Start Ride"}
+									style={dynamicStyles.cancelButton} 
+									onPress={handleCancelRequest}>
+									<Text style={dynamicStyles.cancelButtonText}>
+										{"Cancel Request"}
 									</Text>
 								</TouchableOpacity>
 							)}
-							{showCancel && (
+							{/* When ride is accepted: show message and Cancel Request */}
+							{rideStatus === 'accepted' && (
+								<>
+									<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
+										Driver will show you their PIN to verify and start the ride
+									</Text>
+									<TouchableOpacity 
+										style={dynamicStyles.cancelButton} 
+										onPress={handleCancelRequest}>
+										<Text style={dynamicStyles.cancelButtonText}>
+											{"Cancel Request"}
+										</Text>
+									</TouchableOpacity>
+								</>
+							)}
+							{/* Only show End Ride when ride is started or in progress */}
+							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
 								<TouchableOpacity 
-									style={dynamicStyles.startRideButton} 
-									onPress={handleCancelRequest}>
-									<Text style={dynamicStyles.startRideButtonText}>
-										{"Cancel Request"}
+									style={dynamicStyles.cancelButton} 
+									onPress={handleEndRide}>
+									<Text style={dynamicStyles.cancelButtonText}>
+										{"End Ride"}
 									</Text>
 								</TouchableOpacity>
 							)}
@@ -695,6 +1094,56 @@ export default function SeatReserved() {
 					</View>
 				</View>
 			</ScrollView>
+			
+			{/* PIN Entry Modal */}
+			{showPinEntry && (
+				<View style={dynamicStyles.pinEntryOverlay}>
+					<View style={dynamicStyles.pinEntryContainer}>
+						<View style={dynamicStyles.pinEntryHeader}>
+							<Icon name="shield-checkmark" size={32} color={theme.primary} />
+							<Text style={dynamicStyles.pinEntryTitle}>Enter Driver's PIN</Text>
+							<Text style={dynamicStyles.pinEntrySubtitle}>
+								Ask the driver to show you their verification PIN
+							</Text>
+						</View>
+
+						<View style={dynamicStyles.pinDisplay}>
+							{pin.map((digit, index) => (
+								<View
+									key={index}
+									style={[
+										dynamicStyles.pinDot,
+										digit !== '' && dynamicStyles.pinDotFilled,
+									]}
+								/>
+							))}
+						</View>
+
+						{renderNumberPad()}
+
+						{isVerifying && (
+							<Text style={dynamicStyles.verifyingText}>Verifying...</Text>
+						)}
+
+						<TouchableOpacity
+							style={dynamicStyles.pinCancelButton}
+							onPress={() => setShowPinEntry(false)}
+							activeOpacity={0.7}
+						>
+							<Text style={dynamicStyles.pinCancelButtonText}>Cancel</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+			)}
+			
+			{!isFollowing && (
+				<TouchableOpacity
+					style={{ position: 'absolute', bottom: 120, right: 30, backgroundColor: theme.primary, borderRadius: 25, padding: 12, zIndex: 10 }}
+					onPress={() => setIsFollowing(true)}
+				>
+					<Icon name="locate" size={24} color={isDark ? '#121212' : '#fff'} />
+				</TouchableOpacity>
+			)}
 		</SafeAreaView>
 	)
 }
