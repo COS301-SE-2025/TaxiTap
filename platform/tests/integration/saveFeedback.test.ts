@@ -35,33 +35,39 @@ describe("saveFeedbackHandler integration-like tests", () => {
 
     const before = Date.now();
 
-    const result = await saveFeedbackHandler(mockCtx as any, args);
+    try {
+      const result = await saveFeedbackHandler(mockCtx as any, args);
 
-    const after = Date.now();
+      const after = Date.now();
 
-    expect(mockFirst).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(mockFirst).toHaveBeenCalled();
 
-    // Expect insert called with collection name + document object
-    expect(mockInsert).toHaveBeenCalledWith(
-      "feedback",
-      expect.objectContaining({
-        rideId: "ride123",
-        passengerId: "passenger123",
-        driverId: "driver123",
-        rating: 4,
-        comment: "Smooth trip!",
-        startLocation: "Cape Town",
-        endLocation: "Stellenbosch",
-        createdAt: expect.any(Number),
-      })
-    );
+      // Expect insert called with collection name + document object
+      expect(mockInsert).toHaveBeenCalledWith(
+        "feedback",
+        expect.objectContaining({
+          rideId: "ride123",
+          passengerId: "passenger123",
+          driverId: "driver123",
+          rating: 4,
+          comment: "Smooth trip!",
+          startLocation: "Cape Town",
+          endLocation: "Stellenbosch",
+          createdAt: expect.any(Number),
+        })
+      );
 
-    // Check createdAt timestamp within reasonable range
-    const insertCall = mockInsert.mock.calls[0][1]; // second argument is the document
-    expect(insertCall.createdAt).toBeGreaterThanOrEqual(before);
-    expect(insertCall.createdAt).toBeLessThanOrEqual(after);
+      // Check createdAt timestamp within reasonable range
+      const insertCall = mockInsert.mock.calls[0][1]; // second argument is the document
+      expect(insertCall.createdAt).toBeGreaterThanOrEqual(before);
+      expect(insertCall.createdAt).toBeLessThanOrEqual(after);
 
-    expect(result).toEqual({ id: "newFeedbackId" });
+      expect(result).toEqual({ id: "newFeedbackId" });
+    } catch (error) {
+      console.error('Handler error:', error);
+      throw error;
+    }
   });
 
   it("allows comment to be undefined", async () => {
@@ -69,24 +75,30 @@ describe("saveFeedbackHandler integration-like tests", () => {
     mockFirst.mockResolvedValueOnce(null);
     mockInsert.mockResolvedValueOnce("feedbackNoComment");
 
-    const result = await saveFeedbackHandler(mockCtx as any, argsWithoutComment);
+    try {
+      const result = await saveFeedbackHandler(mockCtx as any, argsWithoutComment);
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      "feedback",
-      expect.objectContaining({
-        comment: undefined,
-      })
-    );
+      expect(result).toBeDefined();
+      expect(mockInsert).toHaveBeenCalledWith(
+        "feedback",
+        expect.objectContaining({
+          comment: undefined,
+        })
+      );
 
-    expect(result).toEqual({ id: "feedbackNoComment" });
+      expect(result).toEqual({ id: "feedbackNoComment" });
+    } catch (error) {
+      console.error('Handler error:', error);
+      throw error;
+    }
   });
 
   it("throws error if feedback already exists", async () => {
     mockFirst.mockResolvedValueOnce({ _id: "existingId" });
 
-    await expect(saveFeedbackHandler(mockCtx as any, args)).rejects.toThrow(
-      "Feedback already submitted for this ride."
-    );
+    const promise = saveFeedbackHandler(mockCtx as any, args);
+    expect(promise).toBeInstanceOf(Promise);
+    await expect(promise).rejects.toThrow("Feedback already submitted for this ride.");
 
     expect(mockInsert).not.toHaveBeenCalled();
   });
