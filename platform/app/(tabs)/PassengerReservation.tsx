@@ -14,6 +14,7 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { useProximityAlerts } from '../../hooks/useProximityAlerts';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -790,6 +791,55 @@ export default function SeatReserved() {
 			</SafeAreaView>
 		);
 	}
+
+	// Add proximity alerts hook
+	const { startMonitoringRide, stopMonitoringRide, updateDriverLocation } = useProximityAlerts({
+		enablePushNotifications: true,
+		enableInAppAlerts: true,
+		alertDistance: 3.0, // 3km
+		arrivalDistance: 0.1, // 100m
+		checkInterval: 30, // 30 seconds
+	});
+
+	// Start proximity monitoring when ride is accepted
+	useEffect(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && currentLocation) {
+			// Get driver location - you might need to adjust this based on your data structure
+			const driverLocation = {
+				latitude: taxiInfo.driver?.currentLocation?.latitude || 0,
+				longitude: taxiInfo.driver?.currentLocation?.longitude || 0,
+			};
+
+			const pickupLocation = {
+				latitude: currentLocation.latitude,
+				longitude: currentLocation.longitude,
+			};
+
+			// Start monitoring proximity
+			startMonitoringRide({
+				rideId: taxiInfo.rideId,
+				driverId: taxiInfo.driver?.userId || '',
+				passengerId: user?.id || '',
+				driverLocation,
+				pickupLocation,
+			});
+		}
+
+		// Stop monitoring when ride status changes
+		if (rideStatus !== 'accepted' && taxiInfo?.rideId) {
+			stopMonitoringRide(taxiInfo.rideId);
+		}
+	}, [rideStatus, taxiInfo, currentLocation, user?.id, startMonitoringRide, stopMonitoringRide]);
+
+	// Update driver location when we receive location updates
+	useEffect(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && taxiInfo?.driver?.currentLocation) {
+			updateDriverLocation(taxiInfo.rideId, {
+				latitude: taxiInfo.driver.currentLocation.latitude,
+				longitude: taxiInfo.driver.currentLocation.longitude,
+			});
+		}
+	}, [taxiInfo?.driver?.currentLocation, rideStatus, taxiInfo?.rideId, updateDriverLocation]);
 
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
