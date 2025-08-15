@@ -11,6 +11,7 @@ export const sendRideNotificationHandler = async (
     type: string;
     passengerId?: Id<"taxiTap_users">;
     driverId?: Id<"taxiTap_users">;
+    metadata?: any;
   }
 ) => {
   const ride = await ctx.db
@@ -55,6 +56,40 @@ export const sendRideNotificationHandler = async (
         message: "Your driver has arrived at the pickup location.",
         priority: "urgent",
         metadata: { rideId: args.rideId, driverId: ride.driverId }
+      });
+      break;
+
+    case "driver_5min_away":
+      notifications.push({
+        userId: ride.passengerId,
+        type: "driver_5min_away",
+        title: "Driver Approaching",
+        message: args.metadata?.message || "Your driver is approaching. Please be ready for pickup.",
+        priority: "high",
+        metadata: { 
+          rideId: args.rideId, 
+          driverId: ride.driverId,
+          distance: args.metadata?.distance,
+          eta: args.metadata?.eta,
+          status: args.metadata?.status
+        }
+      });
+      break;
+
+    case "driver_nearby":
+      notifications.push({
+        userId: ride.passengerId,
+        type: "driver_5min_away", // Using existing type for now
+        title: "Driver Nearby",
+        message: args.metadata?.message || "Your driver is nearby. Please be ready for pickup.",
+        priority: "high",
+        metadata: { 
+          rideId: args.rideId, 
+          driverId: ride.driverId,
+          distance: args.metadata?.distance,
+          eta: args.metadata?.eta,
+          status: args.metadata?.status
+        }
       });
       break;
 
@@ -123,7 +158,8 @@ export const sendRideNotification = internalMutation({
     rideId: v.string(),
     type: v.string(),
     passengerId: v.optional(v.id("taxiTap_users")),
-    driverId: v.optional(v.id("taxiTap_users"))
+    driverId: v.optional(v.id("taxiTap_users")),
+    metadata: v.optional(v.any())
   },
   handler: sendRideNotificationHandler
 });
