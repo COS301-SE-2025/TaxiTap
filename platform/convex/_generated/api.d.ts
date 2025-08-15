@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as crons from "../crons.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
@@ -36,6 +37,7 @@ import type * as functions_notifications_getNotificationSettings from "../functi
 import type * as functions_notifications_getNotifications from "../functions/notifications/getNotifications.js";
 import type * as functions_notifications_markAllAsRead from "../functions/notifications/markAllAsRead.js";
 import type * as functions_notifications_markAsRead from "../functions/notifications/markAsRead.js";
+import type * as functions_notifications_proximityMonitor from "../functions/notifications/proximityMonitor.js";
 import type * as functions_notifications_registerPushToken from "../functions/notifications/registerPushToken.js";
 import type * as functions_notifications_rideNotifications from "../functions/notifications/rideNotifications.js";
 import type * as functions_notifications_sendNotifications from "../functions/notifications/sendNotifications.js";
@@ -46,6 +48,7 @@ import type * as functions_rides_acceptRide from "../functions/rides/acceptRide.
 import type * as functions_rides_acceptRideHandler from "../functions/rides/acceptRideHandler.js";
 import type * as functions_rides_cancelRide from "../functions/rides/cancelRide.js";
 import type * as functions_rides_cancelRideHandler from "../functions/rides/cancelRideHandler.js";
+import type * as functions_rides_checkProximityAndNotify from "../functions/rides/checkProximityAndNotify.js";
 import type * as functions_rides_completeRide from "../functions/rides/completeRide.js";
 import type * as functions_rides_completeRideHandler from "../functions/rides/completeRideHandler.js";
 import type * as functions_rides_declineRide from "../functions/rides/declineRide.js";
@@ -57,7 +60,9 @@ import type * as functions_rides_getActiveTrips from "../functions/rides/getActi
 import type * as functions_rides_getActiveTripsHandler from "../functions/rides/getActiveTripsHandler.js";
 import type * as functions_rides_getDriverPin from "../functions/rides/getDriverPin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
+import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
+import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
 import type * as functions_rides_tripPaid from "../functions/rides/tripPaid.js";
 import type * as functions_rides_tripPaidHandler from "../functions/rides/tripPaidHandler.js";
 import type * as functions_rides_verifyDriverPin from "../functions/rides/verifyDriverPin.js";
@@ -108,6 +113,7 @@ import type * as functions_work_sessions_startWorkSessionHandler from "../functi
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;
@@ -131,6 +137,7 @@ declare const fullApi: ApiFromModules<{
   "functions/notifications/getNotifications": typeof functions_notifications_getNotifications;
   "functions/notifications/markAllAsRead": typeof functions_notifications_markAllAsRead;
   "functions/notifications/markAsRead": typeof functions_notifications_markAsRead;
+  "functions/notifications/proximityMonitor": typeof functions_notifications_proximityMonitor;
   "functions/notifications/registerPushToken": typeof functions_notifications_registerPushToken;
   "functions/notifications/rideNotifications": typeof functions_notifications_rideNotifications;
   "functions/notifications/sendNotifications": typeof functions_notifications_sendNotifications;
@@ -141,6 +148,7 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/acceptRideHandler": typeof functions_rides_acceptRideHandler;
   "functions/rides/cancelRide": typeof functions_rides_cancelRide;
   "functions/rides/cancelRideHandler": typeof functions_rides_cancelRideHandler;
+  "functions/rides/checkProximityAndNotify": typeof functions_rides_checkProximityAndNotify;
   "functions/rides/completeRide": typeof functions_rides_completeRide;
   "functions/rides/completeRideHandler": typeof functions_rides_completeRideHandler;
   "functions/rides/declineRide": typeof functions_rides_declineRide;
@@ -152,7 +160,9 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/getActiveTripsHandler": typeof functions_rides_getActiveTripsHandler;
   "functions/rides/getDriverPin": typeof functions_rides_getDriverPin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
+  "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
   "functions/rides/startRide": typeof functions_rides_startRide;
+  "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
   "functions/rides/tripPaid": typeof functions_rides_tripPaid;
   "functions/rides/tripPaidHandler": typeof functions_rides_tripPaidHandler;
   "functions/rides/verifyDriverPin": typeof functions_rides_verifyDriverPin;
