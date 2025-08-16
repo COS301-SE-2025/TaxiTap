@@ -2,15 +2,9 @@ import { markAsReadHandler } from "../../convex/functions/notifications/markAsRe
 import { Id } from "../../convex/_generated/dataModel";
 
 describe("markAsReadHandler integration", () => {
-  let ctx: any;
   const notificationId = "notif_123" as Id<"notifications">;
 
   beforeEach(() => {
-    ctx = {
-      db: {
-        patch: jest.fn(),
-      },
-    };
     jest.clearAllMocks();
     jest.spyOn(Date, 'now').mockReturnValue(1640995200000);
   });
@@ -21,9 +15,14 @@ describe("markAsReadHandler integration", () => {
 
   it("marks notification as read and returns the patch result", async () => {
     const patchResult = { _id: notificationId, isRead: true, readAt: 1640995200000 };
-    ctx.db.patch.mockResolvedValue(patchResult);
+    
+    const ctx = {
+      db: {
+        patch: jest.fn(() => Promise.resolve(patchResult))
+      }
+    };
 
-    const result = await markAsReadHandler(ctx, { notificationId });
+    const result = await markAsReadHandler(ctx as any, { notificationId });
 
     expect(ctx.db.patch).toHaveBeenCalledWith(notificationId, {
       isRead: true,
@@ -33,7 +32,13 @@ describe("markAsReadHandler integration", () => {
   });
 
   it("handles errors from db.patch", async () => {
-    ctx.db.patch.mockRejectedValue(new Error("DB error"));
-    await expect(markAsReadHandler(ctx, { notificationId })).rejects.toThrow("DB error");
+    const ctx = {
+      db: {
+        patch: jest.fn(() => Promise.reject(new Error("DB error")))
+      }
+    };
+
+    await expect(markAsReadHandler(ctx as any, { notificationId }))
+      .rejects.toThrow("DB error");
   });
 });

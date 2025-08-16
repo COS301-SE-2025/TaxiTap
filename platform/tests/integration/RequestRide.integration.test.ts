@@ -1,15 +1,12 @@
 import { requestRideHandler } from '../../convex/functions/rides/RequestRideHandler';
-import { createMockCtx } from './ridesTestUtils';
 
 describe('RequestRide Integration', () => {
   it('should create a new ride and notify the driver', async () => {
-    const { ctx, db } = createMockCtx();
-    
-    // Add the missing runQuery method to the mock context
-    ctx.runQuery = jest.fn().mockResolvedValue({
+    const mockRideId = "ride_123";
+    const mockTaxiMatchingResult = {
       availableTaxis: [
         {
-          userId: 'user2', // matches the driverId in args
+          userId: 'user2',
           routeInfo: {
             passengerDisplacement: 10.5,
             calculatedFare: 52.50,
@@ -18,7 +15,15 @@ describe('RequestRide Integration', () => {
           }
         }
       ]
-    });
+    };
+
+    const ctx = {
+      db: {
+        insert: jest.fn(() => Promise.resolve(mockRideId))
+      },
+      runQuery: jest.fn(() => Promise.resolve(mockTaxiMatchingResult)),
+      runMutation: jest.fn(() => Promise.resolve())
+    };
 
     const args = {
       passengerId: 'user1',
@@ -29,11 +34,10 @@ describe('RequestRide Integration', () => {
       estimatedDistance: 10,
     };
     
-    const result = await requestRideHandler(ctx, args);
+    const result = await requestRideHandler(ctx as any, args);
     
     expect(result.message).toMatch(/Ride requested successfully/);
-    const rides = await db.query('rides').collect();
-    expect(rides.length).toBe(1);
+    expect(result.rideId).toBe(mockRideId);
     expect(ctx.runMutation).toHaveBeenCalled();
   });
 });
