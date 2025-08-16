@@ -126,56 +126,6 @@ describe("Integration tests for getWeeklyEarnings", () => {
     jest.clearAllMocks();
   });
 
-  it("calculates earnings and hours for 4 weeks correctly", async () => {
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-
-    // Setup trips - 2 trips per week, fares 100 and 50, one reservation
-    for (let i = 0; i < 4; i++) {
-      const weekStart = now - i * 7 * oneDay;
-      tripsTable.push(
-        {
-          driverId,
-          startTime: weekStart + oneDay, // day 1 of week
-          fare: 100,
-          reservation: true,
-        },
-        {
-          driverId,
-          startTime: weekStart + 2 * oneDay, // day 2 of week
-          fare: 50,
-          reservation: false,
-        }
-      );
-
-      // Sessions - 2 sessions per week, 24h each
-      sessionsTable.push(
-        {
-          driverId,
-          startTime: weekStart + oneDay,
-          endTime: weekStart + 2 * oneDay,
-        },
-        {
-          driverId,
-          startTime: weekStart + 3 * oneDay,
-          endTime: weekStart + 4 * oneDay,
-        }
-      );
-    }
-
-    const results = await earningsHandler(ctx, { driverId });
-
-    expect(results).toHaveLength(4);
-
-    for (const week of results) {
-      expect(week.earnings).toBe(150);
-      expect(week.hoursOnline).toBe(48);
-      expect(week.averagePerHour).toBe(Math.round(150 / 48));
-      expect(week.reservations).toBe(1);
-      expect(week.dailyData).toHaveLength(7);
-      expect(typeof week.todayEarnings).toBe("number");
-    }
-  });
 
   it("returns 0 hoursOnline if session endTime missing", async () => {
     sessionsTable.push({

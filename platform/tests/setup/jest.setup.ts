@@ -1,5 +1,7 @@
 import '@testing-library/jest-native/extend-expect'; // Must be first
 
+
+
 // Mock NativeAnimatedHelper with a simple empty object
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}));
 
@@ -12,6 +14,9 @@ jest.mock('../../convex/_generated/api', () => ({
       notifications: {
         rideNotifications: {
           sendRideNotification: jest.fn()
+        },
+        sendNotifications: {
+          sendNotificationInternal: jest.fn().mockReturnValue('mocked_notification_id')
         }
       },
       routes: {
@@ -335,8 +340,50 @@ jest.mock('react-i18next', () => ({
 
 // Mock Convex hooks globally
 jest.mock('convex/react', () => ({
-  useQuery: jest.fn(),
-  useMutation: jest.fn(() => jest.fn()),
+  useQuery: jest.fn((queryFn) => {
+    // Return mock data based on the query function
+    if (queryFn === require('../../convex/_generated/api').functions.earnings.earnings.getWeeklyEarnings) {
+      return {
+        weekly: [
+          { day: 'Monday', earnings: 150.00, trips: 5, reservations: 2 },
+          { day: 'Tuesday', earnings: 200.00, trips: 7, reservations: 3 },
+          { day: 'Wednesday', earnings: 180.00, trips: 6, reservations: 1 },
+          { day: 'Thursday', earnings: 220.00, trips: 8, reservations: 4 },
+          { day: 'Friday', earnings: 250.00, trips: 9, reservations: 5 },
+          { day: 'Saturday', earnings: 300.00, trips: 10, reservations: 6 },
+          { day: 'Sunday', earnings: 280.00, trips: 9, reservations: 4 }
+        ],
+        totalEarnings: 1580.00,
+        totalTrips: 54,
+        totalReservations: 25
+      };
+    }
+    if (queryFn === require('../../convex/_generated/api').functions.routes.displayRoutes.displayRoutes) {
+      return [
+        {
+          id: 'route1',
+          startLocation: 'Cape Town CBD',
+          destination: 'Bellville',
+          duration: 45,
+          stops: 3,
+          fare: 75.00
+        },
+        {
+          id: 'route2',
+          startLocation: 'Bellville',
+          destination: 'Durbanville',
+          duration: 30,
+          stops: 2,
+          fare: 50.00
+        }
+      ];
+    }
+    return null;
+  }),
+  useMutation: jest.fn((mutationFn) => {
+    // Return a mock mutation function
+    return jest.fn().mockResolvedValue('mocked_result');
+  }),
   useAction: jest.fn(() => jest.fn()),
 }));
 

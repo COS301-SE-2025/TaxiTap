@@ -1,6 +1,19 @@
 import { sendRideNotificationHandler } from "../../convex/functions/notifications/rideNotifications";
 import { Id } from "../../convex/_generated/dataModel";
 
+// Mock the internal API
+jest.mock("../../convex/_generated/api", () => ({
+  internal: {
+    functions: {
+      notifications: {
+        sendNotifications: {
+          sendNotificationInternal: jest.fn()
+        }
+      }
+    }
+  }
+}));
+
 describe("sendRideNotificationHandler", () => {
   let ctx: any;
   const rideId = "ride_123";
@@ -53,7 +66,7 @@ describe("sendRideNotificationHandler", () => {
       expect(ctx.db.query).toHaveBeenCalledWith("rides");
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object), // internal.functions.notifications.sendNotifications.sendNotificationInternal
+        expect.any(Function),
         {
           userId: driverId,
           type: "ride_request",
@@ -102,7 +115,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "ride_accepted",
@@ -133,7 +146,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "driver_arrived",
@@ -164,7 +177,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "ride_started",
@@ -197,7 +210,7 @@ describe("sendRideNotificationHandler", () => {
       
       // Check passenger notification
       expect(ctx.runMutation).toHaveBeenNthCalledWith(1,
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "ride_completed",
@@ -210,7 +223,7 @@ describe("sendRideNotificationHandler", () => {
 
       // Check driver notification
       expect(ctx.runMutation).toHaveBeenNthCalledWith(2,
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: driverId,
           type: "ride_completed",
@@ -240,7 +253,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "ride_completed",
@@ -272,7 +285,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: passengerId,
           type: "ride_cancelled",
@@ -302,7 +315,7 @@ describe("sendRideNotificationHandler", () => {
 
       expect(ctx.runMutation).toHaveBeenCalledTimes(1);
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Function),
         {
           userId: driverId,
           type: "ride_cancelled",

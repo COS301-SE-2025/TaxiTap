@@ -56,9 +56,9 @@ export const sendNotification = mutation({
     title: v.string(),
     message: v.string(),
     priority: v.string(),
-    metadata: v.optional(v.any()),
-    scheduledFor: v.optional(v.number()),
-    expiresAt: v.optional(v.number())
+    metadata: v.union(v.undefined(), v.string(), v.number(), v.boolean(), v.object({})),
+    scheduledFor: v.union(v.undefined(), v.number()),
+    expiresAt: v.union(v.undefined(), v.number())
   },
   handler: sendNotificationHandler
 });
@@ -71,9 +71,9 @@ export const sendNotificationInternal = internalMutation({
     title: v.string(),
     message: v.string(),
     priority: v.string(),
-    metadata: v.optional(v.any()),
-    scheduledFor: v.optional(v.number()),
-    expiresAt: v.optional(v.number())
+    metadata: v.union(v.undefined(), v.string(), v.number(), v.boolean(), v.object({})),
+    scheduledFor: v.union(v.undefined(), v.number()),
+    expiresAt: v.union(v.undefined(), v.number())
   },
   handler: sendNotificationHandler
 });

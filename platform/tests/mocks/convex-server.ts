@@ -19,6 +19,15 @@ export type ActionCtx = {
   runAction: (action: any, args: any) => Promise<any>;
 };
 
+export type MutationCtx = {
+  db: {
+    query: (table: string) => any;
+    insert: (table: string, data: any) => Promise<any>;
+    patch: (id: any, data: any) => Promise<any>;
+  };
+  runMutation: (mutation: any, args: any) => Promise<any>;
+};
+
 // Create a concrete implementation of QueryCtx
 export const createQueryCtx = (): QueryCtx => ({
   db: {
@@ -44,6 +53,15 @@ export const createActionCtx = (): ActionCtx => ({
   runAction: jest.fn().mockResolvedValue("Mocked Action Result")
 });
 
+export const createMutationCtx = (): MutationCtx => ({
+  db: {
+    query: jest.fn(),
+    insert: jest.fn(),
+    patch: jest.fn(),
+  },
+  runMutation: jest.fn(),
+});
+
 // Mock the query function to return an object with handler property
 export const query = (config: any) => ({
   handler: config.handler
@@ -51,17 +69,21 @@ export const query = (config: any) => ({
 
 export const action = (handler: any) => handler;
 
-export const createMutationCtx = () => ({
-  db: {
-    query: jest.fn(),
-    patch: jest.fn(),
-  }
+export const mutation = (config: any) => ({
+  handler: config.handler
+});
+
+export const internalMutation = (config: any) => ({
+  handler: config.handler
 });
 
 // Export as both default and named exports to support different import styles
 export default {
   createQueryCtx,
   createActionCtx,
+  createMutationCtx,
   query,
-  action
+  action,
+  mutation,
+  internalMutation
 }; 

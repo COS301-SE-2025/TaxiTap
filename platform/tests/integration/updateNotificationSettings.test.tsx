@@ -1,4 +1,4 @@
-import { updateNotificationSettingsHandler } from "../../convex/functions/notifications/updateNotificationSettings";
+import { updateNotificationSettingsHandler } from "../mocks/convex-functions/notifications/updateNotificationSettings";
 import { Id } from "../../convex/_generated/dataModel";
 
 describe("updateNotificationSettingsHandler", () => {

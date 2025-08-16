@@ -157,9 +157,9 @@ export const sendRideNotification = internalMutation({
   args: {
     rideId: v.string(),
     type: v.string(),
-    passengerId: v.optional(v.id("taxiTap_users")),
-    driverId: v.optional(v.id("taxiTap_users")),
-    metadata: v.optional(v.any())
+    passengerId: v.union(v.undefined(), v.id("taxiTap_users")),
+    driverId: v.union(v.undefined(), v.id("taxiTap_users")),
+    metadata: v.union(v.undefined(), v.string(), v.number(), v.boolean(), v.object({}))
   },
   handler: sendRideNotificationHandler
 });
