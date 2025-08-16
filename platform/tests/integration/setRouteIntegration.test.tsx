@@ -7,59 +7,87 @@
  * @author Test Suite
  */
 
-// Mock external dependencies - these must come before imports
+import React from 'react';
+import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+
+// Mock external dependencies BEFORE imports
 jest.mock('convex/react', () => ({
   useQuery: jest.fn(),
   useMutation: jest.fn(),
 }));
 
-jest.mock('expo-router', () => ({
-  useNavigation: () => ({
-    goBack: jest.fn(),
-    setOptions: jest.fn(),
-    navigate: jest.fn(),
-  }),
+jest.mock('convex/values', () => ({
+  v: {
+    optional: jest.fn(),
+    string: jest.fn(),
+    boolean: jest.fn(),
+    number: jest.fn(),
+    literal: jest.fn(),
+    any: jest.fn(),
+    object: jest.fn(),
+    array: jest.fn(),
+    id: jest.fn(),
+  },
 }));
 
+// Mock navigation
+const mockNavigationMock = {
+  goBack: jest.fn(),
+  setOptions: jest.fn(),
+  navigate: jest.fn(),
+};
+
+jest.mock('expo-router', () => ({
+  useNavigation: () => mockNavigationMock,
+}));
+
+// Mock contexts
+const mockSetCurrentRoute = jest.fn();
+const mockTheme = {
+  primary: '#FF9900',
+  background: '#FFFFFF',
+  surface: '#F5F5F5',
+  text: '#232F3E',
+  textSecondary: '#131A22',
+  border: '#E5E7EB',
+  tabBarActive: '#FF9900',
+  tabBarInactive: '#6B7280',
+  tabBarBackground: '#FFFFFF',
+  headerBackground: '#FFFFFF',
+  card: '#FFFFFF',
+  shadow: '#000000',
+  buttonText: '#FFFFFF'
+};
+
 jest.mock('../../contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      primary: '#FF9900',
-      background: '#FFFFFF',
-      surface: '#F5F5F5',
-      text: '#232F3E',
-      textSecondary: '#131A22',
-      border: '#E5E7EB',
-      tabBarActive: '#FF9900',
-      tabBarInactive: '#6B7280',
-      tabBarBackground: '#FFFFFF',
-      headerBackground: '#FFFFFF',
-      card: '#FFFFFF',
-      shadow: '#000000',
-      buttonText: '#FFFFFF'
-    },
+  useTheme: jest.fn(() => ({
+    theme: mockTheme,
     isDark: false,
     themeMode: 'light',
     setThemeMode: jest.fn()
-  }),
+  })),
 }));
 
 jest.mock('../../contexts/RouteContext', () => ({
-  useRouteContext: () => ({
-    setCurrentRoute: jest.fn(),
+  useRouteContext: jest.fn(() => ({
+    setCurrentRoute: mockSetCurrentRoute,
     currentRoute: 'Not Set'
-  }),
+  })),
 }));
 
+const mockUser = {
+  id: 'user_123',
+  name: 'Test Driver',
+  role: 'driver',
+  accountType: 'driver' as const,
+  phoneNumber: '+27123456789'
+};
+
 jest.mock('../../contexts/UserContext', () => ({
-  useUser: () => ({
-    user: {
-      id: 'user_123',
-      name: 'Test Driver',
-      role: 'driver',
-      accountType: 'driver',
-      phoneNumber: '+27123456789'
-    },
+  useUser: jest.fn(() => ({
+    user: mockUser,
     loading: false,
     login: jest.fn(),
     logout: jest.fn(),
@@ -68,28 +96,12 @@ jest.mock('../../contexts/UserContext', () => ({
     updateNumber: jest.fn(),
     updateAccountType: jest.fn(),
     setUserId: jest.fn()
-  }),
+  })),
 }));
 
 jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
 
-import React from 'react';
-import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import SetRoute from '../../app/SetRoute';
-import { TestWrapper } from '../utils/TestWrapper';
-import { useQuery, useMutation } from 'convex/react';
-import { useNavigation } from 'expo-router';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useRouteContext } from '../../contexts/RouteContext';
-import { useUser } from '../../contexts/UserContext';
-
-// ============================================================================
-// MOCK SETUP
-// ============================================================================
-
-// Mock the AlertContext
+// Mock AlertContext
 const MockAlertProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
@@ -104,7 +116,7 @@ jest.mock('../../contexts/AlertContext', () => ({
   }),
 }));
 
-// Mock AlertHelpers with all the functions your component uses
+// Mock AlertHelpers
 const mockShowGlobalError = jest.fn();
 const mockShowGlobalSuccess = jest.fn();
 const mockShowGlobalAlert = jest.fn();
@@ -120,13 +132,12 @@ jest.mock('../../components/AlertHelpers', () => ({
   }),
 }));
 
-// Mock external dependencies
-jest.mock('convex/react');
-jest.mock('expo-router');
-jest.mock('../../contexts/ThemeContext');
-jest.mock('../../contexts/RouteContext');
-jest.mock('../../contexts/UserContext');
-jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
+// Now import the components and hooks
+import SetRoute from '../../app/SetRoute';
+import { useQuery, useMutation } from 'convex/react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useRouteContext } from '../../contexts/RouteContext';
+import { useUser } from '../../contexts/UserContext';
 
 // Mock Alert
 jest.spyOn(Alert, 'alert');
@@ -134,6 +145,9 @@ jest.spyOn(Alert, 'alert');
 // Type the mocked hooks
 const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>;
+const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+const mockUseRouteContext = useRouteContext as jest.MockedFunction<typeof useRouteContext>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 // ============================================================================
 // TEST DATA
@@ -178,6 +192,31 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
  */
 const setupDefaultMocks = () => {
   mockUseMutation.mockReturnValue(mockAssignRandomRoute as any);
+  
+  // Reset context mocks to defaults
+  mockUseTheme.mockReturnValue({
+    theme: mockTheme,
+    isDark: false,
+    themeMode: 'light',
+    setThemeMode: jest.fn()
+  });
+  
+  mockUseRouteContext.mockReturnValue({
+    setCurrentRoute: mockSetCurrentRoute,
+    currentRoute: 'Not Set'
+  });
+  
+  mockUseUser.mockReturnValue({
+    user: mockUser,
+    loading: false,
+    login: jest.fn(),
+    logout: jest.fn(),
+    updateUserRole: jest.fn(),
+    updateUserName: jest.fn(),
+    updateNumber: jest.fn(),
+    updateAccountType: jest.fn(),
+    setUserId: jest.fn()
+  });
 };
 
 /**
@@ -397,9 +436,6 @@ describe('SetRoute Integration Tests - No Assigned Route', () => {
 
   describe('Error Handling', () => {
     it('should show alert when user is not logged in', async () => {
-      // Set up default mocks first
-      setupDefaultMocks();
-      
       // Mock user as null to simulate not logged in
       mockUseUser.mockReturnValue({
         user: null,
@@ -412,11 +448,6 @@ describe('SetRoute Integration Tests - No Assigned Route', () => {
         updateAccountType: jest.fn(),
         setUserId: jest.fn()
       });
-      
-      // Mock queries for no assigned route scenario
-      mockUseQuery
-        .mockReturnValueOnce(null) // assignedRoute
-        .mockReturnValueOnce(mockTaxiAssociations); // allTaxiAssociations
       
       render(
         <TestWrapper>
@@ -541,8 +572,10 @@ describe('SetRoute Integration Tests - Assigned Route', () => {
       // Simulate the onPress callback from the success alert action
       const successCall = mockShowGlobalSuccess.mock.calls[0];
       const alertOptions = successCall[2]; // Third parameter contains options
-      const okAction = alertOptions.actions[0]; // First action is OK
-      okAction.onPress(); // Simulate pressing OK
+      if (alertOptions && alertOptions.actions && alertOptions.actions[0]) {
+        const okAction = alertOptions.actions[0]; // First action is OK
+        okAction.onPress(); // Simulate pressing OK
+      }
       
       expect(mockNavigationMock.goBack).toHaveBeenCalled();
     });
@@ -597,7 +630,6 @@ describe('Route Name Parsing Integration', () => {
       
       unmount();
       jest.clearAllMocks();
-      setupDefaultMocks();
     }
   });
 });
@@ -706,8 +738,10 @@ describe('Navigation Integration Tests', () => {
     // Simulate the onPress callback from the success alert action
     const successCall = mockShowGlobalSuccess.mock.calls[0];
     const alertOptions = successCall[2]; // Third parameter contains options
-    const okAction = alertOptions.actions[0]; // First action is OK
-    okAction.onPress(); // Simulate pressing OK
+    if (alertOptions && alertOptions.actions && alertOptions.actions[0]) {
+      const okAction = alertOptions.actions[0]; // First action is OK
+      okAction.onPress(); // Simulate pressing OK
+    }
     
     expect(mockNavigationMock.goBack).toHaveBeenCalled();
   });
