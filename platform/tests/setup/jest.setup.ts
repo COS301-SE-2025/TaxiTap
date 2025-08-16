@@ -5,6 +5,24 @@ jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}));
 
 (global as any).__DEV__ = true;
 
+// Mock the generated API for handlers that use require()
+jest.mock('../../convex/_generated/api', () => ({
+  internal: {
+    functions: {
+      notifications: {
+        rideNotifications: {
+          sendRideNotification: jest.fn()
+        }
+      },
+      routes: {
+        enhancedTaxiMatching: {
+          _findAvailableTaxisForJourney: jest.fn()
+        }
+      }
+    }
+  }
+}));
+
 // Mock expo-router
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(() => ({
