@@ -1,51 +1,78 @@
 import { endWorkSessionHandler } from "../../convex/functions/work_sessions/endWorkSessionHandler";
 
 describe("endWorkSessionHandler", () => {
-  let ctx: any;
-  let driverId = "driver123";
-  let activeSession: any;
-
-  beforeEach(() => {
-    activeSession = { _id: "session1", driverId, startTime: Date.now(), endTime: null };
-
-    // Mock context
-    ctx = {
-      db: {
-        query: jest.fn(() => ctx.db),
-        withIndex: jest.fn(() => ctx.db),
-        order: jest.fn(() => ctx.db),
-        first: jest.fn(() => Promise.resolve(activeSession)),
-        patch: jest.fn(() => Promise.resolve(true)),
-      },
-    };
-  });
-
   it("should successfully end an active work session", async () => {
-    try {
-      const result = await endWorkSessionHandler(ctx, { driverId });
-      expect(result).toBeDefined();
-      expect(result).toEqual({ sessionId: "session1" });
-      expect(ctx.db.patch).toHaveBeenCalledWith("session1", expect.objectContaining({ endTime: expect.any(Number) }));
-    } catch (error) {
-      console.error('Handler error:', error);
-      throw error;
-    }
+    const driverId = "driver123";
+    const activeSession = { 
+      _id: "session1", 
+      driverId, 
+      startTime: Date.now() - 1000, 
+      endTime: null 
+    };
+
+    const ctx = {
+      db: {
+        query: jest.fn(() => ({
+          withIndex: jest.fn(() => ({
+            order: jest.fn(() => ({
+              first: jest.fn(() => Promise.resolve(activeSession))
+            }))
+          }))
+        })),
+        patch: jest.fn(() => Promise.resolve("session1"))
+      }
+    };
+
+    const result = await endWorkSessionHandler(ctx as any, { driverId });
+    
+    expect(result).toBeDefined();
+    expect(result).toEqual({ sessionId: "session1" });
+    expect(ctx.db.patch).toHaveBeenCalledWith("session1", {
+      endTime: expect.any(Number)
+    });
   });
 
   it("should throw an error if no active work session exists", async () => {
-    ctx.db.first = jest.fn(() => Promise.resolve(null));
+    const driverId = "driver123";
     
-    const promise = endWorkSessionHandler(ctx, { driverId });
-    expect(promise).toBeInstanceOf(Promise);
-    await expect(promise).rejects.toThrow("No active work session found.");
+    const ctx = {
+      db: {
+        query: jest.fn(() => ({
+          withIndex: jest.fn(() => ({
+            order: jest.fn(() => ({
+              first: jest.fn(() => Promise.resolve(null))
+            }))
+          }))
+        }))
+      }
+    };
+
+    await expect(endWorkSessionHandler(ctx as any, { driverId }))
+      .rejects.toThrow("No active work session found.");
   });
 
   it("should throw an error if latest session already ended", async () => {
-    activeSession.endTime = Date.now();
-    ctx.db.first = jest.fn(() => Promise.resolve(activeSession));
+    const driverId = "driver123";
+    const endedSession = { 
+      _id: "session1", 
+      driverId, 
+      startTime: Date.now() - 1000, 
+      endTime: Date.now() - 500 
+    };
     
-    const promise = endWorkSessionHandler(ctx, { driverId });
-    expect(promise).toBeInstanceOf(Promise);
-    await expect(promise).rejects.toThrow("No active work session found.");
+    const ctx = {
+      db: {
+        query: jest.fn(() => ({
+          withIndex: jest.fn(() => ({
+            order: jest.fn(() => ({
+              first: jest.fn(() => Promise.resolve(endedSession))
+            }))
+          }))
+        }))
+      }
+    };
+
+    await expect(endWorkSessionHandler(ctx as any, { driverId }))
+      .rejects.toThrow("No active work session found.");
   });
 });
