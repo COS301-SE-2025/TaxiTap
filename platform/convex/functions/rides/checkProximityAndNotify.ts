@@ -143,7 +143,9 @@ export const checkRideProximity = internalMutation({
               title: "Driver Approaching",
               message: `Your driver will be arriving around ${etaString}. (Approximately 10 minutes away.)`,
               priority: "high",
-              metadata: { rideId }
+              metadata: { rideId },
+              scheduledFor: null,
+              expiresAt: null
             });
             console.log(`Sent 10min alert for ride ${rideId}`);
           }
@@ -166,7 +168,9 @@ export const checkRideProximity = internalMutation({
               title: "Driver Almost Here",
               message: `Your driver will be arriving around ${etaString}. (Approximately 5 minutes away.)`,
               priority: "high",
-              metadata: { rideId }
+              metadata: { rideId },
+              scheduledFor: null,
+              expiresAt: null
             });
             console.log(`Sent 5min alert for ride ${rideId}`);
           }
@@ -189,7 +193,9 @@ export const checkRideProximity = internalMutation({
               title: "Driver Arrived",
               message: `Your driver has arrived at your location. (Expected around ${etaString})`,
               priority: "urgent",
-              metadata: { rideId }
+              metadata: { rideId },
+              scheduledFor: null,
+              expiresAt: null
             });
             console.log(`Sent arrived alert for ride ${rideId}`);
           }
@@ -214,7 +220,9 @@ export const checkRideProximity = internalMutation({
               title: "Passenger at Destination",
               message: "Your passenger has arrived at their destination.",
               priority: "medium",
-              metadata: { rideId }
+              metadata: { rideId },
+              scheduledFor: null,
+              expiresAt: null
             });
             console.log(`Sent passenger at stop alert for ride ${rideId}`);
           }

@@ -30,12 +30,13 @@ export const startRide = mutation({
       startedAt: Date.now(),
     });
 
-    // Notify both driver and passenger
+    // Notify both driver and passenger - now with metadata field
     await ctx.runMutation(internal.functions.notifications.rideNotifications.sendRideNotification, {
       rideId: args.rideId,
       type: "ride_started",
       driverId: ride.driverId,
       passengerId: ride.passengerId,
+      metadata: { startedAt: Date.now() } // Added missing metadata field
     });
 
     return {
@@ -43,4 +44,4 @@ export const startRide = mutation({
       message: "Ride marked as started.",
     };
   },
-}); 
+});

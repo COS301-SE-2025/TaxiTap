@@ -9,8 +9,8 @@ export const sendRideNotificationHandler = async (
   args: {
     rideId: string;
     type: string;
-    passengerId?: Id<"taxiTap_users">;
-    driverId?: Id<"taxiTap_users">;
+    passengerId?: Id<"taxiTap_users"> | null;
+    driverId?: Id<"taxiTap_users"> | null;
     metadata?: any;
   }
 ) => {
@@ -148,7 +148,11 @@ export const sendRideNotificationHandler = async (
 
   // Send all notifications using the internal mutation
   for (const notification of notifications) {
-    await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, notification);
+    await ctx.runMutation(internal.functions.notifications.sendNotifications.sendNotificationInternal, {
+      ...notification,
+      scheduledFor: null,
+      expiresAt: null
+    });
   }
 };
 
@@ -157,9 +161,9 @@ export const sendRideNotification = internalMutation({
   args: {
     rideId: v.string(),
     type: v.string(),
-    passengerId: v.union(v.undefined(), v.id("taxiTap_users")),
-    driverId: v.union(v.undefined(), v.id("taxiTap_users")),
-    metadata: v.union(v.undefined(), v.string(), v.number(), v.boolean(), v.object({}))
+    passengerId: v.union(v.id("taxiTap_users"), v.null()),
+    driverId: v.union(v.id("taxiTap_users"), v.null()),
+    metadata: v.union(v.string(), v.number(), v.boolean(), v.object({}), v.null())
   },
   handler: sendRideNotificationHandler
 });
