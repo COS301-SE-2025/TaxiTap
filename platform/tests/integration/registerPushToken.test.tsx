@@ -1,4 +1,4 @@
-import { registerPushTokenHandler } from "../../convex/functions/notifications/registerPushToken";
+import { registerPushTokenHandler } from "../mocks/convex-functions/notifications/registerPushToken";
 import { Id } from "../../convex/_generated/dataModel";
 
 describe("registerPushTokenHandler", () => {

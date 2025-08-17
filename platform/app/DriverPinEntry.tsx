@@ -24,11 +24,10 @@ export default function DriverPinEntry() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
   
-  const [pin, setPin] = useState(['', '', '', '']);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [driverPin, setDriverPin] = useState<string>('');
   
   const rideId = params.rideId as string;
 
@@ -48,7 +47,23 @@ export default function DriverPinEntry() {
     ride?.passengerId ? { userId: ride.passengerId } : "skip"
   );
 
-  const verifyPin = useMutation(api.functions.rides.verifyPin.verifyRidePin);
+  // Get driver's pin from user profile
+  const driverData = useQuery(
+    api.functions.users.UserManagement.getUserById.getUserById,
+    user?.id ? { userId: user.id as Id<'taxiTap_users'> } : "skip"
+  );
+
+  const startRide = useMutation(api.functions.rides.startRide.startRide);
+
+  // Set driver pin when ride data is loaded
+  useEffect(() => {
+    if (ride?.ridePin) {
+      setDriverPin(ride.ridePin);
+    } else {
+      // Generate a fallback PIN if none exists
+      setDriverPin(Math.floor(1000 + Math.random() * 9000).toString());
+    }
+  }, [ride?.ridePin]);
 
   // Function to decode Google's polyline format
   const decodePolyline = (encoded: string) => {
@@ -139,48 +154,20 @@ export default function DriverPinEntry() {
     }
   };
 
-  const handleNumberPress = (number: string) => {
-    const emptyIndex = pin.findIndex(digit => digit === '');
-    if (emptyIndex !== -1) {
-      const newPin = [...pin];
-      newPin[emptyIndex] = number;
-      setPin(newPin);
-
-      // Auto-verify when all 4 digits are entered
-      if (emptyIndex === 3) {
-        verifyPinCode(newPin.join(''));
-      }
-    }
-  };
-
-  const handleBackspace = () => {
-    const lastFilledIndex = pin.map((digit, index) => digit !== '' ? index : -1)
-      .filter(index => index !== -1)
-      .pop();
-    
-    if (lastFilledIndex !== undefined) {
-      const newPin = [...pin];
-      newPin[lastFilledIndex] = '';
-      setPin(newPin);
-    }
-  };
-
-  const verifyPinCode = async (enteredPin: string) => {
+  const handleStartRide = async () => {
     if (!user || !ride) {
       Alert.alert('Error', 'User or ride information not available.');
       return;
     }
 
-    setIsVerifying(true);
     try {
-      const result = await verifyPin({
+      const result = await startRide({
         rideId: ride._id,
-        driverId: user.id as Id<'taxiTap_users'>,
-        enteredPin: enteredPin,
+        userId: user.id as Id<'taxiTap_users'>,
       });
 
-      if (result.success) {
-        // Show map with route after successful PIN verification
+      if (result._id) {
+        // Show map with route after starting ride
         setShowMap(true);
         
         // Get route coordinates from ride data
@@ -198,53 +185,11 @@ export default function DriverPinEntry() {
           await getRoute(origin, destination);
         }
       } else {
-        Alert.alert('Invalid PIN', 'Please check with the passenger.');
-        setPin(['', '', '', '']);
+        Alert.alert('Error', 'Failed to start ride. Please try again.');
       }
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to verify PIN. Please try again.');
-      setPin(['', '', '', '']);
-    } finally {
-      setIsVerifying(false);
+      Alert.alert('Error', 'Failed to start ride. Please try again.');
     }
-  };
-
-  const renderNumberPad = () => {
-    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'backspace'];
-    
-    return (
-      <View style={dynamicStyles.numberPad}>
-        {numbers.map((item, index) => {
-          if (item === '') {
-            return <View key={index} style={dynamicStyles.numberButtonEmpty} />;
-          }
-          
-          if (item === 'backspace') {
-            return (
-              <TouchableOpacity
-                key={index}
-                style={dynamicStyles.numberButton}
-                onPress={handleBackspace}
-                activeOpacity={0.7}
-              >
-                <Icon name="backspace-outline" size={24} color={theme.text} />
-              </TouchableOpacity>
-            );
-          }
-          
-          return (
-            <TouchableOpacity
-              key={index}
-              style={dynamicStyles.numberButton}
-              onPress={() => handleNumberPress(item)}
-              activeOpacity={0.7}
-            >
-              <Text style={dynamicStyles.numberButtonText}>{item}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -281,49 +226,71 @@ export default function DriverPinEntry() {
       marginBottom: 20,
       textAlign: 'center',
     },
-    pinDisplay: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginBottom: 40,
-    },
-    pinDot: {
-      width: 16,
-      height: 16,
-      borderRadius: 8,
+    pinContainer: {
+      alignItems: "center",
+      marginBottom: 30,
+      padding: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 16,
       borderWidth: 2,
-      borderColor: theme.border,
-      marginHorizontal: 8,
-      backgroundColor: 'transparent',
+      borderColor: theme.primary,
+      width: '90%',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 4,
     },
-    pinDotFilled: {
+    pinLabel: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.text,
+      marginBottom: 15,
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    pinDisplay: {
+      flexDirection: "row",
+      justifyContent: "center",
+      marginBottom: 15,
+      alignItems: "center",
+    },
+    pinDigit: {
+      width: 50,
+      height: 60,
       backgroundColor: theme.primary,
+      borderRadius: 8,
+      justifyContent: "center",
+      alignItems: "center",
+      marginHorizontal: 4,
+      borderWidth: 2,
       borderColor: theme.primary,
     },
-    numberPad: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      width: 240,
-      marginBottom: 30,
-    },
-    numberButton: {
-      width: 70,
-      height: 70,
-      borderRadius: 35,
-      backgroundColor: isDark ? theme.surface : '#F5F5F5',
-      justifyContent: 'center',
-      alignItems: 'center',
-      margin: 5,
-    },
-    numberButtonEmpty: {
-      width: 70,
-      height: 70,
-      margin: 5,
-    },
-    numberButtonText: {
+    pinDigitText: {
       fontSize: 24,
-      fontWeight: '600',
-      color: theme.text,
+      fontWeight: "bold",
+      color: isDark ? "#121212" : "#FFFFFF",
+      fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    },
+    pinInstruction: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      textAlign: "center",
+      fontStyle: "italic",
+    },
+    startRideButton: {
+      backgroundColor: theme.primary,
+      borderRadius: 16,
+      padding: 16,
+      alignItems: 'center',
+      width: '90%',
+      marginBottom: 15,
+    },
+    startRideButtonText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: isDark ? "#121212" : "#FFFFFF",
     },
     backButton: {
       position: 'absolute',
@@ -351,12 +318,6 @@ export default function DriverPinEntry() {
       textAlign: 'center',
       fontStyle: 'italic',
     },
-    verifyingText: {
-      color: theme.primary,
-      fontSize: 16,
-      fontWeight: '500',
-      marginTop: 20,
-    },
     mapContainer: {
       height: 300,
       marginBottom: 20,
@@ -365,30 +326,6 @@ export default function DriverPinEntry() {
     },
     map: {
       flex: 1,
-    },
-    routeInfoContainer: {
-      backgroundColor: theme.surface,
-      borderRadius: 16,
-      padding: 20,
-      marginHorizontal: 20,
-      marginBottom: 20,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    routeInfoTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 12,
-      textAlign: 'center',
-    },
-    routeInfoText: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      marginBottom: 8,
     },
     continueButton: {
       backgroundColor: theme.primary,
@@ -485,7 +422,7 @@ export default function DriverPinEntry() {
     );
   }
 
-  // If PIN is verified and map should be shown
+  // If ride is started and map should be shown
   if (showMap) {
     const startLocation = ride.startLocation?.coordinates;
     const endLocation = ride.endLocation?.coordinates;
@@ -503,9 +440,9 @@ export default function DriverPinEntry() {
         <View style={dynamicStyles.content}>
           <View style={dynamicStyles.header}>
             <Icon name="checkmark-circle" size={32} color="#4CAF50" />
-            <Text style={dynamicStyles.title}>PIN Verified!</Text>
+            <Text style={dynamicStyles.title}>Ride Started!</Text>
             <Text style={dynamicStyles.subtitle}>
-              Ride started successfully
+              Navigate to pickup location
             </Text>
           </View>
 
@@ -544,8 +481,6 @@ export default function DriverPinEntry() {
             </View>
           )}
 
-          
-
           <TouchableOpacity
             style={dynamicStyles.continueButton}
             onPress={() => router.back()}
@@ -558,7 +493,7 @@ export default function DriverPinEntry() {
     );
   }
 
-  // Original PIN entry screen
+  // Show driver's pin to passenger
   return (
     <SafeAreaView style={dynamicStyles.container}>
       {/* Back Button */}
@@ -576,35 +511,40 @@ export default function DriverPinEntry() {
         <View style={dynamicStyles.content}>
           <View style={dynamicStyles.header}>
             <Icon name="shield-checkmark" size={32} color={theme.primary} />
-            <Text style={dynamicStyles.title}>Enter Passenger PIN</Text>
+            <Text style={dynamicStyles.title}>Show Your PIN</Text>
             <Text style={dynamicStyles.subtitle}>
-              Ask passenger for verification code
+              Display this PIN to the passenger for verification
             </Text>
           </View>
 
           {passenger && (
             <Text style={dynamicStyles.passengerName}>
-              {passenger.name || 'Passenger'}
+              Passenger: {passenger.name || 'Unknown'}
             </Text>
           )}
 
-          <View style={dynamicStyles.pinDisplay}>
-            {pin.map((digit, index) => (
-              <View
-                key={index}
-                style={[
-                  dynamicStyles.pinDot,
-                  digit !== '' && dynamicStyles.pinDotFilled,
-                ]}
-              />
-            ))}
+          {/* Driver PIN Display */}
+          <View style={dynamicStyles.pinContainer}>
+            <Text style={dynamicStyles.pinLabel}>Driver Verification PIN</Text>
+            <View style={dynamicStyles.pinDisplay}>
+              {driverPin.split('').map((digit, index) => (
+                <View key={index} style={dynamicStyles.pinDigit}>
+                  <Text style={dynamicStyles.pinDigitText}>{digit}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={dynamicStyles.pinInstruction}>
+              Ask passenger to verify and enter this PIN on their device
+            </Text>
           </View>
 
-          {renderNumberPad()}
-
-          {isVerifying && (
-            <Text style={dynamicStyles.verifyingText}>Verifying...</Text>
-          )}
+          <TouchableOpacity
+            style={dynamicStyles.startRideButton}
+            onPress={handleStartRide}
+            activeOpacity={0.8}
+          >
+            <Text style={dynamicStyles.startRideButtonText}>Start Ride</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={dynamicStyles.cancelButton}

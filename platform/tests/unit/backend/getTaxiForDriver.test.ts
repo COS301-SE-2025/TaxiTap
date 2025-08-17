@@ -27,7 +27,10 @@ describe('getTaxiForDriverHandler', () => {
         }
         return { withIndex: () => ({ unique: () => Promise.resolve(undefined) }) };
       })
-    }
+    },
+    auth: {},
+    storage: {},
+    runQuery: jest.fn(),
   }) as any;
 
   it('returns taxi if driver and taxi exist', async () => {
@@ -49,7 +52,10 @@ describe('getTaxiForDriverHandler', () => {
           // If driver is not found, taxi query should not be called, but if it is, return undefined
           return { withIndex: () => ({ unique: () => Promise.resolve(undefined) }) };
         })
-      }
+      },
+      auth: {},
+      storage: {},
+      runQuery: jest.fn(),
     } as any;
     const args = { userId: mockUserId };
     const result = await getTaxiForDriverHandler(ctx, args);
@@ -73,7 +79,10 @@ describe('getTaxiForDriverHandler', () => {
           }
           return { withIndex: () => ({ unique: () => Promise.resolve(undefined) }) };
         })
-      }
+      },
+      auth: {},
+      storage: {},
+      runQuery: jest.fn(),
     } as any;
     const args = { userId: mockUserId };
     const result = await getTaxiForDriverHandler(ctx, args);

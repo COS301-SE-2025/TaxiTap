@@ -1,4 +1,4 @@
-import { updateHomeAddressHandler } from '../../convex/functions/users/UserManagement/updateHomeAddress';
+import { updateHomeAddressHandler } from '../mocks/convex-functions/users/UserManagement/updateHomeAddress';
 import { MutationCtx } from '../../convex/_generated/server';
 import { Id } from '../../convex/_generated/dataModel';
 

@@ -25,6 +25,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from "../../convex/_generated/dataModel";
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -107,6 +108,7 @@ export default function RouteSelectionScreen() {
   const userId = user?.id || navId || '';
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
+  const { t } = useLanguage();
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -132,13 +134,13 @@ export default function RouteSelectionScreen() {
   // Configure navigation header
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "Select Route",
+      title: t('booking:selectRoute'),
       headerStyle: {
         backgroundColor: theme.background,
       },
       headerTintColor: theme.text,
     });
-  }, [navigation, theme]);
+  }, [navigation, theme, t]);
 
   // Process routes with updated fare calculation and stop processing
   const processedRoutes = useMemo(() => {
@@ -243,7 +245,11 @@ export default function RouteSelectionScreen() {
    */
   const handleRouteSelect = async (route: RouteData) => {
     if (!route.destinationCoords) {
-      Alert.alert("Error", "Route coordinates not available");
+      showGlobalError("Error", "Route coordinates not available", {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -268,7 +274,7 @@ export default function RouteSelectionScreen() {
         destinationName: route.destination,
         destinationLat: route.destinationCoords.latitude.toString(),
         destinationLng: route.destinationCoords.longitude.toString(),
-        currentName: 'Current Location',
+        currentName: t('common:currentLocation'),
         currentLat: '0',
         currentLng: '0',
         routeId: route.routeId,
@@ -575,14 +581,14 @@ export default function RouteSelectionScreen() {
     if (!enrichedStops || enrichedStops.length === 0) {
       return (
         <View style={dynamicStyles.stopsContainer}>
-          <Text style={dynamicStyles.stopsTitle}>Route Stops</Text>
+          <Text style={dynamicStyles.stopsTitle}>{t('routes:routeStops')}</Text>
           <View style={dynamicStyles.emptyState}>
             <Icon name="information-circle-outline" size={48} color={theme.textSecondary} />
             <Text style={dynamicStyles.emptyStateText}>
-              No stops available for this route
+              {t('routes:noStopsAvailable')}
             </Text>
             <Text style={[dynamicStyles.emptyStateText, { fontSize: 14, marginTop: 8 }]}>
-              Please notify the driver of your specific destination
+              {t('routes:notifyDriverMessage')}
             </Text>
           </View>
         </View>
@@ -591,7 +597,7 @@ export default function RouteSelectionScreen() {
 
     return (
       <View style={dynamicStyles.stopsContainer}>
-        <Text style={dynamicStyles.stopsTitle}>Route Stops</Text>
+        <Text style={dynamicStyles.stopsTitle}>{t('routes:routeStops')}</Text>
         {enrichedStops.map((stop: any, stopIndex: number) => (
           <View key={stop.id} style={dynamicStyles.stopItem}>
             <View style={[
@@ -609,12 +615,12 @@ export default function RouteSelectionScreen() {
               <Text style={dynamicStyles.stopName}>
                 {stop.name}
               </Text>
-              <Text style={[
-                dynamicStyles.stopType,
-                { color: theme.textSecondary }
-              ]}>
-                Stop {stop.order}
-              </Text>
+                              <Text style={[
+                  dynamicStyles.stopType,
+                  { color: theme.textSecondary }
+                ]}>
+                  {t('routes:stop')} {stop.order}
+                </Text>
             </View>
           </View>
         ))}
@@ -630,10 +636,10 @@ export default function RouteSelectionScreen() {
     const enrichedStops = useQuery(api.functions.routes.displayRoutes.getEnrichedStopsForRoute, { routeId });
     
     if (!enrichedStops || enrichedStops.length === 0) {
-      return <Text style={dynamicStyles.routeInfoText}>0 Stops</Text>;
+      return <Text style={dynamicStyles.routeInfoText}>0 {t('routes:stops')}</Text>;
     }
     
-    return <Text style={dynamicStyles.routeInfoText}>{enrichedStops.length} Stops</Text>;
+    return <Text style={dynamicStyles.routeInfoText}>{enrichedStops.length} {t('routes:stops')}</Text>;
   };
 
   // ============================================================================
@@ -646,7 +652,7 @@ export default function RouteSelectionScreen() {
       <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
         <ActivityIndicator size="large" color={theme.primary} />
         <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
-          Getting your location...
+          {t('home:gettingLocation')}
         </Text>
       </View>
     );
@@ -661,7 +667,7 @@ export default function RouteSelectionScreen() {
             <Icon name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
             <TextInput
               style={dynamicStyles.searchInput}
-              placeholder="Search routes or destinations..."
+              placeholder={t('routes:searchRoutes')}
               placeholderTextColor={theme.textSecondary}
               value={searchTerm}
               onChangeText={setSearchTerm}
@@ -671,7 +677,7 @@ export default function RouteSelectionScreen() {
 
         {/* Available Routes Section */}
         <Text style={dynamicStyles.sectionTitle}>
-          Available Routes {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
+          {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
         </Text>
 
         {/* Routes List or Empty State */}
@@ -680,8 +686,8 @@ export default function RouteSelectionScreen() {
             <Icon name="map-outline" size={64} color={theme.textSecondary} />
             <Text style={dynamicStyles.emptyStateText}>
               {searchTerm
-                ? "No routes found matching your criteria"
-                : "No routes available"}
+                ? t('routes:noRoutesMatching')
+                : t('routes:noRoutesFound')}
             </Text>
           </View>
         ) : (
@@ -691,7 +697,7 @@ export default function RouteSelectionScreen() {
               <View style={dynamicStyles.routeHeader}>
                 <View style={dynamicStyles.routeTitle}>
                   <Text style={dynamicStyles.routeTitleText}>
-                    {route.start} to {route.destination}
+                    {route.start} {t('routes:to')} {route.destination}
                   </Text>
                   <Text style={dynamicStyles.routeFare}>
                     R{route.fare ? route.fare.toFixed(2) : 'N/A'}
@@ -702,7 +708,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="time-outline" size={16} color={theme.textSecondary} />
                     <Text style={dynamicStyles.routeInfoText}>
-                      {route.estimatedDuration ? `${Math.round(route.estimatedDuration / 60)} min` : 'N/A'}
+                      {route.estimatedDuration ? `${Math.round(route.estimatedDuration / 60)} ${t('routes:min')}` : 'N/A'}
                     </Text>
                   </View>
                   <View style={dynamicStyles.routeInfoItem}>
@@ -716,7 +722,7 @@ export default function RouteSelectionScreen() {
                     style={dynamicStyles.reserveButton}
                     onPress={() => handleRouteSelect(route)}
                   >
-                    <Text style={dynamicStyles.reserveButtonText}>Reserve Seat</Text>
+                    <Text style={dynamicStyles.reserveButtonText}>{t('routes:reserveSeat')}</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
@@ -746,10 +752,10 @@ export default function RouteSelectionScreen() {
             {/* Page Information */}
             <View style={dynamicStyles.paginationInfo}>
               <Text style={dynamicStyles.paginationText}>
-                Page {currentPage} of {totalPages}
+                {t('routes:page')} {currentPage} {t('routes:of')} {totalPages}
               </Text>
               <Text style={dynamicStyles.paginationSubText}>
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredRoutes.length)} of {filteredRoutes.length} routes
+                {t('routes:showing')} {startIndex + 1}-{Math.min(endIndex, filteredRoutes.length)} {t('routes:of')} {filteredRoutes.length} {t('routes:routes')}
               </Text>
             </View>
 

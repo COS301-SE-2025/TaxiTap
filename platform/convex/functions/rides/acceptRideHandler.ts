@@ -18,15 +18,30 @@ export const acceptRideHandler = async (
     throw new Error("Ride is not available for acceptance");
   }
 
-  // Generate a 4-digit PIN for verification
-  const ridePin = Math.floor(1000 + Math.random() * 9000).toString();
+  // Get the driver's PIN from their profile
+  const driver = await ctx.db.get(args.driverId);
+  if (!driver) {
+    throw new Error("Driver not found");
+  }
+
+  // Use driver's existing PIN or generate a new one if none exists
+  let driverPin = driver.driverPin;
+  if (!driverPin) {
+    driverPin = Math.floor(1000 + Math.random() * 9000).toString();
+    // Update driver's profile with the new PIN
+    await ctx.db.patch(args.driverId, {
+      driverPin: driverPin,
+      pinUpdatedAt: Date.now(),
+    });
+  }
 
   // Update the ride
   const updatedRideId = await ctx.db.patch(ride._id, {
     status: "accepted",
     driverId: args.driverId,
     acceptedAt: Date.now(),
-    ridePin: ridePin,
+    // Store the driver's PIN in the ride for verification
+    ridePin: driverPin,
     pinRegeneratedAt: Date.now(),
   });
 
@@ -37,11 +52,14 @@ export const acceptRideHandler = async (
       rideId: args.rideId,
       type: "ride_accepted",
       driverId: args.driverId,
+      passengerId: ride.passengerId, // Add this line
+      metadata: null, // Add this line
     }
   );
 
   return {
     _id: updatedRideId,
     message: "Ride accepted successfully",
+    driverPin: driverPin, // Return the PIN for immediate use
   };
-}; 
+};

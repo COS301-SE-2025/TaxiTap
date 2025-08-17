@@ -33,6 +33,13 @@ jest.mock('../../../convex/_generated/api', () => ({
 
 function createMockCtx(rideData: any) {
   let ride: any = rideData ? { ...rideData } : null;
+  const mockDriver = {
+    _id: "driver_1",
+    name: "Test Driver",
+    driverPin: "1234",
+    isActive: true
+  };
+  
   return {
     db: {
       query: jest.fn(() => ({
@@ -45,9 +52,17 @@ function createMockCtx(rideData: any) {
           Object.assign(ride, update);
           return _id;
         }
+        if (_id === mockDriver._id) {
+          Object.assign(mockDriver, update);
+          return _id;
+        }
         return null;
       }),
-      get: jest.fn(async (_id: any) => (ride && _id === ride._id ? ride : null)),
+      get: jest.fn(async (_id: any) => {
+        if (ride && _id === ride._id) return ride;
+        if (_id === mockDriver._id) return mockDriver;
+        return null;
+      }),
     },
     runMutation: jest.fn(async () => null),
   };

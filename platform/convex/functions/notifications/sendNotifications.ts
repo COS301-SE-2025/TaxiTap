@@ -12,8 +12,8 @@ export const sendNotificationHandler = async (
     message: string;
     priority: string;
     metadata?: any;
-    scheduledFor?: number;
-    expiresAt?: number;
+    scheduledFor?: number | null;
+    expiresAt?: number | null;
   }
 ) => {
   const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -28,8 +28,8 @@ export const sendNotificationHandler = async (
     isPush: false,
     priority: args.priority as any,
     metadata: args.metadata,
-    scheduledFor: args.scheduledFor,
-    expiresAt: args.expiresAt,
+    scheduledFor: Date.now() + (args.scheduledFor || 0),
+    expiresAt: Date.UTC(args.expiresAt || 0),
     createdAt: Date.now()
   });
 
@@ -57,8 +57,8 @@ export const sendNotification = mutation({
     message: v.string(),
     priority: v.string(),
     metadata: v.optional(v.any()),
-    scheduledFor: v.optional(v.number()),
-    expiresAt: v.optional(v.number())
+    scheduledFor: v.union(v.number(), v.null()),
+    expiresAt: v.union(v.number(), v.null())
   },
   handler: sendNotificationHandler
 });
@@ -72,8 +72,8 @@ export const sendNotificationInternal = internalMutation({
     message: v.string(),
     priority: v.string(),
     metadata: v.optional(v.any()),
-    scheduledFor: v.optional(v.number()),
-    expiresAt: v.optional(v.number())
+    scheduledFor: v.union(v.number(), v.null()),
+    expiresAt: v.union(v.number(), v.null())
   },
   handler: sendNotificationHandler
 });

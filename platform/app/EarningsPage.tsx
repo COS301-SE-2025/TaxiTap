@@ -15,6 +15,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -44,6 +45,36 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const { theme, isDark } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      weeklySummary: "Weekly Summary",
+      weeklyEarnings: "Weekly Earnings",
+      dailyBreakdown: "Daily Breakdown",
+      summary: "Summary",
+      hoursOnline: "Hours Online",
+      reservations: "Reservations",
+      avgPerHour: "Average per Hour",
+      loadingEarnings: "Loading earnings..."
+    },
+    zu: {
+      weeklySummary: "Isifinyezo Seviki",
+      weeklyEarnings: "Imali Yeviki",
+      dailyBreakdown: "Ukuhlukaniswa Kwemali Kwansuku",
+      summary: "Isifinyezo",
+      hoursOnline: "Amahora Okusebenza",
+      reservations: "Izibhukho",
+      avgPerHour: "Isilinganiso Ngehora",
+      loadingEarnings: "Kulayishwa imali..."
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
@@ -94,7 +125,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   if (!currentWeek) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: theme.text }}>Loading earnings...</Text>
+        <Text style={{ color: theme.text }}>{t('loadingEarnings')}</Text>
       </SafeAreaView>
     );
   }
@@ -181,6 +212,21 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
     },
     summaryLabel: { fontSize: 16, color: theme.textSecondary },
     summaryValue: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+    activeRideButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      marginTop: 10,
+    },
+    activeRideButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
   });
 
   return (
@@ -196,7 +242,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
           >
             <Icon name="arrow-back" size={24} color={isDark ? '#121212' : '#FF9900'} />
           </TouchableOpacity>
-          <Text style={dynamicStyles.headerTitle}>Weekly Summary</Text>
+          <Text style={dynamicStyles.headerTitle}>{t('weeklySummary')}</Text>
         </View>
 
         <ScrollView style={dynamicStyles.content} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -222,15 +268,30 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
             )}
           </View>
 
+          {/* Active Ride Status */}
+          {user?.accountType === 'driver' && (
+            <View style={dynamicStyles.card}>
+              <Text style={dynamicStyles.sectionTitle}>Active Ride Status</Text>
+              <TouchableOpacity
+                style={dynamicStyles.activeRideButton}
+                onPress={() => navigation.navigate('DriverOnline' as never)}
+                activeOpacity={0.8}
+              >
+                <Icon name="car" size={20} color="#FFFFFF" />
+                <Text style={dynamicStyles.activeRideButtonText}>Go Online</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Earnings Card */}
           <View style={dynamicStyles.card}>
             <Text style={dynamicStyles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
-            <Text style={dynamicStyles.label}>Weekly Earnings</Text>
+            <Text style={dynamicStyles.label}>{t('weeklyEarnings')}</Text>
           </View>
 
           {/* Bar Chart */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>Daily Breakdown</Text>
+            <Text style={dynamicStyles.sectionTitle}>{t('dailyBreakdown')}</Text>
             <View style={dynamicStyles.barsContainer}>
               {currentWeek.dailyData.map((day: any, index: any) => (
                 <View key={index} style={dynamicStyles.barWrapper}>
@@ -244,17 +305,17 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
           {/* Summary */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>Summary</Text>
+            <Text style={dynamicStyles.sectionTitle}>{t('summary')}</Text>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Hours Online</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('hoursOnline')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.hoursOnline}h</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Reservations</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('reservations')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.reservations}</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Avg per Hour</Text>
+              <Text style={dynamicStyles.summaryLabel}>{t('avgPerHour')}</Text>
               <Text style={dynamicStyles.summaryValue}>R{averagePerHour.toFixed(2)}</Text>
             </View>
           </View>

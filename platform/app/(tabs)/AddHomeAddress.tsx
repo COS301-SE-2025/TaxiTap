@@ -7,6 +7,7 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as Location from 'expo-location';
 
 export default function AddHomeAddress() {
@@ -20,6 +21,7 @@ export default function AddHomeAddress() {
     const router = useRouter();
     const { user } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -47,49 +49,49 @@ export default function AddHomeAddress() {
             // Request location permissions
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to get your current location');
-                return;
-            }
-
-            // Get current location
-            const location = await Location.getCurrentPositionAsync({});
-            const { latitude, longitude } = location.coords;
-            setCoordinates({ latitude, longitude });
-
-            // Reverse geocode to get address
-            const reverseGeocode = await Location.reverseGeocodeAsync({
-                latitude,
-                longitude,
-            });
-
-            if (reverseGeocode.length > 0) {
-                const result = reverseGeocode[0];
-                const fullAddress = `${result.name || ''} ${result.street || ''}, ${result.city || ''}, ${result.region || ''} ${result.postalCode || ''}`.trim();
-                setAddress(fullAddress);
-            }
-        } catch (error) {
-            console.error('Location error:', error);
-            Alert.alert('Error', 'Failed to get current location');
-        } finally {
-            setIsLoadingLocation(false);
+                            Alert.alert(t('address:permissionDenied'), t('address:locationPermissionRequired'));
+            return;
         }
+
+        // Get current location
+        const location = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = location.coords;
+        setCoordinates({ latitude, longitude });
+
+        // Reverse geocode to get address
+        const reverseGeocode = await Location.reverseGeocodeAsync({
+            latitude,
+            longitude,
+        });
+
+        if (reverseGeocode.length > 0) {
+            const result = reverseGeocode[0];
+            const fullAddress = `${result.name || ''} ${result.street || ''}, ${result.city || ''}, ${result.region || ''} ${result.postalCode || ''}`.trim();
+            setAddress(fullAddress);
+        }
+    } catch (error) {
+        console.error('Location error:', error);
+        Alert.alert(t('address:error'), t('address:failedToGetLocation'));
+    } finally {
+        setIsLoadingLocation(false);
+    }
     };
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            Alert.alert(t('address:error'), t('address:userNotLoaded'));
             return;
         }
         if (!address.trim()) {
-            Alert.alert('Error', 'Please enter an address');
+            Alert.alert(t('address:error'), t('address:addressRequired'));
             return;
         }
         if (!nickname.trim()) {
-            Alert.alert('Error', 'Please enter a nickname for this address');
+            Alert.alert(t('address:error'), t('address:nicknameRequired'));
             return;
         }
         if (coordinates.latitude === 0 && coordinates.longitude === 0) {
-            Alert.alert('Error', 'Please get location coordinates or use current location');
+            Alert.alert(t('address:error'), t('address:coordinatesRequired'));
             return;
         }
         setIsLoading(true);
@@ -102,12 +104,12 @@ export default function AddHomeAddress() {
                     coordinates,
                 },
             });
-            Alert.alert('Success', 'Home address saved successfully!', [
+            Alert.alert(t('address:success'), t('address:homeAddressSaved'), [
                 { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
             ]);
         } catch (error: any) {
             console.error('Save error:', error);
-            Alert.alert('Error', error.message || 'Failed to save home address');
+            Alert.alert(t('address:error'), error.message || t('address:failedToSaveAddress'));
         } finally {
             setIsLoading(false);
         }
@@ -115,16 +117,16 @@ export default function AddHomeAddress() {
 
     const handleDelete = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            Alert.alert(t('address:error'), t('address:userNotLoaded'));
             return;
         }
         Alert.alert(
-            'Delete Home Address',
-            'Are you sure you want to delete your home address?',
+            t('address:deleteHomeAddress'),
+            t('address:deleteAddressConfirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('address:cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('address:delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -133,12 +135,12 @@ export default function AddHomeAddress() {
                                 userId: user.id as Id<'taxiTap_users'>,
                                 homeAddress: null,
                             });
-                            Alert.alert('Success', 'Home address deleted successfully!', [
+                            Alert.alert(t('address:success'), t('address:homeAddressDeleted'), [
                                 { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
                             ]);
                         } catch (error: any) {
                             console.error('Delete error:', error);
-                            Alert.alert('Error', error.message || 'Failed to delete home address');
+                            Alert.alert(t('address:error'), error.message || t('address:failedToDeleteAddress'));
                         } finally {
                             setIsLoading(false);
                         }
@@ -289,7 +291,7 @@ export default function AddHomeAddress() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>Loading...</Text>
+                    <Text style={{ color: theme.text }}>{t('personalInfo:loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -304,40 +306,39 @@ export default function AddHomeAddress() {
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>
-                        {hasExistingAddress ? 'Edit Home Address' : 'Add Home Address'}
+                        {hasExistingAddress ? t('address:editHomeAddress') : t('address:addHomeAddress')}
                     </Text>
                 </View>
 
                 {/* Info Box */}
                 <View style={dynamicStyles.infoBox}>
                     <Text style={dynamicStyles.infoText}>
-                        💡 Adding your home address will make it easier to book rides to and from home. 
-                        You can use your current location or enter the address manually.
+                        {t('address:homeAddressInfo')}
                     </Text>
                 </View>
 
                 {/* Address Form */}
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Address Information</Text>
+                    <Text style={dynamicStyles.sectionTitle}>{t('address:addressInformation')}</Text>
                     
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Address Nickname</Text>
+                        <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={nickname}
                             onChangeText={setNickname}
-                            placeholder="e.g., Home, My Place"
+                            placeholder={t('address:addressNicknamePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Full Address</Text>
+                        <Text style={dynamicStyles.label}>{t('address:fullAddress')}</Text>
                         <TextInput
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
                             onChangeText={setAddress}
-                            placeholder="Enter your home address"
+                            placeholder={t('address:fullAddressPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             multiline
                             numberOfLines={3}
@@ -354,14 +355,14 @@ export default function AddHomeAddress() {
                                 color={isDark ? '#121212' : '#fff'} 
                             />
                             <Text style={dynamicStyles.locationButtonText}>
-                                {isLoadingLocation ? 'Getting Location...' : 'Use Current Location'}
+                                {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
                             </Text>
                         </Pressable>
 
                         {(coordinates.latitude !== 0 || coordinates.longitude !== 0) && (
                             <View style={dynamicStyles.coordinatesContainer}>
                                 <Text style={dynamicStyles.coordinatesText}>
-                                    Coordinates: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
+                                    {t('address:coordinates')}: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
                                 </Text>
                             </View>
                         )}
@@ -376,7 +377,7 @@ export default function AddHomeAddress() {
                         disabled={isLoading}
                     >
                         <Text style={dynamicStyles.saveButtonText}>
-                            {isLoading ? 'Saving...' : hasExistingAddress ? 'Update Address' : 'Save Address'}
+                            {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
                         </Text>
                     </Pressable>
 
@@ -386,7 +387,7 @@ export default function AddHomeAddress() {
                             onPress={handleDelete}
                             disabled={isLoading}
                         >
-                            <Text style={dynamicStyles.buttonText}>Delete</Text>
+                            <Text style={dynamicStyles.buttonText}>{t('address:delete')}</Text>
                         </Pressable>
                     )}
                 </View>

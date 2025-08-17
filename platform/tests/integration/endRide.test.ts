@@ -84,6 +84,7 @@ describe("Integration-like: endRideHandler", () => {
     expect(dbData.rides[0].status).toBe("completed");
     expect(dbData.rides[0].completedAt).toEqual(expect.any(Number));
 
+    // FIXED: Added the metadata field that was added to the endRideHandler
     expect(mockCtx.runMutation).toHaveBeenCalledWith(
       internal.functions.notifications.rideNotifications.sendRideNotification,
       {
@@ -91,6 +92,7 @@ describe("Integration-like: endRideHandler", () => {
         type: "ride_completed",
         driverId: dbData.rides[0].driverId,
         passengerId: args.userId,
+        metadata: null, // Added this field to match the handler implementation
       }
     );
 

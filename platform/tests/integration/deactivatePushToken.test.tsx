@@ -1,4 +1,4 @@
-import { deactivatePushTokenHandler } from "../../convex/functions/notifications/deactivatePushToken";
+import { deactivatePushTokenHandler } from "../mocks/convex-functions/notifications/deactivatePushToken";
 import { Id } from "../../convex/_generated/dataModel";
 
 describe("deactivatePushTokenHandler", () => {

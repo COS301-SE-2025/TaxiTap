@@ -12,6 +12,7 @@ import { api } from "../convex/_generated/api";
 import { Platform, AppState } from "react-native";
 import { Id } from "../convex/_generated/dataModel";
 import { router } from "expo-router";
+import { useUser } from "./UserContext";
 import { useAlerts } from "../contexts/AlertContext";
 
 interface NotificationContextType {
@@ -28,8 +29,10 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 
 export const NotificationProvider: React.FC<{
   children: React.ReactNode;
-  userId?: Id<"taxiTap_users">;
-}> = ({ children, userId }) => {
+}> = ({ children }) => {
+  const { user } = useUser();
+  const userId = user?.id;
+  
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const [notifications, setNotifications] = useState<any[]>([]);
   const [appState, setAppState] = useState(AppState.currentState);

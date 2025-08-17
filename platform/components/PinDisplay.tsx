@@ -1,11 +1,9 @@
 // components/PinDisplay.tsx
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useAlertHelpers } from './AlertHelpers';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useMutation } from 'convex/react';
-import { api } from '../convex/_generated/api';
-import { Id } from '../convex/_generated/dataModel';
 
 interface PinDisplayProps {
   pin: string | null;
@@ -19,35 +17,10 @@ export const PinDisplay: React.FC<PinDisplayProps> = ({
   onPinRegenerated 
 }) => {
   const { theme, isDark } = useTheme();
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  
-  const regeneratePin = useMutation(api.functions.rides.generatePin.regenerateRidePin);
+  const { showInfo } = useAlertHelpers();
 
   const handleRegeneratePin = async () => {
-    if (isRegenerating) return;
-    
-    Alert.alert(
-      "Regenerate PIN",
-      "This will create a new 4-digit verification code. The old code will no longer work.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Generate New PIN",
-          onPress: async () => {
-            setIsRegenerating(true);
-            try {
-              const result = await regeneratePin({ rideId: rideId as Id<'rides'> });
-              onPinRegenerated?.(result.newPin);
-              Alert.alert("Success", "New PIN generated successfully!");
-            } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to generate new PIN");
-            } finally {
-              setIsRegenerating(false);
-            }
-          }
-        }
-      ]
-    );
+    showInfo("Info", "PIN regeneration is no longer supported in this version.");
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -188,7 +161,6 @@ export const PinDisplay: React.FC<PinDisplayProps> = ({
       <TouchableOpacity 
         style={dynamicStyles.regenerateButton}
         onPress={handleRegeneratePin}
-        disabled={isRegenerating}
         activeOpacity={0.8}
       >
         <Icon 
@@ -197,7 +169,7 @@ export const PinDisplay: React.FC<PinDisplayProps> = ({
           color="#FF9900"
         />
         <Text style={dynamicStyles.regenerateButtonText}>
-          {isRegenerating ? "Wait..." : "New PIN"}
+          New PIN
         </Text>
       </TouchableOpacity>
     </View>

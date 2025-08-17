@@ -1,10 +1,11 @@
-import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
+import React, { useLayoutEffect, useState, useRef, useEffect, useCallback } from "react";
 import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useUser } from '../../contexts/UserContext';
@@ -13,6 +14,7 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { useProximityAlerts } from '../../hooks/useProximityAlerts';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -25,6 +27,7 @@ export default function SeatReserved() {
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
+	const { t } = useLanguage();
 	const { 
 		currentLocation,
 		destination,
@@ -40,14 +43,14 @@ export default function SeatReserved() {
 		setCachedRoute
 	} = useMapContext();
 	const { notifications, markAsRead } = useNotifications();
-	const { showGlobalAlert, showGlobalError } = useAlertHelpers();
+	const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
 	const mapRef = useRef<MapView | null>(null);
-
-	const processedNotificationsRef = useRef(new Set<string>()); // ref for processing used notification
+	const processedNotificationsRef = useRef(new Set<string>());
+	const isMonitoringRef = useRef(false);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -66,33 +69,30 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
-	const [currentPin, setCurrentPin] = useState<string | null>(null);
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
 	const driverId = taxiInfo?.driver?.userId;
 
-	// Remove averageRating usage if not available
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 
-	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
+
+	// Add proximity alerts hook
+	const { startMonitoringRide, stopMonitoringRide, updateDriverLocation } = useProximityAlerts({
+		enablePushNotifications: true,
+		enableInAppAlerts: true,
+		alertDistance: 3.0,
+		arrivalDistance: 0.1,
+		checkInterval: 30,
+	});
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
 		});
 	}, [navigation]);
-
-	// Simple PIN generation for demo purposes
-	useEffect(() => {
-		if (rideStatus === 'accepted' && !currentPin) {
-			// Get PIN from ride data or use demo PIN
-			const ridePin = taxiInfo?.ridePin || "1234";
-			setCurrentPin(ridePin);
-		}
-	}, [rideStatus, currentPin, taxiInfo?.ridePin]);
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -131,7 +131,7 @@ export default function SeatReserved() {
 			setCurrentLocation({
 				latitude: currentLat,
 				longitude: currentLng,
-				name: getParamAsString(params.currentName, "Current Location")
+				name: getParamAsString(params.currentName, t('passengerReservation:currentLocation'))
 			});
 			setDestination({
 				latitude: destLat,
@@ -139,11 +139,11 @@ export default function SeatReserved() {
 				name: getParamAsString(params.destinationName, "")
 			});
 		}
-	}, [useLiveLocation]);
+	}, [useLiveLocation, params.currentLat, params.currentLng, params.destinationLat, params.destinationLng, params.currentName, params.destinationName]);
 
 	const vehicleInfo = {
-		plate: getParamAsString(params.plate, "Unknown"),
-		time: getParamAsString(params.time, "Unknown"),
+		plate: getParamAsString(params.plate, t('passengerReservation:unknown')),
+		time: getParamAsString(params.time, t('passengerReservation:unknown')),
 		seats: getParamAsString(params.seats, "0"),
 		price: getParamAsString(params.price, "0"),
 		selectedVehicleId: getParamAsString(params.selectedVehicleId, ""),
@@ -188,7 +188,6 @@ export default function SeatReserved() {
 
 	// Function to get route from Google Directions API
 	const getRoute = async (origin: { latitude: number; longitude: number; name: string }, dest: { latitude: number; longitude: number; name: string }) => {
-		// Validate coordinates
 		if (!origin || !dest) {
 			console.warn('Invalid coordinates provided to getRoute');
 			return;
@@ -211,7 +210,6 @@ export default function SeatReserved() {
 
 		const routeKey = `${origin.latitude},${origin.longitude}-${dest.latitude},${dest.longitude}`;
 		
-		// Check cache first
 		const cachedRoute = getCachedRoute(routeKey);
 		if (cachedRoute) {
 			setRouteCoordinates(cachedRoute);
@@ -258,13 +256,11 @@ export default function SeatReserved() {
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
 				console.log('Decoded coordinates count:', decodedCoords.length);
 				
-				// Cache the route
 				setCachedRoute(routeKey, decodedCoords);
 				
 				setRouteCoordinates(decodedCoords);
 				setRouteLoaded(true);
 				
-				// Fit the map to show the entire route
 				const coordinates = [
 					{ latitude: origin.latitude, longitude: origin.longitude },
 					{ latitude: dest.latitude, longitude: dest.longitude },
@@ -280,7 +276,6 @@ export default function SeatReserved() {
 		} catch (error) {
 			console.error('Error fetching route:', error);
 			
-			// Fallback: use straight line between origin and destination
 			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
@@ -289,7 +284,6 @@ export default function SeatReserved() {
 			setRouteCoordinates(fallbackRoute);
 			setRouteLoaded(true);
 			
-			// Center the map to show both points
 			if (mapRef.current) {
 				mapRef.current.fitToCoordinates(fallbackRoute, {
 					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
@@ -360,25 +354,24 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, rideStatus, isFollowing]);
 
-	// MIGRATED: Handle notifications effect using new alert system
+	// Handle notifications effect using new alert system
 	useEffect(() => {
 		const rideStarted = notifications.find(
 			n => n.type === 'ride_started' && 
 				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
+				!processedNotificationsRef.current.has(n._id)
 		);
 		if (rideStarted) {
-
 			processedNotificationsRef.current.add(rideStarted._id);
 
 			showGlobalAlert({
-				title: 'Ride Started',
+				title: t('passengerReservation:rideStarted'),
 				message: rideStarted.message,
 				type: 'success',
 				duration: 0,
 				actions: [
 					{
-						label: 'OK',
+						label: t('passengerReservation:ok'),
 						onPress: () => {
 							markAsRead(rideStarted._id);
 							if (!currentLocation || !destination) {
@@ -397,21 +390,20 @@ export default function SeatReserved() {
 		const rideDeclined = notifications.find(
 		n => n.type === 'ride_declined' && 
 			!n.isRead && 
-			!processedNotificationsRef.current.has(n._id) // Add this check
+			!processedNotificationsRef.current.has(n._id)
 		);
 
 		if (rideDeclined) {
-
 			processedNotificationsRef.current.add(rideDeclined._id);
 			
 			showGlobalError(
-				'Ride Declined',
-				rideDeclined.message || 'Your ride request was declined.',
+				t('passengerReservation:rideDeclined'),
+				rideDeclined.message || t('passengerReservation:rideDeclinedMessage'),
 				{
 					duration: 0,
 					actions: [
 						{
-							label: 'OK',
+							label: t('passengerReservation:ok'),
 							onPress: () => {
 								markAsRead(rideDeclined._id);
 								router.push('/HomeScreen');
@@ -424,20 +416,20 @@ export default function SeatReserved() {
 				}
 			);
 		}
-	}, [notifications, markAsRead, router, showGlobalAlert, showGlobalError]);
+	}, [notifications, markAsRead, router, t, currentLocation, destination, showGlobalAlert, showGlobalError]);
 
 	useEffect(() => {
 		if (rideJustEnded) return;
 		
 		if (taxiInfoError && !hasShownDeclinedAlert) {
 			showGlobalError(
-				'Ride Declined',
-				'No active reservation found. Your ride may have been cancelled or declined.',
+				t('passengerReservation:rideDeclined'),
+				t('passengerReservation:noActiveReservation'),
 				{
 					duration: 0,
 					actions: [
 						{
-							label: 'OK',
+							label: t('passengerReservation:ok'),
 							onPress: () => {
 								setHasShownDeclinedAlert(true);
 								router.push('/HomeScreen');
@@ -450,7 +442,56 @@ export default function SeatReserved() {
 				}
 			);
 		}
-	}, [taxiInfoError, hasShownDeclinedAlert, showGlobalError]);
+	}, [taxiInfoError, hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError]);
+
+	// FIXED: Debounced proximity monitoring with ref tracking
+	const startProximityMonitoring = useCallback(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && currentLocation && !rideJustEnded && !isMonitoringRef.current) {
+			console.log('Started proximity monitoring for ride', taxiInfo.rideId);
+			
+			const driverLocation = {
+				latitude: taxiInfo.driver?.currentLocation?.latitude || 0,
+				longitude: taxiInfo.driver?.currentLocation?.longitude || 0,
+			};
+
+			const pickupLocation = {
+				latitude: currentLocation.latitude,
+				longitude: currentLocation.longitude,
+			};
+
+			startMonitoringRide({
+				rideId: taxiInfo.rideId,
+				driverId: taxiInfo.driver?.userId || '',
+				passengerId: user?.id || '',
+				driverLocation,
+				pickupLocation,
+			});
+			
+			isMonitoringRef.current = true;
+		}
+	}, [rideStatus, taxiInfo?.rideId, currentLocation, user?.id, rideJustEnded, startMonitoringRide, taxiInfo?.driver]);
+
+	useEffect(() => {
+		if (rideStatus === 'accepted' && !isMonitoringRef.current) {
+			startProximityMonitoring();
+		}
+		
+		if (rideStatus !== 'accepted' && isMonitoringRef.current && taxiInfo?.rideId) {
+			console.log('Stopped proximity monitoring for ride', taxiInfo.rideId);
+			stopMonitoringRide(taxiInfo.rideId);
+			isMonitoringRef.current = false;
+		}
+	}, [rideStatus, startProximityMonitoring, taxiInfo?.rideId, stopMonitoringRide]);
+
+	// Update driver location when we receive location updates
+	useEffect(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && taxiInfo?.driver?.currentLocation && isMonitoringRef.current) {
+			updateDriverLocation(taxiInfo.rideId, {
+				latitude: taxiInfo.driver.currentLocation.latitude,
+				longitude: taxiInfo.driver.currentLocation.longitude,
+			});
+		}
+	}, [taxiInfo?.driver?.currentLocation, rideStatus, taxiInfo?.rideId, updateDriverLocation]);
 
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -461,29 +502,19 @@ export default function SeatReserved() {
 			});
 			return;
 		}
-		try {
-			await startRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await startTripConvex({
-				passengerId: passengerId as Id<'taxiTap_users'>,
-				driverId: driverId as Id<'taxiTap_users'>,
-				reservation: true,
-			});
-			router.push({
-				pathname: './Payments',
-				params: {
-					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
-        			licensePlate: taxiInfo?.plate || 'Unknown Plate',
-					fare: taxiInfo?.fare,
-					rideId: taxiInfo?.rideId,
-				},
-			});
-		} catch (error: any) {
-			showGlobalError('Error', error?.message || 'Failed to start ride.', {
-				duration: 4000,
-				position: 'top',
-				animation: 'slide-down',
-			});
-		}
+		
+		router.push({
+			pathname: '/PassengerPinEntry',
+			params: {
+				driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+				licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+				fare: taxiInfo?.fare?.toString() || '0',
+				rideId: taxiInfo?.rideId,
+				startName: currentLocation?.name || 'Current Location',
+				endName: destination?.name || 'Destination',
+				driverId: driverId || '',
+			},
+		});
 	};
 
 	const handleEndRide = async () => {
@@ -500,42 +531,44 @@ export default function SeatReserved() {
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			
-			showGlobalAlert({
-				title: 'Success',
-				message: 'Ride ended!',
-				type: 'success',
-				duration: 3000,
-				position: 'top',
-				animation: 'slide-down',
-			});
-			
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
 			
 			showGlobalAlert({
-				title: 'Ride Ended',
-				message: `Fare: R${result.fare}`,
-				type: 'info',
-				duration: 5000,
+				title: 'Ride Ended Successfully',
+				message: `Ride ended! Fare: R${result.fare}`,
+				type: 'success',
+				duration: 0,
+				actions: [
+					{
+						label: 'Continue to Feedback',
+						onPress: () => {
+							router.push({
+								pathname: '/SubmitFeedback',
+								params: {
+									rideId: taxiInfo.rideDocId,
+									startName: currentLocation?.name || 'Current Location',
+									endName: destination?.name || 'Destination',
+									passengerId: user.id,
+									driverId: driverId || '',
+								},
+							});
+						},
+						style: 'default',
+					},
+					{
+						label: 'Skip Feedback',
+						onPress: () => {
+							router.push('/HomeScreen');
+						},
+						style: 'cancel',
+					}
+				],
 				position: 'top',
 				animation: 'slide-down',
 			});
 			
-			if (!currentLocation || !destination) {
-				return;
-			}
-			router.push({
-				pathname: './SubmitFeedback',
-				params: {
-					startName: currentLocation.name,
-					endName: destination.name,
-					passengerId: passengerId,
-    				rideId: rideId,
-					driverId: driverId,
-				},
-			});
-			setRideJustEnded(true);
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to end ride.', {
 				duration: 4000,
@@ -545,7 +578,7 @@ export default function SeatReserved() {
 		}
 	};
 
-	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
+	const handleCancelRequest = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
 			showGlobalError('Error', 'No ride or user information available.', {
 				duration: 4000,
@@ -557,7 +590,6 @@ export default function SeatReserved() {
 		try {
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			
 			showGlobalAlert({
 				title: 'Success',
 				message: 'Ride cancelled.',
@@ -765,57 +797,6 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
-		pinContainer: {
-			alignItems: "center",
-			marginBottom: 15,
-			padding: 12,
-			backgroundColor: "transparent",
-			borderRadius: 8,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-			borderStyle: "dashed",
-			width: '90%',
-			alignSelf: 'center',
-		},
-		pinLabel: {
-			fontSize: 12,
-			fontWeight: "500",
-			color: "#666666",
-			marginBottom: 8,
-			textAlign: "center",
-			textTransform: "uppercase",
-			letterSpacing: 0.5,
-		},
-		pinDisplay: {
-			flexDirection: "row",
-			justifyContent: "center",
-			marginBottom: 6,
-			alignItems: "center",
-		},
-		pinDigit: {
-			width: 28,
-			height: 32,
-			backgroundColor: "#121212",
-			borderRadius: 4,
-			justifyContent: "center",
-			alignItems: "center",
-			marginHorizontal: 2,
-			borderWidth: 1,
-			borderColor: "#FF9900",
-		},
-		pinDigitText: {
-			fontSize: 16,
-			fontWeight: "bold",
-			color: "#FF9900",
-			fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-		},
-		pinInstruction: {
-			fontSize: 10,
-			color: "#888888",
-			textAlign: "center",
-			fontStyle: "normal",
-			fontWeight: "400",
-		},
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -841,6 +822,19 @@ export default function SeatReserved() {
 			fontSize: 20,
 			fontWeight: "bold",
 		},
+		endRideButton: {
+			alignItems: "center",
+			backgroundColor: isDark ? "#28a745" : "#28a745",
+			borderRadius: 30,
+			paddingVertical: 24,
+			width: 330,
+			marginBottom: 15,
+		},
+		endRideButtonText: {
+			color: "#FFFFFF",
+			fontSize: 20,
+			fontWeight: "bold",
+		},
 	});
 
 	// Early return for loading state - but ensure all hooks are called first
@@ -848,7 +842,7 @@ export default function SeatReserved() {
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
 				<View style={dynamicStyles.loadingContainer}>
-					<Text style={dynamicStyles.loadingText}>Loading...</Text>
+					<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
 				</View>
 			</SafeAreaView>
 		);
@@ -876,7 +870,7 @@ export default function SeatReserved() {
 						>
 							<Marker
 								coordinate={currentLocation}
-								title="You are here"
+								title={t('passengerReservation:youAreHere')}
 								pinColor="blue"
 							>
 							</Marker>
@@ -904,7 +898,7 @@ export default function SeatReserved() {
 								</Text>
 								{isLoadingRoute && (
 									<Text style={dynamicStyles.routeLoadingText}>
-										Loading route...
+										{t('passengerReservation:loadingRoute')}
 									</Text>
 								)}
 							</View>
@@ -915,7 +909,7 @@ export default function SeatReserved() {
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								{t('passengerReservation:driverDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButton}>
 								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
@@ -932,36 +926,36 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+										{taxiInfo?.driver?.name || t('passengerReservation:defaultDriverName')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+										{taxiInfo?.taxi?.model || t('passengerReservation:defaultVehicleModel')}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-														<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<Text style={dynamicStyles.ratingText}>
-									{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
-								</Text>
-								<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-									{[1, 2, 3, 4, 5].map((star, index) => {
-										const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
-										const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={dynamicStyles.ratingText}>
+										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+									</Text>
+									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
+										{[1, 2, 3, 4, 5].map((star, index) => {
+											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
+											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
 
-										return (
-											<FontAwesome
-												key={index}
-												name={full ? "star" : half ? "star-half-full" : "star-o"}
-												size={12}
-												color={theme.primary}
-												style={{ marginRight: 1 }}
-											/>
-										);
-									})}
+											return (
+												<FontAwesome
+													key={index}
+													name={full ? "star" : half ? "star-half-full" : "star-o"}
+													size={12}
+													color={theme.primary}
+													style={{ marginRight: 1 }}
+												/>
+											);
+										})}
+									</View>
 								</View>
-							</View>
 							</View>
 						)}
 						
@@ -1004,38 +998,25 @@ export default function SeatReserved() {
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
 									<Text style={dynamicStyles.cancelButtonText}>
-										{"Cancel Request"}
+										{t('passengerReservation:cancelRequest')}
 									</Text>
 								</TouchableOpacity>
 							)}
-							{/* When ride is accepted: show PIN and Cancel Request */}
+							{/* When ride is accepted: show PIN entry and Cancel Request */}
 							{rideStatus === 'accepted' && (
 								<>
-									{/* PIN Display */}
-									{currentPin && (
-	<View style={dynamicStyles.pinContainer}>
-		<Text style={dynamicStyles.pinLabel}>Safety PIN</Text>
-		<View style={dynamicStyles.pinDisplay}>
-			{currentPin.split('').map((digit, index) => (
-				<View key={index} style={dynamicStyles.pinDigit}>
-					<Text style={dynamicStyles.pinDigitText}>{digit}</Text>
-				</View>
-			))}
-		</View>
-		<Text style={dynamicStyles.pinInstruction}>
-			Show to driver
-		</Text>
-		<TouchableOpacity 
-		>
-			
-		</TouchableOpacity>
-	</View>
-)}
+									<TouchableOpacity 
+										style={dynamicStyles.startRideButton} 
+										onPress={handleStartRide}>
+										<Text style={dynamicStyles.startRideButtonText}>
+											{t('passengerReservation:verifyPin')}
+										</Text>
+									</TouchableOpacity>
 									<TouchableOpacity 
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
+											{t('passengerReservation:cancelRequest')}
 										</Text>
 									</TouchableOpacity>
 								</>
@@ -1043,10 +1024,10 @@ export default function SeatReserved() {
 							{/* Only show End Ride when ride is started or in progress */}
 							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
 								<TouchableOpacity 
-									style={dynamicStyles.cancelButton} 
+									style={dynamicStyles.endRideButton} 
 									onPress={handleEndRide}>
-									<Text style={dynamicStyles.cancelButtonText}>
-										{"End Ride"}
+									<Text style={dynamicStyles.endRideButtonText}>
+										{t('passengerReservation:endRide')}
 									</Text>
 								</TouchableOpacity>
 							)}
@@ -1063,7 +1044,7 @@ export default function SeatReserved() {
 				</TouchableOpacity>
 			)}
 		</SafeAreaView>
-	)
+	);
 }
 
 // Dark map style for better dark mode experience (same as HomeScreen)

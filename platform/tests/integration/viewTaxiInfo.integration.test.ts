@@ -1,13 +1,14 @@
-import { viewTaxiInfoHandler } from '../../../platform/convex/functions/taxis/viewTaxiInfoHandler';
+import { viewTaxiInfoHandler } from '../../convex/functions/taxis/viewTaxiInfoHandler';
 
 describe('viewTaxiInfo (integration)', () => {
-  const passengerId = 'passenger1';
+  // Create proper Convex ID types for testing
+  const passengerId = { __tableName: 'taxiTap_users' } as any;
   const ride = { _id: 'ride1', rideId: 'RIDE123', passengerId, driverId: 'driverUser1', status: 'accepted' };
   const driverProfile = { _id: 'driver1', userId: 'driverUser1', averageRating: 4.5 };
   const taxi = { _id: 'taxi1', driverId: 'driver1', model: 'Toyota' };
   const driverUser = { _id: 'driverUser1', name: 'Alice', phoneNumber: '123456789' };
 
-  const createMockQueryCtx = (opts = {}) => {
+  const createMockQueryCtx = (opts: any = {}) => {
     const {
       rideDoc = ride,
       driverProf = driverProfile,
@@ -37,8 +38,13 @@ describe('viewTaxiInfo (integration)', () => {
           return { withIndex: () => ({ first: () => Promise.resolve(null) }) };
         }),
         get: jest.fn(() => Promise.resolve(driverUsr)),
+        system: {},
+        normalizeId: jest.fn(),
       },
-    };
+      auth: {},
+      storage: {},
+      runQuery: jest.fn(),
+    } as any;
   };
 
   it('returns taxi and driver info for active ride', async () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -7,6 +7,7 @@ import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
@@ -22,7 +23,75 @@ export default function DriverPersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { currentLanguage } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            driverPersonalInfo: "Driver Personal Info",
+            editingDriverProfile: "Editing Driver Profile",
+            basicInformation: "Basic Information",
+            fullName: "Full Name",
+            enterFullName: "Enter your full name",
+            phoneNumber: "Phone Number",
+            enterPhoneNumber: "Enter your phone number",
+            email: "Email",
+            enterEmail: "Enter your email",
+            emergencyContact: "Emergency Contact",
+            emergencyContactName: "Emergency Contact Name",
+            enterEmergencyContactName: "Enter emergency contact name",
+            emergencyContactPhone: "Emergency Contact Phone",
+            enterEmergencyContactNumber: "Enter emergency contact number",
+            emergencyContactRelationship: "Relationship",
+            relationshipPlaceholder: "e.g., Spouse, Parent, Friend",
+            changePhoto: "Change Photo",
+            saveChanges: "Save Changes",
+            cancel: "Cancel",
+            loading: "Loading...",
+            error: "Error",
+            userNotFound: "User not found",
+            nameRequired: "Name is required",
+            phoneNumberRequired: "Phone number is required",
+            changesSaved: "Changes saved successfully!",
+            failedToSaveChanges: "Failed to save changes",
+            ok: "OK"
+        },
+        zu: {
+            driverPersonalInfo: "Ulwazi Lwakho Lomshayeli",
+            editingDriverProfile: "Kuhlelwa Iphrofayili Yomshayeli",
+            basicInformation: "Ulwazi Oluyisisekelo",
+            fullName: "Igama Eligcwele",
+            enterFullName: "Faka igama lakho eligcwele",
+            phoneNumber: "Inombolo Yefoni",
+            enterPhoneNumber: "Faka inombolo yakho yefoni",
+            email: "I-imeyili",
+            enterEmail: "Faka i-imeyili yakho",
+            emergencyContact: "Uxhumano Lwesimo Esiphuthumayo",
+            emergencyContactName: "Igama Lomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            enterEmergencyContactName: "Faka igama lomuntu oxhumana naye esimweni esiphuthumayo",
+            emergencyContactPhone: "Inombolo Yefoni Yomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            enterEmergencyContactNumber: "Faka inombolo yefoni yomuntu oxhumana naye esimweni esiphuthumayo",
+            emergencyContactRelationship: "Ubuhlobo",
+            relationshipPlaceholder: "isb., Umngane Wokuganana, Umzali, Umngane",
+            changePhoto: "Shintsha Isithombe",
+            saveChanges: "Londoloza Izinguquko",
+            cancel: "Khansela",
+            loading: "Kulayishwa...",
+            error: "Iphutha",
+            userNotFound: "Umsebenzisi akalayishwanga",
+            nameRequired: "Igama liyadingeka",
+            phoneNumberRequired: "Inombolo yefoni iyadingeka",
+            changesSaved: "Izinguquko zilondoloziwe ngempumelelo!",
+            failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
+            ok: "Kulungile"
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
     // Initialize form data from user context
@@ -78,6 +147,7 @@ export default function DriverPersonalInfoEdit() {
     const handleSave = async () => {
         try {
             if (!user?.id) {
+                Alert.alert(t('error'), t('userNotFound'));
                 showGlobalError('Error', 'User not found', {
                     duration: 3000,
                     position: 'top',
@@ -93,10 +163,12 @@ export default function DriverPersonalInfoEdit() {
                     position: 'top',
                     animation: 'slide-down',
                 });
+                Alert.alert(t('error'), t('nameRequired'));
                 return;
             }
 
             if (!number.trim()) {
+                Alert.alert(t('error'), t('phoneNumberRequired'));
                 showGlobalError('Error', 'Phone number is required', {
                     duration: 3000,
                     position: 'top',
@@ -133,13 +205,13 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            showGlobalSuccess('Success', 'Driver profile updated successfully!', {
+            showGlobalSuccess(t('success'), t('changesSaved'), {
                 duration: 0,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: 'OK',
+                        label: t('ok'),
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -147,6 +219,7 @@ export default function DriverPersonalInfoEdit() {
             });
 
         } catch (error: any) {
+            Alert.alert(t('error'), error.message || t('failedToSaveChanges'));
             showGlobalError('Error', error.message || 'Failed to update driver profile', {
                 duration: 5000,
                 position: 'top',
@@ -172,6 +245,7 @@ export default function DriverPersonalInfoEdit() {
         headerSection: {
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
             marginBottom: 30,
         },
         backButton: {
@@ -271,13 +345,14 @@ export default function DriverPersonalInfoEdit() {
             textAlign: 'center',
             marginBottom: 20,
         },
+
     });
 
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text>Loading user data...</Text>
+                    <Text>{t('loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -291,12 +366,12 @@ export default function DriverPersonalInfoEdit() {
                     <Pressable onPress={handleCancel} style={dynamicStyles.backButton}>
                         <Ionicons name="chevron-back" size={24} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>Driver Personal Info</Text>
+                    <Text style={dynamicStyles.headerTitle}>{t('driverPersonalInfo')}</Text>
                 </View>
 
                 {/* Role Indicator */}
                 <Text style={dynamicStyles.roleIndicator}>
-                    Editing Driver Profile
+                    {t('editingDriverProfile')}
                 </Text>
 
                 {/* Profile Image Section */}
@@ -313,44 +388,44 @@ export default function DriverPersonalInfoEdit() {
                         )}
                     </Pressable>
                     <Pressable onPress={handleUploadPhoto}>
-                        <Text style={dynamicStyles.changePhotoText}>Change Photo</Text>
+                        <Text style={dynamicStyles.changePhotoText}>{t('changePhoto')}</Text>
                     </Pressable>
                 </View>
 
                 {/* Basic Information Section */}
                 <View style={dynamicStyles.formSection}>
-                    <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
+                    <Text style={dynamicStyles.sectionTitle}>{t('basicInformation')}</Text>
                     
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Full Name</Text>
+                        <Text style={dynamicStyles.label}>{t('fullName')}</Text>
                         <TextInput
                             value={name}
                             onChangeText={setName}
                             style={dynamicStyles.input}
-                            placeholder="Enter your full name"
+                            placeholder={t('enterFullName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Phone Number</Text>
+                        <Text style={dynamicStyles.label}>{t('phoneNumber')}</Text>
                         <TextInput
                             value={number}
                             onChangeText={setNumber}
                             style={dynamicStyles.input}
-                            placeholder="Enter your phone number"
+                            placeholder={t('enterPhoneNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Email</Text>
+                        <Text style={dynamicStyles.label}>{t('email')}</Text>
                         <TextInput
                             value={email}
                             onChangeText={setEmail}
                             style={dynamicStyles.input}
-                            placeholder="Enter your email"
+                            placeholder={t('enterEmail')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -363,38 +438,38 @@ export default function DriverPersonalInfoEdit() {
 
                 {/* Emergency Contact Section */}
                 <View style={dynamicStyles.formSection}>
-                    <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
+                    <Text style={dynamicStyles.sectionTitle}>{t('emergencyContact')}</Text>
                     
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Emergency Contact Name</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactName')}</Text>
                         <TextInput
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
                             style={dynamicStyles.input}
-                            placeholder="Enter emergency contact name"
+                            placeholder={t('enterEmergencyContactName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Emergency Contact Number</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactPhone')}</Text>
                         <TextInput
                             value={emergencyContactNumber}
                             onChangeText={setEmergencyContactNumber}
                             style={dynamicStyles.input}
-                            placeholder="Enter emergency contact number"
+                            placeholder={t('enterEmergencyContactNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Relationship</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactRelationship')}</Text>
                         <TextInput
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
                             style={dynamicStyles.input}
-                            placeholder="e.g., Spouse, Parent, Friend"
+                            placeholder={t('relationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -403,10 +478,10 @@ export default function DriverPersonalInfoEdit() {
                 {/* Action Buttons */}
                 <View style={dynamicStyles.buttonContainer}>
                     <Pressable style={dynamicStyles.cancelButton} onPress={handleCancel}>
-                        <Text style={dynamicStyles.cancelButtonText}>Cancel</Text>
+                        <Text style={dynamicStyles.cancelButtonText}>{t('cancel')}</Text>
                     </Pressable>
                     <Pressable style={dynamicStyles.saveButton} onPress={handleSave}>
-                        <Text style={dynamicStyles.saveButtonText}>Save Changes</Text>
+                        <Text style={dynamicStyles.saveButtonText}>{t('saveChanges')}</Text>
                     </Pressable>
                 </View>
             </ScrollView>
