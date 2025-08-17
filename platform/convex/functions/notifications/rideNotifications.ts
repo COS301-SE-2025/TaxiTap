@@ -10,7 +10,7 @@ export const sendRideNotificationHandler = async (
     rideId: string;
     type: string;
     passengerId?: Id<"taxiTap_users"> | null;
-    driverId?: Id<"taxiTap_users"> | null;
+    driverId?: Id<"taxiTap_users"> | null ;
     metadata?: any;
   }
 ) => {
