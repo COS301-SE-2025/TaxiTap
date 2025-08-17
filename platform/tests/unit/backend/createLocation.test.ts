@@ -67,7 +67,7 @@ describe('createLocation mutation', () => {
         latitude : callArgs.latitude,
         longitude: callArgs.longitude,
         role     : callArgs.role,
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Number),
       }),
     )
   })

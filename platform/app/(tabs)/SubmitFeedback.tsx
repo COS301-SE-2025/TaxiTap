@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, Alert, ScrollView,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Pressable, Image,
 } from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 export default function SubmitFeedbackScreen() {
   const [name, setName] = useState('');
@@ -20,35 +21,24 @@ export default function SubmitFeedbackScreen() {
   const { theme } = useTheme();
   const { user } = useUser();
   const router = useRouter();
+  const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
   const saveFeedback = useMutation(api.functions.feedback.saveFeedback.saveFeedback);
 
-  const {
-    rideId,
-    startName,
-    endName,
-    passengerId,
-    driverId,
-  } = useLocalSearchParams<{
-    rideId?: string;
-    startName?: string;
-    endName?: string;
-    passengerId?: string;
-    driverId?: string;
+  const { rideId, startName, endName, passengerId, driverId } = useLocalSearchParams<{
+    rideId?: string; startName?: string; endName?: string; passengerId?: string; driverId?: string;
   }>();
 
-  useEffect(() => {
-    if (user) setName(user.name || '');
-  }, [user]);
+  useEffect(() => { if (user) setName(user.name || ''); }, [user]);
 
   const handleSubmit = async () => {
     if (!rating && !comment) {
-      Alert.alert('No Input', 'Please provide a rating or comment');
+      showGlobalError('No Input', 'Please provide a rating or comment', { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     if (!rideId || !passengerId || !driverId || !startName || !endName) {
-      Alert.alert('Missing info', 'Cannot submit feedback: Missing ride/user info.');
+      showGlobalError('Missing info', 'Cannot submit feedback: Missing ride/user info.', { duration: 5000, position: 'top', animation: 'slide-down' });
       return;
     }
 
@@ -65,22 +55,22 @@ export default function SubmitFeedbackScreen() {
 
       setRating(0);
       setComment('');
-      Alert.alert('Success', 'Feedback submitted successfully!');
-      router.push('/FeedbackHistoryScreen');
+      showGlobalSuccess('Success', 'Feedback submitted successfully!', {
+        duration: 0,
+        position: 'top',
+        animation: 'slide-down',
+        actions: [
+          { label: 'OK', onPress: () => router.push('/FeedbackHistoryScreen'), style: 'default' },
+        ],
+      });
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Something went wrong.');
+      showGlobalError('Error', err.message || 'Something went wrong.', { duration: 5000, position: 'top', animation: 'slide-down' });
     }
   };
 
   const handleUploadPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      quality: 1,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
-    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 1 });
+    if (!result.canceled && result.assets.length > 0) { setImageUri(result.assets[0].uri); }
   };
 
   return (
@@ -135,9 +125,10 @@ export default function SubmitFeedbackScreen() {
           borderRadius: 12,
           borderWidth: 1,
           borderColor: theme.primary,
+          marginTop: 8,
         }}
       >
-        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center' }}>
+        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center'}}>
           Skip Feedback
         </Text>
       </TouchableOpacity>

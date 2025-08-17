@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  Alert,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { ConvexProvider } from 'convex/react';
 import { useUser } from '../contexts/UserContext';
 import icon from '../assets/images/icon.png';
 import google from '../assets/images/google5.png';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default function Login() {
   const [number, setNumber] = useState('');
@@ -26,15 +26,16 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
+  const { showError } = useAlertHelpers();
 
   const handleLogin = async () => {
     if (!number || !password) {
-      Alert.alert('Error', 'Please enter both phone number and password');
+      showError('Error', 'Please enter both phone number and password');
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert('Invalid number', 'Please enter a valid number');
+      showError('Invalid number', 'Please enter a valid number');
       return;
     }
     try {
@@ -58,7 +59,7 @@ export default function Login() {
       });
       }
     } catch {
-      Alert.alert("Phone number or password is incorrect");
+      showError("Error", "Phone number or password is incorrect");
     }
   };
 
@@ -177,7 +178,6 @@ export default function Login() {
           {/* Google Sign-In Button */}
           <Pressable
             style={{
-              backgroundColor: '#f90',
               width: 45,
               height: 45,
               borderRadius: 10,

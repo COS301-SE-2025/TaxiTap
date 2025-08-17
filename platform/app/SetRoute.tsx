@@ -7,13 +7,12 @@
  * @author Moyahabo Hamese
  */
 
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
@@ -27,6 +26,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -74,6 +74,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   const { theme, isDark } = useTheme();
   const { setCurrentRoute } = useRouteContext();
   const { user } = useUser();
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -102,6 +103,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // LIFECYCLE EFFECTS
   // ============================================================================
 
+  // Mount when assignedRoute changes
+  useEffect(() => {
+    if (assignedRoute) {
+      const { start, destination } = parseRouteName(assignedRoute.name);
+      setCurrentRoute(`${start} → ${destination}`);
+    }
+  }, [assignedRoute, setCurrentRoute]);
+
   // Configure navigation header
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -120,16 +129,20 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
    */
   const handleAssignRoute = async () => {
     if (!taxiAssociation) {
-      Alert.alert(
-        "Select Taxi Association",
-        "Please select your taxi association first.",
-        [{ text: "OK" }]
-      );
+      showGlobalError('Select Taxi Association', 'Please select your taxi association first.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
     if (!user?.id) {
-      Alert.alert("User not found", "You must be logged in as a driver.");
+      showGlobalError('User not found', 'You must be logged in as a driver.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -138,36 +151,39 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     try {
       const result = await assignRandomRoute({
         userId: user.id as Id<'taxiTap_users'>,
-        taxiAssociation: taxiAssociation
+        taxiAssociation,
       });
 
       // Check if result and assignedRoute exist
       if (!result || !result.assignedRoute) {
-        throw new Error("No route was assigned. Please try again.");
+        throw new Error('No route was assigned. Please try again.');
       }
 
       const { start, destination } = parseRouteName(result.assignedRoute.name);
       const routeString = `${start} → ${destination}`;
       
       setCurrentRoute(routeString);
-      if (onRouteSet) {
-        onRouteSet(routeString);
-      }
+      onRouteSet?.(routeString);
 
-      Alert.alert(
-        "Route Assigned Successfully!",
-        `You have been assigned to:\n\n${routeString}\n\nAssociation: ${taxiAssociation}\n\nThis is now your permanent route.`,
-        [{
-          text: "OK",
-          onPress: () => navigation.goBack(),
-        }]
-      );
+      showGlobalSuccess('Route Assigned Successfully!', `You have been assigned to: ${routeString}`, {
+        duration: 0,
+        position: 'top',
+        animation: 'slide-down',
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => navigation.goBack(),
+            style: 'default',
+          },
+        ],
+      });
     } catch (error) {
-      console.error("Error assigning route:", error);
-      Alert.alert(
-        "Assignment Failed", 
-        error instanceof Error ? error.message : "Failed to assign route. Please try again."
-      );
+      const message = error instanceof Error ? error.message : 'Failed to assign route. Please try again.';
+      showGlobalError('Assignment Failed', message, {
+        duration: 5000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     } finally {
       setIsAssigning(false);
     }
@@ -184,18 +200,16 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     const routeString = `${start} → ${destination}`;
     
     setCurrentRoute(routeString);
-    if (onRouteSet) {
-      onRouteSet(routeString);
-    }
+    onRouteSet?.(routeString);
 
-    Alert.alert(
-      "Route Activated",
-      `Your route has been activated:\n\n${routeString}`,
-      [{
-        text: "OK",
-        onPress: () => navigation.goBack(),
-      }]
-    );
+    showGlobalSuccess('Route Activated', `Your route has been activated: ${routeString}`, {
+      duration: 0,
+      position: 'top',
+      animation: 'slide-down',
+      actions: [
+        { label: 'OK', onPress: () => navigation.goBack(), style: 'default' },
+      ],
+    });
   };
 
   // ============================================================================

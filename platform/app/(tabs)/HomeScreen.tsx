@@ -6,7 +6,6 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Platform,
   Animated,
   TextInput,
@@ -26,6 +25,7 @@ import * as Location from "expo-location";
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -46,6 +46,8 @@ export default function HomeScreen() {
     shouldRunQuery ? { passengerId: userId as Id<"taxiTap_users"> } : "skip"
   );
 
+  const { showGlobalError, showGlobalAlert } = useAlertHelpers();
+
   const [detectedLocation, setDetectedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -55,7 +57,15 @@ export default function HomeScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission denied", "Location permission is required to find nearby taxis.");
+        showGlobalError(
+          "Permission denied", 
+          "Location permission is required to find nearby taxis.",
+          {
+            duration: 5000,
+            position: 'top',
+            animation: 'slide-down',
+          }
+        );
         setIsLoadingCurrentLocation(false);
         return;
       }
@@ -66,7 +76,7 @@ export default function HomeScreen() {
         longitude: location.coords.longitude,
       });
     })();
-  }, []);
+  }, [showGlobalError]);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -98,6 +108,10 @@ export default function HomeScreen() {
     destinationLng: number;
   } | null>(null);
 
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
+
   // Query for enhanced taxi matching - only runs when we have search params
   const taxiSearchResult = useQuery(
     api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
@@ -112,11 +126,13 @@ export default function HomeScreen() {
   
   const {
     currentLocation,
+    origin,
     destination,
     routeCoordinates,
     isLoadingRoute,
     routeLoaded,
     setCurrentLocation,
+    setOrigin,
     setDestination,
     setRouteCoordinates,
     setIsLoadingRoute,
@@ -135,33 +151,128 @@ export default function HomeScreen() {
   const { location: streamedLocation, error: locationStreamError } =
     useThrottledLocationStreaming(userId, safeRole, true);
 
-  //This has our functionality but used Ati's variable, so we will change this
+  const storeManualDestination = async (
+    routeId: string, 
+    destination: any, 
+    origin?: any
+  ) => {
+    try {
+      const existingData = await AsyncStorage.getItem('manualDestinations');
+      const destinations = existingData ? JSON.parse(existingData) : {};
+      
+      destinations[routeId] = {
+        latitude: destination.latitude,
+        longitude: destination.longitude,
+        name: destination.name,
+        timestamp: Date.now(),
+        ...(origin && {
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          originName: origin.name,
+        })
+      };
+      
+      await AsyncStorage.setItem('manualDestinations', JSON.stringify(destinations));
+      
+      setManualDestinations(prev => ({
+        ...prev,
+        [routeId]: destinations[routeId]
+      }));
+    } catch (error) {
+      console.error('Failed to store manual destination:', error);
+    }
+  };
+
+  const getManualDestinations = async (): Promise<Record<string, any>> => {
+    try {
+      const data = await AsyncStorage.getItem('manualDestinations');
+      return data ? JSON.parse(data) : {};
+    } catch (error) {
+      console.error('Failed to get manual destinations:', error);
+      return {};
+    }
+  };
+
+  const migrateOldManualDestination = async () => {
+    try {
+      const oldData = await AsyncStorage.getItem('lastManualDestination');
+      if (oldData) {
+        const parsed = JSON.parse(oldData);
+        if (parsed?.latitude && parsed?.longitude && parsed?.name) {
+          const routeId = `manual-${parsed.latitude.toFixed(5)}-${parsed.longitude.toFixed(5)}`;
+          
+          const destinationToStore = {
+            latitude: parsed.latitude,
+            longitude: parsed.longitude,
+            name: parsed.name,
+          };
+          
+          await storeManualDestination(routeId, destinationToStore);
+          await AsyncStorage.removeItem('lastManualDestination');
+        }
+      }
+    } catch (error) {
+      console.error('Migration failed:', error);
+    }
+  };
+
   useEffect(() => {
-    if (detectedLocation  && (!currentLocation || currentLocation.name === '')) {
+    const loadManualDestinations = async () => {
+      await migrateOldManualDestination();
+      const destinations = await getManualDestinations();
+      setManualDestinations(destinations);
+    };
+    
+    loadManualDestinations();
+  }, []);
+
+  useEffect(() => {
+    if (detectedLocation && (!currentLocation || currentLocation.name === '')) {
       setCurrentLocation({
-        latitude: detectedLocation .latitude,
-        longitude: detectedLocation .longitude,
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
         name: 'Current Location'
       });
       setIsLoadingCurrentLocation(false);
-    } else {
     }
-  }, [detectedLocation , currentLocation]);
+  }, [detectedLocation, currentLocation]);
+
+  // Auto-set origin to current location when detected
+  useEffect(() => {
+    if (detectedLocation && !origin) {
+      setOrigin({
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        name: 'Current Location'
+      });
+    }
+  }, [detectedLocation, origin]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!detectedLocation  && isLoadingCurrentLocation) {
+      if (!detectedLocation && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
-        Alert.alert(
+        showGlobalError(
           'Location Error', 
           'Unable to get your current location. Please enter your address manually.',
-          [{ text: 'OK' }]
+          {
+            duration: 0,
+            actions: [
+              {
+                label: 'OK',
+                onPress: () => console.log('Location error acknowledged'),
+                style: 'default',
+              }
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     }, 10000); // 10 second timeout
 
     return () => clearTimeout(timeout);
-  }, [detectedLocation , isLoadingCurrentLocation]);
+  }, [detectedLocation, isLoadingCurrentLocation, showGlobalError]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
@@ -174,41 +285,38 @@ export default function HomeScreen() {
 
   const { notifications, markAsRead } = useNotifications();
 
-  const [manualDestination, setManualDestination] = useState<{
-    latitude: number;
-    longitude: number;
-    name: string;
-  } | null>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem('lastManualDestination').then((val) => {
-      if (val) {
-        try {
-          const parsed = JSON.parse(val);
-          if (parsed?.latitude && parsed?.longitude && parsed?.name) {
-            setManualDestination(parsed);
-          }
-        } catch (err) {
-          console.warn("Failed to parse manual destination", err);
-        }
-      }
-    });
-  }, []);
-
   const fullRecentRoutes = React.useMemo(() => {
     if (!recentRoutes || !routes) return [];
 
     return recentRoutes.map(recent => {
-      if (recent.routeId === "manual-route") {
-        return {
-          ...recent,
-          _id: recent._id,
-          routeName: manualDestination?.name
-            ? `Manual: ${manualDestination.name}`
-            : "Manual Destination",
-          destinationLat: manualDestination?.latitude ?? null,
-          destinationLng: manualDestination?.longitude ?? null,
-        };
+      if (recent.routeId.startsWith("manual-")) {
+        const manualDestination = manualDestinations[recent.routeId];
+        
+        if (manualDestination) {
+          return {
+            ...recent,
+            _id: recent._id,
+            routeName: manualDestination.name,
+            destinationLat: manualDestination.latitude,
+            destinationLng: manualDestination.longitude,
+            startName: recent.startName || 'Current Location',
+            startLat: recent.startLat,
+            startLng: recent.startLng,
+            isManualRoute: true,
+          };
+        } else {
+          return {
+            ...recent,
+            _id: recent._id,
+            routeName: 'Location Unavailable',
+            destinationLat: null,
+            destinationLng: null,
+            startName: recent.startName,
+            startLat: recent.startLat,
+            startLng: recent.startLng,
+            isManualRoute: true,
+          };
+        }
       }
 
       const fullRoute = routes.find(r => r.routeId === recent.routeId);
@@ -216,38 +324,54 @@ export default function HomeScreen() {
         return {
           ...recent,
           _id: fullRoute._id,
-          routeName: `${fullRoute.start} → ${fullRoute.destination}`,
+          routeName: fullRoute.destination,
+          routeDisplayName: `${fullRoute.start} → ${fullRoute.destination}`,
           destinationLat: fullRoute.destinationCoords.latitude,
           destinationLng: fullRoute.destinationCoords.longitude,
+          startName: recent.startName || fullRoute.start,
+          startLat: recent.startLat || fullRoute.startCoords?.latitude,
+          startLng: recent.startLng || fullRoute.startCoords?.longitude,
+          isManualRoute: false,
         };
       }
 
       return {
         ...recent,
+        _id: recent._id,
         routeName: 'Unknown Route',
         destinationLat: null,
         destinationLng: null,
+        startName: recent.startName,
+        startLat: recent.startLat,
+        startLng: recent.startLng,
+        isManualRoute: false,
       };
-
-      return null;
-    });
-  }, [recentRoutes, routes, destination, manualDestination]);
+    }).filter(route => route !== null);
+  }, [recentRoutes, routes, manualDestinations]);
 
   const displayRoutes = fullRecentRoutes.filter(
     (r): r is NonNullable<typeof r> => r !== null
   );
 
+  // FIXED: Only clear state on first load, not every focus - this was causing the taxi search issue
   useFocusEffect(
     React.useCallback(() => {
-      setRouteLoaded(false);
-      setDestination(null);
-      setRouteCoordinates([]);
-      setSelectedRouteId(null);
-      setDestinationAddress('');
-      setAvailableTaxis([]);
-      setRouteMatchResults(null);
-      setIsSearchingTaxis(false);
-    }, [setRouteLoaded, setDestination, setRouteCoordinates])
+      if (isFirstLoad) {
+        // Only clear state on the very first load
+        setRouteLoaded(false);
+        setOrigin(null);
+        setDestination(null);
+        setRouteCoordinates([]);
+        setSelectedRouteId(null);
+        setOriginAddress('');
+        setDestinationAddress('');
+        setAvailableTaxis([]);
+        setRouteMatchResults(null);
+        setIsSearchingTaxis(false);
+        setIsFirstLoad(false);
+      }
+      // Don't clear state on subsequent focuses - this preserves taxi search results
+    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
   );
 
   useLayoutEffect(() => {
@@ -257,7 +381,11 @@ export default function HomeScreen() {
   // Geocoding function
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
-      Alert.alert('Error', 'Google Maps API key is not configured');
+      showGlobalError('Error', 'Google Maps API key is not configured', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return null;
     }
 
@@ -277,7 +405,11 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      Alert.alert('Error', 'Could not find the address. Please try again.');
+      showGlobalError('Error', 'Could not find the address. Please try again.', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return null;
     }
   };
@@ -291,6 +423,9 @@ export default function HomeScreen() {
       return;
     }
 
+    // FIXED: Reset previous search results before starting new search
+    setAvailableTaxis([]);
+    setRouteMatchResults(null);
     setIsSearchingTaxis(true);
     
     try {
@@ -304,10 +439,21 @@ export default function HomeScreen() {
       
     } catch (error) {
       setIsSearchingTaxis(false);
-      Alert.alert(
+      showGlobalError(
         'Search Error', 
         'Unable to find available taxis. Please try again.',
-        [{ text: 'OK' }]
+        {
+          duration: 4000,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('Search error acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
       );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
@@ -350,11 +496,7 @@ export default function HomeScreen() {
     setIsGeocodingOrigin(false);
 
     if (result) {
-      setCurrentLocation(result);
-      // If we have both origin and destination, get route
-      if (destination) {
-        getRoute(result, destination);
-      }
+      setOrigin(result);
       // Animate map to origin
       mapRef.current?.animateToRegion(
         {
@@ -368,7 +510,7 @@ export default function HomeScreen() {
     }
   };
 
-  // Handle destination address submission
+  // Updated destination submission with proper routeId generation and user input preservation
   const handleDestinationSubmit = async () => {
     if (!destinationAddress.trim()) return;
     
@@ -377,56 +519,76 @@ export default function HomeScreen() {
     setIsGeocodingDestination(false);
 
     if (result) {
-      setDestination(result);
-      setSelectedRouteId('manual-route'); // Set a manual route ID
+      const uniqueRouteId = `manual-${result.latitude.toFixed(5)}-${result.longitude.toFixed(5)}`;
       
-      await AsyncStorage.setItem(
-        'lastManualDestination',
-        JSON.stringify({
-          latitude: result.latitude,
-          longitude: result.longitude,
-          name: result.name,
-        })
-      );
-
-      // If we have both origin and destination, get route
-      if (currentLocation) {
-        getRoute(currentLocation, result);
-      }
+      // Create destination object with user input as name, not geocoded address
+      const destinationWithUserName = {
+        ...result,
+        name: destinationAddress.trim(), // Use original user input as display name
+      };
+      
+      setDestination(destinationWithUserName);
+      setSelectedRouteId(uniqueRouteId);
+      
+      await storeManualDestination(uniqueRouteId, destinationWithUserName);
     }
   };
 
-  const uniqueManualRouteId = destination
-    ? `manual-${destination.latitude.toFixed(5)}-${destination.longitude.toFixed(5)}`
-    : 'manual-route';
-
   const handleReserveSeat = async () => {
-    if (!destination || !currentLocation) {
-      Alert.alert('Error', 'Please enter both origin and destination addresses');
+    if (!destination || !origin) {
+      showGlobalError('Error', 'Please enter both origin and destination addresses', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
     if (!selectedRouteId) {
-      Alert.alert('Error', 'Route not selected');
+      showGlobalError('Error', 'Route not selected', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
-    // Check if we have available taxis
     if (availableTaxis.length === 0) {
-      Alert.alert(
-        'No Taxis Available', 
-        'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
-        [{ text: 'OK' }]
-      );
+      showGlobalAlert({
+        title: 'No Taxis Available',
+        message: 'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
+        type: 'warning',
+        duration: 0,
+        actions: [
+          {
+            label: 'OK',
+            onPress: () => console.log('No taxis acknowledged'),
+            style: 'default',
+          }
+        ],
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
-
-    if (!routes || !selectedRouteId) return;
 
     try {
+      let routeIdToStore = selectedRouteId;
+      
+      if (selectedRouteId.startsWith('manual-')) {
+        await storeManualDestination(selectedRouteId, destination, origin);
+        routeIdToStore = selectedRouteId;
+      }
+
       await storeRouteForPassenger({
         passengerId: userId as Id<"taxiTap_users">,
-        routeId: uniqueManualRouteId,
+        routeId: routeIdToStore,
+        name: destination.name,
+        startName: origin.name,
+        startLat: origin.latitude,
+        startLng: origin.longitude,
+        destinationLat: destination.latitude,
+        destinationLng: destination.longitude,
       });
     } catch (err) {
       console.error("Failed to store route:", err);
@@ -438,11 +600,10 @@ export default function HomeScreen() {
         destinationName: destination.name,
         destinationLat: destination.latitude.toString(),
         destinationLng: destination.longitude.toString(),
-        currentName: currentLocation.name,
-        currentLat: currentLocation.latitude.toString(),
-        currentLng: currentLocation.longitude.toString(),
+        currentName: origin.name,
+        currentLat: origin.latitude.toString(),
+        currentLng: origin.longitude.toString(),
         routeId: selectedRouteId,
-        // Pass the available taxis data
         availableTaxisCount: availableTaxis.length.toString(),
         routeMatchData: JSON.stringify(routeMatchResults),
       },
@@ -461,8 +622,14 @@ export default function HomeScreen() {
     }
   }, [routeLoaded]);
 
+  useEffect(() => {
+    if (origin && destination) {
+      getRoute(origin, destination);
+    }
+  }, [origin, destination]);
+
   const getRoute = async (
-    origin: { latitude: number; longitude: number; name: string },
+    originParam: { latitude: number; longitude: number; name: string },
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!GOOGLE_MAPS_API_KEY) {
@@ -470,7 +637,7 @@ export default function HomeScreen() {
     }
 
     const cacheKey = createRouteKey(
-      { ...origin, name: '' },
+      { ...originParam, name: '' },
       { ...dest, name: '' }
     );
 
@@ -478,16 +645,18 @@ export default function HomeScreen() {
     if (cached) {
       setRouteCoordinates(cached);
       setRouteLoaded(true);
-      // Also search for available taxis when route is loaded from cache
-      searchForAvailableTaxis(origin, dest);
+      searchForAvailableTaxis(originParam, dest);
       return;
     }
 
     setIsLoadingRoute(true);
     setRouteLoaded(false);
+    setIsSearchingTaxis(false);
+    setAvailableTaxis([]);
+    setRouteMatchResults(null);
 
     try {
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${dest.latitude},${dest.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originParam.latitude},${originParam.longitude}&destination=${dest.latitude},${dest.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -497,17 +666,20 @@ export default function HomeScreen() {
       setCachedRoute(cacheKey, points);
       setRouteCoordinates(points);
 
-      mapRef.current?.fitToCoordinates([origin, dest, ...points], {
+      mapRef.current?.fitToCoordinates([originParam, dest, ...points], {
         edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
       setRouteLoaded(true);
       
-      // Search for available taxis on matching routes
-      searchForAvailableTaxis(origin, dest);
+      searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
-      Alert.alert('Route Error', err instanceof Error ? err.message : 'Unknown error');
+      showGlobalError('Route Error', err instanceof Error ? err.message : 'Unknown error', {
+        duration: 5000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     } finally {
       setIsLoadingRoute(false);
     }
@@ -551,37 +723,56 @@ export default function HomeScreen() {
     routeId: string;
     destination: string;
     destinationCoords: { latitude: number; longitude: number } | null;
+    routeName?: string;
+    // Add these new properties for start location
+    startName?: string;
+    startLat?: number;
+    startLng?: number;
   }) => {
     if (
       !route.destinationCoords || 
       typeof route.destinationCoords.latitude !== 'number' ||
       typeof route.destinationCoords.longitude !== 'number' ||
-      !currentLocation || 
-      !userId || 
-      !route.routeId
+      !userId
     ) return;
+
+    // For manual routes, use the stored name (user input), for predetermined routes use destination
+    const displayName = route.routeId.startsWith("manual-") 
+      ? route.routeName || route.destination  // routeName contains the user input for manual routes
+      : route.destination;
 
     const dest = {
       latitude: route.destinationCoords.latitude,
       longitude: route.destinationCoords.longitude,
-      name: route.destination,
+      name: displayName, // This will show user input for manual routes
     };
 
+    // Set destination
     setDestination(dest);
-    setDestinationAddress(route.destination);
-    setSelectedRouteId(route._id);
-
-    try {
-      await getRoute(currentLocation, dest);
-      await storeRouteForPassenger({
-        passengerId: userId as Id<"taxiTap_users">,
-        routeId: uniqueManualRouteId,
+    setDestinationAddress(displayName); // Update the input field with the stored name
+    
+    // Set origin/start location if available
+    if (route.startLat && route.startLng && route.startName) {
+      const startLocation = {
+        latitude: route.startLat,
+        longitude: route.startLng,
+        name: route.startName,
+      };
+      
+      setOrigin(startLocation);
+      setOriginAddress(route.startName); // Update the origin input field
+    } else if (detectedLocation) {
+      // Fallback to current location if no start location is stored
+      setOrigin({
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        name: 'Current Location'
       });
-      setRouteLoaded(true);
-    } catch (error) {
-      console.error("Failed to load route:", error);
-      setRouteLoaded(false);
+      setOriginAddress('Current Location');
     }
+    
+    const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
+    setSelectedRouteId(routeIdToUse);
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -729,10 +920,6 @@ export default function HomeScreen() {
       fontSize: 14,
       color: theme.text,
     },
-    routeSubtitle: {
-      fontSize: 12,
-      color: theme.textSecondary,
-    },
     routeLoadingText: {
       color: theme.textSecondary,
       fontSize: 12,
@@ -768,86 +955,20 @@ export default function HomeScreen() {
     },
   });
 
-  useEffect(() => {
-    const rideAccepted = notifications.find(
-      (n: any) => n.type === "ride_accepted" && !n.isRead
-    );
-    if (rideAccepted) {
-      Alert.alert(
-        "Ride Accepted",
-        rideAccepted.message,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              markAsRead(rideAccepted._id);
-              router.push({
-                pathname: './PassengerReservation',
-                params: currentLocation && destination ? {
-                  currentLat: currentLocation.latitude.toString(),
-                  currentLng: currentLocation.longitude.toString(),
-                  currentName: currentLocation.name,
-                  destinationLat: destination.latitude.toString(),
-                  destinationLng: destination.longitude.toString(),
-                  destinationName: destination.name,
-                } : undefined
-              });
-            },
-            style: "default"
-          }
-        ],
-        { cancelable: false }
-      );
-    }
-
-    const rideCancelled = notifications.find(
-      (n: any) => n.type === "ride_cancelled" && !n.isRead
-    );
-    if (rideCancelled) {
-      Alert.alert(
-        "Ride Cancelled",
-        rideCancelled.message,
-        [
-          {
-            text: "OK",
-            onPress: () => markAsRead(rideCancelled._id),
-            style: "default"
-          }
-        ],
-        { cancelable: false }
-      );
-   }
-  }, [notifications, markAsRead, currentLocation, destination]);
-
-  useEffect(() => {
-    const rideDeclined = notifications.find(
-      n => n.type === 'ride_declined' && !n.isRead
-    );
-    if (rideDeclined) {
-      Alert.alert(
-        'Ride Declined',
-        rideDeclined.message || 'Your ride request was declined.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              markAsRead(rideDeclined._id);
-              // Optionally, navigate somewhere if needed
-            },
-            style: 'default',
-          },
-        ],
-        { cancelable: false }
-      );
-    }
-  }, [notifications, markAsRead]);
-
   // Fix: Improved initial region logic
   const getInitialRegion = () => {
-    if (detectedLocation ) {
+    if (detectedLocation) {
       return {
-        latitude: detectedLocation .latitude,
-        longitude: detectedLocation .longitude,
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    if (origin) {
+      return {
+        latitude: origin.latitude,
+        longitude: origin.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
@@ -894,10 +1015,10 @@ export default function HomeScreen() {
           initialRegion={getInitialRegion()}
           customMapStyle={isDark ? darkMapStyle : []}
         >
-          {currentLocation && 
-            typeof currentLocation.latitude === 'number' &&
-            typeof currentLocation.longitude === 'number' &&(
-              <Marker coordinate={currentLocation} title="Origin" pinColor="blue" />
+          {origin && 
+            typeof origin.latitude === 'number' &&
+            typeof origin.longitude === 'number' &&(
+              <Marker coordinate={origin} title="Origin" pinColor="blue" />
           )}
 
           {destination &&
@@ -952,7 +1073,7 @@ export default function HomeScreen() {
           <View style={dynamicStyles.locationTextContainer}>
             <TextInput
               style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-              placeholder={currentLocation ? currentLocation.name : "Enter origin address..."}
+              placeholder={origin ? origin.name : "Enter origin address..."}
               value={originAddress}
               onChangeText={setOriginAddress}
               onSubmitEditing={handleOriginSubmit}
@@ -1043,6 +1164,10 @@ export default function HomeScreen() {
                       latitude: route.destinationLat!,
                       longitude: route.destinationLng!,
                     },
+                    routeName: route.routeName,
+                    startName: route.startName,
+                    startLat: route.startLat,
+                    startLng: route.startLng,
                   })
                 }
               >
@@ -1054,16 +1179,21 @@ export default function HomeScreen() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={dynamicStyles.routeTitle}>
-                    {route.routeName || 'Saved Route'}
-                  </Text>
-                  <Text style={dynamicStyles.routeSubtitle}>
-                    Used {route.usageCount} times
+                    {route.startName && route.routeName 
+                      ? `${route.startName} → ${route.routeName}`
+                      : route.routeName || 'Saved Route'
+                    }
                   </Text>
                 </View>
+                <Icon
+                  name="chevron-forward"
+                  size={16}
+                  color={theme.textSecondary}
+                />
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={{ textAlign: 'center', marginTop: 8 }}>
+            <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
               No recently used routes yet.
             </Text>
           )}

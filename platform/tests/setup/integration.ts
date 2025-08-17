@@ -14,6 +14,6 @@ export const testUtils = {
   delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
   generateTestData: () => ({
     id: Math.random().toString(36).substring(7),
-    timestamp: new Date().toISOString(),
+    timestamp: Date.now(),
   }),
 };

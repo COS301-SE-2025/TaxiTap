@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   StatusBar,
   SafeAreaView,
@@ -18,6 +17,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@/contexts/UserContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 interface DriverOfflineProps {
   onGoOnline: () => void;
@@ -56,15 +56,33 @@ export default function DriverOffline({
   const { theme, isDark, setThemeMode } = useTheme();
   const { user } = useUser();
   const router = useRouter();
-  const { setCurrentRoute, currentRoute } = useRouteContext();
+  const { setCurrentRoute } = useRouteContext();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+  const [showFullStatus, setShowFullStatus] = useState(true);
+  const { showGlobalSuccess, showModal } = useAlertHelpers();
 
   const taxiInfo = useQuery(
       api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
       user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
+
+
+  // Get driver's assigned route from database
+  const assignedRoute = useQuery(
+    api.functions.routes.queries.getDriverAssignedRoute,
+    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+
+  );
+
+
+
+
+  if (!user) return;
+  
+  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+  
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -79,6 +97,23 @@ export default function DriverOffline({
       router.replace('/DriverHomeScreen');
     }
   }, [onGoOnline, router]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
+
+  // Helper function to parse route name
+  const parseRouteName = (routeName: string) => {
+    const parts = routeName?.split(" to ").map(part => part.trim()) ?? ["Unknown", "Unknown"];
+    return {
+      start: parts[0] ?? "Unknown",
+      destination: parts[1] ?? "Unknown"
+    };
+  };
 
   const handleSetRoute = () => {
     router.push('/SetRoute');
@@ -98,15 +133,27 @@ export default function DriverOffline({
   };
 
   const handleEmergency = () => {
-    Alert.alert(
+    showModal(
       "Emergency Alert",
       "This will contact emergency services (112)",
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Yes, Get Help", style: "destructive", onPress: () => {
-          Alert.alert("Emergency Alert Sent", "Emergency services contacted.");
-          setShowSafetyMenu(false);
-        }}
+        {
+          label: "Yes, Get Help",
+          onPress: () => {
+            showGlobalSuccess("Emergency Alert Sent", "Emergency services contacted.", {
+              duration: 3000,
+              position: 'top',
+              animation: 'slide-down',
+            });
+            setShowSafetyMenu(false);
+          },
+          style: "destructive"
+        },
+        {
+          label: "Cancel",
+          onPress: () => setShowSafetyMenu(false),
+          style: "cancel"
+        }
       ]
     );
   };
@@ -155,13 +202,20 @@ export default function DriverOffline({
     },
   ];
 
+  // Get route display string from database
+  const getRouteDisplayString = () => {
+    if (!assignedRoute) return "Not Set";
+    const { start, destination } = parseRouteName(assignedRoute.name);
+    return `${start} → ${destination}`;
+  };
+
   const quickActions: QuickActionType[] = [
     {
       icon: "location-outline",
       title: "Current Route",
-      value: (currentRoute || "Not Set") as string,
+      value: getRouteDisplayString(),
       subtitle: "Tap to set route",
-      color: (currentRoute || "Not Set") === "Not Set" ? "#FF9900" : "#00A591",
+      color: getRouteDisplayString() === "Not Set" ? "#FF9900" : "#00A591",
       onPress: () => router.push('/SetRoute'),
     },
     {
@@ -192,7 +246,7 @@ export default function DriverOffline({
     container: {
       flex: 1,
       backgroundColor: theme.background,
-      paddingTop: 20,
+      zIndex: 999,
     },
     safeArea: {
       flex: 1,
@@ -221,201 +275,7 @@ export default function DriverOffline({
       backgroundColor: isDark ? theme.primary : "#f5f5f5",
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.text,
-    },
-    headerRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    statusContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDark ? theme.surface : "#ECD9C3",
-      borderColor: isDark ? theme.border : "#D4A57D",
-      borderWidth: 1,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      marginRight: 12,
-    },
-    statusDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: '#FF4444',
-      marginRight: 6,
-    },
-    statusText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: isDark ? theme.text : "#C62828",
-    },
-    contentContainer: {
-      flex: 1,
-      paddingHorizontal: 20,
-      paddingTop: 20,
-    },
-    earningsCard: {
-      backgroundColor: theme.surface,
-      borderRadius: 30,
-      padding: 24,
-      marginBottom: 20,
-      alignItems: "center",
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
-    },
-    earningsAmount: {
-      color: theme.primary,
-      fontSize: 32,
-      fontWeight: "bold",
-      marginBottom: 4,
-    },
-    earningsTitle: {
-      color: theme.textSecondary,
-      fontSize: 16,
-      fontWeight: "bold",
-      marginBottom: 8,
-    },
-    earningsSubtitle: {
-      color: theme.textSecondary,
-      fontSize: 14,
-      fontWeight: "bold",
-      textAlign: 'center',
-    },
-    offlineSection: {
-      backgroundColor: theme.surface,
-      borderRadius: 30,
-      padding: 24,
-      marginBottom: 20,
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    offlineIconContainer: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: isDark ? theme.primary : "#ECD9C3",
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    offlineTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-    offlineSubtitle: {
-      fontSize: 16,
-      color: theme.textSecondary,
-      fontWeight: "bold",
-      textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 24,
-    },
-    goOnlineButton: {
-      width: '100%',
-      height: 56,
-      borderRadius: 30,
-      backgroundColor: isDark ? '#10B981' : '#00A591',
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      flexDirection: 'row',
-    },
-    goOnlineButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: isDark ? "#121212" : "#FFFFFF",
-      marginLeft: 8,
-    },
-    quickActionsSection: {
-      marginBottom: 20,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 16,
-    },
-    quickActionsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    quickActionCard: {
-      flex: 1,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      padding: 16,
-      marginHorizontal: 4,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      minHeight: 100,
-    },
-    quickActionIcon: {
-      marginBottom: 8,
-    },
-    quickActionTitle: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-      marginBottom: 4,
-    },
-    quickActionValue: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 2,
-    },
-    quickActionSubtitle: {
-      fontSize: 10,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    safetyButton: {
-      position: 'absolute',
-      bottom: 30,
-      right: 20,
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: '#FF4444',
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
-      zIndex: 1000,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-start',
-      alignItems: 'flex-start',
+      marginRight: 3,
     },
     menuModal: {
       marginTop: 80,
@@ -472,6 +332,178 @@ export default function DriverOffline({
       fontSize: 14,
       fontWeight: 'bold',
       color: theme.textSecondary,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? theme.surface : "#ECD9C3",
+      borderColor: isDark ? theme.border : "#D4A57D",
+      borderWidth: 1,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      marginRight: 12,
+      marginLeft: 10,
+    },
+    statusDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#FF4444',
+    },
+    statusText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: isDark ? theme.text : "#C62828",
+      marginLeft: 6,
+    },
+    contentContainer: {
+      flex: 1,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+    },
+    earningsAmount: {
+      color: theme.primary,
+      fontSize: 32,
+      fontWeight: "bold",
+      marginBottom: 4,
+    },
+    earningsTitle: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
+    earningsSubtitle: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      fontWeight: "bold",
+      textAlign: 'center',
+    },
+    offlineSection: {
+      backgroundColor: theme.surface,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 20,
+      alignItems: 'center',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    offlineIconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: isDark ? theme.primary : "#ECD9C3",
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    offlineTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    offlineSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      fontWeight: "bold",
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    goOnlineButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDark ? "#121212" : "#FFFFFF",
+      marginLeft: 8,
+    },
+    quickActionsSection: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 16,
+    },
+    quickActionsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    quickActionCard: {
+      flex: 1,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      padding: 16,
+      marginHorizontal: 4,
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 4,
+      minHeight: 100,
+    },
+    quickActionIcon: {
+      marginBottom: 8,
+    },
+    quickActionTitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+      marginBottom: 4,
+    },
+    quickActionValue: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    quickActionSubtitle: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+    },
+    actionButton: {
+      flexDirection: 'row',
+      backgroundColor: '#007AFF',
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      marginBottom: 10,
+      borderRadius: 25,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 150,
+      height: 50,
+    },
+    actionButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginLeft: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-start',
     },
     safetyModal: {
       position: 'absolute',
@@ -545,7 +577,9 @@ export default function DriverOffline({
           <View style={dynamicStyles.headerRight}>
             <View style={dynamicStyles.statusContainer}>
               <View style={dynamicStyles.statusDot} />
-              <Text style={dynamicStyles.statusText}>OFFLINE</Text>
+              {showFullStatus && (
+                <Text style={dynamicStyles.statusText}>OFFLINE</Text>
+              )}
             </View>
             
             <TouchableOpacity
@@ -574,14 +608,14 @@ export default function DriverOffline({
               padding: 24,
               marginBottom: 20,
               alignItems: 'center',
-              borderLeftWidth: 4,
-              borderLeftColor: theme.primary,
-              elevation: 4,
+              width: '100%',
+              justifyContent: 'center',
+              elevation: 4,        
             }}
             onPress={() => router.push('/EarningsPage')}
           >
             <Text style={dynamicStyles.earningsAmount}>
-              R{(todaysEarnings ?? 0).toFixed(2)}
+              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
             <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
             <Text style={dynamicStyles.earningsSubtitle}>
@@ -597,6 +631,13 @@ export default function DriverOffline({
             <Text style={dynamicStyles.offlineSubtitle}>
               Go online to start accepting seat reservation requests
             </Text>
+            <TouchableOpacity
+              style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
+              onPress={handleSafetyPress}
+            >
+              <Icon name="call" size={20} color="#fff" />
+              <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={{
                 width: '100%',
@@ -644,15 +685,6 @@ export default function DriverOffline({
             </View>
           </View>
         </ScrollView>
-
-        <TouchableOpacity 
-          style={dynamicStyles.safetyButton}
-          onPress={handleSafetyPress}
-          activeOpacity={0.8}
-          accessibilityLabel="Safety and emergency options"
-        >
-          <Icon name="shield-checkmark" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
 
         <Modal
           visible={showMenu}

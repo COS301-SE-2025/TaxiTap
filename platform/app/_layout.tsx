@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import React from 'react';
 import regular from '../assets/fonts/Amazon_Ember_Display.otf';
 import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
@@ -17,8 +17,9 @@ import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { UserProvider, useUser } from '../contexts/UserContext';
 import { MapProvider } from '../contexts/MapContext';
 import { RouteProvider } from '../contexts/RouteContext';
-import { NotificationProvider } from '@/contexts/NotificationContext';
-import { InAppNotificationOverlay } from '../components/InAppNotificationOverlay';
+import { NotificationProvider } from '../contexts/NotificationContext';
+import { AlertProvider } from '../contexts/AlertContext';
+import { AlertOverlay } from '../components/AlertOverlay';
 import { Id } from '../convex/_generated/dataModel';
 
 export { ErrorBoundary } from 'expo-router';
@@ -29,7 +30,6 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-// Initialize Convex client with your deployment URL
 const convex = new ConvexReactClient('https://affable-goose-538.convex.cloud');
 
 export default function RootLayout() {
@@ -59,13 +59,14 @@ export default function RootLayout() {
     <ConvexProvider client={convex}>
       <ThemeProvider>
         <UserProvider>
-          <NotificationProvider>
           <MapProvider>
             <RouteProvider>
-              <RootLayoutNav />
+              <AlertProvider>
+                <RootLayoutNav />
+                <AlertOverlay />
+              </AlertProvider>
             </RouteProvider>
           </MapProvider>
-          </NotificationProvider>
         </UserProvider>
       </ThemeProvider>
     </ConvexProvider>
@@ -74,9 +75,8 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
-  const { user } = useUser();
+  const { user, loading } = useUser();
  
-  // Create navigation theme based on our custom theme
   const navigationTheme = {
     dark: isDark,
     colors: {
@@ -90,12 +90,19 @@ function RootLayoutNav() {
     fonts: DefaultTheme.fonts,
   };
 
+  if (Platform.OS === 'ios' && loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+      </View>
+    );
+  }
+
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <NotificationProvider userId={user?.id as Id<"taxiTap_users">}>
-          <InAppNotificationOverlay />
+        <NotificationProvider userId={user?.id as Id<"taxiTap_users"> | undefined}>
+
             <Stack
               screenOptions={{
                 headerStyle: {
@@ -213,9 +220,80 @@ function RootLayoutNav() {
                 title: "Notifications" 
                 }}
               />
+              
+              <Stack.Screen
+                name="DriverPinEntry"
+                options={{
+                  headerShown: false
+                }}
+              />
             </Stack>
+
+          <StackNavigator />
+
         </NotificationProvider>
       </View>
     </NavigationThemeProvider>
+  );
+}
+
+function StackNavigator() {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.headerBackground,
+        },
+        headerTitleStyle: {
+          fontFamily: 'AmazonEmber-Medium',
+          fontSize: 18,
+          color: theme.text,
+        },
+        headerTitleAlign: 'center',
+        headerTintColor: theme.text,
+      }}
+    >
+      <Stack.Screen
+        name="LandingPage"
+        options={{ headerShown: false }}
+      />
+      
+      <Stack.Screen
+        name="Login"
+        options={{ headerShown: false }}
+      />
+      
+      <Stack.Screen
+        name="SignUp"
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+      />
+      
+      {Platform.OS === 'android' && (
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false }}
+        />
+      )}
+      
+      <Stack.Screen
+        name="DriverHomeScreen"
+        options={{ headerShown: false }}
+      />
+      
+      <Stack.Screen
+        name="NotificationsScreen"
+        options={{
+          headerShown: true,
+          title: "Notifications" 
+        }}
+      />
+    </Stack>
   );
 }

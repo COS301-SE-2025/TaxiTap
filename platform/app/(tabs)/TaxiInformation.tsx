@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Animated,
   Linking,
   Image,
@@ -18,11 +17,13 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import loading from '../../assets/images/loading4.png';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
   // Get route parameters
   const {
@@ -90,7 +91,7 @@ export default function TaxiInformation() {
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
           displayDistance: `${taxi.distanceToOrigin}km away`,
           routeName: taxi.routeInfo.routeName,
-          fare: taxi.routeInfo.fare,
+          fare: taxi.routeInfo.calculatedFare, // Use calculated fare
         })) || [];
         
         setNearbyTaxis(enhancedTaxiData);
@@ -155,19 +156,31 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          Alert.alert('Error', 'Phone calls are not supported on this device');
+          showGlobalError('Error', 'Phone calls are not supported on this device', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        Alert.alert('Error', 'Could not open phone app');
+        showGlobalError('Error', 'Could not open phone app', {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        });
       });
   };
 
   // Handle ride booking using your existing requestRide function
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      Alert.alert('Error', 'Please select a taxi and ensure you are logged in');
+      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
 
@@ -175,8 +188,8 @@ export default function TaxiInformation() {
 
     try {
       const rideData = {
-        passengerId: user.id as Id<"taxiTap_users">, // Cast to proper type
-        driverId: selectedTaxi.userId as Id<"taxiTap_users">, // Cast to proper type
+        passengerId: user.id as Id<"taxiTap_users">,
+        driverId: selectedTaxi.userId as Id<"taxiTap_users">,
         startLocation: {
           coordinates: {
             latitude: parseFloat(currentLat),
@@ -191,10 +204,7 @@ export default function TaxiInformation() {
           },
           address: destinationName,
         },
-        estimatedFare: selectedTaxi.routeInfo?.fare || 0,
-        estimatedDuration: typeof selectedTaxi.routeInfo?.estimatedDuration === 'string' 
-          ? parseInt(selectedTaxi.routeInfo.estimatedDuration) || 30
-          : selectedTaxi.routeInfo?.estimatedDuration || 30,
+        estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
       };
 
       console.log('📝 Creating ride request:', rideData);
@@ -202,39 +212,56 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
-        Alert.alert(
+        showGlobalSuccess(
           'Ride Request Sent',
           `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                router.push({
-                  pathname: './PassengerReservation',
-                  params: {
-                    currentLat,
-                    currentLng,
-                    currentName,
-                    destinationLat,
-                    destinationLng,
-                    destinationName,
-                    driverId: selectedTaxi.userId,
-                    driverName: selectedTaxi.name,
-                    fare: selectedTaxi.routeInfo?.fare?.toString() || '0',
-                    rideId: result.rideId,
-                  },
-                });
+          {
+            duration: 0,
+            actions: [
+              {
+                label: 'OK',
+                onPress: () => {
+                  router.push({
+                    pathname: './PassengerReservation',
+                    params: {
+                      currentLat,
+                      currentLng,
+                      currentName,
+                      destinationLat,
+                      destinationLng,
+                      destinationName,
+                      driverId: selectedTaxi.userId,
+                      driverName: selectedTaxi.name,
+                      fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
+                      rideId: result.rideId,
+                    },
+                  });
+                },
+                style: 'default',
               },
-            },
-          ]
+            ],
+            position: 'top',
+            animation: 'slide-down',
+          }
         );
       }
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
-      Alert.alert(
+      showGlobalError(
         'Booking Error',
         'Failed to send ride request. Please try again.',
-        [{ text: 'OK' }]
+        {
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('Booking error acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        }
       );
     } finally {
       setIsBooking(false);
@@ -263,7 +290,7 @@ export default function TaxiInformation() {
             {isEnhanced && (
               <View style={dynamicStyles.distanceBadge}>
                 <Text style={dynamicStyles.distanceText}>
-                  {taxi.distanceToOrigin}km
+                  {taxi.distanceToOrigin.toFixed(1)}km
                 </Text>
               </View>
             )}
@@ -282,23 +309,23 @@ export default function TaxiInformation() {
                 <Text style={dynamicStyles.routeInfoText}>
                   🛣️ Route: {taxi.routeInfo.routeName}
                 </Text>
-                <Text style={dynamicStyles.routeInfoText}>
-                  💰 Fare: R{taxi.routeInfo.fare}
+                <Text style={dynamicStyles.fareText}>
+                  💰 Fare: R{(taxi.routeInfo.calculatedFare || taxi.routeInfo.fare || 0).toFixed(2)}
                 </Text>
                 <Text style={dynamicStyles.routeInfoText}>
-                  ⏱️ Est. Duration: {taxi.routeInfo.estimatedDuration}
+                  📏 Distance: {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}km
                 </Text>
                 
                 {taxi.routeInfo.closestStartStop && (
                   <Text style={dynamicStyles.stopInfoText}>
                     📍 Pickup near: {taxi.routeInfo.closestStartStop.name}
-                    ({taxi.routeInfo.closestStartStop.distanceFromOrigin}km)
+                    ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}km)
                   </Text>
                 )}
                 {taxi.routeInfo.closestEndStop && (
                   <Text style={dynamicStyles.stopInfoText}>
                     🏁 Drop-off near: {taxi.routeInfo.closestEndStop.name}
-                    ({taxi.routeInfo.closestEndStop.distanceFromDestination}km)
+                    ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}km)
                   </Text>
                 )}
               </>
@@ -361,22 +388,24 @@ export default function TaxiInformation() {
             </View>
             
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Fare:</Text>
-              <Text style={[dynamicStyles.summaryValue, { color: theme.primary, fontWeight: 'bold' }]}>
-                R{selectedTaxiRoute.fare}
+              <Text style={dynamicStyles.summaryLabel}>Distance:</Text>
+              <Text style={dynamicStyles.summaryValue}>
+                {(selectedTaxiRoute.passengerDisplacement || 0).toFixed(1)}km
               </Text>
             </View>
             
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Est. Duration:</Text>
-              <Text style={dynamicStyles.summaryValue}>{selectedTaxiRoute.estimatedDuration}</Text>
+              <Text style={dynamicStyles.summaryLabel}>Fare:</Text>
+              <Text style={[dynamicStyles.summaryValue, { color: theme.primary, fontWeight: 'bold' }]}>
+                R{(selectedTaxiRoute.calculatedFare || selectedTaxiRoute.fare || 0).toFixed(2)}
+              </Text>
             </View>
           </>
         )}
         
         <View style={dynamicStyles.summaryRow}>
           <Text style={dynamicStyles.summaryLabel}>Driver Distance:</Text>
-          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.distanceToOrigin}km away</Text>
+          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.distanceToOrigin.toFixed(1)}km away</Text>
         </View>
       </View>
     );
@@ -495,6 +524,12 @@ export default function TaxiInformation() {
       color: theme.primary,
       marginBottom: 2,
       fontWeight: '500',
+    },
+    fareText: {
+      fontSize: 14,
+      color: theme.primary,
+      marginBottom: 2,
+      fontWeight: 'bold',
     },
     stopInfoText: {
       fontSize: 12,

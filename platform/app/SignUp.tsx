@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  Alert,
   Image,
   TouchableOpacity,
   ScrollView,
@@ -18,6 +17,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { api } from "../convex/_generated/api";
 import { useMutation } from 'convex/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAlertHelpers } from '../components/AlertHelpers';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
@@ -27,9 +27,7 @@ const data = [
 ];
 
 function LoginComponent() {
-  // Move useMutation inside the component that's wrapped by ConvexProvider
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
-  
   const [nameSurname, setNameSurname] = useState('');
   const [number, setNumber] = useState('');
   const [selectedRole, setSelectedRole] = useState<'passenger' | 'driver' | null>(null);
@@ -38,56 +36,43 @@ function LoginComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const { showGlobalError } = useAlertHelpers();
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
-      Alert.alert('Error', 'Please fill all fields');
+      showGlobalError('Error', 'Please fill all fields', { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (!selectedRole) {
-      Alert.alert('Error', 'Please select a role');
+      showGlobalError('Error', 'Please select a role', { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      Alert.alert('Invalid number', 'Please enter a valid number');
+      showGlobalError('Invalid number', 'Please enter a valid number', { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match');
+      showGlobalError('Password Mismatch', 'Passwords do not match', { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     try {
       const accountType: 'passenger' | 'driver' | 'both' = selectedRole === 'driver' ? 'both' : selectedRole;
-
-      const result = await signUpWithSMS({
-        phoneNumber: number,
-        name: nameSurname,
-        password,
-        accountType: accountType,
-      });
-
-      // Store userId in AsyncStorage
+      const result = await signUpWithSMS({ phoneNumber: number, name: nameSurname, password, accountType });
       await AsyncStorage.setItem('userId', result.userId);
       const userId = await AsyncStorage.getItem('userId');
       if (selectedRole === 'driver') {
-        router.push({
-          pathname: '/DriverOffline',
-          params: { userId: result.userId }
-        });
+        router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
       } else if (selectedRole === 'passenger') {
-        router.push({
-          pathname: '/HomeScreen',
-          params: { userId: result.userId }
-        });
+        router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
       }
     } catch (err: any) {
-      const message = (err?.data?.message) || (err?.message) || "Something went wrong";
-      if (message.includes("Phone number already exists")) {
-        Alert.alert("Phone Number In Use", "This phone number is already registered. Try logging in or use a different number.");
+      const message = (err?.data?.message) || (err?.message) || 'Something went wrong';
+      if (message.includes('Phone number already exists')) {
+        showGlobalError('Phone Number In Use', 'This phone number is already registered. Try logging in or use a different number.', { duration: 5000, position: 'top', animation: 'slide-down' });
       } else {
-        console.log("Signup Error", message);
+        console.log('Signup Error', message);
       }
     }
   };
@@ -282,7 +267,6 @@ function LoginComponent() {
           {/* Google Sign-In Button */}
           <Pressable
             style={{
-              backgroundColor: '#f90',
               width: 45,
               height: 45,
               borderRadius: 10,
@@ -302,7 +286,6 @@ function LoginComponent() {
   );
 }
 
-// Wrap the component with ConvexProvider
 export default function Login() {
   return (
     <ConvexProvider client={convex}>

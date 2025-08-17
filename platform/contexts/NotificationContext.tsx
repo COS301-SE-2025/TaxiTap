@@ -12,33 +12,14 @@ import { api } from "../convex/_generated/api";
 import { Platform, AppState } from "react-native";
 import { Id } from "../convex/_generated/dataModel";
 import { router } from "expo-router";
-
-interface InAppNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: "info" | "success" | "warning" | "error";
-  timestamp: Date;
-  duration?: number; // Auto-dismiss duration in ms (default: 4000)
-  action?: {
-    label: string;
-    onPress: () => void;
-  };
-  data?: any; // Additional data for navigation/handling
-}
+import { useAlerts } from "../contexts/AlertContext";
 
 interface NotificationContextType {
   notifications: any[];
   unreadCount: number;
-  inAppNotifications: InAppNotification[];
   markAsRead: (notificationId: Id<"notifications">) => void;
   markAllAsRead: () => void;
   refreshNotifications: () => void;
-  showInAppNotification: (
-    notification: Omit<InAppNotification, "id" | "timestamp">
-  ) => void;
-  dismissInAppNotification: (id: string) => void;
-  dismissAllInAppNotifications: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -51,14 +32,13 @@ export const NotificationProvider: React.FC<{
 }> = ({ children, userId }) => {
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [inAppNotifications, setInAppNotifications] = useState<
-    InAppNotification[]
-  >([]);
   const [appState, setAppState] = useState(AppState.currentState);
 
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
-  const inAppTimeouts = useRef<Map<string, number>>(new Map());
+
+  // Use the new alert system
+  const { showGlobalAlert } = useAlerts();
 
   // Convex mutations and queries
   const registerToken = useMutation(
@@ -70,19 +50,18 @@ export const NotificationProvider: React.FC<{
     userId ? { userId } : "skip"
   );
 
-  const unreadCount = useQuery(
-    api.functions.notifications.getNotifications.getUnreadCount,
-    userId ? { userId } : "skip"
-  );
+  // Calculate unread count from notifications if getUnreadCount doesn't exist
+  const unreadCount = userNotifications?.filter(n => !n.isRead).length || 0;
 
   const markNotificationAsRead = useMutation(
     api.functions.notifications.markAsRead.markAsRead
   );
+  
   const markAllNotificationsAsRead = useMutation(
     api.functions.notifications.markAllAsRead.markAllAsRead
   );
 
-  // Track app state for in-app notifications
+  // Track app state
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       setAppState(nextAppState);
@@ -91,9 +70,15 @@ export const NotificationProvider: React.FC<{
     return () => subscription?.remove();
   }, []);
 
+  // Setup notifications
   useEffect(() => {
-    if (userId) {
+    if (userId && !__DEV__) {
       registerForPushNotifications();
+    }
+
+    if (__DEV__) {
+      console.log('Skipping notification setup in development/Expo Go');
+      return;
     }
 
     // Listener for notifications received while app is foregrounded
@@ -101,20 +86,30 @@ export const NotificationProvider: React.FC<{
       Notifications.addNotificationReceivedListener((notification) => {
         console.log("Notification received:", notification);
 
-        // Show in-app popup if app is active
+        // Use new alert system instead of old showInAppNotification
         if (appState === "active") {
-          showInAppNotification({
+          showGlobalAlert({
             title: notification.request.content.title || "New Notification",
             message: notification.request.content.body || "",
             type: "info",
-            data: notification.request.content.data,
-            action: notification.request.content.data?.actionRequired
-              ? {
-                  label: "View",
-                  onPress: () =>
-                    handleNotificationTap(notification.request.content.data),
-                }
+            duration: 5000,
+            position: "top",
+            animation: "slide-down",
+            actions: notification.request.content.data?.actionRequired
+              ? [
+                  {
+                    label: "View",
+                    onPress: () =>
+                      handleNotificationTap(notification.request.content.data),
+                    style: "default",
+                  },
+                ]
               : undefined,
+            style: {
+              backgroundColor: "#007AFF",
+              textColor: "#FFFFFF",
+              borderRadius: 12,
+            },
           });
         }
 
@@ -132,26 +127,33 @@ export const NotificationProvider: React.FC<{
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
-      // Clear all timeouts
-      inAppTimeouts.current.forEach((timeout) => clearTimeout(timeout));
-      inAppTimeouts.current.clear();
     };
-  }, [userId, appState]);
+  }, [userId, appState, showGlobalAlert]);
 
+  // Update notifications from Convex
   useEffect(() => {
     if (userNotifications) {
       setNotifications(userNotifications);
     }
   }, [userNotifications]);
 
-  // Update badge count when unread count changes
+  // Update badge count
   useEffect(() => {
-    if (unreadCount !== undefined) {
-      NotificationService.setBadgeCount(unreadCount);
+    if (unreadCount !== undefined && !__DEV__) {
+      try {
+        NotificationService.setBadgeCount(unreadCount);
+      } catch (error) {
+        console.log('Badge count not supported in Expo Go');
+      }
     }
   }, [unreadCount]);
 
   const registerForPushNotifications = async () => {
+    if (__DEV__) {
+      console.log('Skipping push notification registration in Expo Go');
+      return;
+    }
+
     try {
       const token = await NotificationService.registerForPushNotifications();
       if (token && userId) {
@@ -171,7 +173,6 @@ export const NotificationProvider: React.FC<{
     console.log("Handling notification tap with data:", data);
 
     try {
-      // Navigate to ride request page for driver
       if (data?.type === "ride_request" && data?.rideId) {
         router.push({
           pathname: "/DriverRequestPage",
@@ -180,23 +181,21 @@ export const NotificationProvider: React.FC<{
         return;
       }
 
-      // Navigate to specific screen if provided
       if (data?.screen) {
-        // Use router.push with proper type casting for dynamic routes
         router.push(data.screen as any);
         return;
       }
 
-      // Default navigation - update this path to match your actual route structure
       router.push("/NotificationsScreen");
     } catch (error) {
       console.error("Error navigating from notification:", error);
-      // Fallback navigation
       router.push("/");
     }
   };
 
   const markAsRead = async (notificationId: Id<"notifications">) => {
+    if (!userId) return;
+    
     try {
       await markNotificationAsRead({ notificationId });
     } catch (error) {
@@ -206,6 +205,7 @@ export const NotificationProvider: React.FC<{
 
   const markAllAsRead = async () => {
     if (!userId) return;
+    
     try {
       await markAllNotificationsAsRead({ userId });
     } catch (error) {
@@ -217,63 +217,14 @@ export const NotificationProvider: React.FC<{
     console.log("Notifications will auto-refresh due to Convex reactivity");
   };
 
-  // In-app notification functions
-  const showInAppNotification = (
-    notification: Omit<InAppNotification, "id" | "timestamp">
-  ) => {
-    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newNotification: InAppNotification = {
-      ...notification,
-      id,
-      timestamp: new Date(),
-      duration: notification.duration || 4000,
-    };
-
-    setInAppNotifications((prev) => [...prev, newNotification]);
-
-    // Auto-dismiss after specified duration
-    if (newNotification.duration && newNotification.duration > 0) {
-      const timeout = setTimeout(() => {
-        dismissInAppNotification(id);
-      }, newNotification.duration);
-
-      inAppTimeouts.current.set(id, timeout);
-    }
-  };
-
-  const dismissInAppNotification = (id: string) => {
-    setInAppNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
-    );
-
-    // Clear timeout if exists
-    const timeout = inAppTimeouts.current.get(id);
-    if (timeout) {
-      clearTimeout(timeout);
-      inAppTimeouts.current.delete(id);
-    }
-  };
-
-  const dismissAllInAppNotifications = () => {
-    setInAppNotifications([]);
-
-    // Clear all timeouts
-    inAppTimeouts.current.forEach((timeout) => clearTimeout(timeout));
-    inAppTimeouts.current.clear();
-  };
-
   return (
     <NotificationContext.Provider
       value={{
         notifications,
         unreadCount: unreadCount || 0,
-        inAppNotifications,
         markAsRead,
         markAllAsRead,
         refreshNotifications,
-        showInAppNotification,
-        dismissInAppNotification,
-        dismissAllInAppNotifications,
       }}
     >
       {children}

@@ -18,15 +18,58 @@ function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): 
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  // Input validation
+  if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+    console.warn('Invalid coordinates in calculateDistance:', { lat1, lon1, lat2, lon2 });
+    return 0;
+  }
+  
+  // If coordinates are the same, distance is 0
+  if (lat1 === lat2 && lon1 === lon2) {
+    return 0;
+  }
+  
   const R = 6371; // Earth's radius in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
+  
   const a = 
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2);
+  
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+  const distance = R * c;
+  
+  console.log('🧮 Distance calculation:', {
+    from: { lat: lat1, lon: lon1 },
+    to: { lat: lat2, lon: lon2 },
+    distance: distance.toFixed(3) + 'km'
+  });
+  
+  return distance;
+}
+
+/**
+ * Calculate fare based on passenger displacement from origin
+ * Base fare: R20 for passenger displacement up to 10km from origin
+ * Overage: R2.50 per 5km block for displacement over 10km from origin
+ */
+function calculateFare(passengerDisplacement: number): number {
+  const BASE_FARE = 20.0;
+  const BASE_DISTANCE = 10.0;
+  const OVERAGE_RATE = 2.5;
+  const OVERAGE_BLOCK = 5.0;
+  
+  if (passengerDisplacement <= BASE_DISTANCE) {
+    return BASE_FARE;
+  }
+  
+  const overageDistance = passengerDisplacement - BASE_DISTANCE;
+  const overageBlocks = Math.ceil(overageDistance / OVERAGE_BLOCK);
+  const overageFee = overageBlocks * OVERAGE_RATE;
+  
+  return Math.ceil(BASE_FARE + overageFee);
 }
 
 type RouteStop = {
@@ -64,6 +107,8 @@ type RouteScore = {
   startStop: RouteStop | null;
   endStop: RouteStop | null;
   hasDirectRoute: boolean;
+  passengerDisplacement: number; // Distance passenger travels from origin
+  calculatedFare: number; // Fare based on passenger displacement
 };
 
 async function calculateRouteScore(
@@ -74,6 +119,20 @@ async function calculateRouteScore(
   endLat: number,
   endLon: number
 ): Promise<RouteScore> {
+  console.log('🔍 calculateRouteScore input:', {
+    routeId: route.routeId,
+    startLat,
+    startLon,
+    endLat,
+    endLon,
+    inputTypes: {
+      startLat: typeof startLat,
+      startLon: typeof startLon,
+      endLat: typeof endLat,
+      endLon: typeof endLon
+    }
+  });
+
   // Get enriched stops or fall back to original stops
   const enrichedRoute = await ctx.db
     .query("enrichedRouteStops")
@@ -89,7 +148,9 @@ async function calculateRouteScore(
       endProximity: Infinity,
       startStop: null,
       endStop: null,
-      hasDirectRoute: false
+      hasDirectRoute: false,
+      passengerDisplacement: 0,
+      calculatedFare: 0
     };
   }
   
@@ -108,13 +169,45 @@ async function calculateRouteScore(
   const hasDirectRoute: boolean = Boolean(closestToStart.stop && closestToEnd.stop &&
     closestToStart.stop.order < closestToEnd.stop.order);
   
+  // Calculate distances and fare
+  let passengerDisplacement = 0;
+  let calculatedFare = 0;
+  
+  // Always calculate passenger displacement, regardless of route validation
+  passengerDisplacement = calculateDistance(startLat, startLon, endLat, endLon);
+  
+  if (hasDirectRoute && closestToStart.stop && closestToEnd.stop) {
+    // Fare based on passenger displacement from origin
+    calculatedFare = calculateFare(passengerDisplacement);
+    
+    console.log('📍 Route calculation debug:', {
+      startLat, startLon, endLat, endLon,
+      passengerDisplacement,
+      calculatedFare,
+      hasDirectRoute,
+      startStopName: closestToStart.stop.name,
+      endStopName: closestToEnd.stop.name
+    });
+  } else {
+    // Even if no direct route, we can still calculate fare based on displacement
+    calculatedFare = calculateFare(passengerDisplacement);
+    
+    console.log('⚠️ No direct route found, but calculated displacement:', {
+      startLat, startLon, endLat, endLon,
+      passengerDisplacement,
+      calculatedFare
+    });
+  }
+  
   return {
     totalScore,
     startProximity,
     endProximity,
     startStop: closestToStart.stop,
     endStop: closestToEnd.stop,
-    hasDirectRoute
+    hasDirectRoute,
+    passengerDisplacement: Math.round(passengerDisplacement * 100) / 100,
+    calculatedFare: Math.round(calculatedFare * 100) / 100
   };
 }
 
@@ -134,7 +227,7 @@ type AvailableTaxi = {
   currentLocation: {
     latitude: number;
     longitude: number;
-    lastUpdated: string;
+    lastUpdated: number;
   };
   distanceToOrigin: number;
   routeInfo: {
@@ -146,6 +239,8 @@ type AvailableTaxi = {
     startProximity: number;
     endProximity: number;
     totalScore: number;
+    passengerDisplacement: number; // Distance passenger travels from origin
+    calculatedFare: number; // Fare based on passenger displacement
     closestStartStop: {
       id: string;
       name: string;
@@ -173,6 +268,8 @@ type TaxiSearchResult = {
     startProximity: number;
     endProximity: number;
     totalScore: number;
+    passengerDisplacement: number; // Distance passenger travels from origin
+    calculatedFare: number; // Fare based on passenger displacement
   }>;
   totalTaxisFound: number;
   totalRoutesChecked: number;
@@ -218,50 +315,35 @@ export const _findAvailableTaxisForJourneyHandler = async (
   try {
     console.log('🔍 Finding available taxis for journey:', {
       origin: { lat: originLat, lng: originLng },
-      destination: { lat: destinationLat, lng: destinationLng },
-      maxOriginDistance,
-      maxDestinationDistance,
-      maxTaxiDistance
+      destination: { lat: destinationLat, lng: destinationLng }
     });
 
-    // Step 1: Get all active routes
-    const routes = await ctx.db
-      .query("routes")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
+    // Calculate passenger displacement once
+    const passengerDisplacement = calculateDistance(originLat, originLng, destinationLat, destinationLng);
+    const calculatedFare = calculateFare(passengerDisplacement);
     
-    console.log(`📊 Checking ${routes.length} active routes`);
-    
-    // Step 2: Find routes that pass near both origin and destination
-    const routeScores = await Promise.all(
-      routes.map(async (route) => {
-        const score = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng);
-        return {
-          route,
-          ...score
-        };
-      })
-    );
-    
-    // Filter routes based on maximum distances and direct route requirement
-    const validRoutes = routeScores.filter(routeScore => 
-      routeScore.startProximity <= maxOriginDistance &&
-      routeScore.endProximity <= maxDestinationDistance &&
-      routeScore.hasDirectRoute && // Route should go from origin area towards destination area
-      routeScore.totalScore < Infinity
-    );
-    
-    console.log(`✅ Found ${validRoutes.length} valid routes with direct connections`);
-    
-    if (validRoutes.length === 0) {
+    console.log('🧪 Passenger displacement:', {
+      displacement: passengerDisplacement.toFixed(3) + 'km',
+      fare: 'R' + calculatedFare.toFixed(2)
+    });
+
+    // Step 1: Get all drivers with current locations who are nearby
+    const locations = await ctx.db.query("locations").collect();
+    const nearbyDriverLocations = locations.filter((loc) => {
+      if (loc.role !== "driver" && loc.role !== "both") return false;
+      const distanceToOrigin = getDistanceKm(originLat, originLng, loc.latitude, loc.longitude);
+      return distanceToOrigin <= maxTaxiDistance;
+    });
+
+    if (nearbyDriverLocations.length === 0) {
       return {
         success: true,
         availableTaxis: [],
         matchingRoutes: [],
         totalTaxisFound: 0,
-        totalRoutesChecked: routes.length,
+        totalRoutesChecked: 0,
         validRoutesFound: 0,
-        message: "No taxi routes found that pass near both your pickup location and destination within 3km radius",
+        message: "No drivers found within range",
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
@@ -272,61 +354,90 @@ export const _findAvailableTaxisForJourneyHandler = async (
         }
       };
     }
-    
-    // Step 3: For each valid route, find available taxis
+
+    console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers`);
+
+    // Step 2: Get driver profiles for nearby drivers
+    const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
+    const driverProfiles = await ctx.db
+      .query("drivers")
+      .filter((q) => q.or(...driverUserIds.map(id => q.eq(q.field("userId"), id))))
+      .collect();
+
+    if (driverProfiles.length === 0) {
+      return {
+        success: true,
+        availableTaxis: [],
+        matchingRoutes: [],
+        totalTaxisFound: 0,
+        totalRoutesChecked: 0,
+        validRoutesFound: 0,
+        message: "No driver profiles found for nearby drivers",
+        searchCriteria: {
+          origin: { latitude: originLat, longitude: originLng },
+          destination: { latitude: destinationLat, longitude: destinationLng },
+          maxOriginDistance,
+          maxDestinationDistance,
+          maxTaxiDistance,
+          maxResults
+        }
+      };
+    }
+
+    // Step 3: Get unique routes for these drivers
+    const routeIds = [...new Set(driverProfiles.map(d => d.assignedRoute).filter(Boolean))];
+    const routes = await ctx.db
+      .query("routes")
+      .filter((q) => q.and(
+        q.eq(q.field("isActive"), true),
+        q.or(...routeIds.map(id => q.eq(q.field("_id"), id)))
+      ))
+      .collect();
+
+    console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} drivers`);
+
+    // Step 4: Only calculate route scores for routes that have drivers
+    const validRoutes = [];
     const availableTaxis: AvailableTaxi[] = [];
-    const routeDetails = [];
-    
-    for (const routeScore of validRoutes) {
-      const route = routeScore.route;
+
+    for (const route of routes) {
+      // Get drivers on this specific route
+      const driversOnRoute = driverProfiles.filter(d => d.assignedRoute === route._id);
+      const driversOnRouteLocations = nearbyDriverLocations.filter(loc => 
+        driversOnRoute.some(d => d.userId === loc.userId)
+      );
+
+      if (driversOnRouteLocations.length === 0) continue;
+
+      // Calculate route score only once per route
+      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng);
       
-      // Find drivers assigned to this route
-      const driversOnRoute = await ctx.db
-        .query("drivers")
-        .withIndex("by_assigned_route", (q) => q.eq("assignedRoute", route._id as Id<"routes">))
-        .collect();
-      
-      if (driversOnRoute.length === 0) {
-        console.log(`⚠️ No drivers found on route ${route.name}`);
+      // Check if route is valid
+      if (routeScore.startProximity > maxOriginDistance || 
+          routeScore.endProximity > maxDestinationDistance || 
+          !routeScore.hasDirectRoute) {
         continue;
       }
-      
-      const driverUserIds = driversOnRoute.map((d) => d.userId);
-      
-      // Get current locations of all drivers
-      const locations = await ctx.db.query("locations").collect();
-      
-      // Filter for drivers on this route who are nearby the origin
-      const nearbyDrivers = locations.filter((loc) => {
-        const isDriverOnRoute = (loc.role === "driver" || loc.role === "both") &&
-          driverUserIds.some((id) => id === loc.userId);
-        
-        if (!isDriverOnRoute) return false;
-        
-        const distanceToOrigin = getDistanceKm(originLat, originLng, loc.latitude, loc.longitude);
-        return distanceToOrigin <= maxTaxiDistance;
+
+      validRoutes.push({
+        route,
+        routeScore,
+        availableDrivers: driversOnRouteLocations.length
       });
-      
-      console.log(`🚖 Route ${route.name}: Found ${nearbyDrivers.length} nearby drivers`);
-      
-      // Add driver details and route information
-      for (const driverLocation of nearbyDrivers) {
+
+      // Add all drivers on this valid route
+      for (const driverLocation of driversOnRouteLocations) {
         const driverProfile = driversOnRoute.find(d => d.userId === driverLocation.userId);
-        
         if (!driverProfile) continue;
-        
-        // Get user profile for driver name and phone through the userId link
+
         const userProfile = await ctx.db.get(driverProfile.userId);
-        
-        // Get taxi information for this driver through the driver ID link
         const taxi = await ctx.db
           .query("taxis")
           .withIndex("by_driver_id", (q) => q.eq("driverId", driverProfile._id))
           .first();
-        
+
         if (userProfile) {
           const taxiData: AvailableTaxi = {
-            // Driver information (using proper schema fields)
             driverId: driverProfile._id,
             userId: driverLocation.userId,
             name: userProfile.name,
@@ -336,21 +447,15 @@ export const _findAvailableTaxisForJourneyHandler = async (
             vehicleColor: taxi?.color || 'Not specified',
             vehicleYear: taxi?.year || null,
             isAvailable: taxi?.isAvailable || true,
-            
-            // Driver stats from drivers table
             numberOfRidesCompleted: driverProfile.numberOfRidesCompleted,
             averageRating: driverProfile.averageRating || 0,
             taxiAssociation: driverProfile.taxiAssociation || route.taxiAssociation,
-            
-            // Location information (using proper schema fields)
             currentLocation: {
               latitude: driverLocation.latitude,
               longitude: driverLocation.longitude,
               lastUpdated: driverLocation.updatedAt
             },
             distanceToOrigin: Math.round(getDistanceKm(originLat, originLng, driverLocation.latitude, driverLocation.longitude) * 100) / 100,
-            
-            // Route information
             routeInfo: {
               routeId: route.routeId,
               routeName: route.name,
@@ -360,6 +465,8 @@ export const _findAvailableTaxisForJourneyHandler = async (
               startProximity: Math.round(routeScore.startProximity * 100) / 100,
               endProximity: Math.round(routeScore.endProximity * 100) / 100,
               totalScore: Math.round(routeScore.totalScore * 100) / 100,
+              passengerDisplacement: Math.round(passengerDisplacement * 100) / 100,
+              calculatedFare: Math.round(calculatedFare * 100) / 100,
               closestStartStop: routeScore.startStop ? {
                 id: routeScore.startStop.id,
                 name: routeScore.startStop.name,
@@ -378,34 +485,55 @@ export const _findAvailableTaxisForJourneyHandler = async (
           availableTaxis.push(taxiData);
         }
       }
-      
-      // Store route details for reference
-      routeDetails.push({
-        routeId: route.routeId,
-        routeName: route.name,
-        taxiAssociation: route.taxiAssociation,
-        fare: route.fare,
-        availableDrivers: nearbyDrivers.length,
-        startProximity: Math.round(routeScore.startProximity * 100) / 100,
-        endProximity: Math.round(routeScore.endProximity * 100) / 100,
-        totalScore: Math.round(routeScore.totalScore * 100) / 100
-      });
     }
-    
-    // Sort taxis by a combination of route score and distance to origin
+
+    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis`);
+
+    if (availableTaxis.length === 0) {
+      return {
+        success: true,
+        availableTaxis: [],
+        matchingRoutes: [],
+        totalTaxisFound: 0,
+        totalRoutesChecked: routes.length,
+        validRoutesFound: 0,
+        message: "No taxi routes found that pass near both your pickup location and destination",
+        searchCriteria: {
+          origin: { latitude: originLat, longitude: originLng },
+          destination: { latitude: destinationLat, longitude: destinationLng },
+          maxOriginDistance,
+          maxDestinationDistance,
+          maxTaxiDistance,
+          maxResults
+        }
+      };
+    }
+
+    // Sort and limit results
     const sortedTaxis = availableTaxis.sort((a, b) => {
-      // Primary sort: route quality (lower score is better)
       const routeScoreDiff = a.routeInfo.totalScore - b.routeInfo.totalScore;
       if (Math.abs(routeScoreDiff) > 0.1) return routeScoreDiff;
-      
-      // Secondary sort: distance to passenger (closer is better)
       return a.distanceToOrigin - b.distanceToOrigin;
     });
-    
+
     const finalResults = sortedTaxis.slice(0, maxResults);
-    
+
+    // Create route details
+    const routeDetails = validRoutes.map(({ route, routeScore, availableDrivers }) => ({
+      routeId: route.routeId,
+      routeName: route.name,
+      taxiAssociation: route.taxiAssociation,
+      fare: route.fare,
+      availableDrivers,
+      startProximity: Math.round(routeScore.startProximity * 100) / 100,
+      endProximity: Math.round(routeScore.endProximity * 100) / 100,
+      totalScore: Math.round(routeScore.totalScore * 100) / 100,
+      passengerDisplacement: Math.round(passengerDisplacement * 100) / 100,
+      calculatedFare: Math.round(calculatedFare * 100) / 100
+    }));
+
     console.log(`🎯 Final result: ${finalResults.length} available taxis found`);
-    
+
     return {
       success: true,
       availableTaxis: finalResults,
@@ -421,7 +549,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
         maxTaxiDistance,
         maxResults
       },
-      message: `Found ${finalResults.length} available taxis on ${routeDetails.length} matching routes that pass near your locations`
+      message: `Found ${finalResults.length} available taxis on ${routeDetails.length} matching routes`
     };
     
   } catch (error) {
