@@ -139,7 +139,7 @@ describe("requestRideHandler", () => {
       }
     );
 
-    // Verify notification was sent
+    // FIXED: Updated to expect the metadata field that was added
     expect(ctx.runMutation).toHaveBeenCalledWith(
       'internal.functions.notifications.rideNotifications.sendRideNotification',
       {
@@ -147,6 +147,7 @@ describe("requestRideHandler", () => {
         type: "ride_requested",
         driverId: mockArgs.driverId,
         passengerId: mockArgs.passengerId,
+        metadata: null, // Added the expected metadata field
       }
     );
   });
