@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
+import React, { useLayoutEffect, useState, useRef, useEffect, useCallback } from "react";
 import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -46,8 +46,8 @@ export default function SeatReserved() {
 	const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
 	const mapRef = useRef<MapView | null>(null);
-
-	const processedNotificationsRef = useRef(new Set<string>()); // ref for processing used notification
+	const processedNotificationsRef = useRef(new Set<string>());
+	const isMonitoringRef = useRef(false);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
 	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; } | undefined, taxiInfoError: unknown;
@@ -69,7 +69,6 @@ export default function SeatReserved() {
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(true);
-	// Removed pin state - no longer needed
 
 	const passengerId = user?.id;
 	const rideId = taxiInfo?.rideDocId;
@@ -80,13 +79,20 @@ export default function SeatReserved() {
 
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
 
+	// Add proximity alerts hook
+	const { startMonitoringRide, stopMonitoringRide, updateDriverLocation } = useProximityAlerts({
+		enablePushNotifications: true,
+		enableInAppAlerts: true,
+		alertDistance: 3.0,
+		arrivalDistance: 0.1,
+		checkInterval: 30,
+	});
+
 	useLayoutEffect(() => {
 		navigation.setOptions({
 			headerShown: false
 		});
 	}, [navigation]);
-
-	// Removed PIN generation - no longer needed
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -133,7 +139,7 @@ export default function SeatReserved() {
 				name: getParamAsString(params.destinationName, "")
 			});
 		}
-	}, [useLiveLocation, params.currentLat, params.currentLng, params.destinationLat, params.destinationLng, params.currentName, params.destinationName]); // Remove setCurrentLocation and setDestination from dependencies
+	}, [useLiveLocation, params.currentLat, params.currentLng, params.destinationLat, params.destinationLng, params.currentName, params.destinationName]);
 
 	const vehicleInfo = {
 		plate: getParamAsString(params.plate, t('passengerReservation:unknown')),
@@ -182,7 +188,6 @@ export default function SeatReserved() {
 
 	// Function to get route from Google Directions API
 	const getRoute = async (origin: { latitude: number; longitude: number; name: string }, dest: { latitude: number; longitude: number; name: string }) => {
-		// Validate coordinates
 		if (!origin || !dest) {
 			console.warn('Invalid coordinates provided to getRoute');
 			return;
@@ -205,7 +210,6 @@ export default function SeatReserved() {
 
 		const routeKey = `${origin.latitude},${origin.longitude}-${dest.latitude},${dest.longitude}`;
 		
-		// Check cache first
 		const cachedRoute = getCachedRoute(routeKey);
 		if (cachedRoute) {
 			setRouteCoordinates(cachedRoute);
@@ -252,13 +256,11 @@ export default function SeatReserved() {
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
 				console.log('Decoded coordinates count:', decodedCoords.length);
 				
-				// Cache the route
 				setCachedRoute(routeKey, decodedCoords);
 				
 				setRouteCoordinates(decodedCoords);
 				setRouteLoaded(true);
 				
-				// Fit the map to show the entire route
 				const coordinates = [
 					{ latitude: origin.latitude, longitude: origin.longitude },
 					{ latitude: dest.latitude, longitude: dest.longitude },
@@ -274,7 +276,6 @@ export default function SeatReserved() {
 		} catch (error) {
 			console.error('Error fetching route:', error);
 			
-			// Fallback: use straight line between origin and destination
 			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
@@ -283,7 +284,6 @@ export default function SeatReserved() {
 			setRouteCoordinates(fallbackRoute);
 			setRouteLoaded(true);
 			
-			// Center the map to show both points
 			if (mapRef.current) {
 				mapRef.current.fitToCoordinates(fallbackRoute, {
 					edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
@@ -354,15 +354,14 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, rideStatus, isFollowing]);
 
-	// MIGRATED: Handle notifications effect using new alert system
+	// Handle notifications effect using new alert system
 	useEffect(() => {
 		const rideStarted = notifications.find(
 			n => n.type === 'ride_started' && 
 				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
+				!processedNotificationsRef.current.has(n._id)
 		);
 		if (rideStarted) {
-
 			processedNotificationsRef.current.add(rideStarted._id);
 
 			showGlobalAlert({
@@ -391,11 +390,10 @@ export default function SeatReserved() {
 		const rideDeclined = notifications.find(
 		n => n.type === 'ride_declined' && 
 			!n.isRead && 
-			!processedNotificationsRef.current.has(n._id) // Add this check
+			!processedNotificationsRef.current.has(n._id)
 		);
 
 		if (rideDeclined) {
-
 			processedNotificationsRef.current.add(rideDeclined._id);
 			
 			showGlobalError(
@@ -446,6 +444,55 @@ export default function SeatReserved() {
 		}
 	}, [taxiInfoError, hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError]);
 
+	// FIXED: Debounced proximity monitoring with ref tracking
+	const startProximityMonitoring = useCallback(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && currentLocation && !rideJustEnded && !isMonitoringRef.current) {
+			console.log('Started proximity monitoring for ride', taxiInfo.rideId);
+			
+			const driverLocation = {
+				latitude: taxiInfo.driver?.currentLocation?.latitude || 0,
+				longitude: taxiInfo.driver?.currentLocation?.longitude || 0,
+			};
+
+			const pickupLocation = {
+				latitude: currentLocation.latitude,
+				longitude: currentLocation.longitude,
+			};
+
+			startMonitoringRide({
+				rideId: taxiInfo.rideId,
+				driverId: taxiInfo.driver?.userId || '',
+				passengerId: user?.id || '',
+				driverLocation,
+				pickupLocation,
+			});
+			
+			isMonitoringRef.current = true;
+		}
+	}, [rideStatus, taxiInfo?.rideId, currentLocation, user?.id, rideJustEnded, startMonitoringRide, taxiInfo?.driver]);
+
+	useEffect(() => {
+		if (rideStatus === 'accepted' && !isMonitoringRef.current) {
+			startProximityMonitoring();
+		}
+		
+		if (rideStatus !== 'accepted' && isMonitoringRef.current && taxiInfo?.rideId) {
+			console.log('Stopped proximity monitoring for ride', taxiInfo.rideId);
+			stopMonitoringRide(taxiInfo.rideId);
+			isMonitoringRef.current = false;
+		}
+	}, [rideStatus, startProximityMonitoring, taxiInfo?.rideId, stopMonitoringRide]);
+
+	// Update driver location when we receive location updates
+	useEffect(() => {
+		if (rideStatus === 'accepted' && taxiInfo?.rideId && taxiInfo?.driver?.currentLocation && isMonitoringRef.current) {
+			updateDriverLocation(taxiInfo.rideId, {
+				latitude: taxiInfo.driver.currentLocation.latitude,
+				longitude: taxiInfo.driver.currentLocation.longitude,
+			});
+		}
+	}, [taxiInfo?.driver?.currentLocation, rideStatus, taxiInfo?.rideId, updateDriverLocation]);
+
 	const handleStartRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
 			showGlobalError('Error', 'No ride or user information available.', {
@@ -456,7 +503,6 @@ export default function SeatReserved() {
 			return;
 		}
 		
-		// Redirect to PIN entry screen instead of directly starting the ride
 		router.push({
 			pathname: '/PassengerPinEntry',
 			params: {
@@ -493,25 +539,36 @@ export default function SeatReserved() {
 				title: 'Ride Ended Successfully',
 				message: `Ride ended! Fare: R${result.fare}`,
 				type: 'success',
-				duration: 3000,
+				duration: 0,
+				actions: [
+					{
+						label: 'Continue to Feedback',
+						onPress: () => {
+							router.push({
+								pathname: '/SubmitFeedback',
+								params: {
+									rideId: taxiInfo.rideDocId,
+									startName: currentLocation?.name || 'Current Location',
+									endName: destination?.name || 'Destination',
+									passengerId: user.id,
+									driverId: driverId || '',
+								},
+							});
+						},
+						style: 'default',
+					},
+					{
+						label: 'Skip Feedback',
+						onPress: () => {
+							router.push('/HomeScreen');
+						},
+						style: 'cancel',
+					}
+				],
 				position: 'top',
 				animation: 'slide-down',
 			});
 			
-			// Add a small delay before navigation to ensure the alert is shown
-			setTimeout(() => {
-				// Redirect to feedback screen after ride ends
-				router.push({
-					pathname: '/SubmitFeedback',
-					params: {
-						rideId: taxiInfo.rideDocId,
-						startName: currentLocation?.name || 'Current Location',
-						endName: destination?.name || 'Destination',
-						passengerId: user.id,
-						driverId: driverId || '',
-					},
-				});
-			}, 1000);
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to end ride.', {
 				duration: 4000,
@@ -740,7 +797,6 @@ export default function SeatReserved() {
 			alignItems: 'center',
 			marginTop: 10,
 		},
-		// Removed PIN-related styles - no longer needed
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
@@ -791,55 +847,6 @@ export default function SeatReserved() {
 			</SafeAreaView>
 		);
 	}
-
-	// Add proximity alerts hook
-	const { startMonitoringRide, stopMonitoringRide, updateDriverLocation } = useProximityAlerts({
-		enablePushNotifications: true,
-		enableInAppAlerts: true,
-		alertDistance: 3.0, // 3km
-		arrivalDistance: 0.1, // 100m
-		checkInterval: 30, // 30 seconds
-	});
-
-	// Start proximity monitoring when ride is accepted
-	useEffect(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.rideId && currentLocation) {
-			// Get driver location - you might need to adjust this based on your data structure
-			const driverLocation = {
-				latitude: taxiInfo.driver?.currentLocation?.latitude || 0,
-				longitude: taxiInfo.driver?.currentLocation?.longitude || 0,
-			};
-
-			const pickupLocation = {
-				latitude: currentLocation.latitude,
-				longitude: currentLocation.longitude,
-			};
-
-			// Start monitoring proximity
-			startMonitoringRide({
-				rideId: taxiInfo.rideId,
-				driverId: taxiInfo.driver?.userId || '',
-				passengerId: user?.id || '',
-				driverLocation,
-				pickupLocation,
-			});
-		}
-
-		// Stop monitoring when ride status changes
-		if (rideStatus !== 'accepted' && taxiInfo?.rideId) {
-			stopMonitoringRide(taxiInfo.rideId);
-		}
-	}, [rideStatus, taxiInfo, currentLocation, user?.id, startMonitoringRide, stopMonitoringRide]);
-
-	// Update driver location when we receive location updates
-	useEffect(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.rideId && taxiInfo?.driver?.currentLocation) {
-			updateDriverLocation(taxiInfo.rideId, {
-				latitude: taxiInfo.driver.currentLocation.latitude,
-				longitude: taxiInfo.driver.currentLocation.longitude,
-			});
-		}
-	}, [taxiInfo?.driver?.currentLocation, rideStatus, taxiInfo?.rideId, updateDriverLocation]);
 
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
@@ -928,24 +935,24 @@ export default function SeatReserved() {
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
 									</TouchableOpacity>
 								</View>
-															<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<Text style={dynamicStyles.ratingText}>
-									{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
-								</Text>
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={dynamicStyles.ratingText}>
+										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+									</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-									{[1, 2, 3, 4, 5].map((star, index) => {
+										{[1, 2, 3, 4, 5].map((star, index) => {
 											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
-										const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
 
 											return (
-													<FontAwesome
-														key={index}
-														name={full ? "star" : half ? "star-half-full" : "star-o"}
-														size={12}
-														color={theme.primary}
-														style={{ marginRight: 1 }}
-													/>
-										);
+												<FontAwesome
+													key={index}
+													name={full ? "star" : half ? "star-half-full" : "star-o"}
+													size={12}
+													color={theme.primary}
+													style={{ marginRight: 1 }}
+												/>
+											);
 										})}
 									</View>
 								</View>
@@ -1037,7 +1044,7 @@ export default function SeatReserved() {
 				</TouchableOpacity>
 			)}
 		</SafeAreaView>
-	)
+	);
 }
 
 // Dark map style for better dark mode experience (same as HomeScreen)

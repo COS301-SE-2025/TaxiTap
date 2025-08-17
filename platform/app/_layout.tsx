@@ -27,7 +27,7 @@ import { LanguageProvider } from '../contexts/LanguageContext';
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: 'LandingPage',
+  initialRouteName: '(tabs)',
 };
 
 SplashScreen.preventAutoHideAsync();

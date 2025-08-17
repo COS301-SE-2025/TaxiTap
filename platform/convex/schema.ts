@@ -132,6 +132,9 @@ export default defineSchema({
     pinRegeneratedAt: v.optional(v.number()),
     pinVerifiedAt: v.optional(v.number()),
 
+    lastProximityAlertAt: v.optional(v.number()),
+    lastProximityStatus: v.optional(v.string()),
+
 
   })
     .index("by_ride_id", ["rideId"])

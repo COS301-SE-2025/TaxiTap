@@ -56,7 +56,7 @@ export const sendNotification = mutation({
     title: v.string(),
     message: v.string(),
     priority: v.string(),
-    metadata: v.union(v.string(), v.number(), v.boolean(), v.object({}), v.null()),
+    metadata: v.optional(v.any()),
     scheduledFor: v.union(v.number(), v.null()),
     expiresAt: v.union(v.number(), v.null())
   },
@@ -71,7 +71,7 @@ export const sendNotificationInternal = internalMutation({
     title: v.string(),
     message: v.string(),
     priority: v.string(),
-    metadata: v.union(v.string(), v.number(), v.boolean(), v.object({}), v.null()),
+    metadata: v.optional(v.any()),
     scheduledFor: v.union(v.number(), v.null()),
     expiresAt: v.union(v.number(), v.null())
   },

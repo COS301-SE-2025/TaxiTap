@@ -156,14 +156,19 @@ export const sendRideNotificationHandler = async (
   }
 };
 
-// Then update your internalMutation to use the handler
 export const sendRideNotification = internalMutation({
   args: {
     rideId: v.string(),
     type: v.string(),
     passengerId: v.union(v.id("taxiTap_users"), v.null()),
     driverId: v.union(v.id("taxiTap_users"), v.null()),
-    metadata: v.union(v.string(), v.number(), v.boolean(), v.object({}), v.null())
+    metadata: v.optional(v.union(
+      v.string(), 
+      v.number(), 
+      v.boolean(), 
+      v.any(), // Allow any object structure
+      v.null()
+    ))
   },
   handler: sendRideNotificationHandler
 });

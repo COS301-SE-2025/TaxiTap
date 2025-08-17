@@ -52,6 +52,8 @@ export const acceptRideHandler = async (
       rideId: args.rideId,
       type: "ride_accepted",
       driverId: args.driverId,
+      passengerId: ride.passengerId, // Add this line
+      metadata: null, // Add this line
     }
   );
 
@@ -60,4 +62,4 @@ export const acceptRideHandler = async (
     message: "Ride accepted successfully",
     driverPin: driverPin, // Return the PIN for immediate use
   };
-}; 
+};

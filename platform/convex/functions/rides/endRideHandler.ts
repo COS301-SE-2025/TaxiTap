@@ -30,7 +30,7 @@ export const endRideHandler = async (ctx: any, args: any) => {
       completedAt: Date.now(),
     });
 
-    // Safely send notification with error handling
+    // Safely send notification with error handling and metadata field
     try {
       await ctx.runMutation(
         require("../../_generated/api").internal.functions.notifications.rideNotifications.sendRideNotification,
@@ -39,6 +39,7 @@ export const endRideHandler = async (ctx: any, args: any) => {
           type: "ride_completed",
           driverId: ride.driverId,
           passengerId: args.userId,
+          metadata: null, // Add the required metadata field
         }
       );
     } catch (notificationError: any) {
