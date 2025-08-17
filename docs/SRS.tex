@@ -34,7 +34,7 @@
 \newpage
 
 \section{Introduction}
-Taxi Tap is a mobile platform designed to revolutionize South Africa’s minibus taxi industry by digitizing route information, eliminating the need for constant hooting, and creating a semi-structured booking system while preserving the flexibility that makes taxis an essential mode of transport. The system connects passengers and taxi operators through a location-aware mobile application that facilitates taxi requests, communicates passenger locations, manages payments, and provides real-time vehicle tracking – all without fundamentally changing the existing system's multi-passenger, flexible route nature.
+Taxi Tap is a mobile platform designed to revolutionize South Africa’s minibus taxi industry by digitizing route information, eliminating the need for constant hooting, and creating a semi-structured booking system while preserving the flexibility that makes taxis an essential mode of transport. The system connects passengers and taxi operators through a location-aware mobile application that facilitates taxi requests, communicates passenger locations, and provides real-time vehicle tracking – all without fundamentally changing the existing system's multi-passenger, flexible route nature.
 
 \section{User Characteristics}
 
@@ -2786,6 +2786,7 @@ void (no direct response)
     \item R1.2: Users should be able to update their Profile information.
     \item R1.3: The system should support role-based access control for passenger and driver interfaces.
     \item R1.4: Users should be able to reset or change their passwords.
+    \item R1.5: Users should be able to switch between being a driver and a passenger.
 \end{itemize}
 
 \subsection*{R2: Location Services}
@@ -2821,7 +2822,6 @@ void (no direct response)
     \item R5.2: The system should show available seats in approaching taxis.
     \item R5.3: The system should allow drivers to update their seat availability status.
     \item R5.4: The system should indicate taxi status (en route, picking up, full, etc.).
-    \item R5.5: The system should notify waiting passengers when taxis reach capacity.
 \end{itemize}
 
 \subsection*{R6: Notifications}
@@ -2831,13 +2831,11 @@ void (no direct response)
     \item R6.3: The system should notify drivers of new nearby passenger requests.
     \item R6.4: The system should provide ETA updates to waiting passengers.
     \item R6.5: The system should send notifications even with limited connectivity.
-    \item R6.6: The system should allow users to customize notification preferences.
 \end{itemize}
 
 \subsection*{R7: Passenger Destination Management}
 \begin{itemize}
     \item R7.1: The system should allow passengers to specify their drop-off locations.
-    \item R7.2: The system should suggest optimal drop-off order to drivers.
 \end{itemize}
 
 \subsection*{R8: User Interface}
@@ -2856,65 +2854,68 @@ void (no direct response)
 \subsection*{R10: Fare Management}
 \begin{itemize}
     \item R10.1: The system should calculate fare estimates based on route and distance.
-    \item R10.2: The system should support both digital and cash payment options.
-    \item R10.3: The system should provide payment confirmation receipts.
-    \item R10.4: The system should track payment status for trips.
+    \item R10.2: The system should support cash payment options.
+    \item R10.3: The system should track payment status for trips.
 \end{itemize}
 
 \subsection*{R11: Taxi Identification}
 \begin{itemize}
     \item R11.1: The system should provide unique identifiers for each taxi.
-    \item R11.2: The system should support QR code-based taxi identification and verification.
+    \item R11.2: The system should support  pin-based taxi identification and verification.
     \item R11.3: The system should display taxi information (registration, operator) to passengers.
 \end{itemize}
 
 \subsection*{R12: Safety Features}
 \begin{itemize}
-    \item R12.1: The system should provide an anonymous crime reporting tool.
-    \item R12.2: The system should include emergency contact features.
+    \item R12.1: The system should include emergency contact features.
 \end{itemize}
 
 \section{Use Case Diagrams}
   \subsection*{Overall System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{TaxiTap App.jpg} 
+      \includegraphics[width=1\textwidth]{Overall System.png} 
     \end{figure}
     \subsection*{Notification System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Notification System.jpg} 
+      \includegraphics[width=1\textwidth]{Notification System.png} 
     \end{figure}
      \subsection*{Ride Request}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Ride Request System.jpg} 
+      \includegraphics[width=1\textwidth]{Ride Request System.png} 
     \end{figure}
      \subsection*{Route Management System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Route Management System.jpg} 
+      \includegraphics[width=1\textwidth]{Route Management System.png} 
     \end{figure}
     \subsection*{Location System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Location System.jpg} 
+      \includegraphics[width=0.7\textwidth]{Location System.png} 
     \end{figure}
    
   \subsection*{Feedback System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{UserFeedback.png} 
+      \includegraphics[width=1\textwidth]{Feedback.png} 
     \end{figure}
   \subsection*{Login System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Login System.jpg} 
+      \includegraphics[width=1\textwidth]{Login.png} 
     \end{figure}
   \subsection*{Signup System}
     \begin{figure}[H]
       \centering
-      \includegraphics[width=1\textwidth]{Signup System.jpg} 
+      \includegraphics[width=1\textwidth]{Signup System.png} 
+    \end{figure}
+  \subsection*{Payment System}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\textwidth]{Payment System.png} 
     \end{figure}
 
 \section{Technology Requirements}
@@ -2975,14 +2976,14 @@ void (no direct response)
     \item Driver Location: Periodic GPS updates using Expo Location API.
     \item Passenger Location: One-time or continuous tracking during trip.
     \item Proximity Alerts: Triggered from Convex using background function.
-    \item ETA Calculation: Naive approach using Haversine distance + average speed (no Google Maps API due to cost).
+    \item ETA Calculation: Naive approach using Haversine distance and average speed (no Google Maps API due to cost).
 \end{itemize}
 
 \subsubsection*{Taxi Request Subsystem}
 \begin{itemize}
     \item Request Workflow:
     \begin{itemize}
-        \item Passenger sends request with coordinates and optional destination.
+        \item Passenger sends request with pickup and destination location.
         \item Nearby drivers notified (push notification via Expo).
         \item Driver accepts or rejects request.
         \item Status changes handled in real time.
@@ -2991,8 +2992,8 @@ void (no direct response)
 
 \subsubsection*{Route Management Subsystem}
 \begin{itemize}
-    \item Driver Route Declaration: Input form for common route + destination.
-    \item Passenger View: Map view of taxis on route + destinations.
+    \item Driver Route Declaration: Input form for common route and destination.
+    \item Passenger View: Map view of taxis on route and destinations.
     \item Optimized Routing (Optional): Historical route optimization using stored patterns (stretch goal).
 \end{itemize}
 
@@ -3010,10 +3011,7 @@ void (no direct response)
 
 \subsubsection*{Safety and Fare Management Subsystem}
 \begin{itemize}
-    \item QR Identification: QR codes linked to taxi documents in Convex.
-    \item Reporting: Anonymous incident reports saved to a secure Convex table.
     \item Fare Estimate: Static fare matrix per route (e.g., km-based fare slabs).
-    \item Payment: Optional - integrate with SnapScan/Yoco for digital payments.
 \end{itemize}
 
 \subsection{Testing Frameworks}
@@ -3026,8 +3024,8 @@ void (no direct response)
 \subsection{CI/CD}
 \begin{itemize}
     \item Convex Deployment: Triggered via GitHub Action or manual \texttt{npx convex dev} / \texttt{convex deploy}.
-    \item Expo Deployment: Use \texttt{eas build} + \texttt{eas submit} for App Store/Play Store releases.
-    \item Linting \& Tests: Pre-commit lint checks with ESLint + Jest unit tests.
+    \item Expo Deployment: Use \texttt{eas build} and \texttt{eas submit} for App Store/Play Store releases (app store releases might note take place).
+    \item Linting \& Tests: Pre-commit lint checks with ESLint and Jest unit tests.
 \end{itemize}
 
 \subsection{Version Control}
@@ -3036,12 +3034,10 @@ void (no direct response)
     \item Feature branches for each core module.
 \end{itemize}
 
-\section{Architectural Requirements}
-
-\textbf{\href{https://github.com/COS301-SE-2025/Taxi-Tap/blob/7a74ddb4e0d0e853188d32b984f07e9f6e0393c3/docs/Architectural\%20Requirements.pdf}{Architectural Requirements Document Here}}
-
 \subsection{Quality Requirements}
-Quality requirements determine the overall quality of Taxi Tap by specifying criteria that define how well the system performs and behaves.
+Quality requirements determine the overall quality of Taxi Tap by specifying criteria that define how well the system performs and behaves.\newline
+
+The quality requirements mentioned below are overall, but our top 5 is specified in the architectural requirements document.
 
 \begin{enumerate}
     \item \textbf{Security}
@@ -3145,25 +3141,4 @@ The client laid out the following constraints, by which Taxi Tap must abide, in 
     \item \textbf{Budget}\\
     We must use AWS Free Tier platforms or any platforms that are open source or within free tier allowance.
 \end{enumerate}
-
-\section{Deployment Model}
-The system will be deployed following a cloud-based deployment model to ensure scalability, availability, and ease of access. The deployment environment will include:
-\begin{itemize}
-    \item \textbf{Frontend:} Deployed via Expo Go.
-    \item \textbf{Backend:} Hosted on Convex cloud (Convex backend as a service).
-    \item \textbf{Database:}  Managed by Convex (integrated serverless database).
-    \item \textbf{CI/CD:} Managed via GitHub Actions to automate linting, testing and deployment.
-\end{itemize}
-
-\section{Live Deployed System}
-A fully functional live version of the system will be accessible for demonstration purposes. This deployed system will allow real-time interaction by both drivers and passengers via mobile devices. The system will include:
-\begin{itemize}
-    \item User registration and authentication.
-    \item Route selection and reservation.
-    \item Real-time updates.
-    \item Payment simulation (optional).
-    \item Feedback and rating system.
-    \item Switch between passenger and driver.
-\end{itemize}
-
 \end{document}

@@ -4,7 +4,6 @@
 \usepackage{titlesec}
 \usepackage{graphicx}
 \usepackage{hyperref}
-\usepackage{graphicx}
 \usepackage{float}
 
 \titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
@@ -35,7 +34,7 @@
 \section{Introduction}
 
 TaxiTap is a comprehensive taxi booking and management application designed to connect passengers with drivers in real-time. The system provides a seamless, secure, and scalable solution for urban transportation needs. This document outlines the architectural decisions, quality requirements, and technical strategies employed to deliver a robust, high-performance mobile application.
-The system facilitates ride booking, real-time tracking, payment processing, and driver management through an intuitive mobile interface backed by a serverless architecture.
+The system facilitates ride booking, real-time tracking, and driver management through an intuitive mobile interface backed by a serverless architecture.
 
 \section{Architectural Design Strategy}
 
@@ -68,12 +67,13 @@ Event-driven architecture is centered around asynchronous communication between 
 Why this is the best fit for our system:
 
 \begin{itemize}
-  \item Real-time Interaction: Location updates, ride requests, driver availability, and notifications all benefit from real-time triggers and updates. Convex supports reactive data + background functions, making it a natural fit for an event-driven model.
+  \item Real-time Interaction: Location updates, ride requests, driver availability, and notifications all benefit from real-time triggers and updates. Convex supports reactive data and background functions, making it a natural fit for an event-driven model.
   \item Asynchronous Processing: Tasks like sending push notifications, updating seat availability, or logging analytics should not block the main user flow. EDA allows these to run in the background, improving app responsiveness.
   \item Loose Coupling: With EDA, components (like driver matching and notifications) can be developed and deployed independently. This aligns well with Convex’s function-based model, which is modular and reactive.
   \item Scalability and Maintainability: New features can easily be added by listening to events without modifying core components.
 \end{itemize}
 
+\subsection{Architectural Strategies extended}
 \begin{itemize}
   \item \textbf{Availability:} \\
   \textbf{Problem:} If the system becomes unavailable, users cannot book or accept rides, damaging both reliability and trust. \\
@@ -124,7 +124,7 @@ The following quality requirements are prioritized based on client needs and sys
   \item \textbf{Availability:} \\
   \textbf{Why it's a top quality requirement:} Ensures continuous service. If the app is down, users cannot book or accept rides, which impacts revenue and reputation. \\
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -137,8 +137,8 @@ The following quality requirements are prioritized based on client needs and sys
 \textbf{Response Measure} & 
 \begin{itemize}
   \item 99.5\% uptime under normal usage
-  \item Automatic failover within 30 seconds
-  \item Service restoration within 2 minutes
+  % \item Automatic failover within 30 seconds
+  % \item Service restoration within 2 minutes
 \end{itemize} \\
 \hline
 \textbf{Environment} & Normal and peak operating conditions \\
@@ -151,7 +151,7 @@ The following quality requirements are prioritized based on client needs and sys
   \item \textbf{Scalability:} \\
   \textbf{Why it's a top quality requirement:} Supports many users using the app simultaneously and allows the system to handle growth in demand. \\
 
-  \begin{table}[h]
+  \begin{table}[H]
 \centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -178,7 +178,7 @@ The following quality requirements are prioritized based on client needs and sys
   \item \textbf{Usability:} \\
   \textbf{Why it's a top quality requirement:} Users must be able to complete essential tasks easily, regardless of their technical skill level. Poor usability leads to frustration and abandonment. \\
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -190,9 +190,9 @@ The following quality requirements are prioritized based on client needs and sys
 \hline
 \textbf{Response Measure} & 
 \begin{itemize}
-  \item Task completion within 3 clicks
-  \item 70\%+ user satisfaction rating
-  \item 5-minute learning curve for new users
+  \item Task completion within a few clicks
+  % \item 70\%+ user satisfaction rating
+  % \item 5-minute learning curve for new users
 \end{itemize} \\
 \hline
 \textbf{Environment} & Mobile device usage in various conditions \\
@@ -205,7 +205,7 @@ The following quality requirements are prioritized based on client needs and sys
   \item \textbf{Security:} \\
   \textbf{Why it's a top quality requirement:} The system manages sensitive user data, including locations and contact details. Breaches can result in legal issues and loss of trust. \\
 
-  \begin{table}[h]
+  \begin{table}[H]
 \centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -232,7 +232,7 @@ The following quality requirements are prioritized based on client needs and sys
   \item \textbf{Performance:} \\
   \textbf{Why it's a top quality requirement:} Real-time features must respond quickly to meet user expectations. Delays in booking, navigation, or messaging reduce usability during peak hours. \\
 
-  \begin{table}[h]
+  \begin{table}[H]
 \centering
 \begin{tabular}{|l|p{10cm}|}
 \hline
@@ -245,7 +245,7 @@ The following quality requirements are prioritized based on client needs and sys
 \textbf{Response Measure} & 
 \begin{itemize}
   \item Backend functions respond within 20ms average
-  \item Location updates occur within 1 second
+  \item Location updates occur every time the user moves
   \item Ride requests processed within 100ms
 \end{itemize} \\
 \hline
@@ -267,25 +267,30 @@ This section discusses the key architectural patterns employed in our system, al
 
 \textbf{Why We Use It:} To provide high availability and data redundancy. In case one instance fails, another replica can take over.
 
-\textbf{Quality Requirement Supported:} \textbf{Availability}
+\textbf{Quality Requirement Supported:}
+\begin{itemize}
+    \item \textbf{Availability}
+\end{itemize}
 
 \textbf{Application in System:}  
 Convex’s serverless backend infrastructure employs automatic replication of data and functions across multiple zones. This ensures continued access to services even if a zone experiences downtime. It also supports strong consistency guarantees without requiring developers to manage replicas manually.
 
-\subsection{Microservices Architecture}
+\subsection{Service-Oriented Architecture}
 
-\textbf{Purpose:} Decompose the system into independently deployable, loosely coupled services.
+\textbf{Purpose:}  
+To structure the system as a set of loosely coupled, reusable services that communicate over well-defined interfaces. Each service encapsulates a specific business capability, enabling flexibility in deployment and evolution.
 
-\textbf{Why We Use It:} To promote scalability, performance isolation, and independent deployment. It allows team members to work on different services without coordination bottlenecks.
+\textbf{Why We Use It:}  
+Taxi Tap uses SOA to separate key business functions—such as ride booking, driver management, payment processing, and notifications—into independent services. This allows teams to develop, maintain, and deploy each service without impacting others, while still integrating them into a cohesive platform through standard service contracts.
 
 \textbf{Quality Requirements Supported:}  
 \begin{itemize}
-  \item \textbf{Scalability} – Services can scale independently depending on load.
-  \item \textbf{Performance} – Limits cross-service interference; e.g., booking service load doesn’t affect authentication.
+  \item \textbf{Scalability} – Services can scale independently depending on load. For example, the ride booking service can be scaled up during peak hours without affecting payment processing.
+  \item \textbf{Performance} – Limits cross-service interference; e.g., high load on the booking service does not slow down authentication or driver location tracking.
 \end{itemize}
 
 \textbf{Application in System:}  
-Core features like ride matching, user management, route listing, and notifications are implemented as separate serverless functions within Convex. These logical separations reflect microservices principles. Services are invoked through well-defined APIs and can scale horizontally based on demand.
+In Taxi Tap, the SOA approach ensures that each core function (e.g., Booking Service, Authentication Service, Payment Service, Location Service) operates as an independent service. These services communicate via a defined API, enabling the system to replace or update services without a full system redeployment. For example, the Payment Service manages transaction records independently from the Ride Service's booking data, connected only through shared ride identifiers.
 
 \subsection{Event-Driven Architecture}
 
@@ -309,7 +314,10 @@ Convex background functions are used to handle side effects such as updating rid
 
 \textbf{Why We Use It:} To create maintainable and testable frontend code, and to simplify UI state synchronization.
 
-\textbf{Quality Requirement Supported:} \textbf{Usability}
+\textbf{Quality Requirement Supported:} 
+\begin{itemize}
+   \item \textbf{Usability}
+\end{itemize}  
 
 \textbf{Application in System:}  
 Frontend components (built using React Native) follow MVVM principles:
@@ -318,28 +326,7 @@ Frontend components (built using React Native) follow MVVM principles:
   \item \textbf{ViewModel:} Hooks like \texttt{useQuery}, \texttt{useState}, and custom context (e.g., \texttt{ThemeContext}) manage UI logic.
   \item \textbf{View:} React components render based on ViewModel state.
 \end{itemize}
-This enables real-time updates (e.g., seat availability or route filtering) with a clean separation of concerns, enhancing user experience.
-
-\subsection{API Gateway Pattern}
-
-\textbf{Purpose:} Provide a single entry point for client interactions with backend services.
-
-\textbf{Why We Use It:} To centralize authentication, routing, and security checks. It also improves maintainability by hiding internal services.
-
-\textbf{Quality Requirements Supported:}
-\begin{itemize}
-  \item \textbf{Security} – Centralized access control, RBAC, and token validation.
-  \item \textbf{Availability} – Can incorporate rate limiting and failover mechanisms.
-\end{itemize}
-
-\textbf{Application in System:}  
-The system validates requests at a single access point (Convex server functions or middleware). Before processing a request (e.g., booking a ride), the API layer:
-\begin{itemize}
-  \item Validates the user's authentication token.
-  \item Checks RBAC (e.g., only passengers can request rides).
-  \item Routes the request to the correct function based on role and path.
-\end{itemize}
-Internal services are not directly exposed to clients, minimizing attack surface.
+This enables real-time updates (e.g. seat availability or route filtering) with a clean separation of concerns, enhancing user experience.
 
 \section{Design patterns}
 
@@ -378,55 +365,15 @@ Internal services are not directly exposed to clients, minimizing attack surface
     \end{itemize}
 \end{itemize}
 
-\paragraph{Factory Method Pattern}
-
-\begin{itemize}
-  \item \textbf{Pattern Type:} Creational
-  \item \textbf{Participants:}
-    \begin{itemize}
-      \item \textbf{Creator (Factory Class):} \texttt{UserFactory}
-      \item \textbf{Product (Superclass):} \texttt{User}
-      \item \textbf{Concrete Products (Subclasses):} \texttt{Passenger}, \texttt{Driver}
-    \end{itemize}
-  \item \textbf{Explanation:} The Factory Method pattern provides a way to delegate the instantiation logic to a factory class. In this system, \texttt{UserFactory} encapsulates the logic for creating appropriate subclasses of \texttt{User} based on a given role or account type. This promotes loose coupling by avoiding direct instantiation of \texttt{Passenger} or \texttt{Driver} in client code. It also supports scalability—new user types such as \texttt{Admin} or \texttt{Dispatcher} can be added with minimal changes to existing code.
-  \item \textbf{Example:}
-    \begin{itemize}
-      \item \texttt{UserFactory.createUser("driver")} returns a \texttt{Driver} object.
-      \item \texttt{UserFactory.createUser("passenger")} returns a \texttt{Passenger} object.
-      \item Both \texttt{Passenger} and \texttt{Driver} extend the common \texttt{User} class but implement different behaviors (e.g., requesting rides vs. accepting rides).
-    \end{itemize}
-\end{itemize}
-
-\paragraph{Facade Pattern}
-
-\begin{itemize}
-  \item \textbf{Pattern Type:} Structural
-  \item \textbf{Participants:}
-    \begin{itemize}
-      \item \textbf{Facade:} \texttt{AppFacade}
-      \item \textbf{Subsystem Classes:} \texttt{AuthenticationManager}, \texttt{RideManager}, \texttt{PaymentProcessor}, \texttt{UserFactory}, \texttt{NotificationService}
-    \end{itemize}
-  \item \textbf{Explanation:} The Facade pattern provides a simplified and unified interface to a complex subsystem. In this system, the \texttt{AppFacade} class encapsulates interactions between multiple components (e.g., login, ride booking, payment, and notifications), offering a single entry point for high-level operations. This reduces the dependency of UI or controller classes on the internal details of the subsystem and improves modularity and maintainability.
-  \item \textbf{Example:}
-    \begin{itemize}
-      \item \texttt{AppFacade.bookRide(passengerId, destination)} internally:
-      \begin{itemize}
-        \item Authenticates the passenger via \texttt{AuthenticationManager}
-        \item Matches a driver and schedules the ride using \texttt{RideManager}
-        \item Initiates a payment process via \texttt{PaymentProcessor}
-        \item Sends notifications via \texttt{NotificationService}
-      \end{itemize}
-      \item Client code interacts only with \texttt{AppFacade}, not with each manager class individually.
-    \end{itemize}
-\end{itemize}
-
-\section{Architectural Design and Pattern}
+\section{Architectural Design}
 \textbf{Overview:} Taxi Tap is structured using a feature-driven and event-driven architecture. The diagram below illustrates this architecture.
 
 \vspace{1em}
-% \includegraphics[width=\linewidth]{architecture-diagram.png}
-\framebox[\linewidth][c]{\textit{[Architecture Diagram Placeholder]}}
-\vspace{1em}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{Architecural Diagram.png}
+  \caption{Architecture Diagram}
+\end{figure}
 
 \textbf{Components:}
 
@@ -434,7 +381,6 @@ Internal services are not directly exposed to clients, minimizing attack surface
   \item \textbf{Expo Frontend:} Mobile-first interface using React Native. The user intefraces are built with MVVM.
   \item \textbf{Convex Backend:} Serverless backend with modular mutations and schema.
   \item \textbf{Convex Database:} Strongly-typed database used by each module.
-  \item \textbf{Feature Modules:} Each with its own schema, adapter, hook, and UI screen.
 \end{itemize}
 
 This design provides modularity, scalability, and testability with minimal DevOps complexity.
@@ -444,7 +390,7 @@ This design provides modularity, scalability, and testability with minimal DevOp
   \item \textbf{Client Constraints:} Must remain within the AWS Free Tier; performance must be maintained under low-cost infrastructure.
   \item \textbf{Deployment Constraints:} Fully serverless; no Docker/Kubernetes; must deploy via CI/CD with minimal setup.
   \item \textbf{Security Constraints:} Only verified users may access trip, payment, or GPS functionality.
-  \item \textbf{Latency Constraints:} Real-time location updates must occur under \textbf{1 second}.
+  \item \textbf{Latency Constraints:} Real-time location updates must occur.
   \item \textbf{Scalability Constraints:} Design must accommodate scaling to 1,000+ users without architectural changes.
 \end{itemize}
 
@@ -499,21 +445,32 @@ Supabase & Postgres-based, open source & Overhead for micro-systems \\
 \hline
 \end{tabular}
 
-\vspace{1em}
+\section{Deployment Model}
+The system will be deployed following a cloud-based deployment model to ensure scalability, availability, and ease of access. The deployment environment will include:
+\begin{itemize}
+    \item \textbf{Frontend:} Deployed via Expo Go.
+    \item \textbf{Backend:} Hosted on Convex cloud (Convex backend as a service).
+    \item \textbf{Database:}  Managed by Convex (integrated serverless database).
+    \item \textbf{CI/CD:} Managed via GitHub Actions to automate linting, testing and deployment.
+\end{itemize}
 
-\subsubsection*{Payment Processor}
-\begin{tabular}{|l|p{6cm}|p{6cm}|}
-\hline
-\textbf{Option} & \textbf{Pros} & \textbf{Cons} \\
-\hline
-Yoco & Local SA support, fast onboarding, easy to integrate & Limited advanced payment flows \\
-\hline
-Paystack & Clean APIs, good reliability & Limited card support in SA \\
-\hline
-Stripe & Powerful API, subscriptions & International fees, SA limitations \\
-\hline
-\textbf{Chosen:} Yoco & \multicolumn{2}{l|}{Best fit for local payments in South Africa. Simple, effective, mobile-friendly.} \\
-\hline
-\end{tabular}
+The system is deployed using a cloud-based deployment model. The deployment pipeline follows a CI/CD workflow that integrates development, continuous integration, and continuous deployment. During development, source code is managed through GitHub, with developers using Expo Go for mobile app testing and Convex Dev for backend testing in a local environment. Once changes are committed and pushed to GitHub, the CI pipeline is triggered via GitHub Actions, where automated steps such as linting, formatting, and testing are executed to ensure code quality and consistency. After successful integration, the CD pipeline automatically deploys the validated build to the target production environment hosted in the Convex cloud platform. The deployment topology follows a multi-tier architecture, where the frontend (mobile client) communicates with backend services hosted in Convex, which provides serverless functions, database storage, and scaling capabilities. The diagram illustrates this process, showing the transition from local development through GitHub-based integration pipelines to final deployment in Convex Production.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{Deployment Model.png}
+  \caption{Deployment Diagram}
+\end{figure}
+
+\section{Live Deployed System}
+A fully functional live version of the system will be accessible for demonstration purposes. This deployed system will allow real-time interaction by both drivers and passengers via mobile devices. The system will include:
+\begin{itemize}
+    \item User registration and authentication.
+    \item Route selection and ride request.
+    \item Real-time updates.
+    \item Feedback and rating system.
+    \item User account management.
+    \item Cash payment support.
+\end{itemize}
 
 \end{document}
