@@ -23,6 +23,7 @@ import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 //import LocationSpoofer from '../components/LocationSpoofer';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -65,6 +66,7 @@ export default function DriverOnline({
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
   const userId = user?.id;
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -634,7 +636,7 @@ export default function DriverOnline({
       borderTopRightRadius: 30,
       paddingHorizontal: 20,
       paddingVertical: 20,
-      paddingBottom: 40,
+      paddingBottom: Math.max(20, insets.bottom + 20),
       shadowColor: theme.shadow,
       shadowOpacity: isDark ? 0.3 : 0.15,
       shadowOffset: { width: 0, height: -4 },

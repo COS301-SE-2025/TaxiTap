@@ -83,6 +83,24 @@ function RootLayoutNav() {
   const { theme, isDark } = useTheme();
   const { user, loading } = useUser();
   
+  // Configure Android Navigation Bar so it does not overlap content
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      (async () => {
+        try {
+          // @ts-ignore - module may not be installed in dev yet
+          const NavigationBar = await import('expo-navigation-bar');
+          await NavigationBar.setBehaviorAsync('inset-swipe');
+          await NavigationBar.setPositionAsync('relative');
+          await NavigationBar.setBackgroundColorAsync(theme.background);
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+        } catch (e) {
+          // ignore if not available
+        }
+      })();
+    }
+  }, [isDark, theme.background]);
+  
   const navigationTheme = {
     dark: isDark,
     colors: {
