@@ -21,7 +21,7 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { AlertProvider } from '../contexts/AlertContext';
 import { AlertOverlay } from '../components/AlertOverlay';
 import { Id } from '../convex/_generated/dataModel';
-import '../src/i18n/i18n'; // Initialize i18n - MUST be imported before any components
+import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
 
 export { ErrorBoundary } from 'expo-router';
@@ -82,7 +82,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
   const { user, loading } = useUser();
- 
+  
   const navigationTheme = {
     dark: isDark,
     colors: {
@@ -98,12 +98,17 @@ function RootLayoutNav() {
 
   if (Platform.OS === 'ios' && loading) {
     return (
-      <Stack>
-        <Stack.Screen
-          name="Loading"
-          options={{ headerShown: false }}
-        />
-      </Stack>
+      <NavigationThemeProvider value={navigationTheme}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
+          <Stack>
+            <Stack.Screen
+              name="Loading"
+              options={{ headerShown: false }}
+            />
+          </Stack>
+        </View>
+      </NavigationThemeProvider>
     );
   }
 
