@@ -13,23 +13,47 @@ describe("tripPaidHandler - integration style", () => {
     };
 
     ctx = {
-        db: {
-            query: (table: string) => ({
-            withIndex: (_indexName: string, fn: any) => {
-                const q = {
-                eq: (_field: string, value: string) => value,
-                };
-                const targetValue = fn(q);
-                return {
-                first: async () => dbData[table].find((r: any) => r.rideId === targetValue) || null,
-                };
-            },
-            }),
-            patch: async (id: string, patchObj: any) => {
-            const ride = dbData.rides.find((r: any) => r._id === id);
-            if (ride) Object.assign(ride, patchObj);
-            },
+      db: {
+        get: async (id: string) => {
+          // Try to find by _id
+          return dbData.rides.find((r: any) => r._id === id) || null;
         },
+        query: (table: string) => ({
+          withIndex: (_indexName: string, fn: any) => {
+            const q = {
+              eq: (_field: string, value: string) => value,
+            };
+            const targetValue = fn(q);
+            return {
+              first: async () => dbData[table].find((r: any) => r.rideId === targetValue) || null,
+            };
+          },
+          filter: (fn: any) => {
+            const q = {
+              eq: (field: any, value: string) => {
+                // Mock the field function to return the field name
+                const fieldFunc = (fieldName: string) => fieldName;
+                return { field: fieldFunc, value };
+              },
+              field: (fieldName: string) => fieldName,
+            };
+            
+            const filterResult = fn(q);
+            
+            return {
+              first: async () => {
+                // Since this is a fallback method, find by rideId
+                return dbData[table].find((r: any) => r.rideId === filterResult.value) || null;
+              },
+            };
+          },
+          collect: async () => dbData[table] || [],
+        }),
+        patch: async (id: string, patchObj: any) => {
+          const ride = dbData.rides.find((r: any) => r._id === id);
+          if (ride) Object.assign(ride, patchObj);
+        },
+      },
     };
   });
 
@@ -44,7 +68,7 @@ describe("tripPaidHandler - integration style", () => {
 
   it("throws error when user is not passenger", async () => {
     await expect(tripPaidHandler(ctx, "ride2", "user1", true)).rejects.toThrow(
-      "Only the passenger can start the ride"
+      "Only the passenger can confirm payment for this ride"
     );
   });
 

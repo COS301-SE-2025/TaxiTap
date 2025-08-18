@@ -78,9 +78,10 @@ export default function DriverOffline({
 
   );
 
-  if (!user) return;
-  
-  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+  const earnings = useQuery(
+    api.functions.earnings.earnings.getWeeklyEarnings,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({

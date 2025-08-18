@@ -135,7 +135,7 @@ export default defineSchema({
     lastProximityAlertAt: v.optional(v.number()),
     lastProximityStatus: v.optional(v.string()),
 
-
+    paymentConfirmedAt: v.optional(v.float64()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])

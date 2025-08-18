@@ -11,24 +11,36 @@ import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
-export default function DriverProfile() {
+export default function DriverProfile() {   
     const [name, setName] = useState('');
     const [number, setNumber] = useState('');
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    
     const router = useRouter();
-    const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
-    const { updateNumber } = useUser();
+    const { user, loading, logout, updateUserRole, updateUserName, updateAccountType, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
-    const [imageUri, setImageUri] = useState<string | null>(null);
     const { showError, showSuccess, showConfirm } = useAlertHelpers();
 
-    // Initialize name from user context
     useEffect(() => {
         if (user) {
             setName(user.name || '');
             setNumber(user.phoneNumber || '');
         }
     }, [user]);
+
+    const convexUser = useQuery(
+        api.functions.users.UserManagement.getUserById.getUserById, 
+        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace('/LandingPage');
+        }
+    }, [user, loading, router]);
+
+    const switchDriverToBoth = useMutation(api.functions.users.UserManagement.switchDrivertoBoth.switchDriverToBoth);
+    const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
 
     const handleUploadPhoto = async () => {
         try {
@@ -48,35 +60,29 @@ export default function DriverProfile() {
         }
     };
 
-    // Query user data from Convex using the user ID from context
-    const convexUser = useQuery(
-        api.functions.users.UserManagement.getUserById.getUserById, 
-        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
-    );
-
-    // Mutations for switching roles
-    const switchDriverToBoth = useMutation(api.functions.users.UserManagement.switchDrivertoBoth.switchDriverToBoth);
-    const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
-
     const handleVehicle = () => {
         router.push('../VehicleDriver');
     };
+    
     const handleEarnings = () => {
         router.push('../EarningsPage');
     };
 
     const handleRoutes = () => {
-        //router.push('../Routes'); ->change to real name
     };
 
     const handlePersonalInfo = () => {
-        // Navigate to driver personal info edit screen
         router.push('../DriverEdit');
     };
 
     const handleSignout = async () => {
-        await logout();
-        router.push('../LandingPage');
+        try {
+            await logout();
+            router.replace('/LandingPage');
+        } catch (error) {
+            console.error('Logout error:', error);
+            showError('Error', 'Failed to logout. Please try again.');
+        }
     };
 
     const handleSwitchToPassenger = async () => {
@@ -86,25 +92,21 @@ export default function DriverProfile() {
                 return;
             }
 
-            // First time switching - user is currently driver only
             if ((convexUser?.accountType || user.accountType) === 'driver') {
                 showConfirm(
                     'First Time Switching to Passenger',
                     'This will upgrade your account to support both passenger and driver roles.',
                     async () => {
                         try {
-                            // Upgrade driver to both first
                             await switchDriverToBoth({ 
                                 userId: user.id as Id<"taxiTap_users"> 
                             });
                             
-                            // Then switch active role to passenger
                             await switchActiveRole({ 
                                 userId: user.id as Id<"taxiTap_users">, 
                                 newRole: 'passenger' as const
                             });
                             
-                            // Update context
                             await updateAccountType('both');
                             await updateUserRole('passenger');
                             
@@ -115,21 +117,18 @@ export default function DriverProfile() {
                         }
                     }
                 );
-            } 
-            // User already has both account types - just switch active role
+            }
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showConfirm(
                     'Switch Profile',
                     'Are you sure you want to switch to the passenger profile?',
                     async () => {
                         try {
-                            // Switch active role to passenger
                             await switchActiveRole({ 
                                 userId: user.id as Id<"taxiTap_users">, 
                                 newRole: 'passenger' as const
                             });
-                            
-                            // Update context
+
                             await updateUserRole('passenger');
                             
                             showSuccess('Success', 'Switched to passenger mode!');
@@ -253,7 +252,7 @@ export default function DriverProfile() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text>{t('driver:loadingUserData')}</Text>
+                    <Text style={{ color: theme.text }}>{t('driver:loadingUserData')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -262,7 +261,6 @@ export default function DriverProfile() {
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
             <ScrollView contentContainerStyle={dynamicStyles.container}>
-                {/* Header Section with Profile Picture and Name */}
                 <View style={dynamicStyles.headerSection}>
                     <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImage}>
                         {imageUri ? (
@@ -279,7 +277,6 @@ export default function DriverProfile() {
                     <Text style={dynamicStyles.userRole}>{t('driver:driver')}</Text>
                 </View>
 
-                {/* Section 1: Personal Info & Passenger Switch */}
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="person-outline"
@@ -297,7 +294,6 @@ export default function DriverProfile() {
                     </View>
                 </View>
 
-                {/* Section 2: Driver Services */}
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="car-outline"
@@ -320,7 +316,6 @@ export default function DriverProfile() {
                     </View>
                 </View>
 
-                {/* Section 3: Logout */}
                 <View style={dynamicStyles.logoutSection}>
                     <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                         <Ionicons name="log-out-outline" size={24} color="#FF3B30" />

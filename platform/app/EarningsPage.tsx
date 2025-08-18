@@ -84,8 +84,6 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   
   const rawData = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, shouldRunQuery ? { driverId: userId as Id<"taxiTap_users"> } : "skip");
 
-  // const styles = useMemo(() => createStyles(theme, isDark), [theme, isDark]);
-
   const weeklyData = useMemo(() => {
     if (!rawData) return [];
     return rawData.map((week) => {
@@ -124,7 +122,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
   if (!currentWeek) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
         <Text style={{ color: theme.text }}>{t('loadingEarnings')}</Text>
       </SafeAreaView>
     );

@@ -121,9 +121,10 @@ export default function DriverOnline({
   //   return () => clearInterval(interval);
   // }, [user, driverPin]);
 
-  if (!user) return;
-
-  const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
+  const earnings = useQuery(
+    api.functions.earnings.earnings.getWeeklyEarnings,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({
