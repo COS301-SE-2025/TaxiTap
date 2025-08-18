@@ -177,27 +177,44 @@ describe("Integration tests for getWeeklyEarnings", () => {
 
   it("calculates partial week correctly", async () => {
     const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
     
-    // Add only one trip and one session to current week
+    // Calculate current week boundaries (same logic as earningsHandler)
+    function startOfWeek(d: Date): Date {
+      const dt = new Date(d);
+      const day = dt.getDay();
+      const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+      dt.setDate(diff);
+      dt.setHours(0, 0, 0, 0);
+      return dt;
+    }
+    
+    const currentWeekStart = startOfWeek(new Date(now)).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const oneHour = 60 * 60 * 1000;
+    
+    // Ensure trip is within current week
+    const tripTime = currentWeekStart + oneDay; // 1 day into current week
+    const sessionStart = currentWeekStart + oneDay - oneHour; // 1 hour before trip
+    const sessionEnd = currentWeekStart + oneDay + oneHour; // 1 hour after trip
+    
     tripsTable.push({
       driverId,
-      startTime: now - oneDay,
+      startTime: tripTime,
       fare: 75,
       reservation: false,
     });
 
     sessionsTable.push({
       driverId,
-      startTime: now - 2 * oneDay,
-      endTime: now - oneDay,
+      startTime: sessionStart,
+      endTime: sessionEnd,
     });
 
     const results = await earningsHandler(ctx, { driverId });
 
     expect(results[0].earnings).toBe(75);
-    expect(results[0].hoursOnline).toBe(24);
-    expect(results[0].averagePerHour).toBe(Math.round(75 / 24));
+    expect(results[0].hoursOnline).toBe(2); // 2 hours session
+    expect(results[0].averagePerHour).toBe(Math.round(75 / 2)); // 38
     expect(results[0].reservations).toBe(0);
   });
 
