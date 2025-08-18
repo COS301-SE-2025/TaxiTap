@@ -1597,6 +1597,11 @@ export default function HomeScreen() {
               <Text style={dynamicStyles.searchResultsText}>
                 🛣 {t('home:matchingRoutes')} {routeMatchResults.matchingRoutes?.length || 0}
               </Text>
+              {routeMatchResults.availableTaxis?.length > 0 && routeMatchResults.availableTaxis[0]?.routeInfo?.calculatedFare && (
+                <Text style={[dynamicStyles.searchResultsText, { color: theme.primary, fontWeight: 'bold' }]}>
+                  💰 Estimated Fare: R{routeMatchResults.availableTaxis[0].routeInfo.calculatedFare.toFixed(2)}
+                </Text>
+              )}
               {(routeMatchResults.availableTaxis?.length || 0) > 0 && (
                 <Text style={[dynamicStyles.searchResultsText, { color: theme.primary }]}>
                   ✅ {t('home:readyToBook')}

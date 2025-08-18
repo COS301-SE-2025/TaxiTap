@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -8,6 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 import * as Location from 'expo-location';
 
 export default function AddWorkAddress() {
@@ -22,6 +23,7 @@ export default function AddWorkAddress() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
+    const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -49,7 +51,11 @@ export default function AddWorkAddress() {
             // Request location permissions
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert(t('address:permissionDenied'), t('address:locationPermissionRequired'));
+                showGlobalError(
+                    t('address:permissionDenied'),
+                    t('address:locationPermissionRequired'),
+                    { duration: 4000 }
+                );
                 return;
             }
 
@@ -71,7 +77,11 @@ export default function AddWorkAddress() {
             }
         } catch (error) {
             console.error('Location error:', error);
-            Alert.alert(t('address:error'), t('address:failedToGetLocation'));
+            showGlobalError(
+                t('address:error'),
+                t('address:failedToGetLocation'),
+                { duration: 4000 }
+            );
         } finally {
             setIsLoadingLocation(false);
         }
@@ -79,19 +89,35 @@ export default function AddWorkAddress() {
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert(t('address:error'), t('address:userNotLoaded'));
+            showGlobalError(
+                t('address:error'),
+                t('address:userNotLoaded'),
+                { duration: 4000 }
+            );
             return;
         }
         if (!address.trim()) {
-            Alert.alert(t('address:error'), t('address:addressRequired'));
+            showGlobalError(
+                t('address:error'),
+                t('address:addressRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         if (!nickname.trim()) {
-            Alert.alert(t('address:error'), t('address:nicknameRequired'));
+            showGlobalError(
+                t('address:error'),
+                t('address:nicknameRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         if (coordinates.latitude === 0 && coordinates.longitude === 0) {
-            Alert.alert(t('address:error'), t('address:coordinatesRequired'));
+            showGlobalError(
+                t('address:error'),
+                t('address:coordinatesRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         setIsLoading(true);
@@ -104,12 +130,21 @@ export default function AddWorkAddress() {
                     coordinates,
                 },
             });
-            Alert.alert(t('address:success'), t('address:workAddressSaved'), [
-                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
-            ]);
+            showGlobalSuccess(
+                t('address:success'),
+                t('address:workAddressSaved'),
+                { duration: 2000 }
+            );
+            setTimeout(() => {
+                router.push('/(tabs)/PassengerProfile');
+            }, 2000);
         } catch (error: any) {
             console.error('Save error:', error);
-            Alert.alert(t('address:error'), error.message || t('address:failedToSaveAddress'));
+            showGlobalError(
+                t('address:error'),
+                error.message || t('address:failedToSaveAddress'),
+                { duration: 4000 }
+            );
         } finally {
             setIsLoading(false);
         }
@@ -117,36 +152,46 @@ export default function AddWorkAddress() {
 
     const handleDelete = async () => {
         if (!user) {
-            Alert.alert(t('address:error'), t('address:userNotLoaded'));
+            showGlobalError(
+                t('address:error'),
+                t('address:userNotLoaded'),
+                { duration: 4000 }
+            );
             return;
         }
-        Alert.alert(
+        
+        showConfirm(
             t('address:deleteWorkAddress'),
             t('address:deleteAddressConfirm'),
-            [
-                { text: t('address:cancel'), style: 'cancel' },
-                {
-                    text: t('address:delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            setIsLoading(true);
-                            await updateWorkAddress({
-                                userId: user.id as Id<'taxiTap_users'>,
-                                workAddress: null,
-                            });
-                            Alert.alert(t('address:success'), t('address:workAddressDeleted'), [
-                                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
-                            ]);
-                        } catch (error: any) {
-                            console.error('Delete error:', error);
-                            Alert.alert(t('address:error'), error.message || t('address:failedToDeleteAddress'));
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    }
+            async () => {
+                try {
+                    setIsLoading(true);
+                    await updateWorkAddress({
+                        userId: user.id as Id<'taxiTap_users'>,
+                        workAddress: null,
+                    });
+                    showGlobalSuccess(
+                        t('address:success'),
+                        t('address:workAddressDeleted'),
+                        { duration: 2000 }
+                    );
+                    setTimeout(() => {
+                        router.push('/(tabs)/PassengerProfile');
+                    }, 2000);
+                } catch (error: any) {
+                    console.error('Delete error:', error);
+                    showGlobalError(
+                        t('address:error'),
+                        error.message || t('address:failedToDeleteAddress'),
+                        { duration: 4000 }
+                    );
+                } finally {
+                    setIsLoading(false);
                 }
-            ]
+            },
+            undefined,
+            t('address:delete'),
+            t('address:cancel')
         );
     };
 
@@ -164,15 +209,23 @@ export default function AddWorkAddress() {
         header: {
             flexDirection: 'row',
             alignItems: 'center',
+            paddingVertical: 20,
             marginBottom: 30,
         },
         backButton: {
-            marginRight: 15,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
         },
         headerTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
+            fontSize: 28,
+            fontWeight: '600',
             color: theme.text,
+            flex: 1,
         },
         sectionHeader: {
             fontSize: 13,

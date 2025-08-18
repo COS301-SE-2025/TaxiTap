@@ -38,6 +38,7 @@ export default function TaxiInformation() {
     routeId,
     availableTaxisCount,
     routeMatchData: routeMatchDataString,
+    estimatedFare,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -48,6 +49,7 @@ export default function TaxiInformation() {
     routeId: string;
     availableTaxisCount?: string;
     routeMatchData?: string;
+    estimatedFare?: string;
   }>();
 
   // State management
@@ -697,6 +699,11 @@ export default function TaxiInformation() {
                   <Text style={dynamicStyles.matchSummaryText}>
                     {t('taxiInfo:onMatchingRoutes').replace('{count}', routeMatchData.matchingRoutes.length.toString())}
                   </Text>
+                  {estimatedFare && (
+                    <Text style={[dynamicStyles.matchSummaryText, { color: theme.primary, fontWeight: 'bold', marginTop: 8 }]}>
+                      💰 Estimated Fare: R{parseFloat(estimatedFare).toFixed(2)}
+                    </Text>
+                  )}
                 </View>
               )}
               

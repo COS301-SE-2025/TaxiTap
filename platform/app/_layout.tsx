@@ -236,6 +236,13 @@ function RootLayoutNav() {
           />
           
           <Stack.Screen
+            name="HelpPage"
+            options={{
+              headerShown: false
+            }}
+          />
+          
+          <Stack.Screen
             name="DriverPinEntry"
             options={{
               headerShown: false
