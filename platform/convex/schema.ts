@@ -124,11 +124,13 @@ export default defineSchema({
     tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
     
-    // PIN verification fields
+    // Legacy PIN verification fields - kept for backward compatibility
     ridePin: v.optional(v.string()),
     pinRegeneratedAt: v.optional(v.number()),
     pinVerifiedAt: v.optional(v.number()),
-    rideStartedAt: v.optional(v.number()),
+
+    lastProximityAlertAt: v.optional(v.number()),
+    lastProximityStatus: v.optional(v.string()),
 
 
   })

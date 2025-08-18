@@ -24,7 +24,7 @@ export default function FeedbackHistoryScreen() {
       ) : feedbackList.length === 0 ? (
         <Text style={{ color: theme.textSecondary }}>You haven’t received any feedback yet.</Text>
       ) : (
-        feedbackList.map((entry, index) => (
+        feedbackList.map((entry: any, index: number) => (
           <View
             key={entry._id}
             style={{

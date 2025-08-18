@@ -17,17 +17,14 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { api } from "../convex/_generated/api";
 import { useMutation } from 'convex/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
-const data = [
-  { label: 'Passenger', value: 'passenger' },
-  { label: 'Driver', value: 'driver' },
-];
-
-function LoginComponent() {
+function SignUpComponent() {
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
+  const { t, currentLanguage } = useLanguage();
   const [nameSurname, setNameSurname] = useState('');
   const [number, setNumber] = useState('');
   const [selectedRole, setSelectedRole] = useState<'passenger' | 'driver' | null>(null);
@@ -36,24 +33,50 @@ function LoginComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+
+  // Dynamic role data based on current language
+  const getRoleData = () => {
+    switch(currentLanguage) {
+      case 'zu':
+        return [
+          { label: 'Umgibeli', value: 'passenger' },
+          { label: 'Umshayeli', value: 'driver' },
+        ];
+      case 'tn':
+        return [
+          { label: 'Mopalami', value: 'passenger' },
+          { label: 'Mokgweetsi', value: 'driver' },
+        ];
+      case 'af':
+        return [
+          { label: 'Passasier', value: 'passenger' },
+          { label: 'Bestuurder', value: 'driver' },
+        ];
+      default:
+        return [
+          { label: 'Passenger', value: 'passenger' },
+          { label: 'Driver', value: 'driver' },
+        ];
+    }
+  };
   const { showGlobalError } = useAlertHelpers();
 
   const handleSignup = async () => {
     if (!number || !password || !nameSurname || !confirmPassword) {
-      showGlobalError('Error', 'Please fill all fields', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('common:error'), t('common:pleaseFillAllFields'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (!selectedRole) {
-      showGlobalError('Error', 'Please select a role', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('common:error'), t('common:pleaseSelectRole'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showGlobalError('Invalid number', 'Please enter a valid number', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('common:error'), t('common:invalidNumber'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
     if (password !== confirmPassword) {
-      showGlobalError('Password Mismatch', 'Passwords do not match', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('common:error'), t('common:passwordMismatch'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
@@ -68,7 +91,7 @@ function LoginComponent() {
         router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
       }
     } catch (err: any) {
-      const message = (err?.data?.message) || (err?.message) || 'Something went wrong';
+      const message = (err?.data?.message) || (err?.message) || "Something went wrong";
       if (message.includes('Phone number already exists')) {
         showGlobalError('Phone Number In Use', 'This phone number is already registered. Try logging in or use a different number.', { duration: 5000, position: 'top', animation: 'slide-down' });
       } else {
@@ -76,6 +99,8 @@ function LoginComponent() {
       }
     }
   };
+
+  const currentRoleData = getRoleData();
 
   return (
     <ScrollView>
@@ -87,7 +112,7 @@ function LoginComponent() {
             backgroundColor: '#fff',
           }}
         >
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Image
               source={require('../assets/images/icon.png')}
               style={{ width: '100%', height: 200 }}
@@ -108,13 +133,13 @@ function LoginComponent() {
         >
           {/* Name and surname */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Name and Surname
+            {t('auth:nameAndSurname')}
           </Text>
 
           <TextInput
             value={nameSurname}
             onChangeText={setNameSurname}
-            placeholder="Name and Surname"
+            placeholder={t('auth:nameAndSurname')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -128,13 +153,13 @@ function LoginComponent() {
 
           {/* Phone Number */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Cellphone number
+            {t('auth:phoneNumber')}
           </Text>
 
           <TextInput
             value={number}
             onChangeText={setNumber}
-            placeholder="Cellphone number"
+            placeholder={t('auth:phoneNumber')}
             placeholderTextColor="#999"
             keyboardType="phone-pad"
             style={{
@@ -149,14 +174,14 @@ function LoginComponent() {
 
           {/* Dropdown for Role */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Select Role
+            {t('auth:selectRole')}
           </Text>
 
           <Dropdown
-            data={data}
+            data={currentRoleData}
             labelField="label"
             valueField="value"
-            placeholder="Select role"
+            placeholder={t('auth:selectRole')}
             placeholderStyle={{ color: '#999' }}
             style={{
               backgroundColor: '#fff',
@@ -172,7 +197,7 @@ function LoginComponent() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Password
+            {t('auth:password')}
           </Text>
 
           <View
@@ -189,7 +214,7 @@ function LoginComponent() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth:password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -208,7 +233,7 @@ function LoginComponent() {
 
           {/* Confirm Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            Confirm Password
+            {t('auth:confirmPassword')}
           </Text>
 
           <View
@@ -225,7 +250,7 @@ function LoginComponent() {
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Confirm Password"
+              placeholder={t('auth:confirmPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showConfirmPassword}
               style={{
@@ -255,13 +280,15 @@ function LoginComponent() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              Sign Up
+              {t('auth:signUp')}
             </Text>
           </Pressable>
 
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
-            <Text style={{ color: '#fff', fontSize: 18 }}>Or</Text>
+            <Text style={{ color: '#fff', fontSize: 18 }}>
+              {t('auth:or')}
+            </Text>
           </View>
 
           {/* Google Sign-In Button */}
@@ -286,10 +313,10 @@ function LoginComponent() {
   );
 }
 
-export default function Login() {
+export default function SignUp() {
   return (
     <ConvexProvider client={convex}>
-      <LoginComponent />
+      <SignUpComponent />
     </ConvexProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { switchActiveRoleHandler } from "../../convex/functions/users/UserManagement/switchActiveRole";
+import { switchActiveRoleHandler } from "../mocks/convex-functions/users/UserManagement/switchActiveRole";
 import { Id } from "../../convex/_generated/dataModel";
 
 describe("switchActiveRoleHandler", () => {

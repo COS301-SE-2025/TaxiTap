@@ -24,6 +24,29 @@ export const useThrottledLocationStreaming = (
     isActiveRef.current = isActive;
   }, [isActive]);
 
+  // Location validation function
+  const isValidLocation = (lat: number, lng: number): boolean => {
+    // Check if coordinates are within valid ranges
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return false;
+    }
+    
+    // Check if coordinates are not exactly 0,0 (common for mock locations)
+    if (lat === 0 && lng === 0) {
+      return false;
+    }
+    
+    // Check if coordinates are not NaN or Infinity
+    if (isNaN(lat) || isNaN(lng) || !isFinite(lat) || !isFinite(lng)) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Development mode check
+  const isDevelopment = __DEV__;
+
   useEffect(() => {
     if (!isActive || !userId) {
       // Clean up if not active
@@ -50,6 +73,13 @@ export const useThrottledLocationStreaming = (
           return;
         }
 
+        // Check if location services are enabled
+        const isLocationEnabled = await Location.hasServicesEnabledAsync();
+        if (!isLocationEnabled) {
+          setError('Location services are disabled. Please enable location services in your device settings.');
+          return;
+        }
+
         // Clean up any existing subscription
         if (locationSubscriptionRef.current) {
           locationSubscriptionRef.current.remove();
@@ -57,15 +87,34 @@ export const useThrottledLocationStreaming = (
 
         locationSubscriptionRef.current = await Location.watchPositionAsync(
           {
-            accuracy: Location.Accuracy.High, // Better accuracy for more visible updates
-            timeInterval: 2000, // More frequent location checks
-            distanceInterval: 5, // Smaller distance for more updates
+            accuracy: Location.Accuracy.Balanced, // Use balanced accuracy to avoid spoofer detection
+            timeInterval: 5000, // Less frequent checks to avoid triggering anti-spoofer
+            distanceInterval: 10, // Larger distance interval
+            mayShowUserSettingsDialog: true, // Allow user to adjust settings
           },
           async (position) => {
             if (!isMounted || !isActiveRef.current) return;
 
             const { latitude, longitude } = position.coords;
             const now = Date.now();
+
+            // Validate location data
+            if (!isValidLocation(latitude, longitude)) {
+              console.warn('Invalid location data received, skipping update');
+              return;
+            }
+
+            // Check for suspicious location changes (sudden large jumps)
+            if (location && location.latitude && location.longitude) {
+              const latDiff = Math.abs(latitude - location.latitude);
+              const lngDiff = Math.abs(longitude - location.longitude);
+              
+              // If location changed by more than 1 degree (roughly 111km), it's suspicious
+              if (latDiff > 1 || lngDiff > 1) {
+                console.warn('Suspicious location change detected, skipping update');
+                return;
+              }
+            }
 
             // Always update the local state for immediate UI feedback
             setLocation({ latitude, longitude });
@@ -99,10 +148,25 @@ export const useThrottledLocationStreaming = (
         );
       } catch (err: any) {
         errorCountRef.current++;
-        if (errorCountRef.current <= maxErrors) {
-          setError(`Location streaming error: ${err.message}`);
+        const errorMessage = err.message || 'Unknown error';
+        
+        // Handle specific location spoofer errors
+        if (errorMessage.includes('spoofer') || errorMessage.includes('mock') || errorMessage.includes('simulator')) {
+          if (isDevelopment) {
+            setError('Location spoofer detected in development. This is normal when using simulators or development tools. Use real GPS location for production testing.');
+          } else {
+            setError('Location spoofer detected. Please disable any location spoofing apps and use real GPS location.');
+          }
+        } else if (errorMessage.includes('permission')) {
+          setError('Location permission denied. Please enable location permissions in your device settings.');
+        } else if (errorMessage.includes('services')) {
+          setError('Location services are disabled. Please enable location services in your device settings.');
         } else {
-          setError('Too many location errors. Stopping location tracking.');
+          if (errorCountRef.current <= maxErrors) {
+            setError(`Location streaming error: ${errorMessage}`);
+          } else {
+            setError('Too many location errors. Stopping location tracking.');
+          }
         }
       }
     };
@@ -119,4 +183,7 @@ export const useThrottledLocationStreaming = (
   }, [userId, role, isActive, updateLocation]);
 
   return { location, error };
-}; 
+};
+
+// Add default export for route compatibility
+export default useThrottledLocationStreaming; 

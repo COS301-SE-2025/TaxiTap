@@ -55,7 +55,6 @@ export default function DriverOnline({
   onGoOffline, 
   todaysEarnings,
   currentRoute = "Not Set",
-
 }: DriverOnlineProps) {
   const { width, height } = Dimensions.get('window');
 
@@ -71,7 +70,9 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
-  // const [showLocationSpoofer, setShowLocationSpoofer] = useState(false);
+
+  const [driverPin, setDriverPin] = useState<string>('');
+  const [showPinDetails, setShowPinDetails] = useState(false);
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
@@ -85,9 +86,40 @@ export default function DriverOnline({
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
+  // Get active ride information to display the correct PIN
+  const activeRide = useQuery(
+    api.functions.rides.getActiveRideByDriver.getActiveRideByDriver,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
   const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
+
+  // Set driver PIN from active ride when available, or generate a new one if no active ride
+  useEffect(() => {
+    if (activeRide?.ridePin) {
+      // Use the PIN from the active ride
+      setDriverPin(activeRide.ridePin);
+    } else if (user && !driverPin) {
+      // Generate a new PIN only when driver goes online and no active ride
+      const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+      setDriverPin(newPin);
+    }
+  }, [user, driverPin, activeRide?.ridePin]);
+
+  // Remove the periodic PIN regeneration since we want to keep the ride PIN stable
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (user && !driverPin) {
+  //       // Only regenerate if no PIN is set (e.g., when coming back online)
+  //       const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+  //       setDriverPin(newPin);
+  //     }
+  //   }, 30 * 60 * 1000); // 30 minutes
+
+  //   return () => clearInterval(interval);
+  // }, [user, driverPin]);
 
   if (!user) return;
 
@@ -109,11 +141,31 @@ export default function DriverOnline({
           return;
         }
 
+        // Check if location services are enabled
+        const isLocationEnabled = await Location.hasServicesEnabledAsync();
+        if (!isLocationEnabled) {
+          console.warn('Location services are disabled');
+          return;
+        }
+
         const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Highest,
+          accuracy: Location.Accuracy.Balanced, // Use balanced accuracy to avoid spoofer detection
         });
 
         const { latitude, longitude } = location.coords;
+        
+        // Validate location coordinates
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          console.warn('Invalid location coordinates received');
+          return;
+        }
+        
+        // Check for suspicious coordinates (0,0 is common for mock locations)
+        if (latitude === 0 && longitude === 0) {
+          console.warn('Suspicious location coordinates (0,0) detected');
+          return;
+        }
+
         const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
         const placeName = `${place.name || ''} ${place.street || ''}, ${place.city || place.region || ''}`.trim();
 
@@ -134,8 +186,13 @@ export default function DriverOnline({
           },
           1000
         );
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting location:', error);
+        
+        // Handle specific location errors
+        if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
+          console.warn('Location spoofer detected, using fallback location');
+        }
       }
     };
 
@@ -182,8 +239,12 @@ export default function DriverOnline({
             style: 'default',
             onPress: async () => {
               try {
-                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<'taxiTap_users'> });
-                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: 'decrease' });
+                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
+                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
+                markAsRead(rideRequest._id);
+                
+                // Note: Removed navigation to DriverPinEntry page as requested
+                // The driver can now see the PIN directly on the DriverOnline page
               } catch (error) {
                 console.error(error);
                 showGlobalError('Error', 'Failed to accept ride or update seats.', { position: 'top', animation: 'slide-down', duration: 5000 });
@@ -312,15 +373,7 @@ export default function DriverOnline({
         handleToggleTheme();
       }
     },
-    { 
-      icon: "location-outline", 
-      title: "Location Spoofer", 
-      subtitle: "Set custom location for testing",
-      onPress: () => {
-        setShowMenu(false);
-        // setShowLocationSpoofer(true);
-      }
-    },
+
     { 
       icon: "help-outline", 
       title: "Help", 
@@ -449,6 +502,109 @@ export default function DriverOnline({
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
+    },
+    // PIN Display Styles - Compact and unobtrusive
+    pinContainer: {
+      position: 'absolute',
+      top: 8,
+      right: 80,
+      backgroundColor: theme.surface,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 4,
+      zIndex: 1000,
+      borderWidth: 1,
+      borderColor: theme.primary,
+      opacity: 0.9,
+    },
+    pinLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginRight: 6,
+      textTransform: 'uppercase',
+    },
+    pinText: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.primary,
+      fontFamily: 'monospace',
+      letterSpacing: 1,
+    },
+    pinInfoButton: {
+      marginLeft: 6,
+      padding: 2,
+    },
+    // PIN Details Modal
+    pinDetailsModal: {
+      position: 'absolute',
+      top: 70,
+      right: 20,
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 16,
+      minWidth: 280,
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 4,
+      elevation: 8,
+      zIndex: 1001,
+      borderWidth: 1,
+      borderColor: theme.primary,
+    },
+    pinDetailsHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    pinDetailsTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.text,
+      flex: 1,
+    },
+    pinDetailsClose: {
+      padding: 4,
+    },
+    pinDetailsContent: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    pinDisplayLarge: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    pinDigitLarge: {
+      width: 40,
+      height: 48,
+      backgroundColor: theme.primary,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginHorizontal: 2,
+      borderWidth: 2,
+      borderColor: theme.primary,
+    },
+    pinDigitTextLarge: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: isDark ? "#121212" : "#FFFFFF",
+      fontFamily: 'monospace',
+    },
+    pinDetailsInfo: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
     },
     earningsContainer: {
       alignItems: 'center',
@@ -713,6 +869,64 @@ export default function DriverOnline({
                 <Icon name="menu" size={24} color={theme.primary} />
               </TouchableOpacity>
 
+              {/* PIN Display - Compact version in top right */}
+              {driverPin && (
+                <TouchableOpacity 
+                  style={dynamicStyles.pinContainer}
+                  onPress={() => setShowPinDetails(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={dynamicStyles.pinLabel}>DRIVER PIN</Text>
+                  <Text style={dynamicStyles.pinText}>{driverPin}</Text>
+                  <TouchableOpacity style={dynamicStyles.pinInfoButton}>
+                    <Icon name="information-circle-outline" size={16} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              )}
+
+              {/* PIN Details Modal */}
+              {showPinDetails && (
+                <Modal
+                  visible={showPinDetails}
+                  transparent={true}
+                  animationType="fade"
+                  onRequestClose={() => setShowPinDetails(false)}
+                >
+                  <TouchableOpacity 
+                    style={dynamicStyles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowPinDetails(false)}
+                  >
+                    <View style={dynamicStyles.pinDetailsModal}>
+                      <View style={dynamicStyles.pinDetailsHeader}>
+                        <Text style={dynamicStyles.pinDetailsTitle}>Your Driver PIN</Text>
+                        <TouchableOpacity 
+                          style={dynamicStyles.pinDetailsClose}
+                          onPress={() => setShowPinDetails(false)}
+                        >
+                          <Icon name="close" size={20} color={theme.textSecondary} />
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <View style={dynamicStyles.pinDetailsContent}>
+                        <View style={dynamicStyles.pinDisplayLarge}>
+                          {driverPin.split('').map((digit, index) => (
+                            <View key={index} style={dynamicStyles.pinDigitLarge}>
+                              <Text style={dynamicStyles.pinDigitTextLarge}>{digit}</Text>
+                            </View>
+                          ))}
+                        </View>
+                        
+                        <Text style={dynamicStyles.pinDetailsInfo}>
+                          Show this PIN to passengers when they need to verify your identity. 
+                          The PIN remains stable during active rides for consistent verification.
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
+              )}
+
               <TouchableOpacity 
                 style={dynamicStyles.darkModeToggle}
                 onPress={handleToggleTheme}
@@ -728,7 +942,7 @@ export default function DriverOnline({
               <View style={dynamicStyles.earningsContainer}>
                 <TouchableOpacity 
                   style={dynamicStyles.earningsCard}
-                  onPress={() => console.log('Earnings pressed!')}
+                  onPress={() => {}}
                   activeOpacity={0.8}
                 >
                   <Text style={dynamicStyles.earningsAmount}>
@@ -920,10 +1134,7 @@ export default function DriverOnline({
                 </TouchableOpacity>
               )}
 
-              {/* <LocationSpoofer 
-                isVisible={showLocationSpoofer}
-                onClose={() => setShowLocationSpoofer(false)}
-              /> */}
+              {/* Location spoofer component removed - not needed */}
             </>
           )}
         </View>

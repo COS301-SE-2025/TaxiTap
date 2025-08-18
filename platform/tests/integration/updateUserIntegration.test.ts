@@ -1,4 +1,4 @@
-import { updateUserProfileHandler } from '../../convex/functions/users/UserManagement/updateUserProfile';
+import { updateUserProfileHandler } from '../mocks/convex-functions/users/UserManagement/updateUserProfile';
 import { MutationCtx } from '../../convex/_generated/server';
 import { Id } from '../../convex/_generated/dataModel';
 

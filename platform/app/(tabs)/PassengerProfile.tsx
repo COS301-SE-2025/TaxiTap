@@ -7,6 +7,7 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 
@@ -17,6 +18,7 @@ export default function PassengerProfile() {
     const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
     const { updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
@@ -57,34 +59,34 @@ export default function PassengerProfile() {
             }
 
             if ((convexUser?.accountType || user.accountType) === 'passenger') {
-                showGlobalAlert('First Time Switching', 'This will upgrade your account to support both passenger and driver roles.', {
+                showGlobalAlert({
+                  title: 'First Time Switching',
+                  message: 'This will upgrade your account to support both passenger and driver roles.',
+                  type: 'info',
                   duration: 0,
                   position: 'top',
                   animation: 'slide-down',
                   actions: [
                     { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                    { label: 'Continue', style: 'default', onPress: async () => {
+                    { label: 'Continue', onPress: async () => {
                         try {
                           await switchPassengerToBoth({ userId: user.id as Id<'taxiTap_users'> });
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Successfully switched to driver mode!', {
-                            duration: 0,
-                            position: 'top',
-                            animation: 'slide-down',
-                            actions: [
-                              { label: 'OK', onPress: () => router.push('../DriverOffline'), style: 'default' },
-                            ],
-                          });
+                          showGlobalSuccess('Success', 'Successfully switched to driver mode!');
+                          router.push('../DriverOffline');
                         } catch (error: any) {
-                          showGlobalError('Error', error.message || 'Failed to switch to driver mode', { duration: 5000, position: 'top', animation: 'slide-down' });
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
                         }
-                    }}
+                    }, style: 'default' },
                   ],
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
-                showGlobalAlert('Switch Profile', 'Are you sure you want to switch to the driver profile?', {
+                showGlobalAlert({
+                  title: 'Switch Profile',
+                  message: 'Are you sure you want to switch to the driver profile?',
+                  type: 'info',
                   duration: 0,
                   position: 'top',
                   animation: 'slide-down',
@@ -94,23 +96,19 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Switched to driver mode!', {
-                            duration: 0,
-                            position: 'top',
-                            animation: 'slide-down',
-                            actions: [ { label: 'OK', onPress: () => router.push('../DriverOffline'), style: 'default' } ],
-                          });
+                          showGlobalSuccess('Success', 'Switched to driver mode!');
+                          router.push('../DriverOffline');
                         } catch (error: any) {
-                          showGlobalError('Error', error.message || 'Failed to switch to driver mode', { duration: 5000, position: 'top', animation: 'slide-down' });
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
                         }
                     }, style: 'default' },
                   ],
                 });
             } else {
-                showGlobalError('Error', 'Invalid account type for switching to driver mode', { duration: 4000, position: 'top', animation: 'slide-down' });
+                showGlobalError('Error', 'Invalid account type for switching to driver mode');
             }
-        } catch {
-            showGlobalError('Error', 'An unexpected error occurred', { duration: 4000, position: 'top', animation: 'slide-down' });
+        } catch (error: any) {
+            showGlobalError('Error', 'An unexpected error occurred');
         }
     };
 
@@ -235,7 +233,7 @@ export default function PassengerProfile() {
         return (
           <SafeAreaView style={dynamicStyles.safeArea}>
             <View style={dynamicStyles.container}>
-                <Text>Loading user data...</Text>
+                <Text>{t('profile:loadingUserData')}</Text>
             </View>
           </SafeAreaView>
         );
@@ -257,21 +255,21 @@ export default function PassengerProfile() {
                         <Ionicons name="person-circle" size={80} color={theme.text} />
                     )}
                 </Pressable>
-                <Text style={dynamicStyles.userName}>{name || 'Your Name'}</Text>
-                <Text style={dynamicStyles.userRole}>Passenger</Text>
+                <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
+                <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
             </View>
 
             {/* Section 1: Personal Info & Driver Switch */}
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
-                    title="Personal Info"
+                    title={t('profile:personalInfo')}
                     onPress={handlePersonalInfo}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
                         <Ionicons name="car-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Switch to Driver Profile</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:switchToDriverProfile')}</Text>
                     </View>
                     <Pressable onPress={handleSwitchToDriver}>
                         <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -283,13 +281,13 @@ export default function PassengerProfile() {
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
-                    title="Add Home Address"
+                    title={t('profile:addHomeAddress')}
                     onPress={handleAddHomeAddress}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
                         <Ionicons name="briefcase-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Add Work Address</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:addWorkAddress')}</Text>
                     </View>
                     <Pressable onPress={handleAddWorkAddress}>
                         <Ionicons name="chevron-forward" size={20} color={theme.text} />
@@ -301,7 +299,7 @@ export default function PassengerProfile() {
             <View style={dynamicStyles.logoutSection}>
                 <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
                     <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-                    <Text style={dynamicStyles.logoutText}>Log Out</Text>
+                    <Text style={dynamicStyles.logoutText}>{t('profile:logOut')}</Text>
                 </Pressable>
             </View>
         </ScrollView>

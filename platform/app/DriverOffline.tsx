@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRouteContext } from '../contexts/RouteContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
@@ -57,6 +58,7 @@ export default function DriverOffline({
   const { user } = useUser();
   const router = useRouter();
   const { setCurrentRoute } = useRouteContext();
+  const { t } = useLanguage();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
@@ -76,13 +78,9 @@ export default function DriverOffline({
 
   );
 
-
-
-
   if (!user) return;
   
   const earnings = useQuery(api.functions.earnings.earnings.getWeeklyEarnings, { driverId: user.id as Id<"taxiTap_users">, });
-  
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -114,6 +112,23 @@ export default function DriverOffline({
       destination: parts[1] ?? "Unknown"
     };
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
+
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullStatus(false);
+    }, 5000); // 5 seconds
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
 
   const handleSetRoute = () => {
     router.push('/SetRoute');
@@ -166,19 +181,19 @@ export default function DriverOffline({
   const menuItems: MenuItemType[] = [
     {
       icon: 'person-outline',
-      title: 'My Profile',
+      title: t('driver:editProfile'),
       subtitle: 'Driver details & documents',
       onPress: () => router.push('/DriverProfile'),
     },
     {
       icon: 'car-outline',
-      title: 'My Taxi & Route',
+      title: t('driver:vehicleInfo'),
       subtitle: 'Vehicle info & route settings',
       onPress: () => router.push('/DriverRequestPage'),
     },
     {
       icon: 'time-outline',
-      title: 'Trip History',
+      title: t('driver:earningsPage'),
       subtitle: 'Past rides & routes',
       onPress: () => router.push('/EarningsPage'),
     },
@@ -204,7 +219,7 @@ export default function DriverOffline({
 
   // Get route display string from database
   const getRouteDisplayString = () => {
-    if (!assignedRoute) return "Not Set";
+    if (!assignedRoute) return t('driver:notSet');
     const { start, destination } = parseRouteName(assignedRoute.name);
     return `${start} → ${destination}`;
   };
@@ -212,21 +227,21 @@ export default function DriverOffline({
   const quickActions: QuickActionType[] = [
     {
       icon: "location-outline",
-      title: "Current Route",
+      title: t('driver:assignedRoute'),
       value: getRouteDisplayString(),
-      subtitle: "Tap to set route",
-      color: getRouteDisplayString() === "Not Set" ? "#FF9900" : "#00A591",
+      subtitle: t('driver:tapToSetRoute'),
+      color: getRouteDisplayString() === t('driver:notSet') ? "#FF9900" : "#00A591",
       onPress: () => router.push('/SetRoute'),
     },
     {
       icon: "car-outline",
-      title: "Available Seats",
+      title: t('common:availableSeats'),
       value: taxiInfo?.capacity === 0
-        ? "No seats available"
-        : taxiInfo?.capacity?.toString() ?? "Loading...",
+        ? t('common:noSeatsAvailable')
+        : taxiInfo?.capacity?.toString() ?? t('common:loading'),
       subtitle: taxiInfo?.capacity === 0
         ? ""
-        : `of 14 seats free`,
+        : t('driver:ofSeatsFree'),
       color: "#FF9900",
       onPress: () => console.log('Seats pressed')
     }
@@ -235,8 +250,8 @@ export default function DriverOffline({
   const safetyOptions: SafetyOptionType[] = [
     {
       icon: "call",
-      title: "Emergency Call",
-      subtitle: "Call 112 immediately",
+      title: t('driver:emergencyCall'),
+      subtitle: t('driver:call112Immediately'),
       color: "#FF4444",
       onPress: handleEmergency
     },
@@ -571,14 +586,14 @@ export default function DriverOffline({
             >
               <Icon name="menu" size={24} color={isDark ? "#121212" : "#FF9900"} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.headerTitle}>My Dashboard</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('driver:myDashboard')}</Text>
           </View>
           
           <View style={dynamicStyles.headerRight}>
             <View style={dynamicStyles.statusContainer}>
               <View style={dynamicStyles.statusDot} />
               {showFullStatus && (
-                <Text style={dynamicStyles.statusText}>OFFLINE</Text>
+                <Text style={dynamicStyles.statusText}>{t('driver:offline')}</Text>
               )}
             </View>
             
@@ -617,9 +632,9 @@ export default function DriverOffline({
             <Text style={dynamicStyles.earningsAmount}>
               R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
-            <Text style={dynamicStyles.earningsTitle}>Today's Earnings</Text>
+            <Text style={dynamicStyles.earningsTitle}>{t('driver:todaysEarnings')}</Text>
             <Text style={dynamicStyles.earningsSubtitle}>
-              Tap to view detailed breakdown
+              {t('driver:tapToViewBreakdown')}
             </Text>
           </TouchableOpacity>
 
@@ -627,16 +642,16 @@ export default function DriverOffline({
             <View style={dynamicStyles.offlineIconContainer}>
               <Icon name="car-outline" size={40} color={isDark ? "#121212" : "#FF9900"} />
             </View>
-            <Text style={dynamicStyles.offlineTitle}>Ready to Pick Up Passengers?</Text>
+            <Text style={dynamicStyles.offlineTitle}>{t('driver:readyToPickUpPassengers')}</Text>
             <Text style={dynamicStyles.offlineSubtitle}>
-              Go online to start accepting seat reservation requests
+              {t('driver:goOnlineToAcceptRequests')}
             </Text>
             <TouchableOpacity
               style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
               onPress={handleSafetyPress}
             >
               <Icon name="call" size={20} color="#fff" />
-              <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
+              <Text style={dynamicStyles.actionButtonText}>{t('driver:emergency')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={{
@@ -653,12 +668,12 @@ export default function DriverOffline({
               activeOpacity={0.8}
               accessibilityLabel="Go online to accept passengers"
             >
-              <Text style={dynamicStyles.goOnlineButtonText}>GO ONLINE</Text>
+              <Text style={dynamicStyles.goOnlineButtonText}>{t('driver:goOnline')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={dynamicStyles.quickActionsSection}>
-            <Text style={dynamicStyles.sectionTitle}>Quick Overview</Text>
+            <Text style={dynamicStyles.sectionTitle}>{t('driver:quickOverview')}</Text>
             
             <View style={dynamicStyles.quickActionsRow}>
               {quickActions.map((action, index) => (
@@ -699,7 +714,7 @@ export default function DriverOffline({
           >
             <View style={dynamicStyles.menuModal}>
               <View style={dynamicStyles.menuModalHeader}>
-                <Text style={dynamicStyles.menuModalHeaderText}>Menu</Text>
+                <Text style={dynamicStyles.menuModalHeaderText}>{t('driver:menu')}</Text>
               </View>
               {menuItems.map((item, index) => (
                 <TouchableOpacity 

@@ -2,16 +2,13 @@ import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, Image, View } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
-import { UserProvider } from '../../contexts/UserContext';
 import { router } from 'expo-router';
 import dark from '../../assets/images/icon-dark.png';
 import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
-import { MapProvider } from '../../contexts/MapContext';
-import { FeedbackProvider } from '../../contexts/FeedbackContext';
+import { useTranslation } from 'react-i18next';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 
 const NotificationButton: React.FC = () => {
@@ -82,6 +79,7 @@ const HeaderRightButtons: React.FC = () => {
 
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -128,7 +126,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HomeScreen"
         options={{
-          title: 'Home',
+          title: t('navigation:home'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="home" size={24} color={color} />
           ),
@@ -138,7 +136,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerRoute"
         options={{
-          title: 'Routes',
+          title: t('navigation:routes'),
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="map" size={24} color={color} />
           ),
@@ -148,7 +146,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="FeedbackHistoryScreen"
         options={{
-          title: 'Feedback',
+          title: t('navigation:feedback'),
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="feedback" size={24} color={color} />
           ),
@@ -158,7 +156,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerProfile"
         options={{
-          title: 'Profile',
+          title: t('navigation:profile'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="user" size={24} color={color} />
           ),
@@ -168,7 +166,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HelpPage"
         options={{
-          title: 'Help',
+          title: t('navigation:help'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="question-circle" size={24} color={color} />
           ),
@@ -250,6 +248,7 @@ const TabNavigation: React.FC = () => {
 
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
+  const { t } = useTranslation();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
   let currentLocation, destination;
   
@@ -276,13 +275,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideDeclined._id);// Mark as processed
 
       showGlobalError(
-        'Ride Declined',
-        rideDeclined.message || 'Your ride request was declined.',
+        t('notifications:rideDeclined'),
+        rideDeclined.message || t('notifications:rideDeclinedMessage'),
         {
           duration: 0,
           actions: [
             {
-              label: 'OK',
+              label: t('notifications:ok'),
               onPress: () => {
                 markAsRead(rideDeclined._id);
                 router.push('./HomeScreen');
@@ -312,13 +311,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideAccepted._id);// Mark as processed
 
       showGlobalSuccess(
-        'Ride Accepted',
+        t('notifications:rideAccepted'),
         rideAccepted.message,
         {
           duration: 0,
           actions: [
             {
-              label: 'OK',
+              label: t('notifications:ok'),
               onPress: () => {
                 markAsRead(rideAccepted._id);
                 router.push({
@@ -357,13 +356,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideCancelled._id);// Mark as processed
 
       showGlobalAlert({
-        title: 'Ride Cancelled',
+        title: t('notifications:rideCancelled'),
         message: rideCancelled.message,
         type: 'warning',
         duration: 0,
         actions: [
           {
-            label: 'OK',
+            label: t('notifications:ok'),
             onPress: () => markAsRead(rideCancelled._id),
             style: 'default',
           },
@@ -375,14 +374,6 @@ export default function TabLayout() {
   }, [notifications, markAsRead, showGlobalAlert]);
 
   return (
-    <SafeAreaProvider>
-      <UserProvider>
-        <MapProvider>
-          <FeedbackProvider>
-            <TabNavigation />
-          </FeedbackProvider>
-        </MapProvider>
-      </UserProvider>
-    </SafeAreaProvider>
+    <TabNavigation />
   );
 }

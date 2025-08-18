@@ -15,6 +15,7 @@ import { useConvex } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { ConvexProvider } from 'convex/react';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import icon from '../assets/images/icon.png';
 import google from '../assets/images/google5.png';
 import { useAlertHelpers } from '../components/AlertHelpers';
@@ -26,16 +27,25 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
-  const { showError } = useAlertHelpers();
+  const { t, currentLanguage } = useLanguage();
+  const { showGlobalError } = useAlertHelpers();
 
   const handleLogin = async () => {
     if (!number || !password) {
-      showError('Error', 'Please enter both phone number and password');
+      showGlobalError('Error', 'Please fill all fields', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
     const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showError('Invalid number', 'Please enter a valid number');
+      showGlobalError('Error', 'Invalid number format', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
     try {
@@ -59,7 +69,11 @@ export default function Login() {
       });
       }
     } catch {
-      showError("Error", "Phone number or password is incorrect");
+      showGlobalError('Error', 'Phone number or password incorrect', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     }
   };
 
@@ -73,7 +87,7 @@ export default function Login() {
             backgroundColor: '#fff',
           }}
         >
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Image
               source={icon}
               style={{ width: '100%', height: 200 }}
@@ -94,13 +108,13 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Cellphone number
+              {t('auth:phoneNumber')}
           </Text>
 
           <TextInput
             value={number}
             onChangeText={setNumber}
-            placeholder="Cellphone number"
+            placeholder={t('auth:phoneNumber')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -114,7 +128,7 @@ export default function Login() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Password
+              {t('auth:password')}
           </Text>
 
           <View
@@ -131,7 +145,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth:password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -150,7 +164,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>Forgot Password?</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -166,13 +180,15 @@ export default function Login() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              Login
+              {t('auth:login')}
             </Text>
           </Pressable>
 
           {/* Or Divider */}
           <View style={{ alignItems: 'center', marginVertical: 20 }}>
-            <Text style={{ color: '#fff', fontSize: 18 }}>Or</Text>
+            <Text style={{ color: '#fff', fontSize: 18 }}>
+              {t('auth:or')}
+            </Text>
           </View>
 
           {/* Google Sign-In Button */}
