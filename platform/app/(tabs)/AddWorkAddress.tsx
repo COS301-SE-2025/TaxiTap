@@ -49,32 +49,32 @@ export default function AddWorkAddress() {
             // Request location permissions
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                            Alert.alert(t('address:permissionDenied'), t('address:locationPermissionRequired'));
-            return;
+                Alert.alert(t('address:permissionDenied'), t('address:locationPermissionRequired'));
+                return;
+            }
+
+            // Get current location
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+            setCoordinates({ latitude, longitude });
+
+            // Reverse geocode to get address
+            const reverseGeocode = await Location.reverseGeocodeAsync({
+                latitude,
+                longitude,
+            });
+
+            if (reverseGeocode.length > 0) {
+                const result = reverseGeocode[0];
+                const fullAddress = `${result.name || ''} ${result.street || ''}, ${result.city || ''}, ${result.region || ''} ${result.postalCode || ''}`.trim();
+                setAddress(fullAddress);
+            }
+        } catch (error) {
+            console.error('Location error:', error);
+            Alert.alert(t('address:error'), t('address:failedToGetLocation'));
+        } finally {
+            setIsLoadingLocation(false);
         }
-
-        // Get current location
-        const location = await Location.getCurrentPositionAsync({});
-        const { latitude, longitude } = location.coords;
-        setCoordinates({ latitude, longitude });
-
-        // Reverse geocode to get address
-        const reverseGeocode = await Location.reverseGeocodeAsync({
-            latitude,
-            longitude,
-        });
-
-        if (reverseGeocode.length > 0) {
-            const result = reverseGeocode[0];
-            const fullAddress = `${result.name || ''} ${result.street || ''}, ${result.city || ''}, ${result.region || ''} ${result.postalCode || ''}`.trim();
-            setAddress(fullAddress);
-        }
-    } catch (error) {
-        console.error('Location error:', error);
-        Alert.alert(t('address:error'), t('address:failedToGetLocation'));
-    } finally {
-        setIsLoadingLocation(false);
-    }
     };
 
     const handleSave = async () => {
@@ -157,7 +157,8 @@ export default function AddWorkAddress() {
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
         header: {
@@ -173,125 +174,133 @@ export default function AddWorkAddress() {
             fontWeight: 'bold',
             color: theme.text,
         },
+        sectionHeader: {
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
+        },
         section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            borderRadius: 16,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
-        },
-        sectionTitle: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: 15,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         fieldContainer: {
-            marginBottom: 15,
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        lastField: {
+            borderBottomWidth: 0,
         },
         label: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            fontWeight: '400',
             color: theme.text,
-            marginBottom: 5,
+            marginBottom: 8,
         },
         input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             borderRadius: 8,
             paddingHorizontal: 15,
             paddingVertical: 12,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
+            fontSize: 17,
+            borderWidth: 0,
             color: theme.text,
         },
         addressInput: {
             minHeight: 80,
             textAlignVertical: 'top',
         },
+        locationButtonContainer: {
+            marginTop: 12,
+        },
         locationButton: {
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: theme.primary,
-            paddingVertical: 12,
-            paddingHorizontal: 15,
-            borderRadius: 8,
-            marginTop: 10,
+            backgroundColor: theme.card,
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderRadius: 16,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
         },
         locationButtonDisabled: {
             opacity: 0.6,
         },
-        locationButtonText: {
-            color: isDark ? '#121212' : '#fff',
-            fontWeight: '600',
-            marginLeft: 8,
-        },
-        coordinatesContainer: {
-            backgroundColor: isDark ? theme.surface : '#f8f9fa',
+        locationIconContainer: {
+            width: 32,
+            height: 32,
             borderRadius: 8,
-            padding: 10,
-            marginTop: 10,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
         },
-        coordinatesText: {
-            fontSize: 12,
+        locationButtonText: {
             color: theme.text,
-            opacity: 0.7,
+            fontWeight: '400',
+            fontSize: 17,
+            flex: 1,
+        },
+        buttonSection: {
+            marginTop: 8,
         },
         buttonContainer: {
-            flexDirection: 'row',
-            gap: 10,
-            marginTop: 20,
+            backgroundColor: theme.card,
+            borderRadius: 16,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         saveButton: {
-            flex: 1,
             backgroundColor: theme.primary,
             paddingVertical: 16,
-            borderRadius: 12,
+            paddingHorizontal: 16,
             alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            borderRadius: 16,
         },
         deleteButton: {
-            flex: 1,
-            backgroundColor: '#FF3B30',
+            backgroundColor: 'transparent',
             paddingVertical: 16,
-            borderRadius: 12,
+            paddingHorizontal: 16,
             alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
         },
         buttonDisabled: {
             opacity: 0.6,
         },
-        buttonText: {
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: 16,
-        },
         saveButtonText: {
-            color: isDark ? '#121212' : '#fff',
+            color: isDark ? "#121212" : "#FFFFFF",
             fontWeight: 'bold',
             fontSize: 16,
         },
-        infoBox: {
-            backgroundColor: isDark ? theme.surface : '#e3f2fd',
-            borderRadius: 8,
-            padding: 15,
-            marginBottom: 20,
+        deleteButtonText: {
+            color: '#FF3B30',
+            fontWeight: '400',
+            fontSize: 17,
         },
-        infoText: {
-            fontSize: 14,
-            color: theme.text,
-            opacity: 0.8,
+        buttonIcon: {
+            marginRight: 8,
         },
     });
 
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>{t('personalInfo:loading')}</Text>
+                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ color: theme.text, fontSize: 16 }}>{t('personalInfo:loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -299,7 +308,10 @@ export default function AddWorkAddress() {
 
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
-            <ScrollView contentContainerStyle={dynamicStyles.container}>
+            <ScrollView 
+                contentContainerStyle={dynamicStyles.container}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Header */}
                 <View style={dynamicStyles.header}>
                     <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
@@ -310,17 +322,9 @@ export default function AddWorkAddress() {
                     </Text>
                 </View>
 
-                {/* Info Box */}
-                <View style={dynamicStyles.infoBox}>
-                    <Text style={dynamicStyles.infoText}>
-                        {t('address:workAddressInfo')}
-                    </Text>
-                </View>
-
-                {/* Address Form */}
+                {/* Address Information Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:addressInformation')}</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>{t('address:addressInformation')}</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
                         <TextInput
@@ -332,7 +336,7 @@ export default function AddWorkAddress() {
                         />
                     </View>
 
-                    <View style={dynamicStyles.fieldContainer}>
+                    <View style={[dynamicStyles.fieldContainer, dynamicStyles.lastField]}>
                         <Text style={dynamicStyles.label}>{t('address:fullAddress')}</Text>
                         <TextInput
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
@@ -343,53 +347,74 @@ export default function AddWorkAddress() {
                             multiline
                             numberOfLines={3}
                         />
-                        
-                        <Pressable
-                            style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
-                            onPress={getCurrentLocation}
-                            disabled={isLoadingLocation}
-                        >
-                            <Ionicons 
-                                name={isLoadingLocation ? "hourglass" : "location"} 
-                                size={20} 
-                                color={isDark ? '#121212' : '#fff'} 
-                            />
-                            <Text style={dynamicStyles.locationButtonText}>
-                                {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
-                            </Text>
-                        </Pressable>
-
-                        {(coordinates.latitude !== 0 || coordinates.longitude !== 0) && (
-                            <View style={dynamicStyles.coordinatesContainer}>
-                                <Text style={dynamicStyles.coordinatesText}>
-                                    {t('address:coordinates')}: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
-                                </Text>
-                            </View>
-                        )}
                     </View>
                 </View>
 
-                {/* Action Buttons */}
-                <View style={dynamicStyles.buttonContainer}>
+                {/* Location Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:location')}</Text>
+                <View style={dynamicStyles.locationButtonContainer}>
                     <Pressable
-                        style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
-                        onPress={handleSave}
-                        disabled={isLoading}
+                        style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
+                        onPress={getCurrentLocation}
+                        disabled={isLoadingLocation}
+                        android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                     >
-                        <Text style={dynamicStyles.saveButtonText}>
-                            {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                        <View style={dynamicStyles.locationIconContainer}>
+                            <Ionicons 
+                                name={isLoadingLocation ? "hourglass" : "location-outline"} 
+                                size={20} 
+                                color="#FF8C00" 
+                            />
+                        </View>
+                        <Text style={dynamicStyles.locationButtonText}>
+                            {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
                         </Text>
+                        <Ionicons 
+                            name="chevron-forward" 
+                            size={16} 
+                            color={isDark ? theme.border : '#C7C7CC'} 
+                        />
                     </Pressable>
+                </View>
 
-                    {hasExistingAddress && (
+                {/* Action Buttons Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:actions')}</Text>
+                <View style={dynamicStyles.buttonSection}>
+                    <View style={dynamicStyles.buttonContainer}>
                         <Pressable
-                            style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
-                            onPress={handleDelete}
+                            style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
+                            onPress={handleSave}
                             disabled={isLoading}
+                            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                         >
-                            <Text style={dynamicStyles.buttonText}>{t('address:delete')}</Text>
+                            <Ionicons 
+                                name="checkmark" 
+                                size={20} 
+                                color={isDark ? "#121212" : "#FFFFFF"} 
+                                style={dynamicStyles.buttonIcon}
+                            />
+                            <Text style={dynamicStyles.saveButtonText}>
+                                {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                            </Text>
                         </Pressable>
-                    )}
+
+                        {hasExistingAddress && (
+                            <Pressable
+                                style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
+                                onPress={handleDelete}
+                                disabled={isLoading}
+                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+                            >
+                                <Ionicons 
+                                    name="trash-outline" 
+                                    size={20} 
+                                    color="#FF3B30" 
+                                    style={dynamicStyles.buttonIcon}
+                                />
+                                <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
+                            </Pressable>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
         </SafeAreaView>
