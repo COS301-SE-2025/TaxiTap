@@ -17,6 +17,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -26,6 +27,7 @@ import { api } from '../../convex/_generated/api';
 import { Id } from "../../convex/_generated/dataModel";
 import { useUser } from '@/contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -59,17 +61,48 @@ interface RouteData {
 // ============================================================================
 
 /**
- * Calculates fare based on estimated duration
- * Pricing: R15 per 10 minutes, minimum R15
+ * Calculates estimated fare based on passenger displacement
+ * Base fare: R20 for displacement up to 10km, R2.50 per 5km block thereafter
  * 
- * @param estimatedDuration - Duration in seconds
- * @returns Calculated fare in Rands
+ * @param startCoords - Starting coordinates
+ * @param destCoords - Destination coordinates
+ * @returns Estimated fare in Rands
  */
-const calculateFareFromDuration = (estimatedDuration: number): number => {
-  if (!estimatedDuration || estimatedDuration <= 0) return 15; // Default minimum fare
+const calculateEstimatedFare = (
+  startCoords: { latitude: number; longitude: number } | null,
+  destCoords: { latitude: number; longitude: number } | null
+): number => {
+  if (!startCoords || !destCoords) return 20; // Default base fare
   
-  // R15 per 10 minutes, minimum R15
-  return Math.max(15, Math.ceil(estimatedDuration / 600) * 15); // 600 seconds = 10 minutes
+  // Calculate distance using Haversine formula
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (destCoords.latitude - startCoords.latitude) * Math.PI / 180;
+  const dLon = (destCoords.longitude - startCoords.longitude) * Math.PI / 180;
+  
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(startCoords.latitude * Math.PI / 180) * Math.cos(destCoords.latitude * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  
+  // Base fare: R20 for displacement up to 10km
+  // Overage: R2.50 per 5km block for displacement over 10km
+  const BASE_FARE = 20.0;
+  const BASE_DISTANCE = 10.0;
+  const OVERAGE_RATE = 2.5;
+  const OVERAGE_BLOCK = 5.0;
+  
+  if (distance <= BASE_DISTANCE) {
+    return BASE_FARE;
+  }
+  
+  const overageDistance = distance - BASE_DISTANCE;
+  const overageBlocks = Math.ceil(overageDistance / OVERAGE_BLOCK);
+  const overageFee = overageBlocks * OVERAGE_RATE;
+  
+  return Math.ceil(BASE_FARE + overageFee);
 };
 
 /**
@@ -109,6 +142,7 @@ export default function RouteSelectionScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
+  const { showGlobalError } = useAlertHelpers();
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -126,6 +160,23 @@ export default function RouteSelectionScreen() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ROUTES_PER_PAGE = 10;
+
+  // Enhanced taxi matching states - now per route
+  const [routeSearchStatus, setRouteSearchStatus] = useState<{
+    [routeId: string]: {
+      isSearching: boolean;
+      availableTaxis: any[];
+      routeMatchResults: any;
+    }
+  }>({});
+
+  // Enhanced state to trigger taxi search
+  const [taxiSearchParams, setTaxiSearchParams] = useState<{
+    originLat: number;
+    originLng: number;
+    destinationLat: number;
+    destinationLng: number;
+  } | null>(null);
 
   // ============================================================================
   // LIFECYCLE EFFECTS
@@ -147,7 +198,7 @@ export default function RouteSelectionScreen() {
     if (!allRoutes) return [];
     return allRoutes.map(route => ({
       ...route,
-      fare: calculateFareFromDuration(route.estimatedDuration),
+              fare: calculateEstimatedFare(route.startCoords, route.destinationCoords),
       stops: route.stops.map(stop => ({
         ...stop,
         name: processStopName(stop.name) || `Stop ${stop.order}` // Fallback to Stop number if name is empty
@@ -171,6 +222,48 @@ export default function RouteSelectionScreen() {
     setFilteredRoutes(filtered as RouteData[]);
     setCurrentPage(1);
   }, [processedRoutes, searchTerm]);
+
+  // Track which route initiated the current search
+  const [currentSearchRouteId, setCurrentSearchRouteId] = useState<string | null>(null);
+
+  // Query for enhanced taxi matching - only runs when we have search params
+  const taxiSearchResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
+    taxiSearchParams ? {
+      ...taxiSearchParams,
+      maxOriginDistance: 3.0,      // 3km radius from origin
+      maxDestinationDistance: 3.0, // 3km radius for destination
+      maxTaxiDistance: 3.0,        // 3km radius for taxi proximity
+      maxResults: 10
+    } : "skip"
+  );
+
+  // Handle taxi search results
+  useEffect(() => {
+    if (taxiSearchResult && currentSearchRouteId) {
+      if (taxiSearchResult.success) { 
+        // Update specific route's status
+        setRouteSearchStatus(prev => ({
+          ...prev,
+          [currentSearchRouteId]: {
+            isSearching: false,
+            availableTaxis: taxiSearchResult.availableTaxis,
+            routeMatchResults: taxiSearchResult,
+          }
+        }));
+      } else {
+        // Update specific route's status
+        setRouteSearchStatus(prev => ({
+          ...prev,
+          [currentSearchRouteId]: {
+            isSearching: false,
+            availableTaxis: [],
+            routeMatchResults: taxiSearchResult,
+          }
+        }));
+      }
+    }
+  }, [taxiSearchResult, currentSearchRouteId]);
 
   // ============================================================================
   // PAGINATION LOGIC
@@ -237,6 +330,137 @@ export default function RouteSelectionScreen() {
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
+  
+  /**
+   * Handles seat reservation from route selection
+   * This integrates the seat reservation functionality from HomeScreen
+   * 
+   * @param route - Selected route data
+   */
+  const handleReserveSeat = async (route: RouteData) => {
+    if (!route.destinationCoords) {
+      showGlobalError("Error", "Route coordinates not available", {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+      return;
+    }
+
+    // Check if we have origin coordinates, if not use current location
+    let originCoords = route.startCoords;
+    let originName = route.start;
+    
+    if (!originCoords) {
+      // Try to get current location from user context or use default
+      originCoords = {
+        latitude: -26.2041, // Default to Johannesburg coordinates
+        longitude: 28.0473,
+      };
+      originName = 'Current Location';
+    }
+
+    // Check if we already have search results for this route
+    const existingStatus = getRouteSearchStatus(route.routeId);
+    if (existingStatus.routeMatchResults && !existingStatus.isSearching) {
+      // We already have results, proceed immediately
+      await proceedWithReservation(route, originCoords, originName, existingStatus);
+      return;
+    }
+
+    // Search for available taxis first
+    await searchForAvailableTaxis(
+      { latitude: originCoords.latitude, longitude: originCoords.longitude, name: originName },
+      { latitude: route.destinationCoords!.latitude, longitude: route.destinationCoords!.longitude, name: route.destination },
+      route.routeId
+    );
+
+    // Wait for the search to complete by monitoring the state
+    const maxWaitTime = 10000; // 10 seconds max wait
+    const checkInterval = 100; // Check every 100ms
+    let elapsed = 0;
+
+    while (elapsed < maxWaitTime) {
+      const currentStatus = getRouteSearchStatus(route.routeId);
+      
+      if (!currentStatus.isSearching && currentStatus.routeMatchResults) {
+        // Search completed, proceed with reservation
+        await proceedWithReservation(route, originCoords, originName, currentStatus);
+        return;
+      }
+      
+      // Wait a bit before checking again
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      elapsed += checkInterval;
+    }
+
+    // If we get here, the search took too long
+    showGlobalError("Error", "Taxi search is taking longer than expected. Please try again.", {
+      duration: 4000,
+      position: 'top',
+      animation: 'slide-down',
+    });
+  };
+
+  /**
+   * Helper function to proceed with the reservation after taxi search
+   */
+  const proceedWithReservation = async (
+    route: RouteData,
+    originCoords: { latitude: number; longitude: number },
+    originName: string,
+    routeStatus: any
+  ) => {
+    if (!routeStatus || routeStatus.availableTaxis.length === 0) {
+      Alert.alert(
+        'No Taxis Available', 
+        'No taxis are currently available on routes that connect your origin and destination. Please try a different route or check again later.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      // Store the route for the passenger
+      await storeRouteForPassenger({
+        passengerId: userId as Id<"taxiTap_users">,
+        routeId: route.routeId === "manual-route" ? "manual-route" : route.routeId,
+        name: route.destination,
+        startName: originName,
+        startLat: originCoords.latitude,
+        startLng: originCoords.longitude,
+        destinationLat: route.destinationCoords!.latitude,
+        destinationLng: route.destinationCoords!.longitude,
+      });
+      
+      // Navigate to taxi information with route data and taxi search results
+      router.push({
+        pathname: '../TaxiInformation',
+        params: {
+          destinationName: route.destination,
+          destinationLat: route.destinationCoords!.latitude.toString(),
+          destinationLng: route.destinationCoords!.longitude.toString(),
+          currentName: originName,
+          currentLat: originCoords.latitude.toString(),
+          currentLng: originCoords.longitude.toString(),
+          routeId: route.routeId,
+          startName: originName,
+          startLat: originCoords.latitude.toString(),
+          startLng: originCoords.longitude.toString(),
+          estimatedFare: route.fare?.toString() || '20',
+          availableTaxisCount: routeStatus.availableTaxis.length.toString(),
+          routeMatchData: JSON.stringify(routeStatus.routeMatchResults),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to store route:", err);
+      showGlobalError("Error", "Failed to reserve seat. Please try again.", {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+    }
+  };
 
   /**
    * Handles route selection and navigation to taxi information screen
@@ -315,25 +539,109 @@ export default function RouteSelectionScreen() {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
+  // Enhanced function to search for available taxis
+  const searchForAvailableTaxis = async (
+    origin: { latitude: number; longitude: number; name: string },
+    dest: { latitude: number; longitude: number; name: string },
+    routeId: string
+  ) => {
+    if (!userId) {
+      return;
+    }
+
+    // Set search status for this specific route
+    setRouteSearchStatus(prev => ({
+      ...prev,
+      [routeId]: {
+        isSearching: true,
+        availableTaxis: [],
+        routeMatchResults: null,
+      }
+    }));
+    
+    try {
+      // Set the current search route ID to track which route initiated this search
+      setCurrentSearchRouteId(routeId);
+      
+      setTaxiSearchParams({
+        originLat: origin.latitude,
+        originLng: origin.longitude,
+        destinationLat: dest.latitude,
+        destinationLng: dest.longitude,
+      });
+      
+    } catch (error) {
+      // Reset search status for this specific route on error
+      setRouteSearchStatus(prev => ({
+        ...prev,
+        [routeId]: {
+          isSearching: false,
+          availableTaxis: [],
+          routeMatchResults: null,
+        }
+      }));
+      
+      Alert.alert(
+        t('home:searchError'), 
+        t('home:unableToFindTaxis'),
+        [{ text: t('common:ok') }]
+      );
+    }
+  };
+
+  /**
+   * Helper function to get search status for a specific route
+   * Returns default state if route hasn't been searched yet
+   */
+  const getRouteSearchStatus = (routeId: string) => {
+    return routeSearchStatus[routeId] || {
+      isSearching: false,
+      availableTaxis: [],
+      routeMatchResults: null,
+    };
+  };
+
   // ============================================================================
   // STYLES
   // ============================================================================
 
   const dynamicStyles = StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
       backgroundColor: theme.background,
     },
-    scrollContainer: {
-      padding: 16,
+    container: {
+      backgroundColor: theme.background,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+      paddingBottom: 40,
     },
-    searchContainer: {
-      marginBottom: 20,
+    scrollContainer: {
+      flex: 1,
+    },
+    sectionHeader: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 8,
+      marginTop: 8,
+      paddingHorizontal: 4,
+    },
+    searchSection: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      marginBottom: 16,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+      overflow: 'hidden',
+      padding: 16,
     },
     searchInputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? theme.surface : '#F8F9FA',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
       borderRadius: 12,
       padding: 16,
     },
@@ -345,25 +653,21 @@ export default function RouteSelectionScreen() {
       fontSize: 16,
       color: theme.text,
     },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 16,
-    },
-    routeCard: {
+    routesSection: {
       backgroundColor: theme.card,
       borderRadius: 16,
       marginBottom: 16,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 3,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
       overflow: 'hidden',
     },
-    routeHeader: {
+    routeCard: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
       padding: 20,
+    },
+    lastRouteCard: {
+      borderBottomWidth: 0,
     },
     routeTitle: {
       flexDirection: 'row',
@@ -424,8 +728,10 @@ export default function RouteSelectionScreen() {
       justifyContent: 'center',
     },
     stopsContainer: {
-      backgroundColor: isDark ? theme.surface : '#F8F9FA',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
       padding: 20,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     },
     stopsTitle: {
       fontSize: 16,
@@ -479,10 +785,14 @@ export default function RouteSelectionScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    paginationContainer: {
-      paddingVertical: 20,
-      paddingHorizontal: 16,
-      alignItems: 'center',
+    paginationSection: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      marginBottom: 16,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+      overflow: 'hidden',
+      padding: 20,
     },
     paginationInfo: {
       alignItems: 'center',
@@ -509,7 +819,7 @@ export default function RouteSelectionScreen() {
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 8,
-      backgroundColor: theme.card,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
       borderWidth: 1,
       borderColor: theme.border,
       minWidth: 40,
@@ -649,20 +959,27 @@ export default function RouteSelectionScreen() {
   // Loading state
   if (loading) {
     return (
-      <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
-          {t('home:gettingLocation')}
-        </Text>
-      </View>
+      <SafeAreaView style={dynamicStyles.safeArea}>
+        <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
+            {t('home:gettingLocation')}
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={dynamicStyles.container}>
-      <ScrollView style={dynamicStyles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Search Bar */}
-        <View style={dynamicStyles.searchContainer}>
+    <SafeAreaView style={dynamicStyles.safeArea}>
+      <ScrollView 
+        style={dynamicStyles.scrollContainer}
+        contentContainerStyle={dynamicStyles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Search Section */}
+        <Text style={dynamicStyles.sectionHeader}>Search Routes</Text>
+        <View style={dynamicStyles.searchSection}>
           <View style={dynamicStyles.searchInputContainer}>
             <Icon name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
             <TextInput
@@ -676,39 +993,44 @@ export default function RouteSelectionScreen() {
         </View>
 
         {/* Available Routes Section */}
-        <Text style={dynamicStyles.sectionTitle}>
-          {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
+        <Text style={dynamicStyles.sectionHeader}>
+          Available Routes {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
         </Text>
 
         {/* Routes List or Empty State */}
         {currentRoutes.length === 0 ? (
-          <View style={dynamicStyles.emptyState}>
-            <Icon name="map-outline" size={64} color={theme.textSecondary} />
-            <Text style={dynamicStyles.emptyStateText}>
-              {searchTerm
-                ? t('routes:noRoutesMatching')
-                : t('routes:noRoutesFound')}
-            </Text>
+          <View style={dynamicStyles.routesSection}>
+            <View style={dynamicStyles.emptyState}>
+              <Icon name="map-outline" size={64} color={theme.textSecondary} />
+              <Text style={dynamicStyles.emptyStateText}>
+                {searchTerm
+                  ? t('routes:noRoutesMatching')
+                  : t('routes:noRoutesFound')}
+              </Text>
+            </View>
           </View>
         ) : (
-          currentRoutes.map((route: RouteData, index: number) => (
-            <View key={index} style={dynamicStyles.routeCard}>
-              {/* Route Header */}
-              <View style={dynamicStyles.routeHeader}>
-                <View style={dynamicStyles.routeTitle}>
-                  <Text style={dynamicStyles.routeTitleText}>
-                    {route.start} {t('routes:to')} {route.destination}
-                  </Text>
-                  <Text style={dynamicStyles.routeFare}>
-                    R{route.fare ? route.fare.toFixed(2) : 'N/A'}
-                  </Text>
-                </View>
+          <View style={dynamicStyles.routesSection}>
+            {currentRoutes.map((route: RouteData, index: number) => (
+              <View 
+                key={index} 
+                style={[
+                  dynamicStyles.routeCard,
+                  index === currentRoutes.length - 1 && dynamicStyles.lastRouteCard
+                ]}
+              >
+                {/* Route Header */}
+                                 <View style={dynamicStyles.routeTitle}>
+                   <Text style={dynamicStyles.routeTitleText}>
+                     {route.start} {t('routes:to')} {route.destination}
+                   </Text>
+                 </View>
 
                 <View style={dynamicStyles.routeInfo}>
                   <View style={dynamicStyles.routeInfoItem}>
-                    <Icon name="time-outline" size={16} color={theme.textSecondary} />
+                    <Icon name="cash-outline" size={16} color={theme.textSecondary} />
                     <Text style={dynamicStyles.routeInfoText}>
-                      {route.estimatedDuration ? `${Math.round(route.estimatedDuration / 60)} ${t('routes:min')}` : 'N/A'}
+                      R{route.fare ? route.fare.toFixed(2) : 'N/A'}
                     </Text>
                   </View>
                   <View style={dynamicStyles.routeInfoItem}>
@@ -716,13 +1038,46 @@ export default function RouteSelectionScreen() {
                     <StopCount routeId={route.routeId} />
                   </View>
                 </View>
+                
+                {/* Taxi Search Status */}
+                {getRouteSearchStatus(route.routeId).isSearching && (
+                  <View style={dynamicStyles.routeInfoItem}>
+                    <Icon name="car-outline" size={16} color={theme.primary} />
+                    <Text style={[dynamicStyles.routeInfoText, { color: theme.primary }]}>
+                      Searching for available taxis...
+                    </Text>
+                  </View>
+                )}
+                {getRouteSearchStatus(route.routeId).routeMatchResults && !getRouteSearchStatus(route.routeId).isSearching && (
+                  <View style={dynamicStyles.routeInfoItem}>
+                    <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
+                    <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
+                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? `${getRouteSearchStatus(route.routeId).availableTaxis.length} taxis available` : 'No taxis available'}
+                    </Text>
+                  </View>
+                )}
 
                 <View style={dynamicStyles.actionButtons}>
                   <TouchableOpacity
-                    style={dynamicStyles.reserveButton}
-                    onPress={() => handleRouteSelect(route)}
+                    style={[
+                      dynamicStyles.reserveButton,
+                      getRouteSearchStatus(route.routeId).isSearching && { opacity: 0.7 }
+                    ]}
+                    onPress={() => handleReserveSeat(route)}
+                    disabled={getRouteSearchStatus(route.routeId).isSearching}
                   >
-                    <Text style={dynamicStyles.reserveButtonText}>{t('routes:reserveSeat')}</Text>
+                    {getRouteSearchStatus(route.routeId).isSearching ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                        <Text style={dynamicStyles.reserveButtonText}>
+                          Finding Taxis...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={dynamicStyles.reserveButtonText}>
+                        {t('routes:reserveSeat')}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                   
                   <TouchableOpacity
@@ -736,19 +1091,19 @@ export default function RouteSelectionScreen() {
                     />
                   </TouchableOpacity>
                 </View>
-              </View>
 
-              {/* Expandable Stops List */}
-              {expandedRoute === route.routeId && (
-                <RouteStops routeId={route.routeId} />
-              )}
-            </View>
-          ))
+                {/* Expandable Stops List */}
+                {expandedRoute === route.routeId && (
+                  <RouteStops routeId={route.routeId} />
+                )}
+              </View>
+            ))}
+          </View>
         )}
 
         {/* Pagination Controls */}
         {filteredRoutes.length > ROUTES_PER_PAGE && (
-          <View style={dynamicStyles.paginationContainer}>
+          <View style={dynamicStyles.paginationSection}>
             {/* Page Information */}
             <View style={dynamicStyles.paginationInfo}>
               <Text style={dynamicStyles.paginationText}>
@@ -854,6 +1209,6 @@ export default function RouteSelectionScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
