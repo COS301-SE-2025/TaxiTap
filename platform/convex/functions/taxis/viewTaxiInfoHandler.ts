@@ -61,6 +61,7 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     status: ride.status,
     plate: taxi.licensePlate,
     fare: ride.estimatedFare,
+    tripPaid: ride.tripPaid,
     // ridePin removed - no longer needed
   };
 } 
