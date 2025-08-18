@@ -50,6 +50,12 @@ export default function PassengerProfile() {
         user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
     );
 
+    // Query recent feedback for preview
+    const recentFeedback = useQuery(
+        api.functions.feedback.showFeedback.showFeedbackPassenger,
+        user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
     // Mutations for switching roles
     const switchPassengerToBoth = useMutation(api.functions.users.UserManagement.switchPassengertoBoth.switchPassengerToBoth);
     const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
@@ -130,6 +136,10 @@ export default function PassengerProfile() {
 
     const handleAddWorkAddress = () => {
         router.push('../AddWorkAddress');
+    };
+
+    const handleViewFeedback = () => {
+        router.push('/FeedbackHistoryScreen');
     };
 
     type MenuItemProps = {
@@ -309,6 +319,40 @@ export default function PassengerProfile() {
         destructiveMenuItem: {
             // No special styling needed, handled by text and icon
         },
+        feedbackPreview: {
+            padding: 16,
+            borderRadius: 12,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        feedbackPreviewHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        feedbackPreviewTitle: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: theme.text,
+        },
+        feedbackPreviewRating: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#f90',
+        },
+        feedbackPreviewComment: {
+            fontSize: 14,
+            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+            marginBottom: 12,
+            fontStyle: 'italic',
+        },
+        feedbackCount: {
+            fontSize: 14,
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            fontWeight: '500',
+        },
     });
     
     if (!user) {
@@ -389,6 +433,44 @@ export default function PassengerProfile() {
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
                     </Pressable>
                 </View>
+            </View>
+
+            {/* Feedback History Section */}
+            <Text style={dynamicStyles.sectionHeader}>
+                Recent Feedback
+                {recentFeedback && recentFeedback.length > 0 && (
+                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} review{recentFeedback.length !== 1 ? 's' : ''}</Text>
+                )}
+            </Text>
+            <View style={dynamicStyles.section}>
+                {recentFeedback && recentFeedback.length > 0 ? (
+                    <View style={dynamicStyles.feedbackPreview}>
+                        <View style={dynamicStyles.feedbackPreviewHeader}>
+                            <Text style={dynamicStyles.feedbackPreviewTitle}>Latest Review</Text>
+                            <Text style={dynamicStyles.feedbackPreviewRating}>
+                                ⭐ {recentFeedback[0].rating}/5
+                            </Text>
+                        </View>
+                        {recentFeedback[0].comment && (
+                            <Text style={dynamicStyles.feedbackPreviewComment} numberOfLines={2}>
+                                "{recentFeedback[0].comment}"
+                            </Text>
+                        )}
+                        <MenuItemComponent
+                            icon="chatbubble-ellipses-outline"
+                            title="View All Feedback"
+                            onPress={handleViewFeedback}
+                            showArrow={true}
+                        />
+                    </View>
+                ) : (
+                    <MenuItemComponent
+                        icon="chatbubble-ellipses-outline"
+                        title="No feedback yet"
+                        onPress={handleViewFeedback}
+                        showArrow={true}
+                    />
+                )}
             </View>
 
             {/* Settings Section */}
