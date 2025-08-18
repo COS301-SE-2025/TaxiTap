@@ -349,7 +349,6 @@ common: {
     vehicleInfo: "Vehicle Info",
     earningsPage: "Earnings Page",
     viewEarnings: "View Earnings",
-    manageRoutes: "Manage Routes",
     editPersonalInfo: "Edit Personal Info",
     switchToPassenger: "Switch to Passenger",
     switchToPassengerProfile: "Switch to Passenger Profile",
@@ -550,8 +549,6 @@ earningsPage: {
     permissionDenied: "Permission Denied",
     locationPermissionRequired: "Location permission is required to get your current location",
     failedToGetLocation: "Failed to get current location",
-    homeAddressInfo: "💡 Adding your home address will make it easier to book rides to or from home. You can use your current location or enter an address manually.",
-    workAddressInfo: "💡 Adding your work address will make it easier to book rides to or from work. You can use your current location or enter an address manually.",
   },
   // Personal information
   personalInfo: {
@@ -877,7 +874,6 @@ const zuluTranslations: TranslationStructure = {
     vehicleInfo: "Ulwazi Lwemoto",
     earningsPage: "Ikhasi Lemali",
     viewEarnings: "Bona Imali",
-    manageRoutes: "Phatha Izindlela",
     editPersonalInfo: "Hlela Ulwazi Lwakho",
     switchToPassenger: "Shintsha Kuya Kumgibeli",
     switchToPassengerProfile: "Shintsha Kuya Kuphrofayili Yomgibeli",
@@ -1274,8 +1270,6 @@ const zuluTranslations: TranslationStructure = {
     permissionDenied: "Permission Denied",
     locationPermissionRequired: "Location permission is required to get your current location",
     failedToGetLocation: "Failed to get current location",
-    homeAddressInfo: "💡 Ukwengeza ikheli lakho lasekhaya kuzokwenza kube lula ukubhukha amahambo aya noma evela ekhaya. Ungasebenzisa indawo yakho yamanje noma ufake ikheli ngesandla.",
-    workAddressInfo: "💡 Ukwengeza ikheli lakho lasebenza kuzokwenza kube lula ukubhukha amahambo aya noma evela emsebenzini. Ungasebenzisa indawo yakho yamanje noma ufake ikheli ngesandla.",
   },
 
   // Personal info translations
@@ -1646,8 +1640,6 @@ const tswanaTranslations: TranslationStructure = {
     permissionDenied: "Tetla e Gannwe",
     locationPermissionRequired: "Tetla ya lefelo e a tlhokega gore o bone lefelo la gago la gona jaanong",
     failedToGetLocation: "Go paletse go bona lefelo la gona jaanong",
-    homeAddressInfo: "💡 Go tsenya aterese ya gago ya gae go tla dira gore go nne bonolo go beela dimalo tse o yang kgotsa tse o tswang teng gae. O ka dirisa lefelo la gago la gona jaanong kgotsa o tsenye aterese ka seatla.",
-    workAddressInfo: "💡 Go tsenya aterese ya gago ya tiro go tla dira gore go nne bonolo go beela dimalo tse o yang kgotsa tse o tswang teng tiro. O ka dirisa lefelo la gago la gona jaanong kgotsa o tsenye aterese ka seatla.",
   },
 
   // Personal info translations
@@ -1762,7 +1754,6 @@ const tswanaTranslations: TranslationStructure = {
     vehicleInfo: "Tshedimosetso ya Koloi",
     earningsPage: "Tsebe ya Madi",
     viewEarnings: "Bona Madi",
-    manageRoutes: "Laola Ditsela",
     editPersonalInfo: "Fetola Tshedimosetso ya Gago",
     switchToPassenger: "Fetola go ya go Mopalami",
     switchToPassengerProfile: "Fetola go ya go Tshwantsho ya Mopalami",
@@ -2271,7 +2262,6 @@ const afrikaansTranslations: TranslationStructure = {
     vehicleInfo: "Voertuig Inligting",
     earningsPage: "Verdienste Bladsy",
     viewEarnings: "Sien Verdienste",
-    manageRoutes: "Bestuur Roetes",
     editPersonalInfo: "Redigeer Persoonlike Inligting",
     switchToPassenger: "Skakel na Passasier",
     switchToPassengerProfile: "Skakel na Passasier Profiel",
@@ -2471,8 +2461,6 @@ const afrikaansTranslations: TranslationStructure = {
     permissionDenied: "Toestemming Geweier",
     locationPermissionRequired: "Ligging toestemming is nodig om jou huidige ligging te kry",
     failedToGetLocation: "Kon nie huidige ligging kry nie",
-    homeAddressInfo: "💡 Om jou huis adres by te voeg sal dit makliker maak om ritte na of van die huis te bespreek. Jy kan jou huidige ligging gebruik of 'n adres handmatig invoer.",
-    workAddressInfo: "💡 Om jou werk adres by te voeg sal dit makliker maak om ritte na of van werk te bespreek. Jy kan jou huidige ligging gebruik of 'n adres handmatig invoer.",
   },
 
   // Personal information

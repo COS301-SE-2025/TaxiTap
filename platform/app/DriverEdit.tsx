@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -20,11 +20,14 @@ export default function DriverPersonalInfoEdit() {
     const [emergencyContactName, setEmergencyContactName] = useState('');
     const [emergencyContactNumber, setEmergencyContactNumber] = useState('');
     const [emergencyContactRelationship, setEmergencyContactRelationship] = useState('');
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { currentLanguage } = useLanguage();
-    const [imageUri, setImageUri] = useState<string | null>(null);
+    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     
     // Hardcoded translations
     const translations = {
@@ -55,7 +58,8 @@ export default function DriverPersonalInfoEdit() {
             phoneNumberRequired: "Phone number is required",
             changesSaved: "Changes saved successfully!",
             failedToSaveChanges: "Failed to save changes",
-            ok: "OK"
+            ok: "OK",
+            saving: "Saving..."
         },
         zu: {
             driverPersonalInfo: "Ulwazi Lwakho Lomshayeli",
@@ -84,7 +88,8 @@ export default function DriverPersonalInfoEdit() {
             phoneNumberRequired: "Inombolo yefoni iyadingeka",
             changesSaved: "Izinguquko zilondoloziwe ngempumelelo!",
             failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
-            ok: "Kulungile"
+            ok: "Kulungile",
+            saving: "Kulondoloziwa..."
         }
     };
     
@@ -92,7 +97,6 @@ export default function DriverPersonalInfoEdit() {
         const lang = currentLanguage === 'zu' ? 'zu' : 'en';
         return translations[lang][key as keyof typeof translations[typeof lang]] || key;
     };
-    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
     // Initialize form data from user context
     useEffect(() => {
@@ -120,6 +124,9 @@ export default function DriverPersonalInfoEdit() {
                 setEmergencyContactNumber(convexUser.emergencyContact.phoneNumber || '');
                 setEmergencyContactRelationship(convexUser.emergencyContact.relationship || '');
             }
+            if (convexUser.profilePicture) {
+                setImageUri(convexUser.profilePicture);
+            }
         }
     }, [convexUser]);
 
@@ -131,55 +138,54 @@ export default function DriverPersonalInfoEdit() {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
                 allowsEditing: true,
-                quality: 1,
+                quality: 0.8,
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const uri = result.assets[0].uri;
-                console.log('Selected image URI:', uri);
                 setImageUri(uri);
             }
         } catch (error) {
             console.error('Image upload error:', error);
+            showGlobalError('Error', 'Failed to upload image', {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
         }
     };
 
     const handleSave = async () => {
+        if (!user?.id) {
+            showGlobalError('Error', 'User not loaded', {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
+        // Validation
+        if (!name.trim()) {
+            showGlobalError('Error', 'Name is required', {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
+        if (!number.trim()) {
+            showGlobalError('Error', 'Phone number is required', {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
+        setIsLoading(true);
         try {
-            if (!user?.id) {
-                Alert.alert(t('error'), t('userNotFound'));
-                showGlobalError('Error', 'User not found', {
-                    duration: 3000,
-                    position: 'top',
-                    animation: 'slide-down',
-                });
-                return;
-            }
-
-            // Validation
-            if (!name.trim()) {
-                showGlobalError('Error', 'Name is required', {
-                    duration: 3000,
-                    position: 'top',
-                    animation: 'slide-down',
-                });
-                Alert.alert(t('error'), t('nameRequired'));
-                return;
-            }
-
-            if (!number.trim()) {
-                Alert.alert(t('error'), t('phoneNumberRequired'));
-                showGlobalError('Error', 'Phone number is required', {
-                    duration: 3000,
-                    position: 'top',
-                    animation: 'slide-down',
-                });
-                return;
-            }
-
-            // Note: License number and years experience validation removed as they're not in schema
-            // These would need to be added to the schema if required
-
             // Update basic info in context
             if (name !== user.name) {
                 await updateUserName(name);
@@ -202,16 +208,17 @@ export default function DriverPersonalInfoEdit() {
                 name, 
                 phoneNumber: number,
                 email,
+                profilePicture: imageUri || undefined,
                 emergencyContact
             });
 
-            showGlobalSuccess(t('success'), t('changesSaved'), {
-                duration: 0,
+            showGlobalSuccess('Success', 'Changes saved successfully', {
+                duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: t('ok'),
+                        label: 'OK',
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -219,12 +226,14 @@ export default function DriverPersonalInfoEdit() {
             });
 
         } catch (error: any) {
-            Alert.alert(t('error'), error.message || t('failedToSaveChanges'));
-            showGlobalError('Error', error.message || 'Failed to update driver profile', {
-                duration: 5000,
+            console.error('Update error:', error);
+            showGlobalError('Error', error.message || 'Failed to save changes', {
+                duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -236,123 +245,119 @@ export default function DriverPersonalInfoEdit() {
         safeArea: {
             flex: 1,
             backgroundColor: theme.background,
+            borderTopWidth: 0,
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
-        headerSection: {
+        header: {
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 30,
+            marginBottom: 24,
         },
         backButton: {
             marginRight: 15,
         },
         headerTitle: {
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: 'bold',
             color: theme.text,
         },
-        profileImageSection: {
+        photoSection: {
             alignItems: 'center',
-            marginBottom: 30,
+            marginBottom: 24,
         },
-        profileImageContainer: {
-            marginBottom: 15,
+        photoContainer: {
+            position: 'relative',
         },
-        changePhotoText: {
-            fontSize: 16,
-            color: theme.primary,
-            fontWeight: '600',
+        profileImageBackground: {
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 3,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         },
-        formSection: {
+        editPhotoButton: {
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            backgroundColor: theme.primary,
+            borderRadius: 15,
+            width: 30,
+            height: 30,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
+            borderRadius: 16,
             padding: 20,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         sectionTitle: {
-            fontSize: 18,
+            fontSize: 13,
             fontWeight: '600',
-            color: theme.text,
-            marginBottom: 15,
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
         },
         fieldContainer: {
-            marginBottom: 20,
+            marginBottom: 16,
         },
         label: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            fontWeight: '400',
             color: theme.text,
             marginBottom: 8,
         },
         input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             borderRadius: 8,
             paddingHorizontal: 15,
             paddingVertical: 12,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
-            color: theme.text,
-        },
-        buttonContainer: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 20,
-        },
-        cancelButton: {
-            backgroundColor: isDark ? theme.surface : '#f0f0f0',
-            paddingVertical: 15,
-            paddingHorizontal: 30,
-            borderRadius: 8,
-            flex: 1,
-            marginRight: 10,
-            alignItems: 'center',
-        },
-        cancelButtonText: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            borderWidth: 0,
             color: theme.text,
         },
         saveButton: {
             backgroundColor: theme.primary,
-            paddingVertical: 15,
-            paddingHorizontal: 30,
-            borderRadius: 8,
-            flex: 1,
-            marginLeft: 10,
+            paddingVertical: 16,
+            borderRadius: 16,
             alignItems: 'center',
+            marginTop: 16,
+        },
+        saveButtonDisabled: {
+            opacity: 0.6,
         },
         saveButtonText: {
+            color: '#fff',
+            fontWeight: 'bold',
             fontSize: 16,
-            fontWeight: '600',
-            color: isDark ? '#121212' : '#fff',
         },
-        roleIndicator: {
-            fontSize: 14,
-            color: theme.text,
-            opacity: 0.7,
-            textAlign: 'center',
-            marginBottom: 20,
+        separator: {
+            height: 1,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            marginVertical: 16,
         },
-
     });
 
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={dynamicStyles.container}>
-                    <Text>{t('loading')}</Text>
+                    <Text style={{ color: theme.text }}>{t('loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -362,46 +367,43 @@ export default function DriverPersonalInfoEdit() {
         <SafeAreaView style={dynamicStyles.safeArea}>
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Header */}
-                <View style={dynamicStyles.headerSection}>
-                    <Pressable onPress={handleCancel} style={dynamicStyles.backButton}>
-                        <Ionicons name="chevron-back" size={24} color={theme.text} />
+                <View style={dynamicStyles.header}>
+                    <Pressable style={dynamicStyles.backButton} onPress={handleCancel}>
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>{t('driverPersonalInfo')}</Text>
                 </View>
 
-                {/* Role Indicator */}
-                <Text style={dynamicStyles.roleIndicator}>
-                    {t('editingDriverProfile')}
-                </Text>
-
-                {/* Profile Image Section */}
-                <View style={dynamicStyles.profileImageSection}>
-                    <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImageContainer}>
-                        {imageUri ? (
-                            <Image
-                                source={{ uri: imageUri }}
-                                resizeMode="cover"
-                                style={{ width: 100, height: 100, borderRadius: 50 }}
-                            />
-                        ) : (
-                            <Ionicons name="person-circle" size={100} color={theme.text} />
-                        )}
-                    </Pressable>
-                    <Pressable onPress={handleUploadPhoto}>
-                        <Text style={dynamicStyles.changePhotoText}>{t('changePhoto')}</Text>
-                    </Pressable>
+                {/* Profile Photo Section */}
+                <View style={dynamicStyles.photoSection}>
+                    <View style={dynamicStyles.photoContainer}>
+                        <Pressable onPress={handleUploadPhoto}>
+                            {imageUri ? (
+                                <Image
+                                    source={{ uri: imageUri }}
+                                    style={{ width: 100, height: 100, borderRadius: 50 }}
+                                />
+                            ) : (
+                                <View style={dynamicStyles.profileImageBackground}>
+                                    <Ionicons name="person" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+                                </View>
+                            )}
+                        </Pressable>
+                        <Pressable style={dynamicStyles.editPhotoButton} onPress={handleUploadPhoto}>
+                            <Ionicons name="camera" size={16} color={isDark ? '#121212' : '#fff'} />
+                        </Pressable>
+                    </View>
                 </View>
 
-                {/* Basic Information Section */}
-                <View style={dynamicStyles.formSection}>
-                    <Text style={dynamicStyles.sectionTitle}>{t('basicInformation')}</Text>
-                    
+                {/* Basic Information */}
+                <Text style={dynamicStyles.sectionTitle}>{t('basicInformation')}</Text>
+                <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('fullName')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            style={dynamicStyles.input}
                             placeholder={t('enterFullName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
@@ -410,9 +412,9 @@ export default function DriverPersonalInfoEdit() {
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('phoneNumber')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={number}
                             onChangeText={setNumber}
-                            style={dynamicStyles.input}
                             placeholder={t('enterPhoneNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
@@ -422,9 +424,9 @@ export default function DriverPersonalInfoEdit() {
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('email')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            style={dynamicStyles.input}
                             placeholder={t('enterEmail')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
@@ -433,19 +435,15 @@ export default function DriverPersonalInfoEdit() {
                     </View>
                 </View>
 
-                {/* Note: Driver-specific fields removed as they're not in the current schema */}
-                {/* These would need to be added to the schema if required */}
-
                 {/* Emergency Contact Section */}
-                <View style={dynamicStyles.formSection}>
-                    <Text style={dynamicStyles.sectionTitle}>{t('emergencyContact')}</Text>
-                    
+                <Text style={dynamicStyles.sectionTitle}>{t('emergencyContact')}</Text>
+                <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('emergencyContactName')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            style={dynamicStyles.input}
                             placeholder={t('enterEmergencyContactName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
@@ -454,9 +452,9 @@ export default function DriverPersonalInfoEdit() {
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('emergencyContactPhone')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={emergencyContactNumber}
                             onChangeText={setEmergencyContactNumber}
-                            style={dynamicStyles.input}
                             placeholder={t('enterEmergencyContactNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
@@ -466,24 +464,25 @@ export default function DriverPersonalInfoEdit() {
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('emergencyContactRelationship')}</Text>
                         <TextInput
+                            style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            style={dynamicStyles.input}
                             placeholder={t('relationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
                 </View>
 
-                {/* Action Buttons */}
-                <View style={dynamicStyles.buttonContainer}>
-                    <Pressable style={dynamicStyles.cancelButton} onPress={handleCancel}>
-                        <Text style={dynamicStyles.cancelButtonText}>{t('cancel')}</Text>
-                    </Pressable>
-                    <Pressable style={dynamicStyles.saveButton} onPress={handleSave}>
-                        <Text style={dynamicStyles.saveButtonText}>{t('saveChanges')}</Text>
-                    </Pressable>
-                </View>
+                {/* Save Button */}
+                <Pressable
+                    style={[dynamicStyles.saveButton, isLoading && dynamicStyles.saveButtonDisabled]}
+                    onPress={handleSave}
+                    disabled={isLoading}
+                >
+                    <Text style={dynamicStyles.saveButtonText}>
+                        {isLoading ? t('saving') : t('saveChanges')}
+                    </Text>
+                </Pressable>
             </ScrollView>
         </SafeAreaView>
     );

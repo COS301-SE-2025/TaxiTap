@@ -157,31 +157,51 @@ export default function PersonalInfoEdit() {
         safeArea: {
             flex: 1,
             backgroundColor: theme.background,
+            borderTopWidth: 0,
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 30,
+            paddingVertical: 20,
+            marginBottom: 24,
         },
         backButton: {
-            marginRight: 15,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
         },
         headerTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
+            fontSize: 28,
+            fontWeight: '600',
             color: theme.text,
+            flex: 1,
         },
         photoSection: {
             alignItems: 'center',
-            marginBottom: 30,
+            marginBottom: 24,
         },
         photoContainer: {
             position: 'relative',
+        },
+        profileImageBackground: {
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 3,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         },
         editPhotoButton: {
             position: 'absolute',
@@ -196,55 +216,60 @@ export default function PersonalInfoEdit() {
         },
         section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
+            borderRadius: 16,
             padding: 20,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         sectionTitle: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: 15,
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
         },
         fieldContainer: {
-            marginBottom: 15,
+            marginBottom: 16,
         },
         label: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            fontWeight: '400',
             color: theme.text,
-            marginBottom: 5,
+            marginBottom: 8,
         },
         input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             borderRadius: 8,
             paddingHorizontal: 15,
             paddingVertical: 12,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
+            fontSize: 17,
+            borderWidth: 0,
             color: theme.text,
         },
         saveButton: {
             backgroundColor: theme.primary,
             paddingVertical: 16,
-            borderRadius: 12,
+            borderRadius: 16,
             alignItems: 'center',
-            marginTop: 20,
+            marginTop: 16,
         },
         saveButtonDisabled: {
             opacity: 0.6,
         },
         saveButtonText: {
-            color: isDark ? '#121212' : '#fff',
+            color: '#fff',
             fontWeight: 'bold',
-            fontSize: 18,
+            fontSize: 16,
+        },
+        separator: {
+            height: 1,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            marginVertical: 16,
         },
     });
 
@@ -263,7 +288,7 @@ export default function PersonalInfoEdit() {
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Header */}
                 <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('../PassengerProfile')}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>{t('personalInfo:personalInformation')}</Text>
@@ -279,7 +304,9 @@ export default function PersonalInfoEdit() {
                                     style={{ width: 100, height: 100, borderRadius: 50 }}
                                 />
                             ) : (
-                                <Ionicons name="person-circle" size={100} color={theme.text} />
+                                <View style={dynamicStyles.profileImageBackground}>
+                                    <Ionicons name="person" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+                                </View>
                             )}
                         </Pressable>
                         <Pressable style={dynamicStyles.editPhotoButton} onPress={handleUploadPhoto}>
@@ -289,9 +316,8 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
+                <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:personalInformation')}</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
                         <TextInput
@@ -330,9 +356,8 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact */}
+                <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:emergencyContact')}</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>
                         <TextInput
