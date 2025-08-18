@@ -20,7 +20,6 @@ export default function DriverProfile() {
     const { user, loading, logout, updateUserRole, updateUserName, updateAccountType, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
-    const [imageUri, setImageUri] = useState<string | null>(null);
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
     useEffect(() => {
@@ -78,7 +77,7 @@ export default function DriverProfile() {
             router.replace('/LandingPage');
         } catch (error) {
             console.error('Logout error:', error);
-            showError('Error', 'Failed to logout. Please try again.');
+            showGlobalError('Error', 'Failed to logout. Please try again.');
         }
     };
 
