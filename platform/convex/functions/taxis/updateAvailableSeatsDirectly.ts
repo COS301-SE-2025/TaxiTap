@@ -26,7 +26,12 @@ export const updateAvailableSeatsDirectly = mutation({
 
     const currentCapacity = taxi.capacity ?? 0;
     const newCapacity =
-      args.action === "decrease" ? Math.max(currentCapacity - 1, 0) : currentCapacity + 1;
+      args.action === "decrease" ? Math.max(currentCapacity - 1, 0) : Math.min(currentCapacity + 1, 14);
+
+    // Additional validation to ensure capacity doesn't exceed 14
+    if (newCapacity > 14) {
+      throw new Error("Maximum 14 seats are allowed for taxis.");
+    }
 
     await ctx.db.patch(taxi._id, {
       capacity: newCapacity,
