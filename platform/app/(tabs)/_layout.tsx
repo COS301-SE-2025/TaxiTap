@@ -242,6 +242,13 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="PaymentsConfirm"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };

@@ -50,7 +50,7 @@ export default function SeatReserved() {
 	const isMonitoringRef = useRef(false);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; tripPaid?: boolean; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -534,40 +534,81 @@ export default function SeatReserved() {
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
 			});
-			
-			showGlobalAlert({
-				title: 'Ride Ended Successfully',
-				message: `Ride ended! Fare: R${result.fare}`,
-				type: 'success',
-				duration: 0,
-				actions: [
-					{
-						label: 'Continue to Feedback',
-						onPress: () => {
-							router.push({
-								pathname: '/SubmitFeedback',
-								params: {
-									rideId: taxiInfo.rideDocId,
-									startName: currentLocation?.name || 'Current Location',
-									endName: destination?.name || 'Destination',
-									passengerId: user.id,
-									driverId: driverId || '',
-								},
-							});
+
+			const needsPaymentConfirmation = taxiInfo.tripPaid === null || taxiInfo.tripPaid === undefined || taxiInfo.tripPaid === false;
+
+			if (needsPaymentConfirmation) {
+				showGlobalAlert({
+					title: 'Ride Ended Successfully',
+					message: `Ride completed! Fare: R${result.fare}`,
+					type: 'success',
+					duration: 0,
+					actions: [
+						{
+							label: 'Continue to Payment',
+							onPress: () => {
+								router.push({
+									pathname: '/PaymentsConfirm',
+									params: {
+										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
+										startName: currentLocation?.name || 'Current Location',
+										endName: destination?.name || 'Destination',
+										passengerId: user.id,
+										driverId: driverId || '',
+										fare: result.fare.toString(),
+										driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+										licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+									},
+								});
+							},
+							style: 'default',
 						},
-						style: 'default',
-					},
-					{
-						label: 'Skip Feedback',
-						onPress: () => {
-							router.push('/HomeScreen');
+						// {
+						// 	label: 'Skip',
+						// 	onPress: () => {
+						// 		router.push('/HomeScreen');
+						// 	},
+						// 	style: 'cancel',
+						// }
+					],
+					position: 'top',
+					animation: 'slide-down',
+				});
+			} else {
+				showGlobalAlert({
+					title: 'Ride Ended Successfully',
+					message: `Ride completed! Fare: R${result.fare}`,
+					type: 'success',
+					duration: 0,
+					actions: [
+						{
+							label: 'Continue to Feedback',
+							onPress: () => {
+								router.push({
+									pathname: '/SubmitFeedback',
+									params: {
+										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
+										startName: currentLocation?.name || 'Current Location',
+										endName: destination?.name || 'Destination',
+										passengerId: user.id,
+										driverId: driverId || '',
+									},
+								});
+							},
+							style: 'default',
 						},
-						style: 'cancel',
-					}
-				],
-				position: 'top',
-				animation: 'slide-down',
-			});
+						{
+							label: 'Skip Feedback',
+							onPress: () => {
+								router.push('/HomeScreen');
+							},
+							style: 'cancel',
+						}
+					],
+					position: 'top',
+					animation: 'slide-down',
+				});
+			}
 			
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to end ride.', {
