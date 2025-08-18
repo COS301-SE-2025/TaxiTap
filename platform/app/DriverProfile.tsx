@@ -64,9 +64,6 @@ export default function DriverProfile() {
         router.push('../EarningsPage');
     };
 
-    const handleRoutes = () => {
-    };
-
     const handlePersonalInfo = () => {
         router.push('../DriverEdit');
     };
@@ -413,17 +410,6 @@ export default function DriverProfile() {
                         title={t('driver:earningsPage')}
                         onPress={handleEarnings}
                     />
-                    <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
-                        <View style={dynamicStyles.menuItemLeft}>
-                            <View style={dynamicStyles.iconContainer}>
-                                <Ionicons name="map-outline" size={20} color={theme.text} />
-                            </View>
-                            <Text style={dynamicStyles.menuItemText}>{t('driver:manageRoutes')}</Text>
-                        </View>
-                        <Pressable onPress={handleRoutes}>
-                            <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
-                        </Pressable>
-                    </View>
                 </View>
 
                 {/* Settings Section */}
