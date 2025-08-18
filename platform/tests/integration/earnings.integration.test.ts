@@ -48,64 +48,62 @@ describe("Integration tests for getWeeklyEarnings", () => {
         withIndex: jest.fn((indexName: string, queryFn: Function) => ({
           collect: jest.fn(async () => {
             const conditions: any = {};
+            
+            // Create a mock query object that accumulates conditions
             const mockQ = {
               eq: (field: string, val: any) => {
-                conditions.eq = { field, val };
+                conditions[field + '_eq'] = val;
                 return mockQ;
               },
               gt: (field: string, val: any) => {
-                conditions.gt = { field, val };
+                conditions[field + '_gt'] = val;
                 return mockQ;
               },
               lt: (field: string, val: any) => {
-                conditions.lt = { field, val };
+                conditions[field + '_lt'] = val;
                 return mockQ;
               },
             };
+            
+            // Execute the query function to collect conditions
             queryFn(mockQ);
 
             if (tableName === "trips") {
               return tripsTable.filter((trip) => {
-                if (
-                  conditions.eq &&
-                  conditions.eq.field === "driverId" &&
-                  trip.driverId !== conditions.eq.val
-                )
+                // Check driverId equality
+                if (conditions.driverId_eq !== undefined && trip.driverId !== conditions.driverId_eq) {
                   return false;
-                if (
-                  conditions.gt &&
-                  conditions.gt.field === "startTime" &&
-                  !(trip.startTime > conditions.gt.val)
-                )
+                }
+                
+                // Check startTime greater than
+                if (conditions.startTime_gt !== undefined && !(trip.startTime > conditions.startTime_gt)) {
                   return false;
-                if (
-                  conditions.lt &&
-                  conditions.lt.field === "startTime" &&
-                  !(trip.startTime < conditions.lt.val)
-                )
+                }
+                
+                // Check startTime less than
+                if (conditions.startTime_lt !== undefined && !(trip.startTime < conditions.startTime_lt)) {
                   return false;
+                }
+                
                 return true;
               });
             } else if (tableName === "work_sessions") {
               return sessionsTable.filter((session) => {
-                if (
-                  conditions.eq &&
-                  conditions.eq.field === "driverId" &&
-                  session.driverId !== conditions.eq.val
-                )
+                // Check driverId equality
+                if (conditions.driverId_eq !== undefined && session.driverId !== conditions.driverId_eq) {
                   return false;
-                if (
-                  conditions.gt &&
-                  conditions.gt.field === "startTime" &&
-                  !(session.startTime > conditions.gt.val)
-                )
+                }
+                
+                // Check startTime greater than
+                if (conditions.startTime_gt !== undefined && !(session.startTime > conditions.startTime_gt)) {
                   return false;
-                if (
-                  conditions.lt &&
-                  conditions.lt.field === "startTime" &&
-                  !(session.startTime < conditions.lt.val)
-                )
+                }
+                
+                // Check startTime less than  
+                if (conditions.startTime_lt !== undefined && !(session.startTime < conditions.startTime_lt)) {
                   return false;
+                }
+                
                 return true;
               });
             }
@@ -125,7 +123,6 @@ describe("Integration tests for getWeeklyEarnings", () => {
     sessionsTable = [];
     jest.clearAllMocks();
   });
-
 
   it("returns 0 hoursOnline if session endTime missing", async () => {
     sessionsTable.push({
@@ -179,18 +176,29 @@ describe("Integration tests for getWeeklyEarnings", () => {
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
     
-    // Add only one trip and one session to current week
+    // Calculate current week start to ensure trip falls within current week
+    const currentWeekStart = new Date(now);
+    const day = currentWeekStart.getDay();
+    const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1);
+    currentWeekStart.setDate(diff);
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    // Add trip and session within current week bounds
+    const tripTime = currentWeekStart.getTime() + (2 * oneDay); // 2 days into current week
+    const sessionStartTime = currentWeekStart.getTime() + oneDay; // 1 day into current week  
+    const sessionEndTime = sessionStartTime + oneDay; // 1 day duration = 24 hours
+    
     tripsTable.push({
       driverId,
-      startTime: now - oneDay,
+      startTime: tripTime,
       fare: 75,
       reservation: false,
     });
 
     sessionsTable.push({
       driverId,
-      startTime: now - 2 * oneDay,
-      endTime: now - oneDay,
+      startTime: sessionStartTime,
+      endTime: sessionEndTime,
     });
 
     const results = await earningsHandler(ctx, { driverId });
