@@ -10,6 +10,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
 import { useTranslation } from 'react-i18next';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NotificationButton: React.FC = () => {
   const { theme, isDark } = useTheme();
@@ -80,15 +81,17 @@ const HeaderRightButtons: React.FC = () => {
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 10),
           backgroundColor: theme.tabBarBackground,
           borderTopColor: theme.border,
           borderTopWidth: 1,
