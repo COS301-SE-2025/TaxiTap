@@ -7,8 +7,10 @@ import { Id } from '../convex/_generated/dataModel';
 
 export default function WaitingPayments() {
     const { user } = useUser();
-    if (!user) return;
-    const activeTrips = useQuery(api.functions.rides.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
+    const activeTrips = useQuery(
+      api.functions.rides.getActiveTrips.getActiveTrips,
+      user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
 
     const dynamicStyles = StyleSheet.create({
         container: {
@@ -37,7 +39,7 @@ export default function WaitingPayments() {
         noResponse: { color: "#FF9900", fontWeight: "bold" },
     });
 
-    if (activeTrips === undefined) {
+    if (!user || activeTrips === undefined) {
         return (
         <View style={dynamicStyles.container}>
             <Text style={{ fontSize: 20, textAlign: "center" }}>Loading...</Text>

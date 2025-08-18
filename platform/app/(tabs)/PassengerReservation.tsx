@@ -50,7 +50,7 @@ export default function SeatReserved() {
 	const isMonitoringRef = useRef(false);
 	
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; } | undefined, taxiInfoError: unknown;
+	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; tripPaid?: boolean; } | undefined, taxiInfoError: unknown;
 	try {
 		taxiInfo = useQuery(
 			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
@@ -518,26 +518,31 @@ export default function SeatReserved() {
 	};
 
 	const handleEndRide = async () => {
-		if (!taxiInfo?.rideId || !user?.id) {
-			showGlobalError('Error', 'No ride or user information available.', {
-				duration: 4000,
-				position: 'top',
-				animation: 'slide-down',
-			});
-			return;
-		}
-		try {
-			setRideJustEnded(true);
-			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			
-			const result = await endTripConvex({
-				passengerId: user.id as Id<'taxiTap_users'>,
-			});
-			
+	if (!taxiInfo?.rideId || !user?.id) {
+		showGlobalError('Error', 'No ride or user information available.', {
+			duration: 4000,
+			position: 'top',
+			animation: 'slide-down',
+		});
+		return;
+	}
+	try {
+		setRideJustEnded(true);
+		await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+		await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+		
+		const result = await endTripConvex({
+			passengerId: user.id as Id<'taxiTap_users'>,
+		});
+
+		// Check if payment has already been confirmed (tripPaid === true)
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (hasAlreadyPaid) {
+			// User has already paid, go directly to feedback
 			showGlobalAlert({
 				title: 'Ride Ended Successfully',
-				message: `Ride ended! Fare: R${result.fare}`,
+				message: `Ride completed! Fare: R${result.fare}`,
 				type: 'success',
 				duration: 0,
 				actions: [
@@ -547,7 +552,7 @@ export default function SeatReserved() {
 							router.push({
 								pathname: '/SubmitFeedback',
 								params: {
-									rideId: taxiInfo.rideDocId,
+									rideId: taxiInfo.rideDocId || taxiInfo.rideId,
 									startName: currentLocation?.name || 'Current Location',
 									endName: destination?.name || 'Destination',
 									passengerId: user.id,
@@ -568,15 +573,55 @@ export default function SeatReserved() {
 				position: 'top',
 				animation: 'slide-down',
 			});
-			
-		} catch (error: any) {
-			showGlobalError('Error', error?.message || 'Failed to end ride.', {
-				duration: 4000,
+		} else {
+			// Payment confirmation is needed
+			showGlobalAlert({
+				title: 'Ride Ended Successfully',
+				message: `Ride completed! Fare: R${result.fare}`,
+				type: 'success',
+				duration: 0,
+				actions: [
+					{
+						label: 'Continue to Payment',
+						onPress: () => {
+							router.push({
+								pathname: '/PaymentsConfirm',
+								params: {
+									rideId: taxiInfo.rideDocId || taxiInfo.rideId,
+									startName: currentLocation?.name || 'Current Location',
+									endName: destination?.name || 'Destination',
+									passengerId: user.id,
+									driverId: driverId || '',
+									fare: result.fare.toString(),
+									driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+									licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+								},
+							});
+						},
+						style: 'default',
+					},
+					// Uncomment if you want to allow skipping payment
+					// {
+					// 	label: 'Skip',
+					// 	onPress: () => {
+					// 		router.push('/HomeScreen');
+					// 	},
+					// 	style: 'cancel',
+					// }
+				],
 				position: 'top',
 				animation: 'slide-down',
 			});
 		}
-	};
+		
+	} catch (error: any) {
+		showGlobalError('Error', error?.message || 'Failed to end ride.', {
+			duration: 4000,
+			position: 'top',
+			animation: 'slide-down',
+		});
+	}
+};
 
 	const handleCancelRequest = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {

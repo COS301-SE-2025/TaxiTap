@@ -11,24 +11,37 @@ import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
-export default function DriverProfile() {
+export default function DriverProfile() {   
     const [name, setName] = useState('');
     const [number, setNumber] = useState('');
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    
     const router = useRouter();
-    const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
-    const { updateNumber } = useUser();
+    const { user, loading, logout, updateUserRole, updateUserName, updateAccountType, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
-    // Initialize name from user context
     useEffect(() => {
         if (user) {
             setName(user.name || '');
             setNumber(user.phoneNumber || '');
         }
     }, [user]);
+
+    const convexUser = useQuery(
+        api.functions.users.UserManagement.getUserById.getUserById, 
+        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace('/LandingPage');
+        }
+    }, [user, loading, router]);
+
+    const switchDriverToBoth = useMutation(api.functions.users.UserManagement.switchDrivertoBoth.switchDriverToBoth);
+    const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
 
     const handleUploadPhoto = async () => {
         try {
@@ -44,35 +57,29 @@ export default function DriverProfile() {
         } catch {}
     };
 
-    // Query user data from Convex using the user ID from context
-    const convexUser = useQuery(
-        api.functions.users.UserManagement.getUserById.getUserById, 
-        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
-    );
-
-    // Mutations for switching roles
-    const switchDriverToBoth = useMutation(api.functions.users.UserManagement.switchDrivertoBoth.switchDriverToBoth);
-    const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
-
     const handleVehicle = () => {
         router.push('../VehicleDriver');
     };
+    
     const handleEarnings = () => {
         router.push('../EarningsPage');
     };
 
     const handleRoutes = () => {
-        //router.push('../Routes'); ->change to real name
     };
 
     const handlePersonalInfo = () => {
-        // Navigate to driver personal info edit screen
         router.push('../DriverEdit');
     };
 
     const handleSignout = async () => {
-        await logout();
-        router.push('../LandingPage');
+        try {
+            await logout();
+            router.replace('/LandingPage');
+        } catch (error) {
+            console.error('Logout error:', error);
+            showError('Error', 'Failed to logout. Please try again.');
+        }
     };
 
     const handleSwitchToPassenger = async () => {
@@ -82,7 +89,6 @@ export default function DriverProfile() {
                 return;
             }
 
-            // First time switching - user is currently driver only
             if ((convexUser?.accountType || user.accountType) === 'driver') {
                 showGlobalAlert({
                     title: 'First Time Switching to Passenger',

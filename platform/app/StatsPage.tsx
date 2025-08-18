@@ -9,8 +9,27 @@ import { Id } from "@/convex/_generated/dataModel";
 export default function StatsPage() {
   const router = useRouter();
   const { user } = useUser();
-  if (!user) return;
-  const activeTrips = useQuery(api.functions.rides.getActiveTrips.getActiveTrips, { driverId: user.id as Id<"taxiTap_users">, });
+  const activeTrips = useQuery(
+    api.functions.rides.getActiveTrips.getActiveTrips,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+  if (!user || activeTrips === undefined) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
+        <ScrollView contentContainerStyle={{ padding: 15 }}>
+          <View style={{ marginBottom: 20, paddingHorizontal: 15 }}>
+            <Text style={{ fontSize: 28, fontWeight: "bold", color: "#333" }}>
+              Dashboard
+            </Text>
+            <Text style={{ fontSize: 16, color: "#666", marginTop: 6 }}>
+              Loading...
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
