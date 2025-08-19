@@ -19,7 +19,7 @@ import { router, useNavigation, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import loading from '../../assets/images/loading4.png';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
@@ -1044,6 +1044,11 @@ export default function HomeScreen() {
     setShowDestinationSuggestions(false);
   };
 
+  // Show loading spinner if essential data is loading
+  if (!user || recentRoutes === undefined || routes === undefined) {
+    return <LoadingSpinner />;
+  }
+
   const dynamicStyles = StyleSheet.create({
     container: { 
       flex: 1, backgroundColor: theme.background
@@ -1342,9 +1347,8 @@ export default function HomeScreen() {
       </View>
       
       {isLoadingCurrentLocation ? (
-        <View style={[dynamicStyles.map, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Image source={loading} style={{ width: 120, height: 120 }} resizeMode="contain" />
-          <Text style={{ color: theme.textSecondary, marginTop: 10 }}>{t('home:gettingLocation')}</Text>
+        <View style={dynamicStyles.map}>
+          <LoadingSpinner />
         </View>
       ) : (
         <MapView

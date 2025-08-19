@@ -10,6 +10,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -359,7 +360,7 @@ export default function PassengerProfile() {
         return (
           <SafeAreaView style={dynamicStyles.safeArea}>
             <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: theme.text, fontSize: 16 }}>{t('profile:loadingUserData')}</Text>
+                <LoadingSpinner size="large" />
             </View>
           </SafeAreaView>
         );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { ActivityIndicator } from 'react-native';
 import EarningsPage from '../../../app/EarningsPage';
 
 // Mock icon library
@@ -104,7 +105,7 @@ describe('EarningsPage', () => {
   it('renders loading screen when no data', () => {
     const useQuery = require('convex/react').useQuery;
     useQuery.mockImplementationOnce(() => null);
-    const { getByText } = render(<EarningsPage />);
-    expect(getByText('Loading earnings...')).toBeTruthy();
+    const { UNSAFE_getByType } = render(<EarningsPage />);
+    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 });

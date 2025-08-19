@@ -8,6 +8,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default () => {
@@ -216,12 +217,7 @@ export default () => {
     
     // Loading and error states
     if (ride === undefined) {
-        return (
-            <SafeAreaView style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={{ color: theme.text, marginTop: 10 }}>Loading Ride Details...</Text>
-            </SafeAreaView>
-        );
+        return <LoadingSpinner />;
     }
 
     if (ride === null) {

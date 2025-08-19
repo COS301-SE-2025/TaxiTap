@@ -28,6 +28,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -468,11 +469,11 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 10,
     },
     loadingText: {
       fontSize: 16,
       color: theme.textSecondary,
-      marginLeft: 12,
     },
 
   });
@@ -564,7 +565,11 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
           <View style={dynamicStyles.selectionCard}>
             <Text style={dynamicStyles.selectionTitle}>{t('selectTaxiAssociation')}</Text>
             
-            {allTaxiAssociations?.map((association: string, index: number) => (
+            {!allTaxiAssociations ? (
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <LoadingSpinner size="small" />
+              </View>
+            ) : allTaxiAssociations.map((association: string, index: number) => (
               <TouchableOpacity
                 key={index}
                 style={[
@@ -592,7 +597,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
           >
             {isAssigning ? (
               <View style={dynamicStyles.loadingContainer}>
-                <ActivityIndicator size="small" color={theme.text} />
+                <LoadingSpinner size="small" />
                 <Text style={dynamicStyles.loadingText}>{t('assigningRoute')}</Text>
               </View>
             ) : (

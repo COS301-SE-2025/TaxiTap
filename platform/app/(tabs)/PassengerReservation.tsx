@@ -16,6 +16,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { useProximityAlerts } from '../../hooks/useProximityAlerts';
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -1442,7 +1443,7 @@ export default function SeatReserved() {
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
 				<View style={dynamicStyles.loadingContainer}>
-					<Text style={dynamicStyles.loadingText}>{t('passengerReservation:loading')}</Text>
+					<LoadingSpinner size="large" />
 				</View>
 			</SafeAreaView>
 		);

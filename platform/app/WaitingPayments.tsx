@@ -4,6 +4,15 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView  } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+
+// Define the passenger type based on your data structure
+interface Passenger {
+    name: string;
+    phoneNumber: string;
+    fare: number;
+    tripPaid: boolean | null;
+}
 
 export default function WaitingPayments() {
     const { user } = useUser();
@@ -41,13 +50,13 @@ export default function WaitingPayments() {
 
     if (!user || activeTrips === undefined) {
         return (
-        <View style={dynamicStyles.container}>
-            <Text style={{ fontSize: 20, textAlign: "center" }}>Loading...</Text>
+        <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <LoadingSpinner size="large" />
         </View>
         );
     }
 
-    const waitingPayments = activeTrips?.passengers?.filter((p) => p.tripPaid === null) ?? [];
+    const waitingPayments = activeTrips?.passengers?.filter((p: Passenger) => p.tripPaid === null) ?? [];
 
     if (!waitingPayments.length) {
         return (
@@ -61,7 +70,7 @@ export default function WaitingPayments() {
 
     return (
         <ScrollView style={dynamicStyles.container}>
-        {waitingPayments.map((p, idx) => (
+        {waitingPayments.map((p: Passenger, idx: number) => (
             <View key={idx} style={dynamicStyles.passengerCard}>
             <Text style={dynamicStyles.name}>{p.name}</Text>
             <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>
