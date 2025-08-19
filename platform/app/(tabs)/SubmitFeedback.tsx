@@ -69,8 +69,17 @@ export default function SubmitFeedbackScreen() {
   };
 
   const handleUploadPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 1 });
-    if (!result.canceled && result.assets.length > 0) { setImageUri(result.assets[0].uri); }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ 
+        mediaTypes: 'images', 
+        allowsEditing: true, 
+        quality: 1,
+        aspect: [1, 1]
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch {}
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -140,7 +149,7 @@ export default function SubmitFeedbackScreen() {
     lastRideInfoRow: {
       marginBottom: 0,
     },
-    rideInfoIcon: {
+    iconContainer: {
       width: 32,
       height: 32,
       borderRadius: 8,
@@ -172,7 +181,7 @@ export default function SubmitFeedbackScreen() {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginBottom: 8,
-      marginTop: 24,
+      marginTop: 8,
       paddingHorizontal: 4,
     },
     section: {
@@ -187,8 +196,8 @@ export default function SubmitFeedbackScreen() {
       padding: 20,
     },
     ratingTitle: {
-      fontSize: 18,
-      fontWeight: '600',
+      fontSize: 17,
+      fontWeight: '400',
       color: theme.text,
       marginBottom: 20,
       textAlign: 'center',
@@ -206,15 +215,15 @@ export default function SubmitFeedbackScreen() {
       padding: 20,
     },
     commentTitle: {
-      fontSize: 18,
-      fontWeight: '600',
+      fontSize: 17,
+      fontWeight: '400',
       color: theme.text,
       marginBottom: 16,
     },
     commentInput: {
       backgroundColor: isDark 
-        ? 'rgba(15, 23, 42, 0.6)' 
-        : 'rgba(248, 250, 252, 0.8)',
+        ? 'rgba(255,255,255,0.05)' 
+        : 'rgba(0,0,0,0.03)',
       color: theme.text,
       height: 120,
       borderRadius: 12,
@@ -223,8 +232,8 @@ export default function SubmitFeedbackScreen() {
       fontSize: 16,
       borderWidth: 1,
       borderColor: isDark 
-        ? 'rgba(71, 85, 105, 0.2)' 
-        : 'rgba(226, 232, 240, 0.6)',
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(0,0,0,0.08)',
     },
     buttonContainer: {
       gap: 12,
@@ -245,7 +254,7 @@ export default function SubmitFeedbackScreen() {
     },
     submitButtonText: {
       color: '#FFFFFF',
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: '600',
     },
     skipButton: {
@@ -263,7 +272,7 @@ export default function SubmitFeedbackScreen() {
     },
     skipButtonText: {
       color: theme.text,
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: '600',
     },
   });
@@ -295,11 +304,11 @@ export default function SubmitFeedbackScreen() {
           
           <Text style={dynamicStyles.userName}>{name}</Text>
           
-          {/* Ride Info Section - styled like PassengerProfile menu items */}
+          {/* Ride Info Section - styled exactly like PassengerProfile */}
           <View style={dynamicStyles.rideInfoContainer}>
             <View style={dynamicStyles.rideInfoRow}>
-              <View style={dynamicStyles.rideInfoIcon}>
-                <Ionicons name="location-outline" size={16} color={theme.text} />
+              <View style={dynamicStyles.iconContainer}>
+                <Ionicons name="location-outline" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
                 <Text style={dynamicStyles.rideInfoLabel}>From</Text>
@@ -307,8 +316,8 @@ export default function SubmitFeedbackScreen() {
               </View>
             </View>
             <View style={[dynamicStyles.rideInfoRow, dynamicStyles.lastRideInfoRow]}>
-              <View style={dynamicStyles.rideInfoIcon}>
-                <Ionicons name="location" size={16} color={theme.text} />
+              <View style={dynamicStyles.iconContainer}>
+                <Ionicons name="location" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
                 <Text style={dynamicStyles.rideInfoLabel}>To</Text>
@@ -351,7 +360,7 @@ export default function SubmitFeedbackScreen() {
               value={comment}
               onChangeText={setComment}
               placeholder="Share your thoughts about the ride..."
-              placeholderTextColor={theme.textSecondary}
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               style={dynamicStyles.commentInput}
               multiline
               textAlignVertical="top"
