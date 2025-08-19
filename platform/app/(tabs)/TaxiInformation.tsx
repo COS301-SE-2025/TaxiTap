@@ -8,6 +8,7 @@ import {
   Animated,
   Linking,
   Image,
+  Pressable,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,6 +20,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import loading from '../../assets/images/loading4.png';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
@@ -395,15 +397,9 @@ export default function TaxiInformation() {
     },
     header: {
       paddingHorizontal: 20,
-      paddingTop: 70,
+      paddingTop: 10,
       paddingBottom: 20,
       backgroundColor: theme.primary,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: '600',
-      color: theme.buttonText || '#FFFFFF',
-      marginBottom: 6,
     },
     headerSubtitle: {
       fontSize: 14,
@@ -645,21 +641,33 @@ export default function TaxiInformation() {
       borderTopWidth: 1,
       borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
     },
+    backButton2: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    headerTitle2: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: 'black',
+      flex: 1,
+    },
   });
 
   return (
     <View style={dynamicStyles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={dynamicStyles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Icon name="arrow-back" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
       {/* Header */}
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>{t('taxiInfo:availableTaxis')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Pressable style={dynamicStyles.backButton2} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
+          </Pressable>
+          <Text style={dynamicStyles.headerTitle2}>{t('taxiInfo:availableTaxis')}</Text>
+        </View>
         <Text style={dynamicStyles.headerSubtitle}>
           {currentName && currentName !== 'Current Location' ? currentName : t('common:currentLocation')}
           {' → '}

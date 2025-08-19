@@ -7,7 +7,8 @@ import {
   Alert,
   SafeAreaView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ScrollView
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
@@ -175,11 +176,15 @@ export default function PassengerPinEntry() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Header */}
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.push("/PassengerReservation")}
           >
             <Icon name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
@@ -187,10 +192,10 @@ export default function PassengerPinEntry() {
             Verify Driver PIN
           </Text>
           <View style={styles.placeholder} />
-        </View>
+        </View> */}
 
         {/* Main Content */}
-        <View style={styles.content}>
+        {/* <View style={styles.content}> */}
           <View style={styles.infoSection}>
             <Icon name="shield-checkmark" size={60} color={theme.primary} />
             <Text style={[styles.title, { color: theme.text }]}>
@@ -226,14 +231,14 @@ export default function PassengerPinEntry() {
 
           {/* Cancel Button */}
           <TouchableOpacity 
-            style={[styles.cancelButton, { backgroundColor: theme.surface }]}
-            onPress={() => router.back()}
+            style={[styles.cancelButton]}
+            onPress={() => router.push("/PassengerReservation")}
           >
             <Text style={[styles.cancelButtonText, { color: theme.text }]}>
               Cancel
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -246,29 +251,10 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 20,
   },
   infoSection: {
     alignItems: 'center',
@@ -336,16 +322,17 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   cancelButton: {
+    backgroundColor: "#FF4444",
+    borderRadius: 16,
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 25,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    alignItems: "center",
+    marginTop: 20,
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,

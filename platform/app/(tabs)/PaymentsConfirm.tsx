@@ -2,6 +2,7 @@ import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../../contexts/UserContext';
 import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
@@ -140,25 +141,27 @@ export default function PaymentConfirmation() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Payment Confirmation</Text>
-        
-        <Text style={styles.paymentText}>
-          Driver: {driverName}
-        </Text>
-        <Text style={styles.paymentText}>
-          License Plate: {licensePlate}
-        </Text>
+        <Text style={styles.title}>Payments</Text>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="person" size={20} color="#2B2B2B" />
+          <Text style={[styles.paymentText, styles.infoText]}>Driver: {driverName}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="card-outline" size={20} color="#2B2B2B" />
+          <Text style={[styles.paymentText, styles.infoText]}>License Plate: {licensePlate}</Text>
+        </View>
         <Text style={styles.amount}>R{fare ?? 0}</Text>
 
-        <Text style={styles.questionText}>
-          Have you paid the driver?
-        </Text>
+        <Text style={styles.questionText}>Have you paid the driver?</Text>
 
-        <View style={styles.buttonRow}>
+        <View style={styles.buttonRowHorizontal}>
           <TouchableOpacity style={[styles.button, styles.paidButton]} onPress={handlePaid}>
+            <Ionicons name="checkmark" size={20} color="#fff" />
             <Text style={styles.buttonText}>Yes, I paid</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.notPaidButton]} onPress={handleNotPaid}>
+            <Ionicons name="close" size={20} color="#fff" />
             <Text style={styles.buttonText}>No, not yet</Text>
           </TouchableOpacity>
         </View>
@@ -179,21 +182,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#2B2B2B",
     marginBottom: 30,
+    marginTop: -10,
+    textAlign: "center",
+    width: "100%",
   },
   paymentText: {
     fontSize: 16,
     color: "#2B2B2B",
     marginBottom: 15,
+    textAlign: "center",
+    width: "100%",
+    fontWeight: "bold",
   },
   amount: {
     fontSize: 42,
     fontWeight: "bold",
     color: "#FF7B00",
     marginBottom: 40,
+    textAlign: "center",
+    width: "100%",
   },
   debugText: {
     fontSize: 12,
@@ -205,18 +216,36 @@ const styles = StyleSheet.create({
     color: "#2B2B2B",
     marginBottom: 30,
     textAlign: "center",
-  },
-  buttonRow: {
-    flexDirection: "column",
-    gap: 15,
     width: "100%",
-    paddingHorizontal: 20,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+    width: "100%",
+  },
+  infoText: {
+    marginBottom: 0,
+    textAlign: "left",
+    width: "auto",
+  },
+  buttonRowHorizontal: {
+    flexDirection: "row",
+    gap: 16,
+    justifyContent: "center",
+    width: "100%",
   },
   button: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: 16,
+    flex: 1,
+    justifyContent: "center",
   },
   paidButton: {
     backgroundColor: "#2ECC71",

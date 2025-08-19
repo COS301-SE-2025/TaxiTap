@@ -480,8 +480,11 @@ describe('SetRoute Integration Tests - Assigned Route', () => {
           <SetRoute />
         </TestWrapper>
       );
-      
-      expect(screen.getAllByText('Your Assigned Route')).toHaveLength(2);
+
+      expect(
+        screen.getByText('You already have a route assigned. Tap activate to start using it.')
+      ).toBeTruthy();
+      expect(screen.getByText('Current Route')).toBeTruthy();
       expect(screen.getByText('Johannesburg CBD → Soweto')).toBeTruthy();
       expect(screen.getByText('Greater Johannesburg Taxi Association')).toBeTruthy();
       expect(screen.getByText('Activate Route')).toBeTruthy();

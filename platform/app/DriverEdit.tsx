@@ -366,14 +366,6 @@ export default function DriverPersonalInfoEdit() {
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
             <ScrollView contentContainerStyle={dynamicStyles.container}>
-                {/* Header */}
-                <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={handleCancel}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
-                    </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>{t('driverPersonalInfo')}</Text>
-                </View>
-
                 {/* Profile Photo Section */}
                 <View style={dynamicStyles.photoSection}>
                     <View style={dynamicStyles.photoContainer}>
