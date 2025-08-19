@@ -18,7 +18,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Icon from 'react-native-vector-icons/Ionicons';
-import loading from '../../assets/images/loading4.png';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -684,7 +684,7 @@ export default function TaxiInformation() {
         >
           {isLoadingTaxis ? (
             <View style={dynamicStyles.loadingContainer}>
-              <Image source={loading} style={{ width: 80, height: 80 }} resizeMode="contain" />
+              <LoadingSpinner size="large" />
               <Text style={dynamicStyles.loadingText}>{t('taxiInfo:findingAvailableTaxis')}</Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (

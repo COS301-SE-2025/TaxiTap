@@ -19,6 +19,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@/contexts/UserContext';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface DriverOfflineProps {
   onGoOnline: () => void;
@@ -70,7 +71,6 @@ export default function DriverOffline({
       user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
-
   // Get driver's assigned route from database
   const assignedRoute = useQuery(
     api.functions.routes.queries.getDriverAssignedRoute,
@@ -113,23 +113,6 @@ export default function DriverOffline({
       destination: parts[1] ?? "Unknown"
     };
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowFullStatus(false);
-    }, 5000); // 5 seconds
-
-    return () => clearTimeout(timer); // Cleanup on unmount
-  }, []);
-
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowFullStatus(false);
-    }, 5000); // 5 seconds
-
-    return () => clearTimeout(timer); // Cleanup on unmount
-  }, []);
 
   const handleSetRoute = () => {
     router.push('/SetRoute');
@@ -257,6 +240,11 @@ export default function DriverOffline({
       onPress: handleEmergency
     },
   ];
+
+  // Show loading spinner if essential data is not loaded
+  if (!user || taxiInfo === undefined || earnings === undefined) {
+    return <LoadingSpinner />;
+  }
 
   const dynamicStyles = StyleSheet.create({
     container: {

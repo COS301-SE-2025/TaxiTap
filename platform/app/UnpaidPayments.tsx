@@ -3,10 +3,13 @@ import { useQuery } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, ScrollView  } from "react-native";
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Id } from '../convex/_generated/dataModel';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function WaitingPayments() {
     const { user } = useUser();
+    const { theme } = useTheme();
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
       user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -16,33 +19,46 @@ export default function WaitingPayments() {
         container: {
         flex: 1,
         padding: 10,
-        backgroundColor: "#fff",
+        backgroundColor: theme.background,
         },
         passengerCard: {
-        backgroundColor: "#f5f5f5",
+        backgroundColor: theme.card,
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
         elevation: 1,
+        shadowColor: theme.shadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
         },
         name: {
         fontSize: 18,
         fontWeight: "bold",
         marginBottom: 5,
+        color: theme.text,
         },
         info: {
         fontSize: 14,
         marginBottom: 3,
+        color: theme.text,
         },
-        paid: { color: "#2ECC71", fontWeight: "bold" },
-        unpaid: { color: "#E74C3C", fontWeight: "bold" },
-        noResponse: { color: "#FF9900", fontWeight: "bold" },
+        paid: { color: '#2ECC71', fontWeight: "bold" },
+        unpaid: { color: '#E74C3C', fontWeight: "bold" },
+        noResponse: { color: '#FF9900', fontWeight: "bold" },
     });
 
     if (!user || activeTrips === undefined) {
         return (
-        <View style={dynamicStyles.container}>
-            <Text style={{ fontSize: 20, textAlign: "center" }}>Loading...</Text>
+        <View style={[
+            dynamicStyles.container, 
+            { 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                backgroundColor: theme.background 
+            }
+        ]}>
+            <LoadingSpinner size="large" />
         </View>
         );
     }
@@ -52,16 +68,30 @@ export default function WaitingPayments() {
     if (!unpaid.length) {
         return (
         <View style={dynamicStyles.container}>
-            <Text style={{ fontSize: 24, fontWeight: "bold", textAlign: "center" }}>
+            <Text style={{ 
+                fontSize: 24, 
+                fontWeight: "bold", 
+                textAlign: "center", 
+                color: theme.text,
+                marginTop: 20 
+            }}>
             All users have paid.
             </Text>
         </View>
         );
     }
 
+    // Define interface for passenger data
+    interface PassengerData {
+        name: string;
+        phoneNumber: string;
+        fare: number;
+        requestedAt: number | string | Date;
+    }
+    
     return (
         <ScrollView style={dynamicStyles.container}>
-            {unpaid.map((p, idx) => {
+            {unpaid.map((p: PassengerData, idx: number) => {
                 const date = new Date(p.requestedAt);
                 const dateString = date.toLocaleDateString() + " " + date.toLocaleTimeString();
                 return (

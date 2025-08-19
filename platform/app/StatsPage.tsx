@@ -5,6 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function StatsPage() {
   const router = useRouter();
@@ -17,13 +18,9 @@ export default function StatsPage() {
   if (!user || activeTrips === undefined) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
-        <ScrollView contentContainerStyle={{ padding: 15 }}>
-          <View style={{ marginBottom: 20, paddingHorizontal: 15 }}>
-            <Text style={{ fontSize: 16, color: "#666", marginTop: 6 }}>
-              Loading...
-            </Text>
-          </View>
-        </ScrollView>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingSpinner size="large" />
+        </View>
       </SafeAreaView>
     );
   }
