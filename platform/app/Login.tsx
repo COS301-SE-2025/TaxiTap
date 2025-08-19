@@ -121,7 +121,6 @@ export default function Login() {
                 justifyContent: 'center',
                 marginRight: 10,
                 width: 80,
-                height: 44,
               }}
             >
               <Text style={{ fontSize: 16 }}>+27</Text>
@@ -139,7 +138,7 @@ export default function Login() {
                 backgroundColor: '#fff',
                 borderRadius: 10,
                 paddingHorizontal: 16,
-                paddingVertical: 12,
+                paddingVertical: 10,
                 fontSize: 16,
               }}
             />
@@ -196,6 +195,7 @@ export default function Login() {
               justifyContent: 'center',
               alignItems: 'center',
               marginTop: 30,
+              marginBottom: 25,
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
