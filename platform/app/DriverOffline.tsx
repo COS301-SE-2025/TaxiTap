@@ -150,37 +150,11 @@ export default function DriverOffline({
     );
   };
 
-  const menuItems: MenuItemType[] = [
-    {
-      icon: 'person-outline',
-      title: t('driver:editProfile'),
-      subtitle: 'Driver details & documents',
-      onPress: () => router.push('/DriverProfile'),
-    },
-    {
-      icon: 'time-outline',
-      title: t('driver:earningsPage'),
-      subtitle: 'Past rides & routes',
-      onPress: () => router.push('/EarningsPage'),
-    },
-    {
-      icon: 'chatbubble-outline',
-      title: 'Feedback',
-      subtitle: 'Ratings & Feedback',
-      onPress: () => router.push('/FeedbackHistoryScreen'),
-    },
-    {
-      icon: 'contrast-outline',
-      title: 'Toggle Theme',
-      subtitle: 'Switch between light and dark mode',
-      onPress: handleToggleTheme,
-    },
-    { 
-      icon: "help-circle-outline", 
-      title: "Help", 
-      subtitle: "App information",
-      onPress: () => navigation.navigate('HelpPage' as never)
-    },
+   const menuItems = [
+    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
+    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
+    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
   // Get route display string from database
@@ -525,76 +499,60 @@ export default function DriverOffline({
       textAlign: 'center',
       paddingHorizontal: 8,
     },
-    // Enhanced Modal styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-start',
-      alignItems: 'flex-start',
+      paddingTop: 100,
+      paddingHorizontal: 40,
     },
     menuModal: {
-      marginTop: 100,
-      marginHorizontal: 24,
-      backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
-      borderRadius: 20,
-      maxWidth: 340,
+      backgroundColor: theme.background,
+      borderRadius: 16,
+      overflow: 'hidden',
+      maxWidth: 280,
+      alignSelf: 'flex-start',
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
-        : 'rgba(226, 232, 240, 0.5)',
+        : 'rgba(226, 232, 240, 0.8)',
     },
-    menuModalHeader: {
-      paddingHorizontal: 24,
-      paddingVertical: 20,
+    menuHeader: {
+      padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: isDark 
-        ? 'rgba(71, 85, 105, 0.3)' 
-        : 'rgba(226, 232, 240, 0.5)',
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(226, 232, 240, 0.5)',
+      alignItems: 'center',
     },
-    menuModalHeaderText: {
-      fontSize: 20,
+    menuHeaderText: {
+      fontSize: 18,
       fontWeight: '700',
       color: theme.text,
-      letterSpacing: -0.5,
+      letterSpacing: -0.3,
     },
-    menuModalItem: {
+    menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 24,
-      paddingVertical: 18,
-      minHeight: 72,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.1)' : 'rgba(226, 232, 240, 0.3)',
     },
-    menuModalItemIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
+    menuItemIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       backgroundColor: isDark 
-        ? 'rgba(59, 130, 246, 0.1)' 
-        : 'rgba(59, 130, 246, 0.05)',
+        ? 'rgba(245, 158, 11, 0.15)' 
+        : 'rgba(245, 158, 11, 0.08)',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 16,
-      borderWidth: 1,
-      borderColor: isDark 
-        ? 'rgba(59, 130, 246, 0.2)' 
-        : 'rgba(59, 130, 246, 0.1)',
     },
-    menuModalItemContent: {
-      flex: 1,
-    },
-    menuModalItemTitle: {
+    menuItemText: {
       fontSize: 16,
-      fontWeight: '600',
       color: theme.text,
-      marginBottom: 4,
-      letterSpacing: -0.3,
-    },
-    menuModalItemSubtitle: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      lineHeight: 18,
+      fontWeight: '500',
+      letterSpacing: -0.2,
     },
     safetyModal: {
       position: 'absolute',
@@ -772,43 +730,31 @@ export default function DriverOffline({
         </ScrollView>
 
         {/* Enhanced Menu Modal */}
-        <Modal
-          visible={showMenu}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowMenu(false)}
-        >
-          <TouchableOpacity 
-            style={dynamicStyles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowMenu(false)}
-          >
-            <View style={dynamicStyles.menuModal}>
-              <View style={dynamicStyles.menuModalHeader}>
-                <Text style={dynamicStyles.menuModalHeaderText}>{t('driver:menu')}</Text>
+         <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
+            <TouchableOpacity style={dynamicStyles.modalOverlay} onPress={() => setShowMenu(false)}>
+              <View style={dynamicStyles.menuModal}>
+                <View style={dynamicStyles.menuHeader}>
+                  <Text style={dynamicStyles.menuHeaderText}>Menu</Text>
+                </View>
+                
+                {menuItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={dynamicStyles.menuItem}
+                    onPress={() => {
+                      item.onPress();
+                      setShowMenu(false);
+                    }}
+                  >
+                    <View style={dynamicStyles.menuItemIcon}>
+                      <Icon name={item.icon} size={20} color={theme.primary} />
+                    </View>
+                    <Text style={dynamicStyles.menuItemText}>{item.title}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={dynamicStyles.menuModalItem}
-                  onPress={() => {
-                    item.onPress();
-                    setShowMenu(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <View style={dynamicStyles.menuModalItemIcon}>
-                    <Icon name={item.icon} size={22} color={theme.primary} />
-                  </View>
-                  <View style={dynamicStyles.menuModalItemContent}>
-                    <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
-                    <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </TouchableOpacity>
-        </Modal>
+            </TouchableOpacity>
+          </Modal>
 
         {/* Enhanced Safety Modal */}
         {showSafetyMenu && (
