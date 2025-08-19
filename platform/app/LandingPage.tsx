@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
 	},
 	signInContainer: {
 		alignItems: "center",
-		marginBottom: 34,
+		marginBottom: 44,
 	},
 	signInText: {
 		fontSize: 15,
