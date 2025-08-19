@@ -153,11 +153,6 @@ export default function HelpPage() {
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
-        <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.headerTitle}>Help Manual</Text>
-        </View>
-
         {/* User Manual Section */}
         <Text style={dynamicStyles.sectionHeader}>User Manual</Text>
         <View style={dynamicStyles.section}>

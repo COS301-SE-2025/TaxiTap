@@ -40,8 +40,7 @@ export default function FeedbackHistoryScreen() {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 20,
-      marginBottom: 30,
+      marginBottom: 24,
     },
     backButton: {
       width: 40,
@@ -53,7 +52,7 @@ export default function FeedbackHistoryScreen() {
       marginRight: 16,
     },
     headerTitle: {
-      fontSize: 28,
+      fontSize: 22,
       fontWeight: '600',
       color: theme.text,
       flex: 1,
