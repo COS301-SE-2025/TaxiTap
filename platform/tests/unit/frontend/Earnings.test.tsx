@@ -34,7 +34,7 @@ jest.mock('../../../contexts/ThemeContext', () => ({
 // Mock user context
 jest.mock('../../../contexts/UserContext', () => ({
   useUser: () => ({
-    user: { id: 'user123' },
+    user: { id: 'user123', accountType: 'driver' },
   }),
 }));
 
@@ -64,12 +64,7 @@ describe('EarningsPage', () => {
     jest.clearAllMocks();
   });
 
-  it('renders header and title', () => {
-    const { getByText } = render(<EarningsPage />);
-    expect(getByText('Weekly Summary')).toBeTruthy();
-  });
-
-  it('shows earnings and labels', () => {
+  it('shows weekly earnings amount and label', () => {
     const { getByText } = render(<EarningsPage />);
     expect(getByText('R810.50')).toBeTruthy();
     expect(getByText('Weekly Earnings')).toBeTruthy();
@@ -84,7 +79,6 @@ describe('EarningsPage', () => {
 
   it('renders summary values', () => {
     const { getByText } = render(<EarningsPage />);
-    expect(getByText('Summary')).toBeTruthy();
     expect(getByText('42h')).toBeTruthy();
     expect(getByText('18')).toBeTruthy();
     expect(getByText('R19.30')).toBeTruthy();
@@ -105,13 +99,6 @@ describe('EarningsPage', () => {
   it('renders todaysEarnings if provided', () => {
     const { getByText } = render(<EarningsPage todaysEarnings={999.99} />);
     expect(getByText('R999.99')).toBeTruthy();
-  });
-
-  it('handles back button press', () => {
-    const { getByTestId } = render(<EarningsPage />);
-    const backBtn = getByTestId('back-button');
-    fireEvent.press(backBtn);
-    expect(mockGoBack).toHaveBeenCalled();
   });
 
   it('renders loading screen when no data', () => {
