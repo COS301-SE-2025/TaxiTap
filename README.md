@@ -55,6 +55,20 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 | **📝 Coding Standards** | [View PDF](docs/Coding%20Standards.pdf) |
 | **📖 User Manual** | [View PDF](docs/Taxi%20Tap%20User%20Manual.pdf) |
 
+### 📊 Demo 3
+| Resource | Link |
+|----------|------|
+| **🎥 Presentation** | [Watch Video] |
+| **🚀 Live Demo** | [Watch Video] |
+| **📄 SRS Document** | [View PDF]([https://drive.google.com/drive/folders/1VYduQE5U7KPCJwIZhEdY3Q-ijLG-dbcP](https://drive.google.com/file/d/1cVcnNRBMGz8FHW-sJ4GjtsidP9-ZwlGq/view?usp=drive_link)) |
+| **🏗️ Architecture Document** | [View PDF](https://drive.google.com/file/d/1tdwLBUg0rqhwuDzBwusLdB9wAielVv7W/view?usp=drive_link) |
+| **📝 Coding Standards** | [View PDF](https://drive.google.com/file/d/146BTwZXbjiIoXnUQvd8RJXFtnq2DKrnk/view?usp=drive_link) |
+| **📖 User Manual** | [View PDF] |
+| **📄 Techinacal Installation Manual** | [View PDF](https://drive.google.com/file/d/1bQVSCOg5YIk8BMPRdcnYcna9q9_5RH1I/view?usp=drive_link) |
+| **🗠 Domain Model** | [View PDF](https://drive.google.com/file/d/1_2hOXEPfQb0cWvu6iWpEnHbJC_Izsk2P/view?usp=drive_link) |
+| **🗠 Architecture Diagram** | [View PDF](https://drive.google.com/file/d/1Zr1sdzwk3v1HNTBNvswXvv6wGQvxZbjq/view?usp=drive_link) |
+| **🗠 Deployment Diagram** | [View PDF](https://drive.google.com/file/d/1dCMVTM4NRoEbgOD886oPib4O09xFEatC/view?usp=drive_link) |
+
 ---
 
 ## 🛠️ Technology Stack
