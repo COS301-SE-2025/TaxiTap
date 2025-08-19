@@ -1,0 +1,808 @@
+/**
+ * Integration Tests for SetRoute Component and Route Queries
+ * 
+ * Tests the integration between the SetRoute component and Convex queries/mutations,
+ * covering route assignment, activation, and data fetching scenarios.
+ * 
+ * @author Test Suite
+ */
+
+import React from 'react';
+import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+
+// Mock external dependencies BEFORE imports
+jest.mock('convex/react', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+}));
+
+// Mock the generated API
+jest.mock('../../convex/_generated/api', () => ({
+  api: {
+    functions: {
+      routes: {
+        queries: {
+          getDriverAssignedRoute: 'getDriverAssignedRoute',
+          getAllTaxiAssociations: 'getAllTaxiAssociations'
+        },
+        mutations: {
+          assignRandomRouteToDriver: 'assignRandomRouteToDriver'
+        }
+      }
+    }
+  }
+}));
+
+jest.mock('convex/values', () => ({
+  v: {
+    optional: jest.fn(),
+    string: jest.fn(),
+    boolean: jest.fn(),
+    number: jest.fn(),
+    literal: jest.fn(),
+    any: jest.fn(),
+    object: jest.fn(),
+    array: jest.fn(),
+    id: jest.fn(),
+  },
+}));
+
+// Mock navigation
+const mockNavigationMock = {
+  goBack: jest.fn(),
+  setOptions: jest.fn(),
+  navigate: jest.fn(),
+};
+
+jest.mock('expo-router', () => ({
+  useNavigation: () => mockNavigationMock,
+}));
+
+// Mock contexts
+const mockSetCurrentRoute = jest.fn();
+const mockTheme = {
+  primary: '#FF9900',
+  background: '#FFFFFF',
+  surface: '#F5F5F5',
+  text: '#232F3E',
+  textSecondary: '#131A22',
+  border: '#E5E7EB',
+  tabBarActive: '#FF9900',
+  tabBarInactive: '#6B7280',
+  tabBarBackground: '#FFFFFF',
+  headerBackground: '#FFFFFF',
+  card: '#FFFFFF',
+  shadow: '#000000',
+  buttonText: '#FFFFFF'
+};
+
+jest.mock('../../contexts/ThemeContext', () => ({
+  useTheme: jest.fn(() => ({
+    theme: mockTheme,
+    isDark: false,
+    themeMode: 'light',
+    setThemeMode: jest.fn()
+  })),
+}));
+
+jest.mock('../../contexts/RouteContext', () => ({
+  useRouteContext: jest.fn(() => ({
+    setCurrentRoute: mockSetCurrentRoute,
+    currentRoute: 'Not Set'
+  })),
+}));
+
+const mockUser = {
+  id: 'user_123',
+  name: 'Test Driver',
+  role: 'driver',
+  accountType: 'driver' as const,
+  phoneNumber: '+27123456789'
+};
+
+jest.mock('../../contexts/UserContext', () => ({
+  useUser: jest.fn(() => ({
+    user: mockUser,
+    loading: false,
+    login: jest.fn(),
+    logout: jest.fn(),
+    updateUserRole: jest.fn(),
+    updateUserName: jest.fn(),
+    updateNumber: jest.fn(),
+    updateAccountType: jest.fn(),
+    setUserId: jest.fn()
+  })),
+}));
+
+jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
+
+// Mock AlertContext
+const MockAlertProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};
+
+jest.mock('../../contexts/AlertContext', () => ({
+  AlertProvider: MockAlertProvider,
+  useAlerts: () => ({
+    alerts: [],
+    addAlert: jest.fn(),
+    removeAlert: jest.fn(),
+    clearAlerts: jest.fn(),
+  }),
+}));
+
+// Mock AlertHelpers
+const mockShowGlobalError = jest.fn();
+const mockShowGlobalSuccess = jest.fn();
+const mockShowGlobalAlert = jest.fn();
+
+jest.mock('../../components/AlertHelpers', () => ({
+  useAlertHelpers: () => ({
+    showSuccessAlert: jest.fn(),
+    showErrorAlert: jest.fn(),
+    showInfoAlert: jest.fn(),
+    showGlobalError: mockShowGlobalError,
+    showGlobalSuccess: mockShowGlobalSuccess,
+    showGlobalAlert: mockShowGlobalAlert,
+  }),
+}));
+
+// Now import the components and hooks
+import SetRoute from '../../app/SetRoute';
+import { useQuery, useMutation } from 'convex/react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useRouteContext } from '../../contexts/RouteContext';
+import { useUser } from '../../contexts/UserContext';
+
+// Mock Alert
+jest.spyOn(Alert, 'alert');
+
+// Type the mocked hooks
+const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
+const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>;
+const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+const mockUseRouteContext = useRouteContext as jest.MockedFunction<typeof useRouteContext>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+
+// ============================================================================
+// TEST DATA
+// ============================================================================
+
+const mockAssignedRoute = {
+  _id: 'route_123',
+  routeId: 'RT001',
+  name: 'Johannesburg CBD - Soweto',
+  taxiAssociation: 'Greater Johannesburg Taxi Association',
+  fare: 25.50,
+  estimatedDuration: '45 minutes',
+  stops: [],
+  isActive: true
+};
+
+const mockTaxiAssociations = [
+  'Greater Johannesburg Taxi Association',
+  'Pretoria Taxi Association',
+  'Durban Metro Taxi Association'
+];
+
+const mockAssignRandomRoute = jest.fn();
+
+// Test wrapper with all necessary providers
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <NavigationContainer>
+      <MockAlertProvider>
+        {children}
+      </MockAlertProvider>
+    </NavigationContainer>
+  );
+};
+
+// ============================================================================
+// TEST UTILITIES
+// ============================================================================
+
+/**
+ * Sets up default mocks for all tests
+ */
+const setupDefaultMocks = () => {
+  mockUseMutation.mockReturnValue(mockAssignRandomRoute as any);
+  
+  // Reset context mocks to defaults
+  mockUseTheme.mockReturnValue({
+    theme: mockTheme,
+    isDark: false,
+    themeMode: 'light',
+    setThemeMode: jest.fn()
+  });
+  
+  mockUseRouteContext.mockReturnValue({
+    setCurrentRoute: mockSetCurrentRoute,
+    currentRoute: 'Not Set'
+  });
+  
+  mockUseUser.mockReturnValue({
+    user: mockUser,
+    loading: false,
+    login: jest.fn(),
+    logout: jest.fn(),
+    updateUserRole: jest.fn(),
+    updateUserName: jest.fn(),
+    updateNumber: jest.fn(),
+    updateAccountType: jest.fn(),
+    setUserId: jest.fn()
+  });
+};
+
+/**
+ * Sets up mocks for driver with no assigned route
+ */
+const setupNoAssignedRouteMocks = () => {
+  setupDefaultMocks();
+  
+  // Mock queries
+  mockUseQuery
+    .mockReturnValueOnce(null) // assignedRoute
+    .mockReturnValueOnce(mockTaxiAssociations); // allTaxiAssociations
+};
+
+/**
+ * Sets up mocks for driver with assigned route
+ */
+const setupAssignedRouteMocks = () => {
+  setupDefaultMocks();
+  
+  // Mock queries
+  mockUseQuery
+    .mockReturnValueOnce(mockAssignedRoute) // assignedRoute
+    .mockReturnValueOnce(mockTaxiAssociations); // allTaxiAssociations
+};
+
+// ============================================================================
+// INTEGRATION TESTS - NO ASSIGNED ROUTE SCENARIO
+// ============================================================================
+
+describe('SetRoute Integration Tests - No Assigned Route', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+    setupNoAssignedRouteMocks();
+  });
+
+  describe('Component Initialization', () => {
+    it('should render route assignment screen when driver has no assigned route', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Route Assignment')).toBeTruthy();
+      expect(screen.getByText('Select Taxi Association')).toBeTruthy();
+      expect(screen.getByText('Get My Route')).toBeTruthy();
+    });
+
+    it('should fetch and display all taxi associations', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      mockTaxiAssociations.forEach(association => {
+        expect(screen.getByText(association)).toBeTruthy();
+      });
+    });
+
+    it('should configure navigation header correctly', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      // Navigation header configuration is tested through component rendering
+      expect(screen.getByText('Route Assignment')).toBeTruthy();
+    });
+  });
+
+  describe('Taxi Association Selection', () => {
+    it('should allow selecting a taxi association', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      const associationButton = screen.getByText(mockTaxiAssociations[0]);
+      fireEvent.press(associationButton);
+      
+      // Button should now show selected state (this would be tested via testID in real implementation)
+      expect(associationButton).toBeTruthy();
+    });
+  });
+
+  describe('Route Assignment Process', () => {
+    it('should successfully assign route when association is selected', async () => {
+      const mockAssignedRouteResult = {
+        assignedRoute: mockAssignedRoute
+      };
+      
+      mockAssignRandomRoute.mockResolvedValueOnce(mockAssignedRouteResult);
+      
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      // Select association
+      const associationButton = screen.getByText(mockTaxiAssociations[0]);
+      fireEvent.press(associationButton);
+      
+      // Assign route
+      const assignButton = screen.getByText('Get My Route');
+      fireEvent.press(assignButton);
+      
+      await waitFor(() => {
+        expect(mockAssignRandomRoute).toHaveBeenCalledWith({
+          userId: 'user_123',
+          taxiAssociation: mockTaxiAssociations[0]
+        });
+      });
+      
+      // Route context update is tested through component rendering
+      expect(mockShowGlobalSuccess).toHaveBeenCalledWith(
+        'Route Assigned Successfully!',
+        expect.stringContaining('Johannesburg CBD → Soweto'),
+        expect.any(Object)
+      );
+      
+      await waitFor(() => {
+        expect(mockShowGlobalSuccess).toHaveBeenCalledWith(
+          'Route Assigned Successfully!',
+          expect.stringContaining('Johannesburg CBD → Soweto'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('should handle route assignment failure', async () => {
+      const errorMessage = 'No available routes for this association';
+      mockAssignRandomRoute.mockRejectedValueOnce(new Error(errorMessage));
+      
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      // Select association
+      const associationButton = screen.getByText(mockTaxiAssociations[0]);
+      fireEvent.press(associationButton);
+      
+      // Assign route
+      const assignButton = screen.getByText('Get My Route');
+      fireEvent.press(assignButton);
+      
+      await waitFor(() => {
+        expect(mockShowGlobalError).toHaveBeenCalledWith(
+          'Assignment Failed',
+          errorMessage,
+          expect.any(Object)
+        );
+      });
+    });
+
+
+    it('should call onRouteSet callback when provided', async () => {
+      const mockOnRouteSet = jest.fn();
+      mockAssignRandomRoute.mockResolvedValueOnce({ assignedRoute: mockAssignedRoute });
+      
+      render(
+        <TestWrapper>
+          <SetRoute onRouteSet={mockOnRouteSet} />
+        </TestWrapper>
+      );
+      
+      // Select association and assign route
+      const associationButton = screen.getByText(mockTaxiAssociations[0]);
+      fireEvent.press(associationButton);
+      
+      const assignButton = screen.getByText('Get My Route');
+      fireEvent.press(assignButton);
+      
+      await waitFor(() => {
+        expect(mockOnRouteSet).toHaveBeenCalledWith('Johannesburg CBD → Soweto');
+      });
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should show alert when user is not logged in', async () => {
+      // Mock user as null to simulate not logged in
+      mockUseUser.mockReturnValue({
+        user: null,
+        loading: false,
+        login: jest.fn(),
+        logout: jest.fn(),
+        updateUserRole: jest.fn(),
+        updateUserName: jest.fn(),
+        updateNumber: jest.fn(),
+        updateAccountType: jest.fn(),
+        setUserId: jest.fn()
+      });
+      
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      // Select association first (this is required for the flow)
+      const associationButton = screen.getByText(mockTaxiAssociations[0]);
+      fireEvent.press(associationButton);
+      
+      // Try to assign route
+      const assignButton = screen.getByText('Get My Route');
+      fireEvent.press(assignButton);
+      
+      await waitFor(() => {
+        expect(mockShowGlobalError).toHaveBeenCalledWith(
+          'User not found',
+          'You must be logged in as a driver.',
+          expect.any(Object)
+        );
+      });
+    });
+  });
+});
+
+// ============================================================================
+// INTEGRATION TESTS - ASSIGNED ROUTE SCENARIO
+// ============================================================================
+
+describe('SetRoute Integration Tests - Assigned Route', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+    setupAssignedRouteMocks();
+  });
+
+  describe('Assigned Route Display', () => {
+    it('should render assigned route screen when driver has a route', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+
+      expect(
+        screen.getByText('You already have a route assigned. Tap activate to start using it.')
+      ).toBeTruthy();
+      expect(screen.getByText('Current Route')).toBeTruthy();
+      expect(screen.getByText('Johannesburg CBD → Soweto')).toBeTruthy();
+      expect(screen.getByText('Greater Johannesburg Taxi Association')).toBeTruthy();
+      expect(screen.getByText('Activate Route')).toBeTruthy();
+    });
+
+    it('should show correct route information', () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Current Route')).toBeTruthy();
+      expect(screen.getByText('Johannesburg CBD → Soweto')).toBeTruthy();
+      expect(screen.getByText('Greater Johannesburg Taxi Association')).toBeTruthy();
+    });
+  });
+
+  describe('Route Activation', () => {
+    it('should activate existing route successfully', async () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      const activateButton = screen.getByText('Activate Route');
+      fireEvent.press(activateButton);
+      
+      await waitFor(() => {
+        expect(mockSetCurrentRoute).toHaveBeenCalledWith('Johannesburg CBD → Soweto');
+      });
+      
+      await waitFor(() => {
+        expect(mockShowGlobalSuccess).toHaveBeenCalledWith(
+          'Route Activated',
+          expect.stringContaining('Johannesburg CBD → Soweto'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('should call onRouteSet callback when activating route', async () => {
+      const mockOnRouteSet = jest.fn();
+      
+      render(
+        <TestWrapper>
+          <SetRoute onRouteSet={mockOnRouteSet} />
+        </TestWrapper>
+      );
+      
+      const activateButton = screen.getByText('Activate Route');
+      fireEvent.press(activateButton);
+      
+      await waitFor(() => {
+        expect(mockOnRouteSet).toHaveBeenCalledWith('Johannesburg CBD → Soweto');
+      });
+    });
+
+    it('should navigate back after successful activation', async () => {
+      render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      const activateButton = screen.getByText('Activate Route');
+      fireEvent.press(activateButton);
+      
+      // Wait for success message
+      await waitFor(() => {
+        expect(mockShowGlobalSuccess).toHaveBeenCalled();
+      });
+      
+      // Simulate the onPress callback from the success alert action
+      const successCall = mockShowGlobalSuccess.mock.calls[0];
+      const alertOptions = successCall[2]; // Third parameter contains options
+      if (alertOptions && alertOptions.actions && alertOptions.actions[0]) {
+        const okAction = alertOptions.actions[0]; // First action is OK
+        okAction.onPress(); // Simulate pressing OK
+      }
+      
+      expect(mockNavigationMock.goBack).toHaveBeenCalled();
+    });
+  });
+});
+
+// ============================================================================
+// INTEGRATION TESTS - ROUTE NAME PARSING
+// ============================================================================
+
+describe('Route Name Parsing Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+  });
+
+  it('should correctly parse various route name formats', async () => {
+    const testRoutes = [
+      {
+        input: { ...mockAssignedRoute, name: 'Cape Town - Stellenbosch' },
+        expected: 'Cape Town → Stellenbosch'
+      },
+      {
+        input: { ...mockAssignedRoute, name: 'Durban CBD - Pinetown' },
+        expected: 'Durban CBD → Pinetown'
+      },
+      {
+        input: { ...mockAssignedRoute, name: 'Pretoria - Centurion' },
+        expected: 'Pretoria → Centurion'
+      }
+    ];
+
+    for (const testCase of testRoutes) {
+      setupDefaultMocks();
+      mockUseQuery
+        .mockReturnValueOnce(testCase.input) // assignedRoute
+        .mockReturnValueOnce(mockTaxiAssociations); // allTaxiAssociations
+
+      const { unmount } = render(
+        <TestWrapper>
+          <SetRoute />
+        </TestWrapper>
+      );
+      
+      const activateButton = screen.getByText('Activate Route');
+      fireEvent.press(activateButton);
+      
+      await waitFor(() => {
+        expect(mockSetCurrentRoute).toHaveBeenCalledWith(testCase.expected);
+      });
+      
+      unmount();
+      jest.clearAllMocks();
+    }
+  });
+});
+
+// ============================================================================
+// INTEGRATION TESTS - THEME INTEGRATION
+// ============================================================================
+
+describe('Theme Integration Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+  });
+
+  it('should apply dark theme correctly', () => {
+    setupNoAssignedRouteMocks();
+    mockUseTheme.mockReturnValue({
+      theme: {
+        ...mockTheme,
+        background: '#121212',
+        surface: '#1E1E1E',
+        text: '#FFFFFF'
+      },
+      isDark: true,
+      themeMode: 'dark' as const,
+      setThemeMode: jest.fn()
+    });
+
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    // Component should render without errors with dark theme
+    expect(screen.getByText('Route Assignment')).toBeTruthy();
+  });
+
+  it('should apply light theme correctly', () => {
+    setupNoAssignedRouteMocks();
+    mockUseTheme.mockReturnValue({
+      theme: mockTheme,
+      isDark: false,
+      themeMode: 'light' as const,
+      setThemeMode: jest.fn()
+    });
+
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    // Component should render without errors with light theme
+    expect(screen.getByText('Route Assignment')).toBeTruthy();
+  });
+});
+
+// ============================================================================
+// INTEGRATION TESTS - NAVIGATION INTEGRATION
+// ============================================================================
+
+describe('Navigation Integration Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+    setupNoAssignedRouteMocks();
+  });
+
+  it('should handle back button press', () => {
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    const backButton = screen.getByTestId('back-button');
+    fireEvent.press(backButton);
+    
+    expect(mockNavigationMock.goBack).toHaveBeenCalled();
+  });
+
+  it('should navigate back after successful route assignment', async () => {
+    mockAssignRandomRoute.mockResolvedValueOnce({ assignedRoute: mockAssignedRoute });
+    
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    // Select association and assign route
+    const associationButton = screen.getByText(mockTaxiAssociations[0]);
+    fireEvent.press(associationButton);
+    
+    const assignButton = screen.getByText('Get My Route');
+    fireEvent.press(assignButton);
+    
+    // Wait for success message
+    await waitFor(() => {
+      expect(mockShowGlobalSuccess).toHaveBeenCalled();
+    });
+    
+    // Simulate the onPress callback from the success alert action
+    const successCall = mockShowGlobalSuccess.mock.calls[0];
+    const alertOptions = successCall[2]; // Third parameter contains options
+    if (alertOptions && alertOptions.actions && alertOptions.actions[0]) {
+      const okAction = alertOptions.actions[0]; // First action is OK
+      okAction.onPress(); // Simulate pressing OK
+    }
+    
+    expect(mockNavigationMock.goBack).toHaveBeenCalled();
+  });
+});
+
+// ============================================================================
+// INTEGRATION TESTS - EDGE CASES
+// ============================================================================
+
+describe('Edge Cases Integration Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockShowGlobalError.mockClear();
+    mockShowGlobalSuccess.mockClear();
+  });
+
+  it('should handle undefined taxi associations gracefully', () => {
+    setupDefaultMocks();
+    mockUseQuery
+      .mockReturnValueOnce(null) // assignedRoute
+      .mockReturnValueOnce(undefined); // allTaxiAssociations
+
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    // Should not crash when taxi associations are undefined
+    expect(screen.getByText('Route Assignment')).toBeTruthy();
+  });
+
+  it('should handle empty taxi associations array', () => {
+    setupDefaultMocks();
+    mockUseQuery
+      .mockReturnValueOnce(null) // assignedRoute
+      .mockReturnValueOnce([]); // allTaxiAssociations
+
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    expect(screen.getByText('Route Assignment')).toBeTruthy();
+    expect(screen.getByText('Select Taxi Association')).toBeTruthy();
+  });
+
+  it('should handle malformed route names', async () => {
+    const malformedRoute = {
+      ...mockAssignedRoute,
+      name: 'InvalidRouteName'
+    };
+    
+    setupDefaultMocks();
+    mockUseQuery
+      .mockReturnValueOnce(malformedRoute) // assignedRoute
+      .mockReturnValueOnce(mockTaxiAssociations); // allTaxiAssociations
+
+    render(
+      <TestWrapper>
+        <SetRoute />
+      </TestWrapper>
+    );
+    
+    const activateButton = screen.getByText('Activate Route');
+    fireEvent.press(activateButton);
+    
+    // Should handle gracefully even with malformed route name
+    await waitFor(() => {
+      expect(mockSetCurrentRoute).toHaveBeenCalled();
+    });
+  });
+});

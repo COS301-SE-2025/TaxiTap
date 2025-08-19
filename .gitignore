@@ -1,0 +1,4 @@
+android/
+node_modules/
+.expo/
+.env.local
