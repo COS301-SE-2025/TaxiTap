@@ -8,6 +8,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
@@ -354,13 +355,7 @@ export default function DriverPersonalInfoEdit() {
     });
 
     if (!user) {
-        return (
-            <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>{t('loading')}</Text>
-                </View>
-            </SafeAreaView>
-        );
+        return <LoadingSpinner />;
     }
 
     return (

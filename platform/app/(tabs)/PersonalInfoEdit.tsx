@@ -10,6 +10,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function PersonalInfoEdit() {
     const [name, setName] = useState('');
@@ -275,8 +276,8 @@ export default function PersonalInfoEdit() {
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>{t('personalInfo:loading')}</Text>
+                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <LoadingSpinner size="large" />
                 </View>
             </SafeAreaView>
         );

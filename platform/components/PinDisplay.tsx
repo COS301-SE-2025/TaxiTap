@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { useAlertHelpers } from './AlertHelpers';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface PinDisplayProps {
   pin: string | null;
@@ -127,7 +128,7 @@ export const PinDisplay: React.FC<PinDisplayProps> = ({
   if (!pin) {
     return (
       <View style={dynamicStyles.loadingContainer}>
-        <Text style={dynamicStyles.loadingText}>Generating PIN...</Text>
+        <LoadingSpinner size="small" />
       </View>
     );
   }

@@ -18,6 +18,7 @@ import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function PassengerPinEntry() {
   const { user } = useUser();
@@ -163,8 +164,20 @@ export default function PassengerPinEntry() {
   if (!user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
+        <LoadingSpinner size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  // Show loading spinner when verifying PIN
+  if (isVerifying) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingSpinner size="large" />
+          <Text style={{ marginTop: 20, color: theme.text, fontSize: 16 }}>
+            Verifying PIN...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -334,12 +347,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-  },
+  // Loading spinner is used instead of these styles
 });

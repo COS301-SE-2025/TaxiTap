@@ -3,7 +3,16 @@ import { useQuery } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, ScrollView  } from "react-native";
 import { useUser } from '../contexts/UserContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
+
+// Define the passenger type based on your data structure
+interface Passenger {
+    name: string;
+    phoneNumber: string;
+    fare: number;
+    tripPaid: boolean | null;
+}
 
 export default function PaymentConfirmation() {
     const { user } = useUser();
@@ -40,11 +49,7 @@ export default function PaymentConfirmation() {
     });
 
     if (!user || activeTrips === undefined) {
-        return (
-        <View style={dynamicStyles.container}>
-            <Text style={{ fontSize: 20, textAlign: "center" }}>Loading...</Text>
-        </View>
-        );
+        return <LoadingSpinner />;
     }
 
     if (!activeTrips || !activeTrips.passengers.length) {
@@ -59,7 +64,7 @@ export default function PaymentConfirmation() {
 
     return (
         <ScrollView style={dynamicStyles.container}>
-        {activeTrips?.passengers?.map((p, idx) => (
+        {activeTrips?.passengers?.map((p: Passenger, idx: number) => (
             <View key={idx} style={dynamicStyles.passengerCard}>
             <Text style={dynamicStyles.name}>{p.name}</Text>
             <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>

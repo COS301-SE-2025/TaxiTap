@@ -7,6 +7,7 @@ import { useUser } from '../contexts/UserContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function FeedbackHistoryScreen() {
   const { theme, isDark } = useTheme();
@@ -108,21 +109,16 @@ export default function FeedbackHistoryScreen() {
     },
     loadingContainer: {
       alignItems: 'center',
+      justifyContent: 'center',
       paddingVertical: 40,
-    },
-    loadingText: {
-      fontSize: 16,
-      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-      textAlign: 'center',
+      minHeight: 120,
     },
   });
 
   if (!user) {
     return (
       <SafeAreaView style={dynamicStyles.safeArea}>
-        <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={{ color: theme.text, fontSize: 16 }}>Loading user data...</Text>
-        </View>
+        <LoadingSpinner size="large" />
       </SafeAreaView>
     );
   }
@@ -145,7 +141,7 @@ export default function FeedbackHistoryScreen() {
         <View style={dynamicStyles.section}>
           {!feedbackList ? (
             <View style={dynamicStyles.loadingContainer}>
-              <Text style={dynamicStyles.loadingText}>Loading...</Text>
+              <LoadingSpinner size="small" />
             </View>
           ) : feedbackList.length === 0 ? (
             <View style={dynamicStyles.emptyState}>

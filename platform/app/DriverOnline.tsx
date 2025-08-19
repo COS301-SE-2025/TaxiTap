@@ -20,6 +20,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 //import LocationSpoofer from '../components/LocationSpoofer';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
@@ -394,6 +395,11 @@ export default function DriverOnline({
       onPress: handleEmergency
     },
   ];
+
+  // Show loading spinner if essential data is not loaded
+  if (!user || taxiInfo === undefined || earnings === undefined) {
+    return <LoadingSpinner />;
+  }
 
   const dynamicStyles = StyleSheet.create({
     container: {
@@ -828,9 +834,7 @@ export default function DriverOnline({
       <View style={dynamicStyles.container}>
         <View style={dynamicStyles.mapContainer}>
           {!currentLocation ? (
-            <View style={dynamicStyles.loadingContainer}>
-              <Text style={dynamicStyles.loadingText}>Loading location...</Text>
-            </View>
+            <LoadingSpinner />
           ) : (
             <>
             {mapExpanded && (
