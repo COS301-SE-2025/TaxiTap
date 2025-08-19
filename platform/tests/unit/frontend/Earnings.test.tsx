@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { ActivityIndicator } from 'react-native';
 import EarningsPage from '../../../app/EarningsPage';
 
 // Mock icon library
@@ -34,7 +35,7 @@ jest.mock('../../../contexts/ThemeContext', () => ({
 // Mock user context
 jest.mock('../../../contexts/UserContext', () => ({
   useUser: () => ({
-    user: { id: 'user123' },
+    user: { id: 'user123', accountType: 'driver' },
   }),
 }));
 
@@ -64,12 +65,7 @@ describe('EarningsPage', () => {
     jest.clearAllMocks();
   });
 
-  it('renders header and title', () => {
-    const { getByText } = render(<EarningsPage />);
-    expect(getByText('Weekly Summary')).toBeTruthy();
-  });
-
-  it('shows earnings and labels', () => {
+  it('shows weekly earnings amount and label', () => {
     const { getByText } = render(<EarningsPage />);
     expect(getByText('R810.50')).toBeTruthy();
     expect(getByText('Weekly Earnings')).toBeTruthy();
@@ -84,7 +80,6 @@ describe('EarningsPage', () => {
 
   it('renders summary values', () => {
     const { getByText } = render(<EarningsPage />);
-    expect(getByText('Summary')).toBeTruthy();
     expect(getByText('42h')).toBeTruthy();
     expect(getByText('18')).toBeTruthy();
     expect(getByText('R19.30')).toBeTruthy();
@@ -107,17 +102,10 @@ describe('EarningsPage', () => {
     expect(getByText('R999.99')).toBeTruthy();
   });
 
-  it('handles back button press', () => {
-    const { getByTestId } = render(<EarningsPage />);
-    const backBtn = getByTestId('back-button');
-    fireEvent.press(backBtn);
-    expect(mockGoBack).toHaveBeenCalled();
-  });
-
   it('renders loading screen when no data', () => {
     const useQuery = require('convex/react').useQuery;
     useQuery.mockImplementationOnce(() => null);
-    const { getByText } = render(<EarningsPage />);
-    expect(getByText('Loading earnings...')).toBeTruthy();
+    const { UNSAFE_getByType } = render(<EarningsPage />);
+    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 });

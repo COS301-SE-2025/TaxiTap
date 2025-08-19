@@ -98,6 +98,7 @@ export const requestRideHandler = async (
         type: "ride_requested",
         driverId: args.driverId,
         passengerId: args.passengerId,
+        metadata: null,
       }
     );
 

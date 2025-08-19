@@ -7,8 +7,10 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -17,6 +19,7 @@ export default function PassengerProfile() {
     const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
     const { updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
     const [imageUri, setImageUri] = useState<string | null>(null);
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
@@ -30,7 +33,12 @@ export default function PassengerProfile() {
 
     const handleUploadPhoto = async () => {
       try {
-        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 1 });
+        const result = await ImagePicker.launchImageLibraryAsync({ 
+          mediaTypes: 'images', 
+          allowsEditing: true, 
+          quality: 1,
+          aspect: [1, 1]
+        });
         if (!result.canceled && result.assets && result.assets.length > 0) {
           setImageUri(result.assets[0].uri);
         }
@@ -43,11 +51,20 @@ export default function PassengerProfile() {
         user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
     );
 
+    // Query recent feedback for preview
+    const recentFeedback = useQuery(
+        api.functions.feedback.showFeedback.showFeedbackPassenger,
+        user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
     // Mutations for switching roles
     const switchPassengerToBoth = useMutation(api.functions.users.UserManagement.switchPassengertoBoth.switchPassengerToBoth);
     const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
 
-    const handleSignout = async () => { await logout(); router.push('../LandingPage'); };
+    const handleSignout = async () => { 
+        await logout(); 
+        router.push('../LandingPage'); 
+    };
 
     const handleSwitchToDriver = async () => {
         try {
@@ -57,34 +74,34 @@ export default function PassengerProfile() {
             }
 
             if ((convexUser?.accountType || user.accountType) === 'passenger') {
-                showGlobalAlert('First Time Switching', 'This will upgrade your account to support both passenger and driver roles.', {
+                showGlobalAlert({
+                  title: 'First Time Switching',
+                  message: 'This will upgrade your account to support both passenger and driver roles.',
+                  type: 'info',
                   duration: 0,
                   position: 'top',
                   animation: 'slide-down',
                   actions: [
                     { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                    { label: 'Continue', style: 'default', onPress: async () => {
+                    { label: 'Continue', onPress: async () => {
                         try {
                           await switchPassengerToBoth({ userId: user.id as Id<'taxiTap_users'> });
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Successfully switched to driver mode!', {
-                            duration: 0,
-                            position: 'top',
-                            animation: 'slide-down',
-                            actions: [
-                              { label: 'OK', onPress: () => router.push('../DriverOffline'), style: 'default' },
-                            ],
-                          });
+                          showGlobalSuccess('Success', 'Successfully switched to driver mode!');
+                          router.push('../DriverOffline');
                         } catch (error: any) {
-                          showGlobalError('Error', error.message || 'Failed to switch to driver mode', { duration: 5000, position: 'top', animation: 'slide-down' });
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
                         }
-                    }}
+                    }, style: 'default' },
                   ],
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
-                showGlobalAlert('Switch Profile', 'Are you sure you want to switch to the driver profile?', {
+                showGlobalAlert({
+                  title: 'Switch Profile',
+                  message: 'Are you sure you want to switch to the driver profile?',
+                  type: 'info',
                   duration: 0,
                   position: 'top',
                   animation: 'slide-down',
@@ -94,28 +111,23 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Switched to driver mode!', {
-                            duration: 0,
-                            position: 'top',
-                            animation: 'slide-down',
-                            actions: [ { label: 'OK', onPress: () => router.push('../DriverOffline'), style: 'default' } ],
-                          });
+                          showGlobalSuccess('Success', 'Switched to driver mode!');
+                          router.push('../DriverOffline');
                         } catch (error: any) {
-                          showGlobalError('Error', error.message || 'Failed to switch to driver mode', { duration: 5000, position: 'top', animation: 'slide-down' });
+                          showGlobalError('Error', error.message || 'Failed to switch to driver mode');
                         }
                     }, style: 'default' },
                   ],
                 });
             } else {
-                showGlobalError('Error', 'Invalid account type for switching to driver mode', { duration: 4000, position: 'top', animation: 'slide-down' });
+                showGlobalError('Error', 'Invalid account type for switching to driver mode');
             }
-        } catch {
-            showGlobalError('Error', 'An unexpected error occurred', { duration: 4000, position: 'top', animation: 'slide-down' });
+        } catch (error: any) {
+            showGlobalError('Error', 'An unexpected error occurred');
         }
     };
 
     const handlePersonalInfo = () => {
-        // Navigate to personal info edit screen
         router.push('../PersonalInfoEdit');
     };
 
@@ -124,8 +136,11 @@ export default function PassengerProfile() {
     };
 
     const handleAddWorkAddress = () => {
-        // Navigate to add work address screen
         router.push('../AddWorkAddress');
+    };
+
+    const handleViewFeedback = () => {
+        router.push('/FeedbackHistoryScreen');
     };
 
     type MenuItemProps = {
@@ -133,20 +148,55 @@ export default function PassengerProfile() {
         title: string;
         onPress: () => void;
         showArrow?: boolean;
-      };
+        isSpecial?: boolean;
+        isDestructive?: boolean;
+    };
       
-      const MenuItemComponent: React.FC<MenuItemProps> = ({ icon, title, onPress, showArrow = true }) => (
-          <Pressable style={dynamicStyles.menuItem} onPress={onPress}>
-              <View style={dynamicStyles.menuItemLeft}>
-                  <Ionicons name={icon} size={24} color={theme.text} />
-                  <Text style={dynamicStyles.menuItemText}>{title}</Text>
-              </View>
-              {showArrow && (
-                  <Ionicons name="chevron-forward" size={20} color={theme.text} />
-              )}
-          </Pressable>
-      );
-      
+    const MenuItemComponent: React.FC<MenuItemProps> = ({ 
+        icon, 
+        title, 
+        onPress, 
+        showArrow = true, 
+        isSpecial = false,
+        isDestructive = false 
+    }) => (
+        <Pressable 
+            style={[
+                dynamicStyles.menuItem,
+                isSpecial && dynamicStyles.specialMenuItem,
+                isDestructive && dynamicStyles.destructiveMenuItem
+            ]} 
+            onPress={onPress}
+            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+        >
+            <View style={dynamicStyles.menuItemLeft}>
+                <View style={[
+                    dynamicStyles.iconContainer,
+                    isSpecial && dynamicStyles.specialIconContainer,
+                    isDestructive && dynamicStyles.destructiveIconContainer
+                ]}>
+                    <Ionicons 
+                        name={icon} 
+                        size={20} 
+                        color={isDestructive ? '#FF3B30' : theme.text} 
+                    />
+                </View>
+                <Text style={[
+                    dynamicStyles.menuItemText,
+                    isDestructive && dynamicStyles.destructiveText
+                ]}>
+                    {title}
+                </Text>
+            </View>
+            {showArrow && (
+                <Ionicons 
+                    name="chevron-forward" 
+                    size={16} 
+                    color={isDark ? theme.border : '#C7C7CC'} 
+                />
+            )}
+        </Pressable>
+    );
 
     const dynamicStyles = StyleSheet.create({
         safeArea: {
@@ -155,87 +205,162 @@ export default function PassengerProfile() {
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
         headerSection: {
             alignItems: 'center',
-            marginBottom: 30,
+            paddingVertical: 32,
+            marginBottom: 24,
+        },
+        profileImageContainer: {
+            position: 'relative',
+            marginBottom: 16,
         },
         profileImage: {
-            marginBottom: 15,
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 3,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        cameraIconOverlay: {
+            position: 'absolute',
+            bottom: 4,
+            right: 4,
+            backgroundColor: '#f90',
+            borderRadius: 14,
+            width: 28,
+            height: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: theme.background,
         },
         userName: {
-            fontSize: 24,
-            fontWeight: 'bold',
+            fontSize: 28,
+            fontWeight: '600',
             color: theme.text,
-            marginBottom: 5,
+            marginBottom: 4,
+            textAlign: 'center',
         },
         userRole: {
             fontSize: 16,
-            color: theme.text,
-            opacity: 0.7,
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            fontWeight: '500',
+            textTransform: 'capitalize',
+        },
+        sectionHeader: {
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
         },
         section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            borderRadius: 16,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         menuItem: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingVertical: 16,
-            paddingHorizontal: 20,
-            borderBottomWidth: 1,
-            borderBottomColor: isDark ? theme.border : '#f0f0f0',
-        },
-        menuItemLeft: {
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        menuItemText: {
-            fontSize: 16,
-            color: theme.text,
-            marginLeft: 15,
+            paddingHorizontal: 16,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            minHeight: 56,
         },
         lastMenuItem: {
             borderBottomWidth: 0,
         },
-        logoutSection: {
-            backgroundColor: theme.card,
-            borderRadius: 12,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
-        },
-        logoutItem: {
+        menuItemLeft: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingVertical: 16,
-            paddingHorizontal: 20,
+            flex: 1,
         },
-        logoutText: {
-            fontSize: 16,
+        iconContainer: {
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+        },
+        specialIconContainer: {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+        },
+        destructiveIconContainer: {
+            backgroundColor: 'rgba(255, 59, 48, 0.15)',
+        },
+        menuItemText: {
+            fontSize: 17,
+            color: theme.text,
+            fontWeight: '400',
+            flex: 1,
+        },
+        destructiveText: {
             color: '#FF3B30',
-            marginLeft: 15,
+        },
+        specialMenuItem: {
+            // No special styling needed, handled by icon container
+        },
+        destructiveMenuItem: {
+            // No special styling needed, handled by text and icon
+        },
+        feedbackPreview: {
+            padding: 16,
+            borderRadius: 12,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        feedbackPreviewHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        feedbackPreviewTitle: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: theme.text,
+        },
+        feedbackPreviewRating: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#f90',
+        },
+        feedbackPreviewComment: {
+            fontSize: 14,
+            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+            marginBottom: 12,
+            fontStyle: 'italic',
+        },
+        feedbackCount: {
+            fontSize: 14,
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            fontWeight: '500',
         },
     });
     
     if (!user) {
         return (
           <SafeAreaView style={dynamicStyles.safeArea}>
-            <View style={dynamicStyles.container}>
-                <Text>Loading user data...</Text>
+            <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <LoadingSpinner size="large" />
             </View>
           </SafeAreaView>
         );
@@ -243,66 +368,121 @@ export default function PassengerProfile() {
 
     return (
       <SafeAreaView style={dynamicStyles.safeArea}>
-        <ScrollView contentContainerStyle={dynamicStyles.container}>
+        <ScrollView 
+            contentContainerStyle={dynamicStyles.container}
+            showsVerticalScrollIndicator={false}
+        >
             {/* Header Section with Profile Picture and Name */}
             <View style={dynamicStyles.headerSection}>
-                <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImage}>
-                    {imageUri ? (
-                        <Image
-                            source={{ uri: imageUri }}
-                            resizeMode="cover"
-                            style={{ width: 80, height: 80, borderRadius: 40 }}
-                        />
-                    ) : (
-                        <Ionicons name="person-circle" size={80} color={theme.text} />
-                    )}
+                <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImageContainer}>
+                    <View style={dynamicStyles.profileImage}>
+                        {imageUri ? (
+                            <Image
+                                source={{ uri: imageUri }}
+                                style={{ width: 100, height: 100, borderRadius: 50 }}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <Ionicons name="person" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+                        )}
+                    </View>
+                    <View style={dynamicStyles.cameraIconOverlay}>
+                        <Ionicons name="camera" size={14} color="white" />
+                    </View>
                 </Pressable>
-                <Text style={dynamicStyles.userName}>{name || 'Your Name'}</Text>
-                <Text style={dynamicStyles.userRole}>Passenger</Text>
+                <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
+                <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
             </View>
 
-            {/* Section 1: Personal Info & Driver Switch */}
+            {/* Account Section */}
+            <Text style={dynamicStyles.sectionHeader}>Account</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
-                    title="Personal Info"
+                    title={t('profile:personalInfo')}
                     onPress={handlePersonalInfo}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
-                        <Ionicons name="car-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Switch to Driver Profile</Text>
+                        <View style={dynamicStyles.iconContainer}>
+                            <Ionicons name="car-outline" size={20} color={theme.text} />
+                        </View>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:switchToDriverProfile')}</Text>
                     </View>
                     <Pressable onPress={handleSwitchToDriver}>
-                        <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                        <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
                     </Pressable>
                 </View>
             </View>
 
-            {/* Section 2: Saved Places */}
+            {/* Saved Places Section */}
+            <Text style={dynamicStyles.sectionHeader}>Saved Places</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
-                    title="Add Home Address"
+                    title={t('profile:addHomeAddress')}
                     onPress={handleAddHomeAddress}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
-                        <Ionicons name="briefcase-outline" size={24} color={theme.text} />
-                        <Text style={dynamicStyles.menuItemText}>Add Work Address</Text>
+                        <View style={dynamicStyles.iconContainer}>
+                            <Ionicons name="briefcase-outline" size={20} color={theme.text} />
+                        </View>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile:addWorkAddress')}</Text>
                     </View>
                     <Pressable onPress={handleAddWorkAddress}>
-                        <Ionicons name="chevron-forward" size={20} color={theme.text} />
+                        <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
                     </Pressable>
                 </View>
             </View>
 
-            {/* Section 3: Logout */}
-            <View style={dynamicStyles.logoutSection}>
-                <Pressable style={dynamicStyles.logoutItem} onPress={handleSignout}>
-                    <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-                    <Text style={dynamicStyles.logoutText}>Log Out</Text>
-                </Pressable>
+            {/* Feedback History Section */}
+            <Text style={dynamicStyles.sectionHeader}>
+                Recent Feedback
+                {recentFeedback && recentFeedback.length > 0 && (
+                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} review{recentFeedback.length !== 1 ? 's' : ''}</Text>
+                )}
+            </Text>
+            <View style={dynamicStyles.section}>
+                {recentFeedback && recentFeedback.length > 0 ? (
+                    <View style={dynamicStyles.feedbackPreview}>
+                        <View style={dynamicStyles.feedbackPreviewHeader}>
+                            <Text style={dynamicStyles.feedbackPreviewTitle}>Latest Review</Text>
+                            <Text style={dynamicStyles.feedbackPreviewRating}>
+                                ⭐ {recentFeedback[0].rating}/5
+                            </Text>
+                        </View>
+                        {recentFeedback[0].comment && (
+                            <Text style={dynamicStyles.feedbackPreviewComment} numberOfLines={2}>
+                                "{recentFeedback[0].comment}"
+                            </Text>
+                        )}
+                        <MenuItemComponent
+                            icon="chatbubble-ellipses-outline"
+                            title="View All Feedback"
+                            onPress={handleViewFeedback}
+                            showArrow={true}
+                        />
+                    </View>
+                ) : (
+                    <MenuItemComponent
+                        icon="chatbubble-ellipses-outline"
+                        title="No feedback yet"
+                        onPress={handleViewFeedback}
+                        showArrow={true}
+                    />
+                )}
+            </View>
+
+            {/* Settings Section */}
+            <Text style={dynamicStyles.sectionHeader}>Settings</Text>
+            <View style={dynamicStyles.section}>
+                <MenuItemComponent
+                    icon="log-out-outline"
+                    title={t('profile:logOut')}
+                    onPress={handleSignout}
+                    isDestructive={true}
+                />
             </View>
         </ScrollView>
       </SafeAreaView>

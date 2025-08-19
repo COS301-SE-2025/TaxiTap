@@ -8,6 +8,7 @@ import {
   Animated,
   Linking,
   Image,
+  Pressable,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,14 +16,17 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import Icon from 'react-native-vector-icons/Ionicons';
-import loading from '../../assets/images/loading4.png';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { t } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
   // Get route parameters
@@ -36,6 +40,7 @@ export default function TaxiInformation() {
     routeId,
     availableTaxisCount,
     routeMatchData: routeMatchDataString,
+    estimatedFare,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -46,6 +51,7 @@ export default function TaxiInformation() {
     routeId: string;
     availableTaxisCount?: string;
     routeMatchData?: string;
+    estimatedFare?: string;
   }>();
 
   // State management
@@ -58,7 +64,7 @@ export default function TaxiInformation() {
 
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
-  // Convex mutations - using your existing requestRide function
+  // Convex mutations
   const requestRide = useMutation(api.functions.rides.RequestRide.requestRide);
 
   // Process enhanced data from HomeScreen
@@ -87,11 +93,10 @@ export default function TaxiInformation() {
           vehicleModel: taxi.vehicleModel,
           distanceToOrigin: taxi.distanceToOrigin,
           routeInfo: taxi.routeInfo,
-          // Additional display fields
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
-          displayDistance: `${taxi.distanceToOrigin}km away`,
+          displayDistance: `${taxi.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
           routeName: taxi.routeInfo.routeName,
-          fare: taxi.routeInfo.calculatedFare, // Use calculated fare
+          fare: taxi.routeInfo.calculatedFare,
         })) || [];
         
         setNearbyTaxis(enhancedTaxiData);
@@ -104,7 +109,7 @@ export default function TaxiInformation() {
       console.log('⚠️ No enhanced data received, falling back to original query');
       setIsLoadingTaxis(false);
     }
-  }, [routeMatchDataString]);
+  }, [routeMatchDataString, t]);
 
   // Fallback query for backward compatibility
   const shouldUseOriginalQuery = !routeMatchDataString;
@@ -173,7 +178,7 @@ export default function TaxiInformation() {
       });
   };
 
-  // Handle ride booking using your existing requestRide function
+  // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
       showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
@@ -213,13 +218,13 @@ export default function TaxiInformation() {
 
       if (result) {
         showGlobalSuccess(
-          'Ride Request Sent',
-          `Your ride request has been sent to ${selectedTaxi.name}. You will be notified when the driver responds.`,
+          t('taxiInfo:rideRequestSent'),
+          t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
             actions: [
               {
-                label: 'OK',
+                label: t('common:ok'),
                 onPress: () => {
                   router.push({
                     pathname: './PassengerReservation',
@@ -268,10 +273,11 @@ export default function TaxiInformation() {
     }
   };
 
-  // Enhanced taxi card rendering
+  // Enhanced taxi card rendering with improved styling
   const renderTaxiCard = (taxi: any, index: number) => {
     const isEnhanced = taxi.routeInfo;
     const isSelected = selectedTaxi?._id === taxi._id;
+    const fare = isEnhanced ? (taxi.routeInfo.calculatedFare || taxi.routeInfo.fare || 0).toFixed(2) : "0.00";
     
     return (
       <TouchableOpacity
@@ -282,51 +288,78 @@ export default function TaxiInformation() {
         ]}
         onPress={() => handleTaxiSelect(taxi)}
       >
+        {/* Left side - Taxi details */}
         <View style={dynamicStyles.taxiInfo}>
           <View style={dynamicStyles.taxiHeader}>
-            <Text style={dynamicStyles.taxiName}>
-              {taxi.name || `Driver ${index + 1}`}
-            </Text>
+            <View style={dynamicStyles.nameAndFareRow}>
+              <Text style={dynamicStyles.taxiName}>
+                {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
+              </Text>
+              {isEnhanced && (
+                <View style={dynamicStyles.fareDisplay}>
+                  <Icon name="cash" size={16} color={theme.primary} />
+                  <Text style={dynamicStyles.fareAmount}>R{fare}</Text>
+                </View>
+              )}
+            </View>
             {isEnhanced && (
               <View style={dynamicStyles.distanceBadge}>
                 <Text style={dynamicStyles.distanceText}>
-                  {taxi.distanceToOrigin.toFixed(1)}km
+                  {taxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')}
                 </Text>
               </View>
             )}
           </View>
           
           <View style={dynamicStyles.taxiDetails}>
-            <Text style={dynamicStyles.taxiDetailText}>
-              🚗 {taxi.vehicleModel || 'Vehicle info not available'}
-            </Text>
-            <Text style={dynamicStyles.taxiDetailText}>
-              📋 {taxi.vehicleRegistration || 'Registration not available'}
-            </Text>
+            <View style={dynamicStyles.detailRow}>
+              <Icon name="car" size={18} color={theme.textSecondary} />
+              <Text style={dynamicStyles.taxiDetailText}>
+                {taxi.vehicleModel || t('taxiInfo:vehicleInfoNotAvailable')}
+              </Text>
+            </View>
+            
+            <View style={dynamicStyles.detailRow}>
+              <Icon name="card" size={18} color={theme.textSecondary} />
+              <Text style={dynamicStyles.taxiDetailText}>
+                {taxi.vehicleRegistration || t('taxiInfo:registrationNotAvailable')}
+              </Text>
+            </View>
             
             {isEnhanced && taxi.routeInfo && (
               <>
-                <Text style={dynamicStyles.routeInfoText}>
-                  🛣️ Route: {taxi.routeInfo.routeName}
-                </Text>
-                <Text style={dynamicStyles.fareText}>
-                  💰 Fare: R{(taxi.routeInfo.calculatedFare || taxi.routeInfo.fare || 0).toFixed(2)}
-                </Text>
-                <Text style={dynamicStyles.routeInfoText}>
-                  📏 Distance: {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}km
-                </Text>
+                <View style={dynamicStyles.detailRow}>
+                  <Icon name="navigate" size={18} color={theme.primary} />
+                  <Text style={dynamicStyles.routeInfoText}>
+                    {t('taxiInfo:route')} {taxi.routeInfo.routeName}
+                  </Text>
+                </View>
+                
+                <View style={dynamicStyles.detailRow}>
+                  <Icon name="speedometer" size={18} color={theme.textSecondary} />
+                  <Text style={dynamicStyles.routeInfoText}>
+                    {t('taxiInfo:distance')} {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}{t('taxiInfo:km')}
+                  </Text>
+                </View>
                 
                 {taxi.routeInfo.closestStartStop && (
-                  <Text style={dynamicStyles.stopInfoText}>
-                    📍 Pickup near: {taxi.routeInfo.closestStartStop.name}
-                    ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}km)
-                  </Text>
+                  <View style={dynamicStyles.detailRow}>
+                    <Icon name="location" size={18} color={theme.textSecondary} />
+                    <Text style={dynamicStyles.stopInfoText}>
+                      {t('taxiInfo:pickupNear')} {taxi.routeInfo.closestStartStop.name}
+                      ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}{t('taxiInfo:km')})
+                    </Text>
+                  </View>
                 )}
+                
                 {taxi.routeInfo.closestEndStop && (
-                  <Text style={dynamicStyles.stopInfoText}>
-                    🏁 Drop-off near: {taxi.routeInfo.closestEndStop.name}
-                    ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}km)
-                  </Text>
+                  <View style={dynamicStyles.detailRow}>
+                    <Icon name="flag" size={18} color={theme.textSecondary} />
+                    <Text style={dynamicStyles.stopInfoText}>
+                      {t('taxiInfo:dropOffNear')} {taxi.routeInfo.closestEndStop.name}
+                      ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}{t('taxiInfo:km')})
+                    </Text>
+                  </View>
                 )}
               </>
             )}
@@ -336,78 +369,24 @@ export default function TaxiInformation() {
                 style={dynamicStyles.callButton}
                 onPress={() => handleCallDriver(taxi.phoneNumber)}
               >
-                <Icon name="call" size={16} color="#4CAF50" />
-                <Text style={dynamicStyles.callButtonText}>Call Driver</Text>
+                <Icon name="call" size={18} color={theme.primary} />
+                <Text style={dynamicStyles.callButtonText}>{t('taxiInfo:callDriver')}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
         
-        <View style={dynamicStyles.taxiActions}>
-          <Text style={[
-            dynamicStyles.selectText,
-            isSelected && { color: theme.primary }
-          ]}>
-            {isSelected ? '✓ Selected' : 'Select'}
-          </Text>
+        {/* Right side - Radio button centered */}
+        <View style={dynamicStyles.taxiRightSection}>
+          <View style={dynamicStyles.selectionContainer}>
+            <Icon 
+              name={isSelected ? "checkmark-circle" : "radio-button-off"} 
+              size={32} 
+              color={isSelected ? theme.primary : theme.textSecondary} 
+            />
+          </View>
         </View>
       </TouchableOpacity>
-    );
-  };
-
-  // Journey summary component
-  const renderJourneySummary = () => {
-    if (!routeMatchData || !selectedTaxi) return null;
-    
-    const selectedTaxiRoute = selectedTaxi.routeInfo;
-    
-    return (
-      <View style={dynamicStyles.journeySummaryCard}>
-        <Text style={dynamicStyles.journeySummaryTitle}>Journey Summary</Text>
-        
-        <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Driver:</Text>
-          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.name}</Text>
-        </View>
-        
-        <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Vehicle:</Text>
-          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.vehicleModel}</Text>
-        </View>
-        
-        {selectedTaxiRoute && (
-          <>
-            <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Route:</Text>
-              <Text style={dynamicStyles.summaryValue}>{selectedTaxiRoute.routeName}</Text>
-            </View>
-            
-            <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Taxi Association:</Text>
-              <Text style={dynamicStyles.summaryValue}>{selectedTaxiRoute.taxiAssociation}</Text>
-            </View>
-            
-            <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Distance:</Text>
-              <Text style={dynamicStyles.summaryValue}>
-                {(selectedTaxiRoute.passengerDisplacement || 0).toFixed(1)}km
-              </Text>
-            </View>
-            
-            <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>Fare:</Text>
-              <Text style={[dynamicStyles.summaryValue, { color: theme.primary, fontWeight: 'bold' }]}>
-                R{(selectedTaxiRoute.calculatedFare || selectedTaxiRoute.fare || 0).toFixed(2)}
-              </Text>
-            </View>
-          </>
-        )}
-        
-        <View style={dynamicStyles.summaryRow}>
-          <Text style={dynamicStyles.summaryLabel}>Driver Distance:</Text>
-          <Text style={dynamicStyles.summaryValue}>{selectedTaxi.distanceToOrigin.toFixed(1)}km away</Text>
-        </View>
-      </View>
     );
   };
 
@@ -417,30 +396,27 @@ export default function TaxiInformation() {
       backgroundColor: theme.background,
     },
     header: {
-      padding: 20,
-      paddingTop: 60,
+      paddingHorizontal: 20,
+      paddingTop: 10,
+      paddingBottom: 20,
       backgroundColor: theme.primary,
     },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: theme.buttonText || '#FFFFFF',
-      marginBottom: 10,
-    },
     headerSubtitle: {
-      fontSize: 16,
+      fontSize: 14,
       color: theme.buttonText || '#FFFFFF',
       opacity: 0.9,
+      lineHeight: 20,
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingHorizontal: 16,
+      paddingTop: 20,
     },
     taxiList: {
       flex: 1,
     },
     loadingContainer: {
-      padding: 40,
+      paddingVertical: 60,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -453,42 +429,44 @@ export default function TaxiInformation() {
       backgroundColor: isDark ? theme.surface : `${theme.primary}15`,
       borderRadius: 12,
       padding: 16,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
+      marginBottom: 20,
     },
     matchSummaryTitle: {
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: '600',
       color: theme.text,
       marginBottom: 4,
     },
     matchSummaryText: {
       fontSize: 14,
       color: theme.textSecondary,
+      lineHeight: 20,
     },
     taxiCard: {
       backgroundColor: theme.card,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
-      borderWidth: 1,
-      borderColor: isDark ? theme.border : 'transparent',
       shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.05,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOpacity: isDark ? 0.2 : 0.08,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
       flexDirection: 'row',
     },
     selectedTaxiCard: {
       borderColor: theme.primary,
       borderWidth: 2,
-      backgroundColor: isDark ? theme.surface : `${theme.primary}10`,
+      shadowOpacity: isDark ? 0.3 : 0.12,
+      elevation: 4,
     },
     taxiInfo: {
       flex: 1,
     },
     taxiHeader: {
+      marginBottom: 12,
+    },
+    nameAndFareRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -496,118 +474,104 @@ export default function TaxiInformation() {
     },
     taxiName: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: '600',
       color: theme.text,
       flex: 1,
     },
+    fareDisplay: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    fareAmount: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.primary,
+    },
     distanceBadge: {
-      backgroundColor: theme.primary,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 12,
+      backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}15`,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      alignSelf: 'flex-start',
     },
     distanceText: {
-      color: theme.buttonText || '#FFFFFF',
+      color: theme.primary,
       fontSize: 12,
-      fontWeight: 'bold',
+      fontWeight: '600',
     },
     taxiDetails: {
-      marginTop: 8,
+      gap: 8,
+    },
+    detailRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 6,
     },
     taxiDetailText: {
       fontSize: 14,
       color: theme.text,
-      marginBottom: 4,
+      flex: 1,
     },
     routeInfoText: {
       fontSize: 14,
-      color: theme.primary,
-      marginBottom: 2,
+      color: theme.text,
       fontWeight: '500',
+      flex: 1,
     },
     fareText: {
       fontSize: 14,
       color: theme.primary,
-      marginBottom: 2,
-      fontWeight: 'bold',
+      fontWeight: '600',
+      flex: 1,
     },
     stopInfoText: {
-      fontSize: 12,
+      fontSize: 13,
       color: theme.textSecondary,
-      marginBottom: 2,
-      fontStyle: 'italic',
+      flex: 1,
     },
     callButton: {
-      backgroundColor: isDark ? theme.surface : '#E8F5E8',
-      borderColor: '#4CAF50',
-      borderWidth: 1,
+      backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
       borderRadius: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
       marginTop: 8,
       alignSelf: 'flex-start',
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 8,
     },
     callButtonText: {
-      color: '#4CAF50',
+      color: theme.primary,
       fontSize: 14,
-      fontWeight: '500',
-      marginLeft: 6,
+      fontWeight: '600',
     },
-    taxiActions: {
+    taxiRightSection: {
+      width: 60,
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+      paddingVertical: 8,
+    },
+    selectionContainer: {
+      alignItems: 'center',
       justifyContent: 'center',
-      alignItems: 'center',
-      paddingLeft: 16,
-    },
-    selectText: {
-      color: theme.textSecondary,
-      fontSize: 14,
-      fontWeight: 'bold',
-    },
-    journeySummaryCard: {
-      backgroundColor: theme.card,
-      borderRadius: 12,
-      padding: 16,
-      marginTop: 16,
-      marginBottom: 20,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? theme.border : 'transparent',
-    },
-    journeySummaryTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 12,
-    },
-    summaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    summaryLabel: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      flex: 1,
-    },
-    summaryValue: {
-      fontSize: 14,
-      color: theme.text,
-      fontWeight: '500',
-      flex: 1,
-      textAlign: 'right',
     },
     noTaxisContainer: {
       backgroundColor: theme.card,
       borderRadius: 12,
-      padding: 20,
+      padding: 24,
       alignItems: 'center',
       marginTop: 20,
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.2 : 0.08,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
     },
     noTaxisTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: '600',
       color: theme.text,
       marginBottom: 8,
     },
@@ -616,73 +580,112 @@ export default function TaxiInformation() {
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 8,
+      lineHeight: 20,
     },
     noTaxisSubtext: {
-      fontSize: 12,
+      fontSize: 13,
       color: theme.textSecondary,
       textAlign: 'center',
       fontStyle: 'italic',
     },
     bookButton: {
-      position: 'absolute',
-      bottom: 30,
-      left: 20,
-      right: 20,
+      marginHorizontal: 20,
+      marginBottom: 20,
       backgroundColor: theme.primary,
-      borderRadius: 25,
-      paddingVertical: 15,
+      borderRadius: 12,
+      paddingVertical: 16,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: theme.shadow,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 5,
+      shadowOpacity: 0.25,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 12,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
     },
     bookButtonText: {
       color: theme.buttonText || '#FFFFFF',
-      fontSize: 18,
-      fontWeight: 'bold',
+      fontSize: 16,
+      fontWeight: '600',
     },
     backButton: {
       position: 'absolute',
-      top: 50,
+      top: 20,
       left: 20,
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.3)',
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+    },
+    bookButtonContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingTop: 15,
+      paddingBottom: 5,
+      backgroundColor: isDark ? theme.surface : '#FFFFFF',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: -3 },
+      shadowRadius: 6,
+      elevation: 8,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    },
+    backButton2: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    headerTitle2: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: 'black',
+      flex: 1,
     },
   });
 
   return (
     <View style={dynamicStyles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={dynamicStyles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Icon name="arrow-back" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
       {/* Header */}
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>Available Taxis</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Pressable style={dynamicStyles.backButton2} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
+          </Pressable>
+          <Text style={dynamicStyles.headerTitle2}>{t('taxiInfo:availableTaxis')}</Text>
+        </View>
         <Text style={dynamicStyles.headerSubtitle}>
-          From {currentName} to {destinationName}
+          {currentName && currentName !== 'Current Location' ? currentName : t('common:currentLocation')}
+          {' → '}
+          {destinationName}
         </Text>
       </View>
 
       {/* Content */}
       <View style={dynamicStyles.content}>
-        <ScrollView style={dynamicStyles.taxiList} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={dynamicStyles.taxiList} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 120 }}
+        >
           {isLoadingTaxis ? (
             <View style={dynamicStyles.loadingContainer}>
-              <Image source={loading} style={{ width: 80, height: 80 }} resizeMode="contain" />
-              <Text style={dynamicStyles.loadingText}>Finding available taxis...</Text>
+              <LoadingSpinner size="large" />
+              <Text style={dynamicStyles.loadingText}>{t('taxiInfo:findingAvailableTaxis')}</Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (
             <>
@@ -690,31 +693,33 @@ export default function TaxiInformation() {
               {routeMatchData && (
                 <View style={dynamicStyles.matchSummaryCard}>
                   <Text style={dynamicStyles.matchSummaryTitle}>
-                    Found {routeMatchData.availableTaxis.length} Available Taxis
+                    {t('taxiInfo:foundTaxisOnRoutes').replace('{count}', routeMatchData.availableTaxis.length.toString())}
                   </Text>
                   <Text style={dynamicStyles.matchSummaryText}>
-                    on {routeMatchData.matchingRoutes.length} matching routes
+                    {t('taxiInfo:onMatchingRoutes').replace('{count}', routeMatchData.matchingRoutes.length.toString())}
                   </Text>
+                  {estimatedFare && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                      <Icon name="cash-outline" size={16} color={theme.primary} style={{ marginRight: 6 }} />
+                      <Text style={[dynamicStyles.matchSummaryText, { color: theme.primary, fontWeight: '600' }]}>
+                        Estimated Fare: R{parseFloat(estimatedFare).toFixed(2)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
               
               {/* Taxi cards */}
               {nearbyTaxis.map((taxi, index) => renderTaxiCard(taxi, index))}
-              
-              {/* Journey summary */}
-              {renderJourneySummary()}
-              
-              {/* Bottom padding for button */}
-              <View style={{ height: 100 }} />
             </>
           ) : (
             <View style={dynamicStyles.noTaxisContainer}>
-              <Text style={dynamicStyles.noTaxisTitle}>No Available Taxis</Text>
+              <Text style={dynamicStyles.noTaxisTitle}>{t('taxiInfo:noAvailableTaxis')}</Text>
               <Text style={dynamicStyles.noTaxisText}>
-                {routeMatchData?.message || 'No taxis found on routes connecting your origin and destination.'}
+                {routeMatchData?.message || t('taxiInfo:noTaxisMessage')}
               </Text>
               <Text style={dynamicStyles.noTaxisSubtext}>
-                Try adjusting your pickup location or check again later.
+                {t('taxiInfo:tryAdjustingLocation')}
               </Text>
             </View>
           )}
@@ -723,14 +728,19 @@ export default function TaxiInformation() {
 
       {/* Book Ride Button */}
       {selectedTaxi && (
-        <Animated.View style={{ opacity: buttonOpacity }}>
+        <Animated.View 
+          style={{ 
+            opacity: buttonOpacity,
+            ...dynamicStyles.bookButtonContainer
+          }}
+        >
           <TouchableOpacity
             style={dynamicStyles.bookButton}
             onPress={handleBookRide}
             disabled={isBooking}
           >
             <Text style={dynamicStyles.bookButtonText}>
-              {isBooking ? 'Booking Ride...' : `Book Ride with ${selectedTaxi.name}`}
+              {isBooking ? t('taxiInfo:bookingRide') : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)}
             </Text>
           </TouchableOpacity>
         </Animated.View>

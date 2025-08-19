@@ -1,4 +1,4 @@
-import { getAverageRatingHandler } from "../../convex/functions/feedback/averageRating";
+import { getAverageRating } from "../../convex/functions/feedback/averageRating";
 
 describe("getAverageRating integration-like", () => {
   let feedbacks: any[] = [];
@@ -12,6 +12,9 @@ describe("getAverageRating integration-like", () => {
         })),
       })),
     },
+    auth: {},
+    storage: {},
+    runQuery: jest.fn(),
   };
 
   const insertFeedback = (driverId: string, rating: any) => {
@@ -28,7 +31,8 @@ describe("getAverageRating integration-like", () => {
   });
 
   it("returns 0 if driver has no feedback", async () => {
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    // Test the handler function directly
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(0);
   });
 
@@ -38,7 +42,7 @@ describe("getAverageRating integration-like", () => {
     insertFeedback("driver1", "bad");
     insertFeedback("driver1", null);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.5);
   });
 
@@ -46,17 +50,17 @@ describe("getAverageRating integration-like", () => {
     insertFeedback("driver2", 1);
     insertFeedback("driver1", 4);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(4.0);
   });
 
-    it("ignores zero and negative ratings", async () => {
+  it("ignores zero and negative ratings", async () => {
     insertFeedback("driver1", 0);
     insertFeedback("driver1", -1);
     insertFeedback("driver1", 3);
     insertFeedback("driver1", 4);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(3.5); // Only 3 and 4 are valid
   });
 
@@ -65,7 +69,7 @@ describe("getAverageRating integration-like", () => {
     insertFeedback("driver1", 2);
     insertFeedback("driver1", 3); // avg = 2.33...
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(2.3); // Rounded
   });
 
@@ -75,17 +79,17 @@ describe("getAverageRating integration-like", () => {
     insertFeedback("driver1", {});
     insertFeedback("driver1", 5); // only valid
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(5.0);
   });
 
   it("returns 0 when all ratings are invalid", async () => {
-    insertFeedback("driver1", "bad");
+    insertFeedback("driver1", 0);
     insertFeedback("driver1", null);
     insertFeedback("driver1", {});
     insertFeedback("driver1", NaN);
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(0);
   });
 
@@ -95,7 +99,7 @@ describe("getAverageRating integration-like", () => {
     }
     insertFeedback("driver1", "bad"); // invalid one at the end
 
-    const result = await getAverageRatingHandler(mockCtx, { driverId: "driver1" });
+    const result = await getAverageRating.handler(mockCtx as any, { driverId: "driver1" });
     expect(result).toBe(5.0);
   });
 });

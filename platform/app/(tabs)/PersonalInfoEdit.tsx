@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -7,7 +8,9 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function PersonalInfoEdit() {
     const [name, setName] = useState('');
@@ -22,6 +25,8 @@ export default function PersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
+    const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -67,21 +72,37 @@ export default function PersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            Alert.alert('Error', 'Failed to upload image');
+            showGlobalError('Error', 'Failed to upload image', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         }
     };
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            showGlobalError('Error', 'User not loaded', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         if (!name.trim()) {
-            Alert.alert('Error', 'Name is required');
+            showGlobalError('Error', 'Name is required', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         if (!phoneNumber.trim()) {
-            Alert.alert('Error', 'Phone number is required');
+            showGlobalError('Error', 'Phone number is required', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
             return;
         }
         
@@ -109,12 +130,25 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            Alert.alert('Success', 'Profile updated successfully!', [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
+            showGlobalSuccess('Success', 'Changes saved successfully', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+              actions: [
+                {
+                  label: 'OK',
+                  onPress: () => router.back(),
+                  style: 'default',
+                },
+              ],
+            });
         } catch (error: any) {
             console.error('Update error:', error);
-            Alert.alert('Error', error.message || 'Failed to update profile');
+            showGlobalError('Error', error.message || 'Failed to save changes', {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
         } finally {
             setIsLoading(false);
         }
@@ -124,31 +158,50 @@ export default function PersonalInfoEdit() {
         safeArea: {
             flex: 1,
             backgroundColor: theme.background,
+            borderTopWidth: 0,
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 30,
+            marginBottom: 24,
         },
         backButton: {
-            marginRight: 15,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
         },
         headerTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
+            fontSize: 22,
+            fontWeight: '600',
             color: theme.text,
+            flex: 1,
         },
         photoSection: {
             alignItems: 'center',
-            marginBottom: 30,
+            marginBottom: 24,
         },
         photoContainer: {
             position: 'relative',
+        },
+        profileImageBackground: {
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 3,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         },
         editPhotoButton: {
             position: 'absolute',
@@ -163,63 +216,68 @@ export default function PersonalInfoEdit() {
         },
         section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
+            borderRadius: 16,
             padding: 20,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         sectionTitle: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: 15,
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
         },
         fieldContainer: {
-            marginBottom: 15,
+            marginBottom: 16,
         },
         label: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            fontWeight: '400',
             color: theme.text,
-            marginBottom: 5,
+            marginBottom: 8,
         },
         input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             borderRadius: 8,
             paddingHorizontal: 15,
             paddingVertical: 12,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
+            fontSize: 17,
+            borderWidth: 0,
             color: theme.text,
         },
         saveButton: {
             backgroundColor: theme.primary,
             paddingVertical: 16,
-            borderRadius: 12,
+            borderRadius: 16,
             alignItems: 'center',
-            marginTop: 20,
+            marginTop: 16,
         },
         saveButtonDisabled: {
             opacity: 0.6,
         },
         saveButtonText: {
-            color: isDark ? '#121212' : '#fff',
+            color: '#fff',
             fontWeight: 'bold',
-            fontSize: 18,
+            fontSize: 16,
+        },
+        separator: {
+            height: 1,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            marginVertical: 16,
         },
     });
 
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>Loading...</Text>
+                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <LoadingSpinner size="large" />
                 </View>
             </SafeAreaView>
         );
@@ -230,10 +288,10 @@ export default function PersonalInfoEdit() {
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Header */}
                 <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('../PassengerProfile')}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>Personal Information</Text>
+                    <Text style={dynamicStyles.headerTitle}>{t('personalInfo:personalInformation')}</Text>
                 </View>
 
                 {/* Profile Photo Section */}
@@ -246,7 +304,9 @@ export default function PersonalInfoEdit() {
                                     style={{ width: 100, height: 100, borderRadius: 50 }}
                                 />
                             ) : (
-                                <Ionicons name="person-circle" size={100} color={theme.text} />
+                                <View style={dynamicStyles.profileImageBackground}>
+                                    <Ionicons name="person" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+                                </View>
                             )}
                         </Pressable>
                         <Pressable style={dynamicStyles.editPhotoButton} onPress={handleUploadPhoto}>
@@ -256,39 +316,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
+                <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Full Name</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder="Enter your full name"
+                            placeholder={t('personalInfo:namePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Phone Number</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            placeholder="Enter your phone number"
+                            placeholder={t('personalInfo:phoneNumberPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Email</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder="Enter your email"
+                            placeholder={t('personalInfo:emailPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -297,39 +356,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact */}
+                <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Contact Name</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder="Enter emergency contact name"
+                            placeholder={t('personalInfo:emergencyContactNamePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Contact Phone</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactPhone}
                             onChangeText={setEmergencyContactPhone}
-                            placeholder="Enter emergency contact phone"
+                            placeholder={t('personalInfo:emergencyContactPhonePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Relationship</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder="e.g., Mother, Father, Spouse"
+                            placeholder={t('personalInfo:emergencyContactRelationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -342,7 +400,7 @@ export default function PersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? 'Saving...' : 'Save Changes'}
+                        {isLoading ? t('personalInfo:saving') : t('personalInfo:saveChanges')}
                     </Text>
                 </Pressable>
             </ScrollView>

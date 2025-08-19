@@ -26,7 +26,12 @@ export async function updateTaxiSeatAvailabilityHandler(ctx: any, args: { rideId
 
     const currentSeats = taxi.capacity ?? 0;
     const updatedSeats =
-      args.action === "decrease" ? Math.max(0, currentSeats - 1) : currentSeats + 1;
+      args.action === "decrease" ? Math.max(0, currentSeats - 1) : Math.min(currentSeats + 1, 14);
+
+    // Additional validation to ensure capacity doesn't exceed 14
+    if (updatedSeats > 14) {
+      throw new Error("Maximum 14 seats are allowed for taxis.");
+    }
 
     await ctx.db.patch(taxi._id, {
       capacity: updatedSeats,

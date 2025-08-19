@@ -63,15 +63,80 @@ describe("endRideHandler", () => {
       completedAt: expect.any(Number),
     });
 
-    expect(mockCtx.runMutation).toHaveBeenCalledWith(
-      expect.anything(), // Safely match internal mutation path
-      {
-        rideId: args.rideId,
-        type: "ride_completed",
-        driverId: rideDoc.driverId,
-        passengerId: args.userId,
-      }
-    );
+    // FIXED: Simply check that runMutation was called and verify the notification data
+    expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+    
+    // Check only the second argument (the notification data) since the first is a complex require path
+    const [, secondArg] = mockCtx.runMutation.mock.calls[0];
+    expect(secondArg).toEqual({
+      rideId: args.rideId,
+      type: "ride_completed",
+      driverId: rideDoc.driverId,
+      passengerId: args.userId,
+      metadata: null,
+    });
+
+    expect(result).toEqual({
+      _id: rideDoc._id,
+      message: "Ride completed successfully",
+    });
+  });
+
+  it("continues ride completion even if notification fails", async () => {
+    mockCtx.db.first.mockResolvedValueOnce(rideDoc);
+    
+    // Mock notification failure
+    mockCtx.runMutation.mockRejectedValueOnce(new Error("Notification service unavailable"));
+
+    const result = await endRideHandler(mockCtx, args);
+
+    // Should still complete the ride despite notification failure
+    expect(mockCtx.db.patch).toHaveBeenCalledWith(rideDoc._id, {
+      status: "completed",
+      completedAt: expect.any(Number),
+    });
+
+    expect(result).toEqual({
+      _id: rideDoc._id,
+      message: "Ride completed successfully",
+    });
+  });
+
+  it("accepts rides with 'started' status", async () => {
+    const startedRideDoc = {
+      ...rideDoc,
+      status: "started",
+    };
+
+    mockCtx.db.first.mockResolvedValueOnce(startedRideDoc);
+
+    const result = await endRideHandler(mockCtx, args);
+
+    expect(mockCtx.db.patch).toHaveBeenCalledWith(rideDoc._id, {
+      status: "completed",
+      completedAt: expect.any(Number),
+    });
+
+    expect(result).toEqual({
+      _id: rideDoc._id,
+      message: "Ride completed successfully",
+    });
+  });
+
+  it("accepts rides with 'accepted' status", async () => {
+    const acceptedRideDoc = {
+      ...rideDoc,
+      status: "accepted",
+    };
+
+    mockCtx.db.first.mockResolvedValueOnce(acceptedRideDoc);
+
+    const result = await endRideHandler(mockCtx, args);
+
+    expect(mockCtx.db.patch).toHaveBeenCalledWith(rideDoc._id, {
+      status: "completed",
+      completedAt: expect.any(Number),
+    });
 
     expect(result).toEqual({
       _id: rideDoc._id,

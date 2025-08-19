@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
@@ -7,7 +7,10 @@ import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useAlertHelpers } from '../../components/AlertHelpers';
 import * as Location from 'expo-location';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function AddWorkAddress() {
     const [address, setAddress] = useState('');
@@ -20,6 +23,8 @@ export default function AddWorkAddress() {
     const router = useRouter();
     const { user } = useUser();
     const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
+    const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -47,7 +52,11 @@ export default function AddWorkAddress() {
             // Request location permissions
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to get your current location');
+                showGlobalError(
+                    t('address:permissionDenied'),
+                    t('address:locationPermissionRequired'),
+                    { duration: 4000 }
+                );
                 return;
             }
 
@@ -69,7 +78,11 @@ export default function AddWorkAddress() {
             }
         } catch (error) {
             console.error('Location error:', error);
-            Alert.alert('Error', 'Failed to get current location');
+            showGlobalError(
+                t('address:error'),
+                t('address:failedToGetLocation'),
+                { duration: 4000 }
+            );
         } finally {
             setIsLoadingLocation(false);
         }
@@ -77,19 +90,35 @@ export default function AddWorkAddress() {
 
     const handleSave = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            showGlobalError(
+                t('address:error'),
+                t('address:userNotLoaded'),
+                { duration: 4000 }
+            );
             return;
         }
         if (!address.trim()) {
-            Alert.alert('Error', 'Please enter an address');
+            showGlobalError(
+                t('address:error'),
+                t('address:addressRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         if (!nickname.trim()) {
-            Alert.alert('Error', 'Please enter a nickname for this address');
+            showGlobalError(
+                t('address:error'),
+                t('address:nicknameRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         if (coordinates.latitude === 0 && coordinates.longitude === 0) {
-            Alert.alert('Error', 'Please get location coordinates or use current location');
+            showGlobalError(
+                t('address:error'),
+                t('address:coordinatesRequired'),
+                { duration: 4000 }
+            );
             return;
         }
         setIsLoading(true);
@@ -102,12 +131,21 @@ export default function AddWorkAddress() {
                     coordinates,
                 },
             });
-            Alert.alert('Success', 'Work address saved successfully!', [
-                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
-            ]);
+            showGlobalSuccess(
+                t('address:success'),
+                t('address:workAddressSaved'),
+                { duration: 2000 }
+            );
+            setTimeout(() => {
+                router.push('/(tabs)/PassengerProfile');
+            }, 2000);
         } catch (error: any) {
             console.error('Save error:', error);
-            Alert.alert('Error', error.message || 'Failed to save work address');
+            showGlobalError(
+                t('address:error'),
+                error.message || t('address:failedToSaveAddress'),
+                { duration: 4000 }
+            );
         } finally {
             setIsLoading(false);
         }
@@ -115,36 +153,46 @@ export default function AddWorkAddress() {
 
     const handleDelete = async () => {
         if (!user) {
-            Alert.alert('Error', 'User not loaded');
+            showGlobalError(
+                t('address:error'),
+                t('address:userNotLoaded'),
+                { duration: 4000 }
+            );
             return;
         }
-        Alert.alert(
-            'Delete Work Address',
-            'Are you sure you want to delete your work address?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            setIsLoading(true);
-                            await updateWorkAddress({
-                                userId: user.id as Id<'taxiTap_users'>,
-                                workAddress: null,
-                            });
-                            Alert.alert('Success', 'Work address deleted successfully!', [
-                                { text: 'OK', onPress: () => router.push('/(tabs)/PassengerProfile') }
-                            ]);
-                        } catch (error: any) {
-                            console.error('Delete error:', error);
-                            Alert.alert('Error', error.message || 'Failed to delete work address');
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    }
+        
+        showConfirm(
+            t('address:deleteWorkAddress'),
+            t('address:deleteAddressConfirm'),
+            async () => {
+                try {
+                    setIsLoading(true);
+                    await updateWorkAddress({
+                        userId: user.id as Id<'taxiTap_users'>,
+                        workAddress: null,
+                    });
+                    showGlobalSuccess(
+                        t('address:success'),
+                        t('address:workAddressDeleted'),
+                        { duration: 2000 }
+                    );
+                    setTimeout(() => {
+                        router.push('/(tabs)/PassengerProfile');
+                    }, 2000);
+                } catch (error: any) {
+                    console.error('Delete error:', error);
+                    showGlobalError(
+                        t('address:error'),
+                        error.message || t('address:failedToDeleteAddress'),
+                        { duration: 4000 }
+                    );
+                } finally {
+                    setIsLoading(false);
                 }
-            ]
+            },
+            undefined,
+            t('address:delete'),
+            t('address:cancel')
         );
     };
 
@@ -155,141 +203,157 @@ export default function AddWorkAddress() {
         },
         container: {
             backgroundColor: theme.background,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
             paddingBottom: 40,
         },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 30,
+            marginBottom: 24,
         },
         backButton: {
-            marginRight: 15,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
         },
         headerTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
+            fontSize: 22,
+            fontWeight: '600',
             color: theme.text,
+            flex: 1,
+        },
+        sectionHeader: {
+            fontSize: 13,
+            fontWeight: '600',
+            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+            marginTop: 8,
+            paddingHorizontal: 4,
         },
         section: {
             backgroundColor: theme.card,
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowRadius: 4,
-            elevation: 4,
+            borderRadius: 16,
+            marginBottom: 16,
             borderWidth: isDark ? 1 : 0,
-            borderColor: theme.border,
-        },
-        sectionTitle: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: 15,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         fieldContainer: {
-            marginBottom: 15,
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        },
+        lastField: {
+            borderBottomWidth: 0,
         },
         label: {
-            fontSize: 16,
-            fontWeight: '600',
+            fontSize: 17,
+            fontWeight: '400',
             color: theme.text,
-            marginBottom: 5,
+            marginBottom: 8,
         },
         input: {
-            backgroundColor: isDark ? theme.surface : '#fff',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             borderRadius: 8,
             paddingHorizontal: 15,
             paddingVertical: 12,
-            fontSize: 16,
-            borderColor: isDark ? theme.border : '#ddd',
-            borderWidth: 1,
+            fontSize: 17,
+            borderWidth: 0,
             color: theme.text,
         },
         addressInput: {
             minHeight: 80,
             textAlignVertical: 'top',
         },
+        locationButtonContainer: {
+            marginTop: 12,
+        },
         locationButton: {
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: theme.primary,
-            paddingVertical: 12,
-            paddingHorizontal: 15,
-            borderRadius: 8,
-            marginTop: 10,
+            backgroundColor: theme.card,
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            borderRadius: 16,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
         },
         locationButtonDisabled: {
             opacity: 0.6,
         },
-        locationButtonText: {
-            color: isDark ? '#121212' : '#fff',
-            fontWeight: '600',
-            marginLeft: 8,
-        },
-        coordinatesContainer: {
-            backgroundColor: isDark ? theme.surface : '#f8f9fa',
+        locationIconContainer: {
+            width: 32,
+            height: 32,
             borderRadius: 8,
-            padding: 10,
-            marginTop: 10,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
         },
-        coordinatesText: {
-            fontSize: 12,
+        locationButtonText: {
             color: theme.text,
-            opacity: 0.7,
+            fontWeight: '400',
+            fontSize: 17,
+            flex: 1,
+        },
+        buttonSection: {
+            marginTop: 8,
         },
         buttonContainer: {
-            flexDirection: 'row',
-            gap: 10,
-            marginTop: 20,
+            backgroundColor: theme.card,
+            borderRadius: 16,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            overflow: 'hidden',
         },
         saveButton: {
-            flex: 1,
             backgroundColor: theme.primary,
             paddingVertical: 16,
-            borderRadius: 12,
+            paddingHorizontal: 16,
             alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            borderRadius: 16,
         },
         deleteButton: {
-            flex: 1,
-            backgroundColor: '#FF3B30',
+            backgroundColor: 'transparent',
             paddingVertical: 16,
-            borderRadius: 12,
+            paddingHorizontal: 16,
             alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
         },
         buttonDisabled: {
             opacity: 0.6,
         },
-        buttonText: {
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: 16,
-        },
         saveButtonText: {
-            color: isDark ? '#121212' : '#fff',
+            color: isDark ? "#121212" : "#FFFFFF",
             fontWeight: 'bold',
             fontSize: 16,
         },
-        infoBox: {
-            backgroundColor: isDark ? theme.surface : '#e3f2fd',
-            borderRadius: 8,
-            padding: 15,
-            marginBottom: 20,
+        deleteButtonText: {
+            color: '#FF3B30',
+            fontWeight: '400',
+            fontSize: 17,
         },
-        infoText: {
-            fontSize: 14,
-            color: theme.text,
-            opacity: 0.8,
+        buttonIcon: {
+            marginRight: 8,
         },
     });
 
     if (!user) {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={dynamicStyles.container}>
-                    <Text style={{ color: theme.text }}>Loading...</Text>
+                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <LoadingSpinner size="large" />
                 </View>
             </SafeAreaView>
         );
@@ -297,31 +361,25 @@ export default function AddWorkAddress() {
 
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
-            <ScrollView contentContainerStyle={dynamicStyles.container}>
+            <ScrollView 
+                contentContainerStyle={dynamicStyles.container}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Header */}
                 <View style={dynamicStyles.header}>
                     <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>
-                        {hasExistingAddress ? 'Edit Work Address' : 'Add Work Address'}
+                        {hasExistingAddress ? t('address:editWorkAddress') : t('address:addWorkAddress')}
                     </Text>
                 </View>
 
-                {/* Info Box */}
-                <View style={dynamicStyles.infoBox}>
-                    <Text style={dynamicStyles.infoText}>
-                        🏢 Adding your work address will make it easier to book rides to and from work. 
-                        You can use your current location or enter the address manually.
-                    </Text>
-                </View>
-
-                {/* Address Form */}
+                {/* Address Information Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:addressInformation')}</Text>
                 <View style={dynamicStyles.section}>
-                    <Text style={dynamicStyles.sectionTitle}>Address Information</Text>
-                    
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Address Nickname</Text>
+                        <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={nickname}
@@ -331,8 +389,8 @@ export default function AddWorkAddress() {
                         />
                     </View>
 
-                    <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>Full Address</Text>
+                    <View style={[dynamicStyles.fieldContainer, dynamicStyles.lastField]}>
+                        <Text style={dynamicStyles.label}>{t('address:fullAddress')}</Text>
                         <TextInput
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
@@ -342,53 +400,74 @@ export default function AddWorkAddress() {
                             multiline
                             numberOfLines={3}
                         />
-                        
-                        <Pressable
-                            style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
-                            onPress={getCurrentLocation}
-                            disabled={isLoadingLocation}
-                        >
-                            <Ionicons 
-                                name={isLoadingLocation ? "hourglass" : "location"} 
-                                size={20} 
-                                color={isDark ? '#121212' : '#fff'} 
-                            />
-                            <Text style={dynamicStyles.locationButtonText}>
-                                {isLoadingLocation ? 'Getting Location...' : 'Use Current Location'}
-                            </Text>
-                        </Pressable>
-
-                        {(coordinates.latitude !== 0 || coordinates.longitude !== 0) && (
-                            <View style={dynamicStyles.coordinatesContainer}>
-                                <Text style={dynamicStyles.coordinatesText}>
-                                    Coordinates: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
-                                </Text>
-                            </View>
-                        )}
                     </View>
                 </View>
 
-                {/* Action Buttons */}
-                <View style={dynamicStyles.buttonContainer}>
+                {/* Location Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:location')}</Text>
+                <View style={dynamicStyles.locationButtonContainer}>
                     <Pressable
-                        style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
-                        onPress={handleSave}
-                        disabled={isLoading}
+                        style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
+                        onPress={getCurrentLocation}
+                        disabled={isLoadingLocation}
+                        android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                     >
-                        <Text style={dynamicStyles.saveButtonText}>
-                            {isLoading ? 'Saving...' : hasExistingAddress ? 'Update Address' : 'Save Address'}
+                        <View style={dynamicStyles.locationIconContainer}>
+                            <Ionicons 
+                                name={isLoadingLocation ? "hourglass" : "location-outline"} 
+                                size={20} 
+                                color="#FF8C00" 
+                            />
+                        </View>
+                        <Text style={dynamicStyles.locationButtonText}>
+                            {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
                         </Text>
+                        <Ionicons 
+                            name="chevron-forward" 
+                            size={16} 
+                            color={isDark ? theme.border : '#C7C7CC'} 
+                        />
                     </Pressable>
+                </View>
 
-                    {hasExistingAddress && (
+                {/* Action Buttons Section */}
+                <Text style={dynamicStyles.sectionHeader}>{t('address:actions')}</Text>
+                <View style={dynamicStyles.buttonSection}>
+                    <View style={dynamicStyles.buttonContainer}>
                         <Pressable
-                            style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
-                            onPress={handleDelete}
+                            style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
+                            onPress={handleSave}
                             disabled={isLoading}
+                            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                         >
-                            <Text style={dynamicStyles.buttonText}>Delete</Text>
+                            <Ionicons 
+                                name="checkmark" 
+                                size={20} 
+                                color={isDark ? "#121212" : "#FFFFFF"} 
+                                style={dynamicStyles.buttonIcon}
+                            />
+                            <Text style={dynamicStyles.saveButtonText}>
+                                {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                            </Text>
                         </Pressable>
-                    )}
+
+                        {hasExistingAddress && (
+                            <Pressable
+                                style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
+                                onPress={handleDelete}
+                                disabled={isLoading}
+                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+                            >
+                                <Ionicons 
+                                    name="trash-outline" 
+                                    size={20} 
+                                    color="#FF3B30" 
+                                    style={dynamicStyles.buttonIcon}
+                                />
+                                <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
+                            </Pressable>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
         </SafeAreaView>

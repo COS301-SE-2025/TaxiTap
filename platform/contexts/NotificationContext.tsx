@@ -12,13 +12,16 @@ import { api } from "../convex/_generated/api";
 import { Platform, AppState } from "react-native";
 import { Id } from "../convex/_generated/dataModel";
 import { router } from "expo-router";
+import { useUser } from "./UserContext";
 import { useAlerts } from "../contexts/AlertContext";
 
 interface NotificationContextType {
   notifications: any[];
+  inAppNotifications: any[];
   unreadCount: number;
   markAsRead: (notificationId: Id<"notifications">) => void;
   markAllAsRead: () => void;
+  dismissInAppNotification: (id: string) => void;
   refreshNotifications: () => void;
 }
 
@@ -28,10 +31,13 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 
 export const NotificationProvider: React.FC<{
   children: React.ReactNode;
-  userId?: Id<"taxiTap_users">;
-}> = ({ children, userId }) => {
+}> = ({ children }) => {
+  const { user } = useUser();
+  const userId = user?.id;
+  
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [inAppNotifications, setInAppNotifications] = useState<any[]>([]);
   const [appState, setAppState] = useState(AppState.currentState);
 
   const notificationListener = useRef<Notifications.Subscription | null>(null);
@@ -217,13 +223,19 @@ export const NotificationProvider: React.FC<{
     console.log("Notifications will auto-refresh due to Convex reactivity");
   };
 
+  const dismissInAppNotification = (id: string) => {
+    setInAppNotifications(prev => prev.filter(notification => notification.id !== id));
+  };
+
   return (
     <NotificationContext.Provider
       value={{
         notifications,
+        inAppNotifications,
         unreadCount: unreadCount || 0,
         markAsRead,
         markAllAsRead,
+        dismissInAppNotification,
         refreshNotifications,
       }}
     >

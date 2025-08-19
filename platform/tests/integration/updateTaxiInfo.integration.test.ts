@@ -1,7 +1,10 @@
-import { updateTaxiInfoHandler } from '../../../platform/convex/functions/taxis/updateTaxiInfoHandler';
+import { updateTaxiInfoHandler } from '../../convex/functions/taxis/updateTaxiInfoHandler';
+
+// Mock Id type for testing
+type MockId<T> = string & { __tableName: T };
 
 describe('updateTaxiInfo (integration)', () => {
-  const userId = 'user1';
+  const userId = 'user1' as MockId<"taxiTap_users">;
   const driverProfile = { _id: 'driver1', userId };
   const taxi = { _id: 'taxi1', driverId: 'driver1' };
 

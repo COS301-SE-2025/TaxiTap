@@ -38,7 +38,7 @@ const displayRoutesModule = require('../../../convex/functions/routes/displayRou
 // Extract the handler functions from the module
 const getEnrichedStopName = displayRoutesModule.getEnrichedStopName?.handler;
 const getEnrichedStopsForRoute = displayRoutesModule.getEnrichedStopsForRoute?.handler;
-const displayRoutes = displayRoutesModule.displayRoutes;
+const displayRoutes = displayRoutesModule.displayRoutesHandler;
 const displayRoutesPaginated = displayRoutesModule.displayRoutesPaginated?.handler;
 
 // Mock data for testing
@@ -221,7 +221,7 @@ describe('Display Routes Functions', () => {
     it('should return processed routes with formatted names and coordinates', async () => {
       const ctx = createMockQueryCtx();
       
-      const result = await displayRoutes(ctx, {});
+      const result = await displayRoutes({ db: ctx.db });
       
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(3);
@@ -245,7 +245,7 @@ describe('Display Routes Functions', () => {
     it('should handle routes with invalid coordinates gracefully', async () => {
       const ctx = createMockQueryCtx();
       
-      const result = await displayRoutes(ctx, {});
+      const result = await displayRoutes({ db: ctx.db });
       const invalidRoute = result.find((r: { routeId: string; }) => r.routeId === 'route3');
       
       expect(invalidRoute).toBeDefined();
@@ -258,7 +258,7 @@ describe('Display Routes Functions', () => {
     it('should calculate fare correctly based on duration', async () => {
       const ctx = createMockQueryCtx();
       
-      const result = await displayRoutes(ctx, {});
+      const result = await displayRoutes({ db: ctx.db });
       
       // Route with 1800 seconds (30 minutes) should have fare of 45 (R15 per 10 minutes)
       const route1 = result.find((r: { routeId: string; }) => r.routeId === 'route1');

@@ -15,8 +15,8 @@ import { useConvex } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { ConvexProvider } from 'convex/react';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import icon from '../assets/images/icon.png';
-import google from '../assets/images/google5.png';
 import { useAlertHelpers } from '../components/AlertHelpers';
 
 export default function Login() {
@@ -26,21 +26,31 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
-  const { showError } = useAlertHelpers();
+  const { t, currentLanguage } = useLanguage();
+  const { showGlobalError } = useAlertHelpers();
 
   const handleLogin = async () => {
     if (!number || !password) {
-      showError('Error', 'Please enter both phone number and password');
+      showGlobalError('Error', 'Please fill all fields', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
-    const saNumberRegex = /^0(6|7|8)[0-9]{8}$/;
+    const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showError('Invalid number', 'Please enter a valid number');
+      showGlobalError('Error', 'Invalid number format', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
       return;
     }
     try {
+      const fullNumber = '0' + number;
       const result = await convex.query(api.functions.users.UserManagement.logInWithSMS.loginSMS, {
-        phoneNumber: number,
+        phoneNumber: fullNumber,
         password,
       });
 
@@ -59,7 +69,11 @@ export default function Login() {
       });
       }
     } catch {
-      showError("Error", "Phone number or password is incorrect");
+      showGlobalError('Error', 'Phone number or password incorrect', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
     }
   };
 
@@ -73,7 +87,7 @@ export default function Login() {
             backgroundColor: '#fff',
           }}
         >
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
             <Image
               source={icon}
               style={{ width: '100%', height: 200 }}
@@ -94,27 +108,45 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Cellphone number
+              {t('auth:phoneNumber')}
           </Text>
 
-          <TextInput
-            value={number}
-            onChangeText={setNumber}
-            placeholder="Cellphone number"
-            placeholderTextColor="#999"
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: 10,
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              marginBottom: 20,
-              fontSize: 16,
-            }}
-          />
+          <View style={{ flexDirection: 'row', marginBottom: 15 }}>
+            {/* Country code */}
+            <View
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                justifyContent: 'center',
+                marginRight: 10,
+                width: 80,
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>+27</Text>
+            </View>
+
+            {/* Local number */}
+            <TextInput
+              value={number}
+              onChangeText={setNumber}
+              placeholder="000000000"
+              placeholderTextColor="#999"
+              keyboardType="phone-pad"
+              style={{
+                flex: 1,
+                backgroundColor: '#fff',
+                borderRadius: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                fontSize: 16,
+              }}
+            />
+          </View>
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              Password
+              {t('auth:password')}
           </Text>
 
           <View
@@ -131,7 +163,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth:password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -150,7 +182,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>Forgot Password?</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -163,33 +195,12 @@ export default function Login() {
               justifyContent: 'center',
               alignItems: 'center',
               marginTop: 30,
+              marginBottom: 25,
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              Login
+              {t('auth:login')}
             </Text>
-          </Pressable>
-
-          {/* Or Divider */}
-          <View style={{ alignItems: 'center', marginVertical: 20 }}>
-            <Text style={{ color: '#fff', fontSize: 18 }}>Or</Text>
-          </View>
-
-          {/* Google Sign-In Button */}
-          <Pressable
-            style={{
-              width: 45,
-              height: 45,
-              borderRadius: 10,
-              alignSelf: 'center',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Image
-              source={google}
-              style={{ width: 24, height: 24 }}
-            />
           </Pressable>
         </View>
       </View>

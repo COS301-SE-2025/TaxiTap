@@ -1,62 +1,199 @@
-import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { useLayoutEffect } from 'react';
+import { ScrollView, Text, View, SafeAreaView, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function FeedbackHistoryScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const router = useRouter();
+  const navigation = useNavigation();
 
   const feedbackList = useQuery(
-    api.functions.feedback.showFeedback.showFeedbackDriver,
-    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+    user?.role === 'driver' 
+      ? api.functions.feedback.showFeedback.showFeedbackDriver
+      : api.functions.feedback.showFeedback.showFeedbackPassenger,
+    user?.id ? (user?.role === 'driver' 
+      ? { driverId: user.id as Id<"taxiTap_users"> }
+      : { passengerId: user.id as Id<"taxiTap_users"> }
+    ) : "skip"
   );
 
-  return (
-    <ScrollView style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
-      <Text style={{ fontSize: 24, color: theme.text, marginBottom: 16 }}>Your Feedback History</Text>
+  const dynamicStyles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    container: {
+      backgroundColor: theme.background,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+      paddingBottom: 40,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: theme.text,
+      flex: 1,
+    },
+    section: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      marginBottom: 16,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+      overflow: 'hidden',
+    },
+    feedbackItem: {
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      minHeight: 56,
+    },
+    lastFeedbackItem: {
+      borderBottomWidth: 0,
+    },
+    feedbackContent: {
+      marginBottom: 8,
+    },
+    feedbackText: {
+      fontSize: 17,
+      color: theme.text,
+      fontWeight: '400',
+      marginBottom: 4,
+    },
+    feedbackSecondary: {
+      fontSize: 15,
+      color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+      fontWeight: '400',
+      marginBottom: 4,
+    },
+    feedbackTimestamp: {
+      fontSize: 12,
+      color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+      fontWeight: '400',
+      marginTop: 8,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 40,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 40,
+      minHeight: 120,
+    },
+  });
 
-      {!feedbackList ? (
-        <Text style={{ color: theme.textSecondary }}>Loading...</Text>
-      ) : feedbackList.length === 0 ? (
-        <Text style={{ color: theme.textSecondary }}>You haven’t received any feedback yet.</Text>
-      ) : (
-        feedbackList.map((entry, index) => (
-          <View
-            key={entry._id}
-            style={{
-              backgroundColor: theme.surface,
-              borderRadius: 10,
-              padding: 12,
-              marginBottom: 12,
-              elevation: 2,
-            }}
-          >
-            {entry.rating > 0 && (
-              <Text style={{ color: theme.text }}>⭐ Rating: {entry.rating}</Text>
-            )}
-            {entry.comment && (
-              <Text style={{ color: theme.text }}>📝 Comment: {entry.comment}</Text>
-            )}
-            {(entry.startLocation || entry.endLocation) && (
-              <View>
-                <Text style={{ color: theme.text }}>
-                  From: {entry.startLocation || 'N/A'}
-                </Text>
-                <Text style={{ color: theme.text }}>
-                  To: {entry.endLocation || 'N/A'}
+  if (!user) {
+    return (
+      <SafeAreaView style={dynamicStyles.safeArea}>
+        <LoadingSpinner size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={dynamicStyles.safeArea}>
+      <ScrollView 
+        contentContainerStyle={dynamicStyles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Feedback List Section */}
+        <View style={dynamicStyles.section}>
+          {!feedbackList ? (
+            <View style={dynamicStyles.loadingContainer}>
+              <LoadingSpinner size="small" />
+            </View>
+          ) : feedbackList.length === 0 ? (
+            <View style={dynamicStyles.emptyState}>
+              <Text style={dynamicStyles.emptyStateText}>
+                {user.role === 'driver' 
+                  ? "You haven't received any feedback yet." 
+                  : "You haven't left any reviews yet."
+                }
+              </Text>
+              <Text style={dynamicStyles.emptyStateText}>
+                {user.role === 'driver' 
+                  ? "Passenger feedback helps improve your service!" 
+                  : "Your feedback helps improve our service!"
+                }
+              </Text>
+            </View>
+          ) : (
+            feedbackList.map((entry: any, index: number) => (
+              <View
+                key={entry._id}
+                style={[
+                  dynamicStyles.feedbackItem,
+                  index === feedbackList.length - 1 && dynamicStyles.lastFeedbackItem
+                ]}
+              >
+                <View style={dynamicStyles.feedbackContent}>
+                  {entry.rating > 0 && (
+                    <Text style={dynamicStyles.feedbackText}>⭐ Rating: {entry.rating}</Text>
+                  )}
+                  {entry.comment && (
+                    <Text style={dynamicStyles.feedbackText}>📝 Comment: {entry.comment}</Text>
+                  )}
+                  {user.role === 'driver' ? (
+                    // For drivers, show passenger name
+                    entry.passengerName && (
+                      <Text style={dynamicStyles.feedbackSecondary}>Passenger: {entry.passengerName}</Text>
+                    )
+                  ) : (
+                    // For passengers, show driver name
+                    entry.driverName && (
+                      <Text style={dynamicStyles.feedbackSecondary}>Driver: {entry.driverName}</Text>
+                    )
+                  )}
+                  {(entry.startLocation || entry.endLocation) && (
+                    <View>
+                      <Text style={dynamicStyles.feedbackSecondary}>
+                        From: {entry.startLocation || 'N/A'}
+                      </Text>
+                      <Text style={dynamicStyles.feedbackSecondary}>
+                        To: {entry.endLocation || 'N/A'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={dynamicStyles.feedbackTimestamp}>
+                  {new Date(entry.createdAt).toLocaleString()}
                 </Text>
               </View>
-            )}
-            <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
-              {new Date(entry.createdAt).toLocaleString()}
-            </Text>
-          </View>
-        ))
-      )}
-    </ScrollView>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
