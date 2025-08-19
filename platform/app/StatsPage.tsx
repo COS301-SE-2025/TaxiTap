@@ -19,9 +19,6 @@ export default function StatsPage() {
       <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
         <ScrollView contentContainerStyle={{ padding: 15 }}>
           <View style={{ marginBottom: 20, paddingHorizontal: 15 }}>
-            <Text style={{ fontSize: 28, fontWeight: "bold", color: "#333" }}>
-              Dashboard
-            </Text>
             <Text style={{ fontSize: 16, color: "#666", marginTop: 6 }}>
               Loading...
             </Text>
@@ -35,9 +32,6 @@ export default function StatsPage() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
       <ScrollView contentContainerStyle={{ padding: 15 }}>
         <View style={{ marginBottom: 20, paddingHorizontal: 15 }}>
-            <Text style={{ fontSize: 28, fontWeight: "bold", color: "#333" }}>
-                Dashboard
-            </Text>
             <Text style={{ fontSize: 16, color: "#666", marginTop: 6 }}>
                 Overview of your rides and payments
             </Text>

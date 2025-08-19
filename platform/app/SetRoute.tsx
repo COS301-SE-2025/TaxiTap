@@ -188,12 +188,12 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   }, [assignedRoute, setCurrentRoute]);
 
   // Configure navigation header
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-      tabBarStyle: { display: 'none' },
-    });
-  }, [navigation]);
+  // useLayoutEffect(() => {
+  //   navigation.setOptions({
+  //     headerShown: false,
+  //     tabBarStyle: { display: 'none' },
+  //   });
+  // }, [navigation]);
 
   // ============================================================================
   // EVENT HANDLERS
@@ -310,7 +310,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingVertical: 4,
       backgroundColor: theme.surface,
       shadowColor: theme.shadow,
       shadowOpacity: isDark ? 0.3 : 0.15,
@@ -331,11 +331,6 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       alignItems: 'center',
       marginRight: 12,
     },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.text,
-    },
     content: {
       flex: 1,
       paddingHorizontal: 20,
@@ -345,7 +340,6 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme.text,
-      marginBottom: 8,
       textAlign: 'center',
     },
     sectionSubtitle: {
@@ -367,23 +361,31 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       elevation: 4,
     },
     routeCardTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: 'bold',
       color: theme.primary,
       marginBottom: 12,
       textAlign: 'center',
     },
     routeText: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: 'bold',
       color: theme.text,
-      textAlign: 'center',
+      marginBottom: 8,
+    },
+    routeText2: {
+      fontSize: 16,
+      color: theme.text,
       marginBottom: 8,
     },
     associationText: {
       fontSize: 14,
       color: theme.textSecondary,
-      textAlign: 'center',
+    },
+    associationText2: {
+      fontWeight: 'bold',
+      fontSize: 18,
+      color: theme.textSecondary,
     },
     selectionCard: {
       backgroundColor: theme.surface,
@@ -491,32 +493,27 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
           backgroundColor={theme.surface} 
         />
         <View style={dynamicStyles.container}>
-          {/* Header */}
-          <View style={dynamicStyles.header}>
-            <View style={dynamicStyles.headerLeft}>
-              <TouchableOpacity 
-                style={dynamicStyles.backButton}
-                onPress={() => navigation.goBack()}
-                testID="back-button"
-              >
-                <Icon name="arrow-back" size={24} color={isDark ? "#121212" : "#FF9900"} />
-              </TouchableOpacity>
-              <Text style={dynamicStyles.headerTitle}>{t('yourAssignedRoute')}</Text>
-            </View>
-
-          </View>
-
           {/* Content */}
           <View style={dynamicStyles.content}>
-            <Text style={dynamicStyles.sectionTitle}>{t('yourAssignedRoute')}</Text>
             <Text style={dynamicStyles.sectionSubtitle}>
               {t('yourAssignedRouteMessage')}
             </Text>
 
             {/* Route Information Card */}
             <View style={dynamicStyles.routeCard}>
-              <Text style={dynamicStyles.routeCardTitle}>{t('currentRoute')}</Text>
-              <Text style={dynamicStyles.routeText}>{start} → {destination}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <Icon name="map-outline" size={22} color={theme.primary} style={{ marginRight: 8, marginBottom: 10 }} />
+                <Text style={dynamicStyles.routeCardTitle}>{t('currentRoute')}</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                <Icon name="navigate-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6, marginBottom: 7 }} />
+                <Text style={dynamicStyles.routeText}>Route</Text>
+              </View>
+              <Text style={dynamicStyles.routeText2}>{start} → {destination}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4 }}>
+                <Icon name="people-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={dynamicStyles.associationText2}>Taxi Association</Text>
+              </View>
               <Text style={dynamicStyles.associationText}>{assignedRoute.taxiAssociation}</Text>
             </View>
 
@@ -553,9 +550,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
             >
               <Icon name="arrow-back" size={24} color={isDark ? "#121212" : "#FF9900"} />
             </TouchableOpacity>
-                          <Text style={dynamicStyles.headerTitle}>{t('getYourRoute')}</Text>
           </View>
-
         </View>
 
         {/* Content */}
