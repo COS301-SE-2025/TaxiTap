@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { View, Platform } from 'react-native';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import regular from '../assets/fonts/Amazon_Ember_Display.otf';
 import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
 import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
@@ -58,24 +59,26 @@ export default function RootLayout() {
   }
 
   return (
-    <ConvexProvider client={convex}>
-      <ThemeProvider>
-        <LanguageProvider>
-          <UserProvider>
-            <MapProvider>
-              <RouteProvider>
-                <AlertProvider>
-                  <NotificationProvider>
-                    <RootLayoutNav />
-                    <AlertOverlay />
-                  </NotificationProvider>
-                </AlertProvider>
-              </RouteProvider>
-            </MapProvider>
-          </UserProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </ConvexProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ConvexProvider client={convex}>
+        <ThemeProvider>
+          <LanguageProvider>
+            <UserProvider>
+              <MapProvider>
+                <RouteProvider>
+                  <AlertProvider>
+                    <NotificationProvider>
+                      <RootLayoutNav />
+                      <AlertOverlay />
+                    </NotificationProvider>
+                  </AlertProvider>
+                </RouteProvider>
+              </MapProvider>
+            </UserProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </ConvexProvider>
+    </GestureHandlerRootView>
   );
 }
 

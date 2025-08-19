@@ -222,29 +222,52 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
     }
   };
 
+  // Native-style notification colors
   const getDefaultStyle = (): any => {
     const baseStyle = {
-      backgroundColor: '#007AFF',
+      // Light transparent Amazon blue background
+      backgroundColor: 'rgba(29, 41, 57, 0.95)', // Amazon blue with transparency
       textColor: '#FFFFFF',
-      borderColor: 'transparent',
-      borderWidth: 0,
-      borderRadius: 12,
+      titleColor: '#FFFFFF',
+      messageColor: 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 12, // Native iOS-style rounded corners
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
+      shadowRadius: 12,
+      elevation: 10,
     };
 
+    // Subtle variations for different alert types
     switch (alert.type) {
       case 'success':
-        return { ...baseStyle, backgroundColor: '#34C759' };
+        return { 
+          ...baseStyle, 
+          backgroundColor: 'rgba(29, 41, 57, 0.95)',
+          borderLeftColor: '#34C759',
+          borderLeftWidth: 3,
+        };
       case 'warning':
-        return { ...baseStyle, backgroundColor: '#FF9500' };
+        return { 
+          ...baseStyle, 
+          backgroundColor: 'rgba(29, 41, 57, 0.95)',
+          borderLeftColor: '#FF9500',
+          borderLeftWidth: 3,
+        };
       case 'error':
-        return { ...baseStyle, backgroundColor: '#FF3B30' };
+        return { 
+          ...baseStyle, 
+          backgroundColor: 'rgba(29, 41, 57, 0.95)',
+          borderLeftColor: '#FF3B30',
+          borderLeftWidth: 3,
+        };
       case 'info':
-        return { ...baseStyle, backgroundColor: '#007AFF' };
+        return { 
+          ...baseStyle, 
+          backgroundColor: 'rgba(29, 41, 57, 0.95)',
+          borderLeftColor: '#007AFF',
+          borderLeftWidth: 3,
+        };
       default:
         return baseStyle;
     }
@@ -255,17 +278,18 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   const finalStyle = { ...defaultStyle, ...customStyle };
 
   const getPositionStyle = (): any => {
-    // Global alerts have slightly more spacing from edges and between each other
-    const baseOffset = isGlobal ? 70 : 20;
-    const spacing = isGlobal ? 90 : 80;
+    // Native notification spacing
+    const baseOffset = Platform.OS === 'ios' ? 60 : 40;
+    const spacing = 74; // Native notification spacing
     const topOffset = baseOffset + (index * spacing);
+    const horizontalMargin = 12; // Native side margins
 
     switch (alert.position) {
       case 'top':
         return {
           top: topOffset,
-          left: 16,
-          right: 16,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateY: animatedValue },
             { scale: scaleValue },
@@ -274,8 +298,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'bottom':
         return {
           bottom: topOffset,
-          left: 16,
-          right: 16,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateY: animatedValue },
             { scale: scaleValue },
@@ -284,8 +308,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'center':
         return {
           top: '50%',
-          left: 16,
-          right: 16,
+          left: 20,
+          right: 20,
           transform: [
             { translateY: animatedValue },
             { scale: scaleValue },
@@ -295,8 +319,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'top-left':
         return {
           top: topOffset,
-          left: 16,
-          maxWidth: screenWidth * 0.7,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateX: animatedValue },
             { scale: scaleValue },
@@ -305,8 +329,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'top-right':
         return {
           top: topOffset,
-          right: 16,
-          maxWidth: screenWidth * 0.7,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateX: animatedValue },
             { scale: scaleValue },
@@ -315,8 +339,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'bottom-left':
         return {
           bottom: topOffset,
-          left: 16,
-          maxWidth: screenWidth * 0.7,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateX: animatedValue },
             { scale: scaleValue },
@@ -325,8 +349,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'bottom-right':
         return {
           bottom: topOffset,
-          right: 16,
-          maxWidth: screenWidth * 0.7,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateX: animatedValue },
             { scale: scaleValue },
@@ -335,8 +359,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       default:
         return {
           top: topOffset,
-          left: 16,
-          right: 16,
+          left: horizontalMargin,
+          right: horizontalMargin,
           transform: [
             { translateY: animatedValue },
             { scale: scaleValue },
@@ -344,6 +368,23 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         };
     }
   };
+
+  const renderAppIcon = () => (
+    <View style={[
+      styles.appIconContainer,
+      { borderLeftColor: finalStyle.borderLeftColor }
+    ]}>
+      {/* App Logo - Replace with your actual app logo/icon */}
+      <View style={styles.appIcon}>
+        <Text style={styles.appIconText}>A</Text>
+      </View>
+      {isGlobal && (
+        <View style={styles.globalBadge}>
+          <Text style={styles.globalBadgeText}>!</Text>
+        </View>
+      )}
+    </View>
+  );
 
   const renderAlert = () => (
     <Animated.View
@@ -354,21 +395,14 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
           zIndex: isGlobal ? 1100 : 1000,
           opacity: opacityValue,
           backgroundColor: finalStyle.backgroundColor,
-          borderColor: finalStyle.borderColor,
-          borderWidth: finalStyle.borderWidth,
           borderRadius: finalStyle.borderRadius,
+          borderLeftColor: finalStyle.borderLeftColor,
+          borderLeftWidth: finalStyle.borderLeftWidth,
           shadowColor: finalStyle.shadowColor,
           shadowOffset: finalStyle.shadowOffset,
           shadowOpacity: finalStyle.shadowOpacity,
           shadowRadius: finalStyle.shadowRadius,
           elevation: finalStyle.elevation,
-          // Global alerts get additional visual emphasis
-          ...(isGlobal && {
-            borderLeftWidth: 4,
-            borderLeftColor: '#FFD700',
-            elevation: finalStyle.elevation + 2,
-            shadowOpacity: (finalStyle.shadowOpacity || 0.25) + 0.1,
-          }),
         },
       ]}
     >
@@ -378,29 +412,17 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         activeOpacity={0.9}
       >
         <View style={styles.alertHeader}>
-          <View style={[
-            styles.iconContainer,
-            isGlobal && styles.globalIconContainer
-          ]}>
-            <Text style={[styles.icon, { color: finalStyle.textColor }]}>
-              {getAlertIcon()}
-            </Text>
-            {isGlobal && (
-              <View style={styles.globalIndicator}>
-                <Text style={styles.globalIndicatorText}>●</Text>
-              </View>
-            )}
-          </View>
+          {renderAppIcon()}
           
           <View style={styles.textContainer}>
             <Text 
-              style={[styles.title, { color: finalStyle.textColor }]} 
+              style={[styles.title, { color: finalStyle.titleColor }]} 
               numberOfLines={1}
             >
               {alert.title}
             </Text>
             <Text 
-              style={[styles.message, { color: finalStyle.textColor }]} 
+              style={[styles.message, { color: finalStyle.messageColor }]} 
               numberOfLines={3}
             >
               {alert.message}
@@ -545,52 +567,86 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   alertContent: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     minHeight: 70,
   },
   alertHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  appIconContainer: {
+    position: 'relative',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  appIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8, // Native app icon corner radius
+    backgroundColor: '#1d2939', // Amazon blue for app icon
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
-  icon: {
-    fontSize: 16,
+  appIconText: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  globalBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  globalBadgeText: {
+    fontSize: 10,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    lineHeight: 12,
   },
   textContainer: {
     flex: 1,
     marginRight: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
+    letterSpacing: -0.24,
+    lineHeight: 20,
   },
   message: {
     fontSize: 14,
     lineHeight: 18,
-    opacity: 0.9,
+    fontWeight: '400',
+    letterSpacing: -0.08,
   },
   closeButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   closeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 18,
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 16,
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -598,17 +654,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     marginTop: 12,
-    gap: 8,
-    minHeight: 36,
+    marginLeft: 52, // Align with text content
+    gap: 10,
+    minHeight: 32,
   },
   actionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     maxWidth: '48%',
+    minHeight: 28,
   },
   destructiveAction: {
     backgroundColor: 'rgba(255, 59, 48, 0.2)',
@@ -617,8 +675,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(142, 142, 147, 0.2)',
   },
   actionText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: -0.08,
   },
   destructiveText: {
     color: '#FF3B30',
@@ -645,24 +704,5 @@ const styles = StyleSheet.create({
   backdropContent: {
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  globalIconContainer: {
-    position: 'relative',
-  },
-  globalIndicator: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFD700',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  globalIndicatorText: {
-    fontSize: 6,
-    color: '#000',
-    fontWeight: 'bold',
   },
 });

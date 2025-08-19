@@ -98,4 +98,56 @@ describe("showFeedback integration-like tests", () => {
       expect(result[0].driverName).toBe("Unknown");
     });
   });
+
+  describe("showFeedbackDriverHandler", () => {
+    it("returns empty array if no feedback", async () => {
+      const result = await showFeedbackDriverHandler(mockCtx as any, { driverId: "driver1" });
+      expect(result).toEqual([]);
+    });
+
+    it("returns feedbacks with passenger names, sorted descending by createdAt", async () => {
+      addUser("passenger1", "Alice");
+      addUser("passenger2", "Bob");
+
+      addFeedback({
+        _id: "fb1",
+        passengerId: "passenger1",
+        driverId: "driver1",
+        rating: 5,
+        comment: "Great driver",
+        createdAt: 1000,
+      });
+
+      addFeedback({
+        _id: "fb2",
+        passengerId: "passenger2",
+        driverId: "driver1",
+        rating: 4,
+        comment: "Nice driver",
+        createdAt: 2000,
+      });
+
+      const result = await showFeedbackDriverHandler(mockCtx as any, { driverId: "driver1" });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ passengerId: "passenger2", passengerName: "Bob" });   // Newest first
+      expect(result[1]).toMatchObject({ passengerId: "passenger1", passengerName: "Alice" });
+    });
+
+    it("returns passengerName as Unknown if passenger not found", async () => {
+      addFeedback({
+        _id: "fb3",
+        passengerId: "missing_passenger",
+        driverId: "driver1",
+        rating: 3,
+        comment: "Okay driver",
+        createdAt: 1500,
+      });
+
+      const result = await showFeedbackDriverHandler(mockCtx as any, { driverId: "driver1" });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].passengerName).toBe("Unknown");
+    });
+  });
 });
