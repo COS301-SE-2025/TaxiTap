@@ -9,6 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect } from "react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function StatsPage() {
   const router = useRouter();

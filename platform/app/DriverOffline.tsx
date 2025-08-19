@@ -19,6 +19,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@/contexts/UserContext';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface DriverOfflineProps {
   onGoOnline: () => void;
@@ -111,6 +112,10 @@ export default function DriverOffline({
     };
   };
 
+  const handleSetRoute = () => {
+    router.push('/SetRoute');
+  };
+
   const handleMenuPress = () => {
     setShowMenu(!showMenu);
   };
@@ -198,6 +203,11 @@ export default function DriverOffline({
       onPress: handleEmergency
     },
   ];
+
+  // Show loading spinner if essential data is not loaded
+  if (!user || taxiInfo === undefined || earnings === undefined) {
+    return <LoadingSpinner />;
+  }
 
   const dynamicStyles = StyleSheet.create({
     container: {

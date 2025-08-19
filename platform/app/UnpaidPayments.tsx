@@ -3,11 +3,13 @@ import { useQuery } from "convex/react";
 import React, { useLayoutEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from "react-native";
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function UnpaidPayments() {
     const { user } = useUser();
@@ -16,6 +18,7 @@ export default function UnpaidPayments() {
     const router = useRouter();
     const navigation = useNavigation();
     
+    const { theme } = useTheme();
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
       user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -24,6 +27,38 @@ export default function UnpaidPayments() {
     const handleBackPress = () => {
         router.back();
     };
+    const dynamicStyles = StyleSheet.create({
+        container: {
+        flex: 1,
+        padding: 10,
+        backgroundColor: theme.background,
+        },
+        passengerCard: {
+        backgroundColor: theme.card,
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        elevation: 1,
+        shadowColor: theme.shadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        },
+        name: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 5,
+        color: theme.text,
+        },
+        info: {
+        fontSize: 14,
+        marginBottom: 3,
+        color: theme.text,
+        },
+        paid: { color: '#2ECC71', fontWeight: "bold" },
+        unpaid: { color: '#E74C3C', fontWeight: "bold" },
+        noResponse: { color: '#FF9900', fontWeight: "bold" },
+    });
 
     if (!user || activeTrips === undefined) {
         return (
@@ -55,6 +90,14 @@ export default function UnpaidPayments() {
         );
     }
 
+    // Define interface for passenger data
+    interface PassengerData {
+        name: string;
+        phoneNumber: string;
+        fare: number;
+        requestedAt: number | string | Date;
+    }
+    
     return (
         <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
             <ScrollView 

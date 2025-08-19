@@ -28,6 +28,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { useUser } from '@/contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -961,7 +962,7 @@ export default function RouteSelectionScreen() {
     return (
       <SafeAreaView style={dynamicStyles.safeArea}>
         <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <LoadingSpinner size="large" />
           <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
             {t('home:gettingLocation')}
           </Text>

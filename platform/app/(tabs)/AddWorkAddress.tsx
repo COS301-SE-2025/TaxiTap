@@ -10,6 +10,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import * as Location from 'expo-location';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function AddWorkAddress() {
     const [address, setAddress] = useState('');
@@ -352,7 +353,7 @@ export default function AddWorkAddress() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ color: theme.text, fontSize: 16 }}>{t('personalInfo:loading')}</Text>
+                    <LoadingSpinner size="large" />
                 </View>
             </SafeAreaView>
         );

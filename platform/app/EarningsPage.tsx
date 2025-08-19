@@ -16,6 +16,7 @@ import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -114,11 +115,7 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const toggleDropdown = useCallback(() => setIsDropdownOpen((prev) => !prev), []);
 
   if (!currentWeek) {
-    return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
-        <Text style={{ color: theme.text }}>{t('loadingEarnings')}</Text>
-      </SafeAreaView>
-    );
+    return <LoadingSpinner />;
   }
 
   const averagePerHour = currentWeek.earnings / (currentWeek.hoursOnline || 1);

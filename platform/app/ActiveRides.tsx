@@ -3,11 +3,20 @@ import { useQuery } from "convex/react";
 import React, { useLayoutEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable } from "react-native";
 import { useUser } from '../contexts/UserContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
+
+// Define the passenger type based on your data structure
+interface Passenger {
+    name: string;
+    phoneNumber: string;
+    fare: number;
+    tripPaid: boolean | null;
+}
 
 export default function ActiveRides() {
     const { user } = useUser();
@@ -26,6 +35,7 @@ export default function ActiveRides() {
     };
 
     if (!user || activeTrips === undefined) {
+        return <LoadingSpinner />;
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 {/* Custom Header with Back Button */}

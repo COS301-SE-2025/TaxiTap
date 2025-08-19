@@ -16,6 +16,7 @@ import { useUser } from '../contexts/UserContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function DriverPinEntry() {
@@ -413,13 +414,7 @@ export default function DriverPinEntry() {
   ];
 
   if (!ride) {
-    return (
-      <SafeAreaView style={dynamicStyles.container}>
-        <View style={dynamicStyles.content}>
-          <Text style={dynamicStyles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingSpinner />;
   }
 
   // If ride is started and map should be shown

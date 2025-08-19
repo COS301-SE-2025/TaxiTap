@@ -12,6 +12,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -905,7 +906,7 @@ export default function SeatReserved() {
 		return (
 			<SafeAreaView style={dynamicStyles.container}>
 				<View style={dynamicStyles.loadingContainer}>
-					<Text style={dynamicStyles.loadingText}>Loading...</Text>
+					<LoadingSpinner size="large" />
 				</View>
 			</SafeAreaView>
 		);

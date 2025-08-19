@@ -21,6 +21,7 @@ import { RouteProvider } from '../contexts/RouteContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { AlertProvider } from '../contexts/AlertContext';
 import { AlertOverlay } from '../components/AlertOverlay';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
 import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
@@ -118,19 +119,7 @@ function RootLayoutNav() {
   };
 
   if (Platform.OS === 'ios' && loading) {
-    return (
-      <NavigationThemeProvider value={navigationTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <View style={{ flex: 1, backgroundColor: theme.background }}>
-          <Stack>
-            <Stack.Screen
-              name="Loading"
-              options={{ headerShown: false }}
-            />
-          </Stack>
-        </View>
-      </NavigationThemeProvider>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

@@ -8,6 +8,15 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+
+// Define the passenger type based on your data structure
+interface Passenger {
+    name: string;
+    phoneNumber: string;
+    fare: number;
+    tripPaid: boolean | null;
+}
 
 export default function WaitingPayments() {
     const { user } = useUser();
@@ -34,10 +43,13 @@ export default function WaitingPayments() {
                     </View>
                 </View>
             </SafeAreaView>
+        <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <LoadingSpinner size="large" />
+        </View>
         );
     }
 
-    const waitingPayments = activeTrips?.passengers?.filter((p) => p.tripPaid === null) ?? [];
+    const waitingPayments = activeTrips?.passengers?.filter((p: Passenger) => p.tripPaid === null) ?? [];
 
     if (!waitingPayments.length) {
         return (
@@ -95,6 +107,20 @@ export default function WaitingPayments() {
                 </View>
             </ScrollView>
         </SafeAreaView>
+        <ScrollView style={dynamicStyles.container}>
+        {waitingPayments.map((p: Passenger, idx: number) => (
+            <View key={idx} style={dynamicStyles.passengerCard}>
+            <Text style={dynamicStyles.name}>{p.name}</Text>
+            <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>
+            <Text style={dynamicStyles.info}>💰 Fare: R{p.fare.toFixed(2)}</Text>
+            <Text
+                style={ dynamicStyles.noResponse }
+            >
+                ⌛ Waiting for Payment
+            </Text>
+            </View>
+        ))}
+        </ScrollView>
     );
 }
 

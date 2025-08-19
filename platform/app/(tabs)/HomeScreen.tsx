@@ -19,7 +19,7 @@ import { router, useNavigation, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import loading from '../../assets/images/loading4.png';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
@@ -1046,19 +1046,12 @@ export default function HomeScreen() {
     // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
     setShowDestinationSuggestions(false);
-    setOriginSuggestions([]);
-    setDestinationSuggestions([]);
-    
-    // Set flags to prevent immediate autocomplete suggestions
-    setJustSelectedOrigin(true);
-    setJustSelectedDestination(true);
-    
-    // Reset flags after a longer delay to allow route calculation and prevent interference
-    setTimeout(() => {
-      setJustSelectedOrigin(false);
-      setJustSelectedDestination(false);
-    }, 1000);
   };
+
+  // Show loading spinner if essential data is loading
+  if (!user || recentRoutes === undefined || routes === undefined) {
+    return <LoadingSpinner />;
+  }
 
   const dynamicStyles = StyleSheet.create({
     container: { 
@@ -1407,6 +1400,8 @@ export default function HomeScreen() {
 
       
       {isLoadingCurrentLocation ? (
+        <View style={dynamicStyles.map}>
+          <LoadingSpinner />
         <View style={[dynamicStyles.map, { 
           justifyContent: 'center', 
           alignItems: 'center',
