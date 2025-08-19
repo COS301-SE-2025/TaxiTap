@@ -83,7 +83,7 @@ export default function StatsPage() {
       >
         {/* Header Section */}
         <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.headerTitle}>Dashboard</Text>
+          <Text style={dynamicStyles.sectionTitle}>Dashboard</Text>
           <Text style={dynamicStyles.headerSubtitle}>Ride and payment overview</Text>
         </View>
 
@@ -168,7 +168,7 @@ const dynamicStyles = StyleSheet.create({
     paddingVertical: 24,
     marginBottom: 32,
   },
-  headerTitle: {
+  sectionTitle: {
     fontSize: 32,
     fontWeight: '700',
     color: '#1a1a1a',

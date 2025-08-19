@@ -1040,8 +1040,19 @@ export default function HomeScreen() {
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
     setSelectedRouteId(routeIdToUse);
 
+    // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
     setShowDestinationSuggestions(false);
+    setOriginSuggestions([]);
+    setDestinationSuggestions([]);
+    setJustSelectedOrigin(true);
+    setJustSelectedDestination(true);
+    
+    // Reset flags after a short delay to allow route calculation
+    setTimeout(() => {
+      setJustSelectedOrigin(false);
+      setJustSelectedDestination(false);
+    }, 100);
   };
 
   const dynamicStyles = StyleSheet.create({

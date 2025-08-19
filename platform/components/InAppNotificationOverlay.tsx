@@ -210,7 +210,7 @@ export const InAppNotificationOverlay: React.FC = () => {
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      {inAppNotifications.map((notification, index) => (
+      {inAppNotifications.map((notification: any, index: number) => (
         <NotificationItem
           key={notification.id}
           notification={notification}

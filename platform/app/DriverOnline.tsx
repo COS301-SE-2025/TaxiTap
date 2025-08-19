@@ -9,8 +9,8 @@ import {
   StatusBar,
   SafeAreaView,
   Animated,
-  Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -25,48 +25,6 @@ import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
-
-interface UserProfile {
-  _id: string;
-  name: string;
-  email: string;
-  age: number;
-  phoneNumber: string;
-  isVerified: boolean;
-  isActive: boolean;
-  accountType: "passenger" | "driver" | "both";
-  currentActiveRole?: "passenger" | "driver";
-  lastRoleSwitchAt?: number;
-  profilePicture?: string;
-  dateOfBirth?: number;
-  gender?: "male" | "female" | "other" | "prefer_not_to_say";
-  emergencyContact?: {
-    name: string;
-    phoneNumber: string;
-    relationship: string;
-  };
-  createdAt: number;
-  updatedAt: number;
-  lastLoginAt?: number;
-  homeAddress?: {
-    address: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-    nickname?: string;
-  };
-  workAddress?: {
-    address: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-    nickname?: string;
-  };
-  driverPin?: string;
-}
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -89,13 +47,11 @@ export default function DriverOnline({
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
   const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
-  const updateDriverPin = useMutation(api.functions.rides.verifyDriverPin.updateDriverPin);
 
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
-  const insets = useSafeAreaInsets();
   const userId = user?.id;
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   
@@ -103,10 +59,16 @@ export default function DriverOnline({
   const [showMenu, setShowMenu] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [driverPin, setDriverPin] = useState<string>('');
+  
+  // Prevent PIN from being cleared on re-renders
+  const setDriverPinStable = (pin: string) => {
+    if (pin && pin !== driverPin) {
+      setDriverPin(pin);
+    }
+  };
   const [showPinModal, setShowPinModal] = useState(false);
   
   const mapRef = useRef<MapView | null>(null);
-  const pinGeneratedRef = useRef<boolean>(false);
   const { notifications, markAsRead } = useNotifications();
   const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
   
@@ -127,49 +89,50 @@ export default function DriverOnline({
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
-  // Get user's full profile including driverPin
-  const userProfile = useQuery(
-    api.functions.users.UserManagement.getUserById.getUserById,
-    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
-  ) as UserProfile | undefined;
-
   const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
 
-  // Generate or use existing PIN
+  // Generate or use existing PIN - only once per session
+  const pinGeneratedRef = useRef(false);
+  const sessionPinRef = useRef<string>('');
+  
+  // Try to get PIN from AsyncStorage or generate new one
   useEffect(() => {
-    if (activeRide?.ridePin) {
-      setDriverPin(activeRide.ridePin);
-      pinGeneratedRef.current = true;
-    } else if (userProfile && !pinGeneratedRef.current) {
-      // Check if user already has a stored PIN
-      if (userProfile.driverPin) {
-        console.log('Using existing driver PIN:', userProfile.driverPin);
-        setDriverPin(userProfile.driverPin);
-        pinGeneratedRef.current = true;
-      } else {
-        // Generate PIN only if user doesn't have one stored
-        const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-        console.log('Generating new driver PIN:', newPin);
-        setDriverPin(newPin);
-        pinGeneratedRef.current = true;
+    const getStoredPin = async () => {
+      try {
+        // Check if we have a stored PIN for this user session
+        const storedPin = await AsyncStorage.getItem(`driverPin_${userId}`);
         
-        // Save the new PIN to the user's profile
-        if (user?.id) {
-          updateDriverPin({ driverId: user.id as Id<"taxiTap_users">, newPin })
-            .then(() => {
-              console.log('Driver PIN saved successfully');
-            })
-            .catch(error => {
-              console.error('Error saving driver PIN:', error);
-              // Reset the flag so we can try again
-              pinGeneratedRef.current = false;
-            });
+        if (storedPin) {
+          sessionPinRef.current = storedPin;
+          setDriverPinStable(storedPin);
+          pinGeneratedRef.current = true;
+          return;
         }
+        
+        // If there's an active ride with a PIN, use that
+        if (activeRide?.ridePin) {
+          sessionPinRef.current = activeRide.ridePin;
+          await AsyncStorage.setItem(`driverPin_${userId}`, activeRide.ridePin);
+          setDriverPinStable(activeRide.ridePin);
+          pinGeneratedRef.current = true;
+        } 
+        // If no active ride and we haven't generated a PIN yet, generate one
+        else if (user && !pinGeneratedRef.current) {
+          const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+          sessionPinRef.current = newPin;
+          await AsyncStorage.setItem(`driverPin_${userId}`, newPin);
+          setDriverPinStable(newPin);
+          pinGeneratedRef.current = true;
+        }
+      } catch (error) {
+        console.error('Error with PIN storage:', error);
       }
-    }
-  }, [userProfile, activeRide?.ridePin, updateDriverPin, user?.id]);
+    };
+    
+    getStoredPin();
+  }, [user, activeRide?.ridePin, userId]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -286,6 +249,38 @@ export default function DriverOnline({
     });
   };
 
+  // Clear PIN when going offline
+  const handleGoOffline = async () => {
+    try {
+      // Clear the stored PIN
+      if (userId) {
+        await AsyncStorage.removeItem(`driverPin_${userId}`);
+      }
+      // Call the parent's onGoOffline function
+      onGoOffline();
+    } catch (error) {
+      console.error('Error clearing PIN:', error);
+      // Still call onGoOffline even if clearing fails
+      onGoOffline();
+    }
+  };
+
+  // Clear PIN when ride ends (status changes from in_progress)
+  useEffect(() => {
+    if (activeRide?.status === 'completed' || activeRide?.status === 'cancelled') {
+      const clearRidePin = async () => {
+        try {
+          if (userId) {
+            await AsyncStorage.removeItem(`driverPin_${userId}`);
+          }
+        } catch (error) {
+          console.error('Error clearing ride PIN:', error);
+        }
+      };
+      clearRidePin();
+    }
+  }, [activeRide?.status, userId]);
+
   const increaseSeats = async () => {
     if (!user) return;
     try {
@@ -304,32 +299,9 @@ export default function DriverOnline({
     }
   };
 
-  const regeneratePin = async () => {
-    if (!user?.id) return;
-    
-    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-    console.log('Regenerating driver PIN:', newPin);
-    
-    try {
-      await updateDriverPin({ driverId: user.id as Id<"taxiTap_users">, newPin });
-      setDriverPin(newPin);
-      showGlobalSuccess('PIN Updated', 'Your driver PIN has been updated successfully.', { 
-        position: 'top', 
-        animation: 'slide-down', 
-        duration: 3000 
-      });
-    } catch (error) {
-      console.error('Error updating driver PIN:', error);
-      showGlobalError('Error', 'Failed to update driver PIN. Please try again.', { 
-        position: 'top', 
-        animation: 'slide-down', 
-        duration: 5000 
-      });
-    }
-  };
-
   const menuItems = [
     { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
+    { icon: "car", title: "My Taxi", onPress: () => router.push('/DriverRequestPage') },
     { icon: "time", title: "Trip History", onPress: () => router.push('/EarningsPage') },
     { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
@@ -347,86 +319,55 @@ export default function DriverOnline({
       justifyContent: 'space-between',
       paddingHorizontal: 20,
       paddingVertical: 16,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
+      backgroundColor: theme.background,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 8,
-      elevation: 8,
-      backdropFilter: 'blur(20px)',
+      borderBottomColor: theme.border,
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     menuButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 6,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '600',
       color: theme.text,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
     },
     headerRight: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
     },
     pinButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 6,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+      backgroundColor: theme.primary + '20',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
     },
     pinText: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
       color: theme.primary,
       fontFamily: 'monospace',
-      marginRight: 6,
-      textShadowColor: 'rgba(0,0,0,0.2)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      marginRight: 4,
     },
     offlineButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
+      width: 40,
+      height: 40,
+      borderRadius: 12,
       backgroundColor: '#EF4444',
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#EF4444',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 4,
     },
     
     // Main Content
@@ -438,45 +379,32 @@ export default function DriverOnline({
     // Stats Row
     statsContainer: {
       flexDirection: 'row',
-      paddingVertical: 24,
+      paddingVertical: 20,
       gap: 16,
     },
     statCard: {
       flex: 1,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)',
-      borderRadius: 20,
-      padding: 20,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+      borderRadius: 16,
+      padding: 16,
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.4 : 0.15,
-      shadowRadius: 16,
-      elevation: 12,
-      backdropFilter: 'blur(20px)',
+      borderColor: theme.border,
     },
     statLabel: {
       fontSize: 12,
       color: theme.textSecondary,
-      marginBottom: 8,
+      marginBottom: 4,
       textTransform: 'uppercase',
-      letterSpacing: 1,
-      fontWeight: '600',
+      letterSpacing: 0.5,
     },
     statValue: {
-      fontSize: 24,
-      fontWeight: '800',
+      fontSize: 20,
+      fontWeight: '700',
       color: theme.text,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
     },
     earningsValue: {
       color: '#22C55E',
-      textShadowColor: 'rgba(34,197,94,0.3)',
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 4,
     },
     
     // Seat Control
@@ -486,156 +414,110 @@ export default function DriverOnline({
       alignItems: 'center',
     },
     seatCard: {
-      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)',
-      borderRadius: 24,
-      padding: 36,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+      borderRadius: 20,
+      padding: 32,
       alignItems: 'center',
       width: '100%',
-      maxWidth: 300,
+      maxWidth: 280,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: isDark ? 0.5 : 0.2,
-      shadowRadius: 24,
-      elevation: 16,
-      backdropFilter: 'blur(20px)',
+      borderColor: theme.border,
     },
     seatTitle: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '600',
       color: theme.text,
-      marginBottom: 10,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      marginBottom: 8,
     },
     seatSubtitle: {
       fontSize: 14,
       color: theme.textSecondary,
       textAlign: 'center',
-      marginBottom: 28,
-      lineHeight: 22,
-      fontWeight: '500',
+      marginBottom: 24,
+      lineHeight: 20,
     },
     seatDisplay: {
-      fontSize: 72,
-      fontWeight: '900',
+      fontSize: 64,
+      fontWeight: '800',
       color: theme.primary,
-      marginVertical: 24,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 4,
+      marginVertical: 20,
     },
     seatControls: {
       flexDirection: 'row',
-      gap: 24,
+      gap: 20,
     },
     seatButton: {
-      width: 64,
-      height: 64,
-      borderRadius: 18,
+      width: 60,
+      height: 60,
+      borderRadius: 16,
       justifyContent: 'center',
       alignItems: 'center',
       borderWidth: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 8,
     },
     decreaseButton: {
       borderColor: '#EF4444',
-      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
+      backgroundColor: '#EF4444' + '10',
     },
     increaseButton: {
       borderColor: '#22C55E',
-      backgroundColor: isDark ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.1)',
+      backgroundColor: '#22C55E' + '10',
     },
     buttonText: {
-      fontSize: 28,
-      fontWeight: '700',
+      fontSize: 24,
+      fontWeight: '600',
     },
-    decreaseText: { 
-      color: '#EF4444',
-      textShadowColor: 'rgba(239,68,68,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
-    },
-    increaseText: { 
-      color: '#22C55E',
-      textShadowColor: 'rgba(34,197,94,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
-    },
+    decreaseText: { color: '#EF4444' },
+    increaseText: { color: '#22C55E' },
     
     // Bottom Actions
     bottomActions: {
-      padding: 24,
-      gap: 16,
+      padding: 20,
+      gap: 12,
     },
     actionRow: {
       flexDirection: 'row',
-      gap: 16,
+      gap: 12,
     },
     actionButton: {
       flex: 1,
-      height: 52,
+      height: 48,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 16,
-      gap: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.2,
-      shadowRadius: 12,
-      elevation: 8,
-      borderWidth: 1,
+      borderRadius: 14,
+      gap: 8,
     },
     emergencyButton: {
-      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
-      borderColor: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)',
+      backgroundColor: '#EF4444' + '15',
+      borderWidth: 1,
+      borderColor: '#EF4444' + '30',
     },
     emergencyButtonText: {
       color: '#EF4444',
-      fontSize: 15,
-      fontWeight: '700',
-      textShadowColor: 'rgba(239,68,68,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      fontSize: 14,
+      fontWeight: '600',
     },
     mapButton: {
-      backgroundColor: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
-      borderColor: isDark ? 'rgba(59,130,246,0.3)' : 'rgba(59,130,246,0.2)',
+      backgroundColor: theme.primary + '15',
+      borderWidth: 1,
+      borderColor: theme.primary + '30',
     },
     mapButtonText: {
       color: theme.primary,
-      fontSize: 15,
-      fontWeight: '700',
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      fontSize: 14,
+      fontWeight: '600',
     },
     primaryButton: {
-      height: 56,
+      height: 52,
       backgroundColor: theme.primary,
-      borderRadius: 16,
+      borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 6,
     },
     primaryButtonText: {
       color: '#FFFFFF',
-      fontSize: 17,
-      fontWeight: '700',
-      textShadowColor: 'rgba(0,0,0,0.2)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      fontSize: 16,
+      fontWeight: '600',
     },
     
     // Map View
@@ -654,187 +536,108 @@ export default function DriverOnline({
       position: 'absolute',
       top: 60,
       right: 20,
-      width: 48,
-      height: 48,
-      borderRadius: 14,
+      width: 44,
+      height: 44,
+      borderRadius: 12,
       backgroundColor: 'rgba(0,0,0,0.8)',
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 101,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
     },
     
     // Modals
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.6)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-start',
       paddingTop: 100,
-      backdropFilter: 'blur(10px)',
     },
     menuModal: {
       marginHorizontal: 20,
-      backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
-      borderRadius: 20,
+      backgroundColor: theme.background,
+      borderRadius: 16,
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.4,
-      shadowRadius: 40,
-      elevation: 20,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
-      backdropFilter: 'blur(20px)',
     },
     menuHeader: {
-      padding: 24,
+      padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)',
+      borderBottomColor: theme.border,
     },
     menuHeaderText: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '600',
       color: theme.text,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
     },
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 24,
-      paddingVertical: 18,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
     },
     menuItemIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)',
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: theme.primary + '15',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 18,
-      shadowColor: theme.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 4,
+      marginRight: 16,
     },
     menuItemText: {
-      fontSize: 17,
+      fontSize: 16,
       color: theme.text,
-      fontWeight: '600',
+      fontWeight: '500',
     },
     
     pinModal: {
       margin: 20,
-      backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
-      borderRadius: 20,
-      padding: 28,
+      backgroundColor: theme.background,
+      borderRadius: 16,
+      padding: 24,
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.4,
-      shadowRadius: 40,
-      elevation: 20,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
-      backdropFilter: 'blur(20px)',
     },
     pinModalTitle: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '600',
       color: theme.text,
-      marginBottom: 24,
-      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      marginBottom: 20,
     },
     pinDisplay: {
       flexDirection: 'row',
-      gap: 10,
-      marginBottom: 20,
+      gap: 8,
+      marginBottom: 16,
     },
     pinDigit: {
-      width: 52,
-      height: 60,
+      width: 48,
+      height: 56,
       backgroundColor: theme.primary,
-      borderRadius: 14,
+      borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.primary,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      elevation: 8,
     },
     pinDigitText: {
-      fontSize: 26,
-      fontWeight: '800',
+      fontSize: 24,
+      fontWeight: '700',
       color: '#FFFFFF',
       fontFamily: 'monospace',
-      textShadowColor: 'rgba(0,0,0,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
     },
     pinInfo: {
-      fontSize: 15,
+      fontSize: 14,
       color: theme.textSecondary,
       textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 24,
-      fontWeight: '500',
+      lineHeight: 20,
+      marginBottom: 20,
     },
     closeButton: {
       backgroundColor: theme.primary,
-      paddingHorizontal: 28,
-      paddingVertical: 14,
-      borderRadius: 14,
-      shadowColor: theme.primary,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      elevation: 8,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 12,
     },
     closeButtonText: {
       color: '#FFFFFF',
-      fontSize: 15,
-      fontWeight: '700',
-      textShadowColor: 'rgba(0,0,0,0.2)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
-    },
-    pinModalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      width: '100%',
-      marginTop: 20,
-    },
-    regenerateButton: {
-      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
-      borderColor: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)',
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 14,
-      shadowColor: '#EF4444',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    regenerateButtonText: {
-      color: '#EF4444',
-      fontSize: 15,
-      fontWeight: '700',
-      textShadowColor: 'rgba(239,68,68,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 2,
+      fontSize: 14,
+      fontWeight: '600',
     },
   });
 
@@ -870,7 +673,7 @@ export default function DriverOnline({
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
+          <TouchableOpacity style={styles.offlineButton} onPress={handleGoOffline}>
             <Icon name="power" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -1019,15 +822,9 @@ export default function DriverOnline({
               Show this PIN to passengers for secure verification.
             </Text>
             
-            <View style={styles.pinModalButtons}>
-              <TouchableOpacity style={styles.regenerateButton} onPress={regeneratePin}>
-                <Text style={styles.regenerateButtonText}>Regenerate PIN</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>

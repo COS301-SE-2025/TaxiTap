@@ -245,12 +245,6 @@ export default function DriverOffline({
         : 'rgba(255, 255, 255, 0.95)',
       borderBottomWidth: 1,
       borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(0, 0, 0, 0.08)',
-      // Glossy effect
-      shadowColor: isDark ? '#000' : '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 8,
-      elevation: 20,
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
@@ -274,11 +268,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 12,
-      elevation: 12,
     },
     headerTitle: {
       fontSize: 20,
@@ -302,11 +291,6 @@ export default function DriverOffline({
       borderRadius: 16,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 8,
     },
     statusDot: {
       width: 8,
@@ -335,11 +319,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 12,
-      elevation: 12,
     },
     contentContainer: {
       flex: 1,
@@ -359,11 +338,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.25 : 0.15,
-      shadowRadius: 16,
-      elevation: 16,
     },
     earningsAmount: {
       color: '#F59E0B',
@@ -401,11 +375,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.25 : 0.15,
-      shadowRadius: 16,
-      elevation: 16,
     },
     offlineIconContainer: {
       width: 80,
@@ -421,11 +390,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(255, 255, 255, 0.2)' 
         : 'rgba(0, 0, 0, 0.1)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 16,
     },
     offlineTitle: {
       fontSize: 22,
@@ -461,11 +425,6 @@ export default function DriverOffline({
       justifyContent: 'center',
       alignItems: 'center',
       flexDirection: 'row',
-      shadowColor: '#EF4444',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 12,
     },
     emergencyButtonText: {
       fontSize: 16,
@@ -482,11 +441,6 @@ export default function DriverOffline({
       justifyContent: 'center',
       alignItems: 'center',
       flexDirection: 'row',
-      shadowColor: '#F59E0B',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.4,
-      shadowRadius: 16,
-      elevation: 16,
     },
     goOnlineButtonText: {
       fontSize: 18,
@@ -526,11 +480,6 @@ export default function DriverOffline({
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: isDark ? 0.2 : 0.1,
-      shadowRadius: 12,
-      elevation: 12,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -591,11 +540,6 @@ export default function DriverOffline({
         : 'rgba(255, 255, 255, 0.95)',
       borderRadius: 20,
       maxWidth: 340,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.3,
-      shadowRadius: 20,
-      elevation: 20,
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
@@ -662,11 +606,6 @@ export default function DriverOffline({
       borderRadius: 16,
       padding: 12,
       minWidth: 300,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 16,
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
@@ -687,11 +626,6 @@ export default function DriverOffline({
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 4,
     },
     safetyItemContent: {
       flex: 1,
