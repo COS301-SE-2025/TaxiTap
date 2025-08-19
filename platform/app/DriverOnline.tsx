@@ -8,7 +8,10 @@ import {
   Modal,
   StatusBar,
   SafeAreaView,
+  Animated,
+  Platform,
 } from 'react-native';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as Location from 'expo-location';
@@ -20,9 +23,49 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
-//import LocationSpoofer from '../components/LocationSpoofer';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
+
+interface UserProfile {
+  _id: string;
+  name: string;
+  email: string;
+  age: number;
+  phoneNumber: string;
+  isVerified: boolean;
+  isActive: boolean;
+  accountType: "passenger" | "driver" | "both";
+  currentActiveRole?: "passenger" | "driver";
+  lastRoleSwitchAt?: number;
+  profilePicture?: string;
+  dateOfBirth?: number;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say";
+  emergencyContact?: {
+    name: string;
+    phoneNumber: string;
+    relationship: string;
+  };
+  createdAt: number;
+  updatedAt: number;
+  lastLoginAt?: number;
+  homeAddress?: {
+    address: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    nickname?: string;
+  };
+  workAddress?: {
+    address: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    nickname?: string;
+  };
+  driverPin?: string;
+}
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -36,21 +79,6 @@ interface LocationData {
   name: string;
 }
 
-interface MenuItem {
-  icon: string;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-}
-
-interface SafetyOption {
-  icon: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  onPress: () => void;
-}
-
 export default function DriverOnline({ 
   onGoOffline, 
   todaysEarnings,
@@ -60,23 +88,24 @@ export default function DriverOnline({
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
   const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
+  const updateDriverPin = useMutation(api.functions.rides.verifyDriverPin.updateDriverPin);
 
   const navigation = useNavigation();
-  const { theme, isDark, themeMode, setThemeMode } = useTheme();
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
   const userId = user?.id;
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
+  
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [showSafetyMenu, setShowSafetyMenu] = useState(false);
-
-  const [driverPin, setDriverPin] = useState<string>('');
-  const [showPinDetails, setShowPinDetails] = useState(false);
-  const mapRef = useRef<MapView | null>(null);
-  const { notifications, markAsRead } = useNotifications();
   const [showMap, setShowMap] = useState(false);
-  const [mapExpanded, setMapExpanded] = useState(false);
+  const [driverPin, setDriverPin] = useState<string>('');
+  const [showPinModal, setShowPinModal] = useState(false);
+  
+  const mapRef = useRef<MapView | null>(null);
+  const pinGeneratedRef = useRef<boolean>(false);
+  const { notifications, markAsRead } = useNotifications();
   const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
   
   const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
@@ -86,45 +115,59 @@ export default function DriverOnline({
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
-  // Get active ride information to display the correct PIN
   const activeRide = useQuery(
     api.functions.rides.getActiveRideByDriver.getActiveRideByDriver,
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
-  const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
-  const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
-  const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
-
-  // Set driver PIN from active ride when available, or generate a new one if no active ride
-  useEffect(() => {
-    if (activeRide?.ridePin) {
-      // Use the PIN from the active ride
-      setDriverPin(activeRide.ridePin);
-    } else if (user && !driverPin) {
-      // Generate a new PIN only when driver goes online and no active ride
-      const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-      setDriverPin(newPin);
-    }
-  }, [user, driverPin, activeRide?.ridePin]);
-
-  // Remove the periodic PIN regeneration since we want to keep the ride PIN stable
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (user && !driverPin) {
-  //       // Only regenerate if no PIN is set (e.g., when coming back online)
-  //       const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-  //       setDriverPin(newPin);
-  //     }
-  //   }, 30 * 60 * 1000); // 30 minutes
-
-  //   return () => clearInterval(interval);
-  // }, [user, driverPin]);
-
   const earnings = useQuery(
     api.functions.earnings.earnings.getWeeklyEarnings,
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
+
+  // Get user's full profile including driverPin
+  const userProfile = useQuery(
+    api.functions.users.UserManagement.getUserById.getUserById,
+    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+  ) as UserProfile | undefined;
+
+  const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
+  const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
+  const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
+
+  // Generate or use existing PIN
+  useEffect(() => {
+    if (activeRide?.ridePin) {
+      setDriverPin(activeRide.ridePin);
+      pinGeneratedRef.current = true;
+    } else if (userProfile && !pinGeneratedRef.current) {
+      // Check if user already has a stored PIN
+      if (userProfile.driverPin) {
+        console.log('Using existing driver PIN:', userProfile.driverPin);
+        setDriverPin(userProfile.driverPin);
+        pinGeneratedRef.current = true;
+      } else {
+        // Generate PIN only if user doesn't have one stored
+        const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+        console.log('Generating new driver PIN:', newPin);
+        setDriverPin(newPin);
+        pinGeneratedRef.current = true;
+        
+        // Save the new PIN to the user's profile
+        if (user?.id) {
+          updateDriverPin({ driverId: user.id as Id<"taxiTap_users">, newPin })
+            .then(() => {
+              console.log('Driver PIN saved successfully');
+            })
+            .catch(error => {
+              console.error('Error saving driver PIN:', error);
+              // Reset the flag so we can try again
+              pinGeneratedRef.current = false;
+            });
+        }
+      }
+    }
+  }, [userProfile, activeRide?.ridePin, updateDriverPin, user?.id]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -133,39 +176,24 @@ export default function DriverOnline({
     });
   });
 
+  // Location setup
   useEffect(() => {
     const getCurrentLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          console.warn('Permission to access location was denied');
-          return;
-        }
+        if (status !== 'granted') return;
 
-        // Check if location services are enabled
         const isLocationEnabled = await Location.hasServicesEnabledAsync();
-        if (!isLocationEnabled) {
-          console.warn('Location services are disabled');
-          return;
-        }
+        if (!isLocationEnabled) return;
 
         const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced, // Use balanced accuracy to avoid spoofer detection
+          accuracy: Location.Accuracy.Balanced,
         });
 
         const { latitude, longitude } = location.coords;
         
-        // Validate location coordinates
-        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-          console.warn('Invalid location coordinates received');
-          return;
-        }
-        
-        // Check for suspicious coordinates (0,0 is common for mock locations)
-        if (latitude === 0 && longitude === 0) {
-          console.warn('Suspicious location coordinates (0,0) detected');
-          return;
-        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+        if (latitude === 0 && longitude === 0) return;
 
         const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
         const placeName = `${place.name || ''} ${place.street || ''}, ${place.city || place.region || ''}`.trim();
@@ -177,42 +205,25 @@ export default function DriverOnline({
         };
 
         setCurrentLocation(currentLoc);
-
-        mapRef.current?.animateToRegion(
-          {
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          1000
-        );
-      } catch (error: any) {
+        mapRef.current?.animateToRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      } catch (error) {
         console.error('Error getting location:', error);
-        
-        // Handle specific location errors
-        if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
-          console.warn('Location spoofer detected, using fallback location');
-        }
       }
     };
 
     getCurrentLocation();
   }, []);
 
+  // Handle notifications
   useEffect(() => {
-    if (typeof onGoOffline !== 'function') {
-      router.replace('/DriverHomeScreen');
-    }
-  }, [onGoOffline, router]);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-    const rideRequest = notifications.find(
-      n => n.type === "ride_request" && !n.isRead
-    );
+    if (!user) return;
+    
+    const rideRequest = notifications.find(n => n.type === "ride_request" && !n.isRead);
     if (rideRequest) {
       showGlobalAlert({
         title: "New Ride Request",
@@ -229,8 +240,7 @@ export default function DriverOnline({
               try {
                 await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                console.error(error);
-                showGlobalError('Error', 'Failed to decline ride or update seats.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
@@ -240,17 +250,12 @@ export default function DriverOnline({
             style: 'default',
             onPress: async () => {
               try {
-                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users">, });
+                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users"> });
                 await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
                 markAsRead(rideRequest._id);
-                
-                // Note: Removed navigation to DriverPinEntry page as requested
-                // The driver can now see the PIN directly on the DriverOnline page
               } catch (error) {
-                console.error(error);
-                showGlobalError('Error', 'Failed to accept ride or update seats.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
               }
-              markAsRead(rideRequest._id);
             },
           },
         ],
@@ -258,62 +263,11 @@ export default function DriverOnline({
     }
   }, [notifications, user]);
 
-  useEffect(() => {
-    const rideCancelled = notifications.find(
-      n => n.type === 'ride_cancelled' && !n.isRead
-    );
-    if (rideCancelled) {
-      showGlobalAlert({
-        title: 'Ride Cancelled',
-        message: rideCancelled.message,
-        type: 'warning',
-        position: 'top',
-        animation: 'slide-down',
-        duration: 0,
-        actions: [
-          { label: 'OK', onPress: () => markAsRead(rideCancelled._id), style: 'default' },
-        ],
-      });
-    }
-  }, [notifications, markAsRead]);
-
-  useEffect(() => {
-    const rideStarted = notifications.find(
-      n => n.type === 'ride_started' && !n.isRead
-    );
-    if (rideStarted) {
-      showGlobalAlert({
-        title: 'Ride Started',
-        message: rideStarted.message,
-        type: 'info',
-        position: 'top',
-        animation: 'slide-down',
-        duration: 0,
-        actions: [
-          { label: 'OK', onPress: () => markAsRead(rideStarted._id), style: 'default' },
-        ],
-      });
-    }
-  }, [notifications, markAsRead]);
-
-  const handleMenuPress = () => {
-    setShowMenu(!showMenu);
-  };
-
-  const handleSafetyPress = () => {
-    setShowSafetyMenu(!showSafetyMenu);
-  };
-
-  const handleToggleTheme = () => {
-    const newMode = isDark ? 'light' : 'dark';
-    setThemeMode(newMode);
-  };
-
   const handleEmergency = () => {
     showGlobalAlert({
       title: 'Emergency Alert',
       message: 'This will contact emergency services (112)',
-      type: 'Emergency  Alert' as AlertType,
+      type: 'Emergency Alert' as AlertType,
       position: 'top',
       animation: 'slide-down',
       duration: 0,
@@ -323,823 +277,758 @@ export default function DriverOnline({
           style: 'destructive',
           onPress: () => {
             showGlobalSuccess('Emergency Alert Sent', 'Emergency services contacted.', { position: 'top', animation: 'slide-down', duration: 3000 });
-            setShowSafetyMenu(false);
           },
         },
-        { label: 'Cancel', style: 'cancel', onPress: () => setShowSafetyMenu(false) },
+        { label: 'Cancel', style: 'cancel', onPress: () => {} },
       ],
     });
   };
 
-  const menuItems: MenuItem[] = [
-    { 
-      icon: "person-outline", 
-      title: "My Profile", 
-      subtitle: "Driver details & documents",
-      onPress: () => {
-        setShowMenu(false);
-        router.push('/DriverProfile');
-      }
-    },
-    { 
-      icon: "car-outline", 
-      title: "My Taxi & Route", 
-      subtitle: "Vehicle info & route settings",
-      onPress: () => {
-        setShowMenu(false);
-        router.push('/DriverRequestPage');
-      }
-    },
-    { 
-      icon: "time-outline", 
-      title: "Trip History", 
-      subtitle: "Past rides & routes",
-      onPress: () => {
-        setShowMenu(false);
-        router.push('/EarningsPage');
-      }
-    },
-    {
-      icon: 'person-outline',
-      title: 'Feedback',
-      subtitle: 'Ratings & Feedback',
-      onPress: () => router.push('/FeedbackHistoryScreen'),
-    },
-    { 
-      icon: "settings-outline", 
-      title: "Toggle Theme", 
-      subtitle: "Switch between light and dark mode",
-      onPress: () => {
-        setShowMenu(false);
-        handleToggleTheme();
-      }
-    },
-
-    { 
-      icon: "help-outline", 
-      title: "Help", 
-      subtitle: "App information",
-      onPress: () => navigation.navigate('HelpPage' as never)
-    },
-  ];
-
-  const safetyOptions: SafetyOption[] = [
-    {
-      icon: "call",
-      title: "Emergency Call",
-      subtitle: "Call 112 immediately",
-      color: "#FF4444",
-      onPress: handleEmergency
-    },
-  ];
-
-  const dynamicStyles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.background,
-      zIndex: 999,
-    },
-    safeArea: {
-      flex: 1,
-    },
-    mapContainer: {
-      flex: 1,
-      position: 'relative',
-    },
-    map: {
-      width: width,
-      height: height,
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: theme.background,
-    },
-    loadingText: {
-      color: theme.text,
-      fontSize: 16,
-      marginTop: 16,
-    },
-    menuButton: {
-      position: 'absolute',
-      top: 10,
-      left: 20,
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: theme.surface,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    menuModal: {
-      marginTop: 80,
-      marginLeft: 20,
-      marginRight: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      paddingVertical: 8,
-      minWidth: 280,
-      maxWidth: '90%',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 12,
-    },
-    menuModalHeader: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? theme.border : "#D4A57D",
-    },
-    menuModalHeaderText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    menuModalItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      minHeight: 60,
-    },
-    menuModalItemIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: isDark ? theme.primary : "#ECD9C3",
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 16,
-    },
-    menuModalItemContent: {
-      flex: 1,
-    },
-    menuModalItemTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 2,
-    },
-    menuModalItemSubtitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    darkModeToggle: {
-      position: 'absolute',
-      top: 8,
-      right: 20,
-      width: 50,
-      height: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    // PIN Display Styles - Compact and unobtrusive
-    pinContainer: {
-      position: 'absolute',
-      top: 8,
-      right: 80,
-      backgroundColor: theme.surface,
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 4,
-      zIndex: 1000,
-      borderWidth: 1,
-      borderColor: theme.primary,
-      opacity: 0.9,
-    },
-    pinLabel: {
-      fontSize: 10,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      marginRight: 6,
-      textTransform: 'uppercase',
-    },
-    pinText: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.primary,
-      fontFamily: 'monospace',
-      letterSpacing: 1,
-    },
-    pinInfoButton: {
-      marginLeft: 6,
-      padding: 2,
-    },
-    // PIN Details Modal
-    pinDetailsModal: {
-      position: 'absolute',
-      top: 70,
-      right: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 16,
-      padding: 16,
-      minWidth: 280,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
-      zIndex: 1001,
-      borderWidth: 1,
-      borderColor: theme.primary,
-    },
-    pinDetailsHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    pinDetailsTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.text,
-      flex: 1,
-    },
-    pinDetailsClose: {
-      padding: 4,
-    },
-    pinDetailsContent: {
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    pinDisplayLarge: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginBottom: 12,
-    },
-    pinDigitLarge: {
-      width: 40,
-      height: 48,
-      backgroundColor: theme.primary,
-      borderRadius: 8,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginHorizontal: 2,
-      borderWidth: 2,
-      borderColor: theme.primary,
-    },
-    pinDigitTextLarge: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: isDark ? "#121212" : "#FFFFFF",
-      fontFamily: 'monospace',
-    },
-    pinDetailsInfo: {
-      fontSize: 12,
-      color: theme.textSecondary,
-      textAlign: 'center',
-      lineHeight: 18,
-    },
-    earningsContainer: {
-      alignItems: 'center',
-      zIndex: 999,
-    },
-    earningsCard: {
-      backgroundColor: theme.surface,
-      padding: 15,
-      alignItems: "center",
-      elevation: 4,
-      width: '100%',
-    },
-    earningsAmount: {
-      color: theme.primary,
-      fontSize: 24,
-      fontWeight: "bold",
-      marginBottom: 4,
-    },
-    bottomContainer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: theme.surface,
-      borderTopLeftRadius: 30,
-      borderTopRightRadius: 30,
-      paddingHorizontal: 20,
-      paddingVertical: 20,
-      paddingBottom: 40,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: -4 },
-      shadowRadius: 4,
-      elevation: 8,
-    },
-    quickStatusValue: {
-      fontSize: 100,
-      fontWeight: 'bold',
-      color: theme.primary,
-      marginBottom: 4,
-    },
-    offlineButton: {
-      height: 56,
-      borderRadius: 30,
-      backgroundColor: theme.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      flexDirection: 'row',
-    },
-    offlineButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
-      marginLeft: 8,
-    },
-    statsButton: {
-      height: 56,
-      borderRadius: 30,
-      backgroundColor: '#343a40',
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      flexDirection: 'row',
-      marginTop: 20,
-    },
-    statsButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
-      marginLeft: 8,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-start',
-      alignItems: 'flex-start',
-    },
-    safetyModal: {
-      position: 'absolute',
-      bottom: 270,
-      left: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      padding: 8,
-      minWidth: 300,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
-    },
-    safetyItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      minHeight: 50,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    safetyItemLast: {
-      borderBottomWidth: 0,
-    },
-    safetyItemIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
-    },
-    safetyItemContent: {
-      flex: 1,
-    },
-    safetyItemTitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 2,
-    },
-    safetyItemSubtitle: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    actionButton: {
-      flexDirection: 'row',
-      backgroundColor: '#007AFF',
-      paddingVertical: 10,
-      paddingHorizontal: 16,
-      borderRadius: 25,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 4,
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: 150,
-      height: 50,
-    },
-    actionButtonText: {
-      color: '#FFFFFF',
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginLeft: 8,
-    },
-    locationStreamingStatus: {
-      position: 'absolute',
-      top: 120,
-      left: 20,
-      right: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      padding: 8,
-      alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 4,
-      zIndex: 998,
-    },
-    locationStreamingText: {
-      fontSize: 12,
-      fontWeight: 'bold',
-    },
-    locationStreamingSuccess: {
-      color: '#4CAF50',
-    },
-    locationStreamingError: {
-      color: '#F44336',
-    },
-    locationStreamingLoading: {
-      color: theme.textSecondary,
-    },
-  });
-
-    async function increaseSeats() {
-      if (!user) {
-        showGlobalError('Validation error', 'You must be logged in', { position: 'top', animation: 'slide-down', duration: 4000 });
-        return;
-      }
+  const increaseSeats = async () => {
+    if (!user) return;
     try {
       await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "increase" });
     } catch (e) {
       console.error(e);
     }
-  }
+  };
 
-    async function decreaseSeats() {
-      if (!user) {
-        showGlobalError('Validation error', 'You must be logged in', { position: 'top', animation: 'slide-down', duration: 4000 });
-        return;
-      }
+  const decreaseSeats = async () => {
+    if (!user) return;
     try {
       await updateSeats({ userId: user.id as Id<"taxiTap_users">, action: "decrease" });
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const regeneratePin = async () => {
+    if (!user?.id) return;
+    
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    console.log('Regenerating driver PIN:', newPin);
+    
+    try {
+      await updateDriverPin({ driverId: user.id as Id<"taxiTap_users">, newPin });
+      setDriverPin(newPin);
+      showGlobalSuccess('PIN Updated', 'Your driver PIN has been updated successfully.', { 
+        position: 'top', 
+        animation: 'slide-down', 
+        duration: 3000 
+      });
+    } catch (error) {
+      console.error('Error updating driver PIN:', error);
+      showGlobalError('Error', 'Failed to update driver PIN. Please try again.', { 
+        position: 'top', 
+        animation: 'slide-down', 
+        duration: 5000 
+      });
+    }
+  };
+
+  const menuItems = [
+    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: "Trip History", onPress: () => router.push('/EarningsPage') },
+    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
+    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
+  ];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    // Header
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 8,
+      elevation: 8,
+      backdropFilter: 'blur(20px)',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    menuButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.text,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    pinButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+    },
+    pinText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.primary,
+      fontFamily: 'monospace',
+      marginRight: 6,
+      textShadowColor: 'rgba(0,0,0,0.2)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    offlineButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: '#EF4444',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#EF4444',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    
+    // Main Content
+    mainContent: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    
+    // Stats Row
+    statsContainer: {
+      flexDirection: 'row',
+      paddingVertical: 24,
+      gap: 16,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)',
+      borderRadius: 20,
+      padding: 20,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.4 : 0.15,
+      shadowRadius: 16,
+      elevation: 12,
+      backdropFilter: 'blur(20px)',
+    },
+    statLabel: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginBottom: 8,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontWeight: '600',
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: theme.text,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    earningsValue: {
+      color: '#22C55E',
+      textShadowColor: 'rgba(34,197,94,0.3)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
+    },
+    
+    // Seat Control
+    seatControlContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    seatCard: {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)',
+      borderRadius: 24,
+      padding: 36,
+      alignItems: 'center',
+      width: '100%',
+      maxWidth: 300,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: isDark ? 0.5 : 0.2,
+      shadowRadius: 24,
+      elevation: 16,
+      backdropFilter: 'blur(20px)',
+    },
+    seatTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 10,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    seatSubtitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginBottom: 28,
+      lineHeight: 22,
+      fontWeight: '500',
+    },
+    seatDisplay: {
+      fontSize: 72,
+      fontWeight: '900',
+      color: theme.primary,
+      marginVertical: 24,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
+    },
+    seatControls: {
+      flexDirection: 'row',
+      gap: 24,
+    },
+    seatButton: {
+      width: 64,
+      height: 64,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    decreaseButton: {
+      borderColor: '#EF4444',
+      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
+    },
+    increaseButton: {
+      borderColor: '#22C55E',
+      backgroundColor: isDark ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.1)',
+    },
+    buttonText: {
+      fontSize: 28,
+      fontWeight: '700',
+    },
+    decreaseText: { 
+      color: '#EF4444',
+      textShadowColor: 'rgba(239,68,68,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    increaseText: { 
+      color: '#22C55E',
+      textShadowColor: 'rgba(34,197,94,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    
+    // Bottom Actions
+    bottomActions: {
+      padding: 24,
+      gap: 16,
+    },
+    actionRow: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    actionButton: {
+      flex: 1,
+      height: 52,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 16,
+      gap: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      elevation: 8,
+      borderWidth: 1,
+    },
+    emergencyButton: {
+      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
+      borderColor: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)',
+    },
+    emergencyButtonText: {
+      color: '#EF4444',
+      fontSize: 15,
+      fontWeight: '700',
+      textShadowColor: 'rgba(239,68,68,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    mapButton: {
+      backgroundColor: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
+      borderColor: isDark ? 'rgba(59,130,246,0.3)' : 'rgba(59,130,246,0.2)',
+    },
+    mapButtonText: {
+      color: theme.primary,
+      fontSize: 15,
+      fontWeight: '700',
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    primaryButton: {
+      height: 56,
+      backgroundColor: theme.primary,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    primaryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 17,
+      fontWeight: '700',
+      textShadowColor: 'rgba(0,0,0,0.2)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    
+    // Map View
+    mapContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 100,
+    },
+    map: {
+      flex: 1,
+    },
+    mapCloseButton: {
+      position: 'absolute',
+      top: 60,
+      right: 20,
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 101,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    
+    // Modals
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'flex-start',
+      paddingTop: 100,
+      backdropFilter: 'blur(10px)',
+    },
+    menuModal: {
+      marginHorizontal: 20,
+      backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
+      borderRadius: 20,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.4,
+      shadowRadius: 40,
+      elevation: 20,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+      backdropFilter: 'blur(20px)',
+    },
+    menuHeader: {
+      padding: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)',
+    },
+    menuHeaderText: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.text,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+    },
+    menuItemIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 18,
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    menuItemText: {
+      fontSize: 17,
+      color: theme.text,
+      fontWeight: '600',
+    },
+    
+    pinModal: {
+      margin: 20,
+      backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
+      borderRadius: 20,
+      padding: 28,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.4,
+      shadowRadius: 40,
+      elevation: 20,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+      backdropFilter: 'blur(20px)',
+    },
+    pinModalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 24,
+      textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    pinDisplay: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 20,
+    },
+    pinDigit: {
+      width: 52,
+      height: 60,
+      backgroundColor: theme.primary,
+      borderRadius: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    pinDigitText: {
+      fontSize: 26,
+      fontWeight: '800',
+      color: '#FFFFFF',
+      fontFamily: 'monospace',
+      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    pinInfo: {
+      fontSize: 15,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+      fontWeight: '500',
+    },
+    closeButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 28,
+      paddingVertical: 14,
+      borderRadius: 14,
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    closeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '700',
+      textShadowColor: 'rgba(0,0,0,0.2)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+    pinModalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      width: '100%',
+      marginTop: 20,
+    },
+    regenerateButton: {
+      backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)',
+      borderColor: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 14,
+      shadowColor: '#EF4444',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    regenerateButtonText: {
+      color: '#EF4444',
+      fontSize: 15,
+      fontWeight: '700',
+      textShadowColor: 'rgba(239,68,68,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    },
+  });
+
+  if (!currentLocation) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: theme.text, fontSize: 16 }}>Loading location...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <SafeAreaView style={dynamicStyles.safeArea}>
-      <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
-        backgroundColor={theme.background} 
-      />
-      <View style={dynamicStyles.container}>
-        <View style={dynamicStyles.mapContainer}>
-          {!currentLocation ? (
-            <View style={dynamicStyles.loadingContainer}>
-              <Text style={dynamicStyles.loadingText}>Loading location...</Text>
-            </View>
-          ) : (
-            <>
-            {mapExpanded && (
-              <MapView
-                ref={mapRef}
-                style={dynamicStyles.map}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={{
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                showsUserLocation={true}
-                showsMyLocationButton={false}
-                showsCompass={false}
-                showsScale={false}
-                showsBuildings={true}
-                showsTraffic={false}
-                showsIndoors={false}
-                showsPointsOfInterest={true}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                  }}
-                  title="Your Location"
-                  pinColor="#FF0000"
-                />
-              </MapView>
-            )}
-
-              <TouchableOpacity 
-                style={dynamicStyles.menuButton}
-                onPress={handleMenuPress}
-                accessibilityLabel="Open menu"
-              >
-                <Icon name="menu" size={24} color={theme.primary} />
-              </TouchableOpacity>
-
-              {/* PIN Display - Compact version in top right */}
-              {driverPin && (
-                <TouchableOpacity 
-                  style={dynamicStyles.pinContainer}
-                  onPress={() => setShowPinDetails(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={dynamicStyles.pinLabel}>DRIVER PIN</Text>
-                  <Text style={dynamicStyles.pinText}>{driverPin}</Text>
-                  <TouchableOpacity style={dynamicStyles.pinInfoButton}>
-                    <Icon name="information-circle-outline" size={16} color={theme.textSecondary} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-
-              {/* PIN Details Modal */}
-              {showPinDetails && (
-                <Modal
-                  visible={showPinDetails}
-                  transparent={true}
-                  animationType="fade"
-                  onRequestClose={() => setShowPinDetails(false)}
-                >
-                  <TouchableOpacity 
-                    style={dynamicStyles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowPinDetails(false)}
-                  >
-                    <View style={dynamicStyles.pinDetailsModal}>
-                      <View style={dynamicStyles.pinDetailsHeader}>
-                        <Text style={dynamicStyles.pinDetailsTitle}>Your Driver PIN</Text>
-                        <TouchableOpacity 
-                          style={dynamicStyles.pinDetailsClose}
-                          onPress={() => setShowPinDetails(false)}
-                        >
-                          <Icon name="close" size={20} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                      </View>
-                      
-                      <View style={dynamicStyles.pinDetailsContent}>
-                        <View style={dynamicStyles.pinDisplayLarge}>
-                          {driverPin.split('').map((digit, index) => (
-                            <View key={index} style={dynamicStyles.pinDigitLarge}>
-                              <Text style={dynamicStyles.pinDigitTextLarge}>{digit}</Text>
-                            </View>
-                          ))}
-                        </View>
-                        
-                        <Text style={dynamicStyles.pinDetailsInfo}>
-                          Show this PIN to passengers when they need to verify your identity. 
-                          The PIN remains stable during active rides for consistent verification.
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Modal>
-              )}
-
-              <TouchableOpacity 
-                style={dynamicStyles.darkModeToggle}
-                onPress={handleToggleTheme}
-                activeOpacity={0.8}
-                accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              >
-                <Icon 
-                  name={isDark ? 'sunny' : 'moon'} 
-                  size={28} 
-                />
-              </TouchableOpacity>
-
-              <View style={dynamicStyles.earningsContainer}>
-                <TouchableOpacity 
-                  style={dynamicStyles.earningsCard}
-                  onPress={() => {}}
-                  activeOpacity={0.8}
-                >
-                  <Text style={dynamicStyles.earningsAmount}>
-                   R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Live Location Streaming Status for Drivers */}
-              <View style={dynamicStyles.locationStreamingStatus}>
-                {locationStreamError ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
-                    Location Error: {locationStreamError}
-                  </Text>
-                ) : streamedLocation ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
-                    Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
-                  </Text>
-                ) : (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
-                    Starting location streaming...
-                  </Text>
-                )}
-              </View>
-
-              {!mapExpanded && (
-                <View
-                  style={{
-                    backgroundColor: '#fff',
-                    alignItems: 'center',
-                    marginTop: 45,
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await increaseSeats();
-                      } catch (error) {
-                        console.error("Failed to update seat availability:", error);
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#28a745',
-                      borderRadius: 50,
-                      width: 100,
-                      height: 100,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Text style={{ fontSize: 60, color: '#fff' }}>+</Text>
-                  </TouchableOpacity>
-
-                  <Text style={[dynamicStyles.quickStatusValue, { fontSize: 50 }]}>
-                    {taxiInfo?.capacity === 0
-                      ? "No seats"
-                      : taxiInfo?.capacity?.toString() ?? "Loading..."}
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await decreaseSeats();
-                      } catch (error) {
-                        console.error("Failed to update seat availability:", error);
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#dc3545',
-                      borderRadius: 50,
-                      width: 100,
-                      height: 100,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginTop: 16,
-                    }}
-                  >
-                    <Text style={{ fontSize: 60, color: '#fff' }}>−</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <View style={dynamicStyles.bottomContainer}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-                  <TouchableOpacity
-                    style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
-                    onPress={handleSafetyPress}
-                  >
-                    <Icon name="call" size={20} color="#fff" />
-                    <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={dynamicStyles.actionButton}
-                    onPress={() => setMapExpanded(prev => !prev)}
-                  >
-                    <Icon name="map" size={20} color="#fff" />
-                    <Text style={dynamicStyles.actionButtonText}>
-                      {mapExpanded ? "Hide Map" : "Show Map"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={dynamicStyles.offlineButton}
-                  onPress={onGoOffline}
-                  activeOpacity={0.8}
-                  accessibilityLabel="Go offline"
-                >
-                  <Text style={dynamicStyles.offlineButtonText}>GO OFFLINE</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={dynamicStyles.statsButton}
-                  onPress={() => router.push('/StatsPage')}
-                  activeOpacity={0.8}
-                  accessibilityLabel="Ride and Payment Stats"
-                >
-                  <Text style={dynamicStyles.statsButtonText}>Ride and Payment Stats</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Modal
-                visible={showMenu}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowMenu(false)}
-              >
-                <TouchableOpacity 
-                  style={dynamicStyles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowMenu(false)}
-                >
-                  <View style={dynamicStyles.menuModal}>
-                    <View style={dynamicStyles.menuModalHeader}>
-                      <Text style={dynamicStyles.menuModalHeaderText}>Menu</Text>
-                    </View>
-                    {menuItems.map((item, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={dynamicStyles.menuModalItem}
-                        onPress={() => {
-                          item.onPress();
-                          setShowMenu(false);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={dynamicStyles.menuModalItemIcon}>
-                          <Icon name={item.icon} size={20} color={isDark ? "#121212" : "#FF9900"} />
-                        </View>
-                        <View style={dynamicStyles.menuModalItemContent}>
-                          <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
-                          <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
-                      
-              {showSafetyMenu && (
-                <TouchableOpacity 
-                  style={dynamicStyles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowSafetyMenu(false)}
-                >
-                  <View style={dynamicStyles.safetyModal}>
-                    {safetyOptions.map((option, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={[
-                          dynamicStyles.safetyItem,
-                          index === safetyOptions.length - 1 && dynamicStyles.safetyItemLast
-                        ]}
-                        onPress={option.onPress}
-                        activeOpacity={0.8}
-                      >
-                        <View style={[dynamicStyles.safetyItemIcon, { backgroundColor: `${option.color}20` }]}>
-                          <Icon name={option.icon} size={16} color={option.color} />
-                        </View>
-                        <View style={dynamicStyles.safetyItemContent}>
-                          <Text style={dynamicStyles.safetyItemTitle}>{option.title}</Text>
-                          <Text style={dynamicStyles.safetyItemSubtitle}>{option.subtitle}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              {/* Location spoofer component removed - not needed */}
-            </>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
+            <Icon name="menu" size={20} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Driver Online</Text>
+        </View>
+        
+        <View style={styles.headerRight}>
+          {driverPin && (
+            <TouchableOpacity style={styles.pinButton} onPress={() => setShowPinModal(true)}>
+              <Text style={styles.pinText}>{driverPin}</Text>
+              <Icon name="information-circle-outline" size={16} color={theme.primary} />
+            </TouchableOpacity>
           )}
+          
+          <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
+            <Icon name="power" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
       </View>
+
+      <View style={styles.mainContent}>
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Today's Earnings</Text>
+            <Text style={[styles.statValue, styles.earningsValue]}>
+              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
+            </Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Available Seats</Text>
+            <Text style={styles.statValue}>
+              {taxiInfo?.capacity?.toString() ?? "0"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Seat Control */}
+        <View style={styles.seatControlContainer}>
+          <View style={styles.seatCard}>
+            <Text style={styles.seatTitle}>Seat Management</Text>
+            <Text style={styles.seatSubtitle}>
+              Adjust available seats for passengers
+            </Text>
+            
+            <Text style={styles.seatDisplay}>
+              {taxiInfo?.capacity?.toString() ?? "0"}
+            </Text>
+            
+            <View style={styles.seatControls}>
+              <TouchableOpacity
+                style={[styles.seatButton, styles.decreaseButton]}
+                onPress={decreaseSeats}
+              >
+                <Text style={[styles.buttonText, styles.decreaseText]}>−</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.seatButton, styles.increaseButton]}
+                onPress={increaseSeats}
+              >
+                <Text style={[styles.buttonText, styles.increaseText]}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Bottom Actions */}
+      <View style={styles.bottomActions}>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={[styles.actionButton, styles.emergencyButton]} onPress={handleEmergency}>
+            <Icon name="warning" size={18} color="#EF4444" />
+            <Text style={styles.emergencyButtonText}>Emergency</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
+            <Icon name="map" size={18} color={theme.primary} />
+            <Text style={styles.mapButtonText}>View Map</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
+          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Map View */}
+      {showMap && (
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={{
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+            showsUserLocation={true}
+          >
+            <Marker
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}
+              title="Your Location"
+            />
+          </MapView>
+          
+          <TouchableOpacity style={styles.mapCloseButton} onPress={() => setShowMap(false)}>
+            <Icon name="close" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Menu Modal */}
+      <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowMenu(false)}>
+          <View style={styles.menuModal}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuHeaderText}>Menu</Text>
+            </View>
+            
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={() => {
+                  item.onPress();
+                  setShowMenu(false);
+                }}
+              >
+                <View style={styles.menuItemIcon}>
+                  <Icon name={item.icon} size={20} color={theme.primary} />
+                </View>
+                <Text style={styles.menuItemText}>{item.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* PIN Modal */}
+      <Modal visible={showPinModal} transparent animationType="fade" onRequestClose={() => setShowPinModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowPinModal(false)}>
+          <View style={styles.pinModal}>
+            <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
+            
+            <View style={styles.pinDisplay}>
+              {driverPin.split('').map((digit, index) => (
+                <View key={index} style={styles.pinDigit}>
+                  <Text style={styles.pinDigitText}>{digit}</Text>
+                </View>
+              ))}
+            </View>
+            
+            <Text style={styles.pinInfo}>
+              Show this PIN to passengers for secure verification.
+            </Text>
+            
+            <View style={styles.pinModalButtons}>
+              <TouchableOpacity style={styles.regenerateButton} onPress={regeneratePin}>
+                <Text style={styles.regenerateButtonText}>Regenerate PIN</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
