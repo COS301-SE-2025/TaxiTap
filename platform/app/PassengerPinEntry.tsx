@@ -99,6 +99,13 @@ export default function PassengerPinEntry() {
             startName: startName || 'Current Location',
             endName: endName || 'Destination',
             driverId: driverId || '',
+            // Pass through location parameters
+            currentLat: params.currentLat,
+            currentLng: params.currentLng,
+            currentName: params.currentName,
+            destinationLat: params.destinationLat,
+            destinationLng: params.destinationLng,
+            destinationName: params.destinationName,
           },
         });
       } else {
@@ -336,5 +343,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-

@@ -12,7 +12,22 @@ export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
   const userId = user?.id;
-  const { driverName, licensePlate, fare, rideId, startName, endName, driverId } = useLocalSearchParams();
+  
+  const { 
+    driverName, 
+    licensePlate, 
+    fare, 
+    rideId, 
+    startName, 
+    endName, 
+    driverId,
+    currentLat,
+    currentLng,
+    currentName,
+    destinationLat,
+    destinationLng,
+    destinationName
+  } = useLocalSearchParams();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
 
@@ -22,7 +37,21 @@ export default function PaymentConfirmation() {
         userId: userId as Id<"taxiTap_users">,
         paid: true,
     });
-    router.push('/PassengerReservation');
+    router.push({
+      pathname: '/PassengerReservation',
+      params: {
+        currentLat,
+        currentLng,
+        currentName,
+        destinationLat,
+        destinationLng,
+        destinationName,
+        driverId,
+        driverName,
+        fare,
+        rideId,
+      }
+    });
   };
 
   const handleNotPaid = () => {
@@ -31,7 +60,21 @@ export default function PaymentConfirmation() {
         userId: userId as Id<"taxiTap_users">,
         paid: false,
     });
-    router.push('/PassengerReservation');
+    router.push({
+      pathname: '/PassengerReservation',
+      params: {
+        currentLat,
+        currentLng,
+        currentName,
+        destinationLat,
+        destinationLng,
+        destinationName,
+        driverId,
+        driverName,
+        fare,
+        rideId,
+      }
+    });
   };
 
   return (
