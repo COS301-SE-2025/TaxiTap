@@ -75,7 +75,6 @@ export default function DriverOffline({
   const assignedRoute = useQuery(
     api.functions.routes.queries.getDriverAssignedRoute,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
-
   );
 
   const earnings = useQuery(
@@ -100,9 +99,8 @@ export default function DriverOffline({
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFullStatus(false);
-    }, 5000); // 5 seconds
-
-    return () => clearTimeout(timer); // Cleanup on unmount
+    }, 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Helper function to parse route name
@@ -157,48 +155,11 @@ export default function DriverOffline({
     );
   };
 
-  const handleEarningsPress = () => {
-    // Type-safe navigation
-    router.push('/EarningsPage');
-  };
-
-  const menuItems: MenuItemType[] = [
-    {
-      icon: 'person-outline',
-      title: t('driver:editProfile'),
-      subtitle: 'Driver details & documents',
-      onPress: () => router.push('/DriverProfile'),
-    },
-    {
-      icon: 'car-outline',
-      title: t('driver:vehicleInfo'),
-      subtitle: 'Vehicle info & route settings',
-      onPress: () => router.push('/DriverRequestPage'),
-    },
-    {
-      icon: 'time-outline',
-      title: t('driver:earningsPage'),
-      subtitle: 'Past rides & routes',
-      onPress: () => router.push('/EarningsPage'),
-    },
-    {
-      icon: 'person-outline',
-      title: 'Feedback',
-      subtitle: 'Ratings & Feedback',
-      onPress: () => router.push('/FeedbackHistoryScreen'),
-    },
-    {
-      icon: 'settings-outline',
-      title: 'Toggle Theme',
-      subtitle: 'Switch between light and dark mode',
-      onPress: handleToggleTheme,
-    },
-    { 
-      icon: "settings-outline", 
-      title: "Help", 
-      subtitle: "App information",
-      onPress: () => navigation.navigate('HelpPage' as never)
-    },
+   const menuItems = [
+    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
+    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
+    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
   // Get route display string from database
@@ -213,20 +174,22 @@ export default function DriverOffline({
       icon: "location-outline",
       title: t('driver:assignedRoute'),
       value: getRouteDisplayString(),
-      subtitle: t('driver:tapToSetRoute'),
-      color: getRouteDisplayString() === t('driver:notSet') ? "#FF9900" : "#00A591",
+      subtitle: getRouteDisplayString() === t('driver:notSet') 
+        ? t('driver:noRouteAssigned') 
+        : t('driver:currentRoute'),
+      color: "#F59E0B",
       onPress: () => router.push('/SetRoute'),
     },
     {
-      icon: "car-outline",
+      icon: "people-outline",
       title: t('common:availableSeats'),
       value: taxiInfo?.capacity === 0
         ? t('common:noSeatsAvailable')
-        : taxiInfo?.capacity?.toString() ?? t('common:loading'),
+        : `${taxiInfo?.capacity ?? 0} ${t('common:seats')}`,
       subtitle: taxiInfo?.capacity === 0
-        ? ""
-        : t('driver:ofSeatsFree'),
-      color: "#FF9900",
+        ? t('driver:taxiFull')
+        : t('driver:seatsAvailable'),
+      color: taxiInfo?.capacity === 0 ? "#EF4444" : "#F59E0B",
       onPress: () => console.log('Seats pressed')
     }
   ];
@@ -236,7 +199,7 @@ export default function DriverOffline({
       icon: "call",
       title: t('driver:emergencyCall'),
       subtitle: t('driver:call112Immediately'),
-      color: "#FF4444",
+      color: "#EF4444",
       onPress: handleEmergency
     },
   ];
@@ -250,312 +213,402 @@ export default function DriverOffline({
     container: {
       flex: 1,
       backgroundColor: theme.background,
-      zIndex: 999,
     },
     safeArea: {
       flex: 1,
     },
+    // Enhanced Header with glossy finish
     header: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       paddingVertical: 16,
-      backgroundColor: theme.surface,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.95)' 
+        : 'rgba(255, 255, 255, 0.95)',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(0, 0, 0, 0.08)',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.5)',
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     menuButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: isDark ? theme.primary : "#f5f5f5",
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 3,
-    },
-    menuModal: {
-      marginTop: 80,
-      marginLeft: 20,
-      marginRight: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      paddingVertical: 8,
-      minWidth: 280,
-      maxWidth: '90%',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 12,
-    },
-    menuModalHeader: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? theme.border : "#D4A57D",
-    },
-    menuModalHeaderText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    menuModalItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      minHeight: 60,
-    },
-    menuModalItemIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: isDark ? theme.primary : "#ECD9C3",
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 16,
-    },
-    menuModalItemContent: {
-      flex: 1,
-    },
-    menuModalItemTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 2,
-    },
-    menuModalItemSubtitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: '600',
+      fontSize: 20,
+      fontWeight: '700',
       color: theme.text,
+      letterSpacing: -0.5,
     },
     headerRight: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 12,
     },
     statusContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? theme.surface : "#ECD9C3",
-      borderColor: isDark ? theme.border : "#D4A57D",
-      borderWidth: 1,
+      backgroundColor: isDark 
+        ? 'rgba(239, 68, 68, 0.2)' 
+        : 'rgba(239, 68, 68, 0.1)',
       paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      marginRight: 12,
-      marginLeft: 10,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)',
     },
     statusDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: '#FF4444',
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#EF4444',
     },
     statusText: {
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: '600',
-      color: isDark ? theme.text : "#C62828",
+      color: '#EF4444',
       marginLeft: 6,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    themeButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 16,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     contentContainer: {
       flex: 1,
-      paddingHorizontal: 20,
-      paddingTop: 20,
+      paddingHorizontal: 24,
+    },
+    // Enhanced Earnings card with glossy design
+    earningsCard: {
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 20,
+      padding: 24,
+      marginTop: 24,
+      marginBottom: 24,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     earningsAmount: {
-      color: theme.primary,
-      fontSize: 32,
-      fontWeight: "bold",
-      marginBottom: 4,
+      color: '#F59E0B',
+      fontSize: 36,
+      fontWeight: "800",
+      marginBottom: 8,
+      textShadowColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
     },
     earningsTitle: {
-      color: theme.textSecondary,
-      fontSize: 16,
-      fontWeight: "bold",
-      marginBottom: 8,
+      color: theme.text,
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 6,
+      letterSpacing: -0.3,
     },
     earningsSubtitle: {
       color: theme.textSecondary,
       fontSize: 14,
-      fontWeight: "bold",
-      textAlign: 'center',
+      fontWeight: "500",
+      opacity: 0.8,
+      letterSpacing: -0.2,
     },
+    // Enhanced Main offline section with glossy design
     offlineSection: {
-      backgroundColor: theme.surface,
-      borderRadius: 30,
-      padding: 24,
-      marginBottom: 20,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 24,
+      padding: 32,
+      marginBottom: 28,
       alignItems: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     offlineIconContainer: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: isDark ? theme.primary : "#ECD9C3",
+      backgroundColor: isDark 
+        ? 'rgba(255, 255, 255, 0.1)' 
+        : 'rgba(0, 0, 0, 0.05)',
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 20,
+      borderWidth: 2,
+      borderColor: isDark 
+        ? 'rgba(255, 255, 255, 0.2)' 
+        : 'rgba(0, 0, 0, 0.1)',
     },
     offlineTitle: {
       fontSize: 22,
-      fontWeight: 'bold',
+      fontWeight: '700',
       color: theme.text,
-      marginBottom: 8,
+      marginBottom: 12,
       textAlign: 'center',
+      letterSpacing: -0.5,
     },
     offlineSubtitle: {
       fontSize: 16,
       color: theme.textSecondary,
-      fontWeight: "bold",
+      fontWeight: "500",
       textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 24,
+      lineHeight: 24,
+      marginBottom: 28,
+      opacity: 0.9,
+      letterSpacing: -0.2,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      width: '100%',
+      gap: 16,
+      marginBottom: 20,
+    },
+    emergencyButton: {
+      flex: 1,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderWidth: 2,
+      borderColor: '#EF4444',
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexDirection: 'row',
+    },
+    emergencyButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#DC2626',
+      marginLeft: 8,
+      letterSpacing: 0.5,
+    },
+    goOnlineButton: {
+      width: '100%',
+      height: 60,
+      borderRadius: 18,
+      backgroundColor: '#F59E0B',
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexDirection: 'row',
     },
     goOnlineButtonText: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: isDark ? "#121212" : "#FFFFFF",
-      marginLeft: 8,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      letterSpacing: 1,
     },
+    // Enhanced Quick actions section
     quickActionsSection: {
-      marginBottom: 20,
+      marginBottom: 28,
+    },
+    sectionDivider: {
+      height: 1,
+      backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(226, 232, 240, 0.5)',
+      marginVertical: 20,
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
+      fontSize: 20,
+      fontWeight: '700',
       color: theme.text,
-      marginBottom: 16,
+      marginBottom: 20,
+      letterSpacing: -0.5,
     },
     quickActionsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 12,
+      flexDirection: 'column',
+      gap: 16,
     },
     quickActionCard: {
-      flex: 1,
-      backgroundColor: theme.surface,
+      width: '100%',
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
       borderRadius: 20,
-      padding: 16,
-      marginHorizontal: 4,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
-      minHeight: 100,
+      padding: 24,
+      minHeight: 140,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     quickActionIcon: {
-      marginBottom: 8,
+      marginBottom: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      backgroundColor: isDark 
+        ? 'rgba(245, 158, 11, 0.08)' 
+        : 'rgba(245, 158, 11, 0.04)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(245, 158, 11, 0.15)' 
+        : 'rgba(245, 158, 11, 0.08)',
     },
     quickActionTitle: {
       fontSize: 12,
-      fontWeight: 'bold',
+      fontWeight: '600',
       color: theme.textSecondary,
-      marginBottom: 4,
+      marginBottom: 8,
+      textTransform: 'uppercase',
+      letterSpacing: 1.2,
+      textAlign: 'center',
+      opacity: 0.8,
     },
     quickActionValue: {
       fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 2,
+      fontWeight: '700',
+      marginBottom: 8,
+      lineHeight: 22,
+      letterSpacing: -0.3,
+      textAlign: 'center',
     },
     quickActionSubtitle: {
-      fontSize: 10,
-      fontWeight: 'bold',
+      fontSize: 12,
+      fontWeight: '500',
       color: theme.textSecondary,
-    },
-    actionButton: {
-      flexDirection: 'row',
-      backgroundColor: '#007AFF',
-      paddingVertical: 10,
-      paddingHorizontal: 16,
-      marginBottom: 10,
-      borderRadius: 25,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: 150,
-      height: 50,
-    },
-    actionButtonText: {
-      color: '#FFFFFF',
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginLeft: 8,
+      opacity: 0.7,
+      lineHeight: 16,
+      textAlign: 'center',
+      paddingHorizontal: 8,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-start',
-      alignItems: 'flex-start',
+      paddingTop: 100,
+      paddingHorizontal: 40,
+    },
+    menuModal: {
+      backgroundColor: theme.background,
+      borderRadius: 16,
+      overflow: 'hidden',
+      maxWidth: 280,
+      alignSelf: 'flex-start',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
+    },
+    menuHeader: {
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(226, 232, 240, 0.5)',
+      alignItems: 'center',
+    },
+    menuHeaderText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.text,
+      letterSpacing: -0.3,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.1)' : 'rgba(226, 232, 240, 0.3)',
+    },
+    menuItemIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: isDark 
+        ? 'rgba(245, 158, 11, 0.15)' 
+        : 'rgba(245, 158, 11, 0.08)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    menuItemText: {
+      fontSize: 16,
+      color: theme.text,
+      fontWeight: '500',
+      letterSpacing: -0.2,
     },
     safetyModal: {
       position: 'absolute',
-      bottom: 100,
-      right: 20,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      padding: 8,
-      minWidth: 200,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 8,
+      bottom: 120,
+      right: 24,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.95)' 
+        : 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 16,
+      padding: 12,
+      minWidth: 300,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.5)',
     },
     safetyItem: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
-      paddingVertical: 12,
-      minHeight: 50,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? theme.border : "#D4A57D",
-    },
-    safetyItemLast: {
-      borderBottomWidth: 0,
+      paddingVertical: 16,
+      minHeight: 64,
+      borderRadius: 12,
     },
     safetyItemIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 40,
+      height: 40,
+      borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
     safetyItemContent: {
       flex: 1,
     },
     safetyItemTitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
+      fontSize: 16,
+      fontWeight: '700',
       color: theme.text,
-      marginBottom: 2,
+      marginBottom: 4,
+      letterSpacing: -0.3,
     },
     safetyItemSubtitle: {
-      fontSize: 12,
-      fontWeight: 'bold',
+      fontSize: 14,
       color: theme.textSecondary,
+      lineHeight: 18,
     },
   });
 
@@ -563,17 +616,19 @@ export default function DriverOffline({
     <SafeAreaView style={dynamicStyles.safeArea}>
       <StatusBar 
         barStyle={isDark ? "light-content" : "dark-content"} 
-        backgroundColor={theme.surface} 
+        backgroundColor={theme.background} 
       />
       <View style={dynamicStyles.container}>
+        {/* Enhanced Header */}
         <View style={dynamicStyles.header}>
           <View style={dynamicStyles.headerLeft}>
             <TouchableOpacity 
               style={dynamicStyles.menuButton}
               onPress={handleMenuPress}
               accessibilityLabel="Open menu"
+              activeOpacity={0.8}
             >
-              <Icon name="menu" size={24} color={isDark ? "#121212" : "#FF9900"} />
+              <Icon name="menu" size={24} color={theme.text} />
             </TouchableOpacity>
             <Text style={dynamicStyles.headerTitle}>{t('driver:myDashboard')}</Text>
           </View>
@@ -587,13 +642,15 @@ export default function DriverOffline({
             </View>
             
             <TouchableOpacity
+              style={dynamicStyles.themeButton}
               onPress={handleToggleTheme}
               activeOpacity={0.8}
               accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
             >
               <Icon 
-                name={isDark ? 'sunny' : 'moon'} 
-                size={28}
+                name={isDark ? 'sunny-outline' : 'moon-outline'} 
+                size={22}
+                color={theme.text}
               />
             </TouchableOpacity>
           </View>
@@ -602,21 +659,13 @@ export default function DriverOffline({
         <ScrollView 
           style={dynamicStyles.contentContainer} 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 40 }}
         >
-          {/* Earnings card */}
+          {/* Enhanced Earnings Card */}
           <TouchableOpacity
-            style={{
-              backgroundColor: theme.surface,
-              borderRadius: 30,
-              padding: 24,
-              marginBottom: 20,
-              alignItems: 'center',
-              width: '100%',
-              justifyContent: 'center',
-              elevation: 4,        
-            }}
+            style={dynamicStyles.earningsCard}
             onPress={() => router.push('/EarningsPage')}
+            activeOpacity={0.8}
           >
             <Text style={dynamicStyles.earningsAmount}>
               R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
@@ -627,41 +676,40 @@ export default function DriverOffline({
             </Text>
           </TouchableOpacity>
 
+          {/* Enhanced Offline Section */}
           <View style={dynamicStyles.offlineSection}>
             <View style={dynamicStyles.offlineIconContainer}>
-              <Icon name="car-outline" size={40} color={isDark ? "#121212" : "#FF9900"} />
+              <Icon name="car-outline" size={32} color="#F59E0B" />
             </View>
             <Text style={dynamicStyles.offlineTitle}>{t('driver:readyToPickUpPassengers')}</Text>
             <Text style={dynamicStyles.offlineSubtitle}>
               {t('driver:goOnlineToAcceptRequests')}
             </Text>
+            
+            <View style={dynamicStyles.buttonRow}>
+              <TouchableOpacity
+                style={dynamicStyles.emergencyButton}
+                onPress={handleSafetyPress}
+                activeOpacity={0.8}
+              >
+                <Icon name="call" size={20} color="#DC2626" />
+                <Text style={dynamicStyles.emergencyButtonText}>{t('driver:emergency')}</Text>
+              </TouchableOpacity>
+            </View>
+            
             <TouchableOpacity
-              style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
-              onPress={handleSafetyPress}
-            >
-              <Icon name="call" size={20} color="#fff" />
-              <Text style={dynamicStyles.actionButtonText}>{t('driver:emergency')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                width: '100%',
-                height: 56,
-                borderRadius: 30,
-                backgroundColor: isDark ? '#10B981' : '#00A591',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexDirection: 'row',
-                elevation: 4,
-              }}
+              style={dynamicStyles.goOnlineButton}
               onPress={onGoOnline}
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               accessibilityLabel="Go online to accept passengers"
             >
               <Text style={dynamicStyles.goOnlineButtonText}>{t('driver:goOnline')}</Text>
             </TouchableOpacity>
           </View>
 
+          {/* Enhanced Quick Actions */}
           <View style={dynamicStyles.quickActionsSection}>
+            <View style={dynamicStyles.sectionDivider} />
             <Text style={dynamicStyles.sectionTitle}>{t('driver:quickOverview')}</Text>
             
             <View style={dynamicStyles.quickActionsRow}>
@@ -673,12 +721,13 @@ export default function DriverOffline({
                   activeOpacity={0.8}
                   accessibilityLabel={`${action.title}: ${action.value}`}
                 >
-                  <Icon 
-                    name={action.icon} 
-                    size={24} 
-                    color={action.color} 
-                    style={dynamicStyles.quickActionIcon} 
-                  />
+                  <View style={dynamicStyles.quickActionIcon}>
+                    <Icon 
+                      name={action.icon} 
+                      size={24} 
+                      color={action.color}
+                    />
+                  </View>
                   <Text style={dynamicStyles.quickActionTitle}>{action.title}</Text>
                   <Text style={[dynamicStyles.quickActionValue, { color: action.color }]}>
                     {action.value}
@@ -690,44 +739,34 @@ export default function DriverOffline({
           </View>
         </ScrollView>
 
-        <Modal
-          visible={showMenu}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowMenu(false)}
-        >
-          <TouchableOpacity 
-            style={dynamicStyles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowMenu(false)}
-          >
-            <View style={dynamicStyles.menuModal}>
-              <View style={dynamicStyles.menuModalHeader}>
-                <Text style={dynamicStyles.menuModalHeaderText}>{t('driver:menu')}</Text>
+        {/* Enhanced Menu Modal */}
+         <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
+            <TouchableOpacity style={dynamicStyles.modalOverlay} onPress={() => setShowMenu(false)}>
+              <View style={dynamicStyles.menuModal}>
+                <View style={dynamicStyles.menuHeader}>
+                  <Text style={dynamicStyles.menuHeaderText}>Menu</Text>
+                </View>
+                
+                {menuItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={dynamicStyles.menuItem}
+                    onPress={() => {
+                      item.onPress();
+                      setShowMenu(false);
+                    }}
+                  >
+                    <View style={dynamicStyles.menuItemIcon}>
+                      <Icon name={item.icon} size={20} color={theme.primary} />
+                    </View>
+                    <Text style={dynamicStyles.menuItemText}>{item.title}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={dynamicStyles.menuModalItem}
-                  onPress={() => {
-                    item.onPress();
-                    setShowMenu(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <View style={dynamicStyles.menuModalItemIcon}>
-                    <Icon name={item.icon} size={20} color={isDark ? "#121212" : "#FF9900"} />
-                  </View>
-                  <View style={dynamicStyles.menuModalItemContent}>
-                    <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
-                    <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </TouchableOpacity>
-        </Modal>
+            </TouchableOpacity>
+          </Modal>
 
+        {/* Enhanced Safety Modal */}
         {showSafetyMenu && (
           <TouchableOpacity 
             style={dynamicStyles.modalOverlay}
@@ -738,15 +777,15 @@ export default function DriverOffline({
               {safetyOptions.map((option, index) => (
                 <TouchableOpacity 
                   key={index}
-                  style={[
-                    dynamicStyles.safetyItem,
-                    index === safetyOptions.length - 1 && dynamicStyles.safetyItemLast
-                  ]}
+                  style={dynamicStyles.safetyItem}
                   onPress={option.onPress}
                   activeOpacity={0.8}
                 >
-                  <View style={[dynamicStyles.safetyItemIcon, { backgroundColor: `${option.color}20` }]}>
-                    <Icon name={option.icon} size={16} color={option.color} />
+                  <View style={[
+                    dynamicStyles.safetyItemIcon, 
+                    { backgroundColor: `${option.color}20` }
+                  ]}>
+                    <Icon name={option.icon} size={20} color={option.color} />
                   </View>
                   <View style={dynamicStyles.safetyItemContent}>
                     <Text style={dynamicStyles.safetyItemTitle}>{option.title}</Text>

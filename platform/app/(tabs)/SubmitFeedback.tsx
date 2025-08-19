@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Pressable, Image,
+  StyleSheet, Pressable, Image, SafeAreaView,
 } from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -18,7 +18,7 @@ export default function SubmitFeedbackScreen() {
   const [comment, setComment] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user } = useUser();
   const router = useRouter();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
@@ -60,7 +60,7 @@ export default function SubmitFeedbackScreen() {
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: 'OK', onPress: () => router.push('/FeedbackHistoryScreen'), style: 'default' },
+          { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
         ],
       });
     } catch (err: any) {
@@ -69,69 +69,336 @@ export default function SubmitFeedbackScreen() {
   };
 
   const handleUploadPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 1 });
-    if (!result.canceled && result.assets.length > 0) { setImageUri(result.assets[0].uri); }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ 
+        mediaTypes: 'images', 
+        allowsEditing: true, 
+        quality: 1,
+        aspect: [1, 1]
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch {}
   };
 
+  const dynamicStyles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    container: {
+      backgroundColor: theme.background,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+      paddingBottom: 40,
+    },
+    headerSection: {
+      alignItems: 'center',
+      paddingVertical: 32,
+      marginBottom: 24,
+    },
+    profileImageContainer: {
+      position: 'relative',
+      marginBottom: 16,
+    },
+    profileImage: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 3,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+    },
+    cameraIconOverlay: {
+      position: 'absolute',
+      bottom: 4,
+      right: 4,
+      backgroundColor: '#f90',
+      borderRadius: 14,
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: theme.background,
+    },
+    userName: {
+      fontSize: 28,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    userRole: {
+      fontSize: 16,
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      fontWeight: '500',
+      textTransform: 'capitalize',
+      marginBottom: 16,
+    },
+    rideInfoContainer: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      padding: 16,
+      marginTop: 16,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+      width: '100%',
+    },
+    rideInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    lastRideInfoRow: {
+      marginBottom: 0,
+    },
+    iconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    rideInfoContent: {
+      flex: 1,
+    },
+    rideInfoLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 4,
+    },
+    rideInfoText: {
+      fontSize: 16,
+      color: theme.text,
+      fontWeight: '500',
+    },
+    sectionHeader: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 8,
+      marginTop: 8,
+      paddingHorizontal: 4,
+    },
+    section: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      marginBottom: 16,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+      overflow: 'hidden',
+    },
+    ratingSection: {
+      padding: 20,
+    },
+    ratingTitle: {
+      fontSize: 17,
+      fontWeight: '400',
+      color: theme.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    starsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 16,
+    },
+    starButton: {
+      padding: 8,
+    },
+    commentSection: {
+      padding: 20,
+    },
+    commentTitle: {
+      fontSize: 17,
+      fontWeight: '400',
+      color: theme.text,
+      marginBottom: 16,
+    },
+    commentInput: {
+      backgroundColor: isDark 
+        ? 'rgba(255,255,255,0.05)' 
+        : 'rgba(0,0,0,0.03)',
+      color: theme.text,
+      height: 120,
+      borderRadius: 12,
+      padding: 16,
+      textAlignVertical: 'top',
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(0,0,0,0.08)',
+    },
+    buttonContainer: {
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+      marginTop: 8,
+    },
+    submitButton: {
+      backgroundColor: '#f90',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 56,
+      borderWidth: 2,
+      borderColor: '#D97706',
+    },
+    submitButtonText: {
+      color: '#FFFFFF',
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    skipButton: {
+      backgroundColor: isDark 
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(0,0,0,0.05)',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      minHeight: 56,
+    },
+    skipButtonText: {
+      color: theme.text,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.background, padding: 20 }}>
-      <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Pressable onPress={handleUploadPhoto}>
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={{ width: 150, height: 150, borderRadius: 75 }} />
-          ) : (
-            <Ionicons name="person-circle" size={100} color={theme.text} />
-          )}
-        </Pressable>
-        <Text>{name}</Text>
-        <Text>From: {startName ?? 'N/A'}</Text>
-        <Text>To: {endName ?? 'N/A'}</Text>
-      </View>
-
-      <Text style={{ color: theme.text, fontSize: 18, marginBottom: 8 }}>Rating</Text>
-      <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-        {[1, 2, 3, 4, 5].map(star => (
-          <TouchableOpacity key={star} onPress={() => setRating(star)}>
-            <FontAwesome name={rating >= star ? 'star' : 'star-o'} size={30} color={theme.primary} />
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TextInput
-        value={comment}
-        onChangeText={setComment}
-        placeholder="Type your feedback here..."
-        placeholderTextColor={theme.textSecondary}
-        style={{
-          backgroundColor: theme.surface,
-          color: theme.text,
-          height: 100,
-          borderRadius: 10,
-          padding: 12,
-          textAlignVertical: 'top',
-          marginBottom: 20,
-        }}
-        multiline
-      />
-
-      <TouchableOpacity onPress={handleSubmit} style={{ backgroundColor: theme.primary, padding: 16, borderRadius: 12 }}>
-        <Text style={{ color: '#fff', fontSize: 18, textAlign: 'center' }}>Submit Feedback</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => router.push('/HomeScreen')}
-        style={{
-          backgroundColor: theme.surface,
-          padding: 16,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: theme.primary,
-          marginTop: 8,
-        }}
+    <SafeAreaView style={dynamicStyles.safeArea}>
+      <ScrollView 
+        contentContainerStyle={dynamicStyles.container}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={{ color: theme.primary, fontSize: 18, textAlign: 'center'}}>
-          Skip Feedback
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Header Section with Profile and Ride Info */}
+        <View style={dynamicStyles.headerSection}>
+          <Pressable onPress={handleUploadPhoto} style={dynamicStyles.profileImageContainer}>
+            <View style={dynamicStyles.profileImage}>
+              {imageUri ? (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Ionicons name="person" size={48} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+              )}
+            </View>
+            <View style={dynamicStyles.cameraIconOverlay}>
+              <Ionicons name="camera" size={14} color="white" />
+            </View>
+          </Pressable>
+          
+          <Text style={dynamicStyles.userName}>{name}</Text>
+          <Text style={dynamicStyles.userRole}>Passenger</Text>
+          
+          {/* Ride Info Section - styled exactly like PassengerProfile */}
+          <View style={dynamicStyles.rideInfoContainer}>
+            <View style={dynamicStyles.rideInfoRow}>
+              <View style={dynamicStyles.iconContainer}>
+                <Ionicons name="location-outline" size={20} color={theme.text} />
+              </View>
+              <View style={dynamicStyles.rideInfoContent}>
+                <Text style={dynamicStyles.rideInfoLabel}>From</Text>
+                <Text style={dynamicStyles.rideInfoText}>{startName ?? 'N/A'}</Text>
+              </View>
+            </View>
+            <View style={[dynamicStyles.rideInfoRow, dynamicStyles.lastRideInfoRow]}>
+              <View style={dynamicStyles.iconContainer}>
+                <Ionicons name="location" size={20} color={theme.text} />
+              </View>
+              <View style={dynamicStyles.rideInfoContent}>
+                <Text style={dynamicStyles.rideInfoLabel}>To</Text>
+                <Text style={dynamicStyles.rideInfoText}>{endName ?? 'N/A'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Driver Feedback Section */}
+        <Text style={dynamicStyles.sectionHeader}>Rate Your Driver</Text>
+        <View style={dynamicStyles.section}>
+          <View style={dynamicStyles.ratingSection}>
+            <Text style={dynamicStyles.ratingTitle}>How was your driver?</Text>
+            <View style={dynamicStyles.starsContainer}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <TouchableOpacity 
+                  key={star} 
+                  onPress={() => setRating(star)}
+                  style={dynamicStyles.starButton}
+                  activeOpacity={0.7}
+                >
+                  <FontAwesome 
+                    name={rating >= star ? 'star' : 'star-o'} 
+                    size={36} 
+                    color={rating >= star ? '#F59E0B' : theme.textSecondary} 
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* Comment Section */}
+        <Text style={dynamicStyles.sectionHeader}>Share Your Feedback</Text>
+        <View style={dynamicStyles.section}>
+          <View style={dynamicStyles.commentSection}>
+            <Text style={dynamicStyles.commentTitle}>Tell us about your driver</Text>
+            <TextInput
+              value={comment}
+              onChangeText={setComment}
+              placeholder="Share your thoughts about the driver..."
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
+              style={dynamicStyles.commentInput}
+              multiline
+              textAlignVertical="top"
+              autoCorrect={false}
+              autoCapitalize="sentences"
+            />
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={dynamicStyles.buttonContainer}>
+          <TouchableOpacity 
+            onPress={handleSubmit} 
+            style={dynamicStyles.submitButton}
+            activeOpacity={0.9}
+          >
+            <Text style={dynamicStyles.submitButtonText}>Submit Feedback</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={() => router.replace('/HomeScreen')}
+            style={dynamicStyles.skipButton}
+            activeOpacity={0.8}
+          >
+            <Text style={dynamicStyles.skipButtonText}>
+              Skip Feedback
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

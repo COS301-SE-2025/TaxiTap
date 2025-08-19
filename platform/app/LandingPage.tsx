@@ -4,6 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useLanguage } from '../contexts/LanguageContext';
 
+// Import local images
+import southAfricanTaxi from '../assets/images/south-african-black-taxi-common-260nw-1746541244.jpg';
+import iconDarkImage from '../assets/images/icon-dark.png';
+
 const languageOptions = [
   { label: 'English', value: 'en', flag: '🇬🇧' },
   { label: 'isiZulu', value: 'zu', flag: '🇿🇦' },
@@ -68,19 +72,19 @@ export default () => {
 				<View style={styles.imagesContainer}>
 					<View style={styles.leftImages}>
 						<Image
-							source={{uri: "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/qMlslhlkN1/mxkbvvdx_expires_30_days.png"}} 
-							resizeMode="stretch"
+							source={southAfricanTaxi} 
+							resizeMode="cover"
 							style={styles.topLeftImage}
 						/>
 						<Image
-							source={{uri: "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/qMlslhlkN1/lequemu8_expires_30_days.png"}} 
-							resizeMode="stretch"
+							source={require('../assets/images/Taxi rap.jpg')} 
+							resizeMode="cover"
 							style={styles.bottomLeftImage}
 						/>
 					</View>
 					<Image
-						source={{uri: "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/qMlslhlkN1/tmpetyyk_expires_30_days.png"}} 
-						resizeMode="stretch"
+						source={iconDarkImage} 
+						resizeMode="cover"
 						style={styles.rightImage}
 					/>
 				</View>
@@ -244,15 +248,18 @@ const styles = StyleSheet.create({
 		width: 129,
 		height: 155,
 		marginBottom: 16,
+		borderRadius: 15,
 	},
 	bottomLeftImage: {
 		width: 135,
 		height: 155,
+		borderRadius: 15,
 	},
 	rightImage: {
 		width: 158,
 		height: 211,
 		marginTop: 65,
+		borderRadius: 15,
 	},
 	title: {
 		fontSize: 36,

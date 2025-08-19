@@ -16,9 +16,18 @@ export async function showFeedbackPassengerHandler(ctx: any, args: any) {
 }
 
 export async function showFeedbackDriverHandler(ctx: any, args: any) {
-  return await ctx.db
+  const feedbacks = await ctx.db
     .query("feedback")
     .withIndex("by_driver", (q: any) => q.eq("driverId", args.driverId))
     .order("desc")
     .collect();
+
+  const enrichedFeedbacks = await Promise.all(
+    feedbacks.map(async (fb: any) => {
+      const passenger = fb.passengerId ? await ctx.db.get(fb.passengerId) : null;
+      return { ...fb, passengerName: passenger?.name || "Unknown" };
+    })
+  );
+
+  return enrichedFeedbacks;
 }
