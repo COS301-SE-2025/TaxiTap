@@ -301,8 +301,7 @@ export default function DriverOnline({
 
   const menuItems = [
     { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "car", title: "My Taxi", onPress: () => router.push('/DriverRequestPage') },
-    { icon: "time", title: "Trip History", onPress: () => router.push('/EarningsPage') },
+    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
     { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
@@ -545,40 +544,51 @@ export default function DriverOnline({
       zIndex: 101,
     },
     
-    // Modals
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-start',
       paddingTop: 100,
+      paddingHorizontal: 40,
     },
     menuModal: {
-      marginHorizontal: 20,
       backgroundColor: theme.background,
       borderRadius: 16,
       overflow: 'hidden',
+      maxWidth: 280,
+      alignSelf: 'flex-start',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     menuHeader: {
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: theme.border,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(226, 232, 240, 0.5)',
+      alignItems: 'center',
     },
     menuHeaderText: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: '700',
       color: theme.text,
+      letterSpacing: -0.3,
     },
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.1)' : 'rgba(226, 232, 240, 0.3)',
     },
     menuItemIcon: {
       width: 36,
       height: 36,
       borderRadius: 10,
-      backgroundColor: theme.primary + '15',
+      backgroundColor: isDark 
+        ? 'rgba(245, 158, 11, 0.15)' 
+        : 'rgba(245, 158, 11, 0.08)',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 16,
@@ -587,6 +597,7 @@ export default function DriverOnline({
       fontSize: 16,
       color: theme.text,
       fontWeight: '500',
+      letterSpacing: -0.2,
     },
     
     pinModal: {
