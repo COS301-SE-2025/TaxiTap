@@ -25,6 +25,50 @@
 
 \section{Getting Started}
 
+\subsection{Landing Page}
+
+When you first open the TaxiTap app, you'll be greeted by the Landing Page which provides:
+
+\subsubsection{App Overview}
+The landing page displays a brief overview of TaxiTap's key features:
+\begin{itemize}
+    \item Quick and reliable taxi booking
+    \item Real-time tracking and navigation
+    \item Driver and passenger safety features
+    \item Multi-language support
+\end{itemize}
+
+\subsubsection{Language Selection}
+TaxiTap supports multiple South African languages to ensure accessibility for all users:
+\begin{itemize}
+    \item English (Default)
+    \item isiZulu
+    \item Setswana
+    \item Afrikaans
+\end{itemize}
+
+You can change the app language at any time by selecting your preferred language from the language selector on the landing page. This will translate the entire app interface into your chosen language.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{landing_page.png}
+  \caption{Landing Page with App Overview}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{language_selection.png}
+  \caption{Language Selection Options}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{ttap_tn.png}
+  \caption{TaxiTap in Setswana}
+\end{figure}
+
+From the landing page, you can proceed to either sign up for a new account or log in to your existing account.
+
 \subsection{Logging In and Signing Up}
 
 TaxiTap provides separate interfaces for passengers and drivers. To get started, you'll need to create an account or log in to your existing account.
@@ -92,16 +136,8 @@ The app will search for available taxis that:
 
 If taxis are available, you'll see:
 \begin{itemize}
-    \item Number of available taxis
-    \item Number of matching routes
-    \item A "Ready to book your ride!" confirmation message
+    \item An orange "Reserve a Seat" button with the number of taxis available to accommodate your request.
 \end{itemize}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.4\textwidth]{available_taxis.png}
-  \caption{Available Taxis Display}
-\end{figure}
 
 \subsubsection{Step 3: Reserve Your Seat}
 Once available taxis are found, click the orange "Reserve a Seat" button to proceed to taxi selection.
@@ -166,29 +202,43 @@ When the driver accepts your request:
   \caption{Ride Accepted Notification}
 \end{figure}
 
-\subsection{During the Ride}
+\subsection{Starting and Managing Your Ride}
 
-\subsubsection{Starting Your Ride}
+\subsubsection{Verify PIN}
+When you're ready to start your ride:
 \begin{enumerate}
-    \item When the driver arrives at your pickup location, click "Start Ride"
-    \item This confirms that you have boarded the taxi
-    \item You'll see a "Ride Started" confirmation message
-    \item The app will display "Your ride has started. Enjoy your journey!"
+    \item Click "Verify PIN"
+    \item You'll be taken to a PIN verification page where you enter the correct PIN provided by the driver
+    \item This ensures secure boarding and prevents unauthorized ride starts
 \end{enumerate}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\textwidth]{ride_started.png}
-  \caption{Ride Started Confirmation}
+  \includegraphics[width=0.4\textwidth]{verify_pin.png}
+  \caption{PIN Verification Screen}
 \end{figure}
 
-\subsubsection{Ride Tracking}
-During your ride, you can:
+\subsubsection{Payment Confirmation}
+After entering the correct PIN:
+\begin{enumerate}
+    \item You'll be directed to a payment confirmation page
+    \item Choose whether you have paid or not
+    \item This helps track payment status for both you and the driver
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{payment_confirmation.png}
+  \caption{Payment Confirmation Screen}
+\end{figure}
+
+\subsubsection{During the Ride}
+After payment confirmation, you'll see your ride page which displays:
 \begin{itemize}
-    \item View your route on the map
-    \item See driver details and rating
-    \item Access emergency contact options
-    \item Monitor your journey progress
+    \item Your route to the destination on the map
+    \item Driver details and rating
+    \item Real-time journey progress
+    \item Emergency contact options if needed
 \end{itemize}
 
 \begin{figure}[H]
@@ -198,17 +248,23 @@ During your ride, you can:
 \end{figure}
 
 \subsubsection{Ending Your Ride}
+When you reach your destination:
 \begin{enumerate}
-    \item When you reach your destination and are ready to disembark
     \item Click the "End Ride" button
-    \item You'll receive a "Success - Ride ended!" confirmation
-    \item The app will return to the main screen, ready for your next journey
+    \item If you have paid: You'll be directed to the Feedback page
+    \item If you haven't paid: You'll be taken to the Payments page first, then to Feedback
 \end{enumerate}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\textwidth]{ride_ended.png}
-  \caption{Ride Completion}
+  \includegraphics[width=0.4\textwidth]{feedback_1.png}
+  \caption{Feedback Page }
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{feedback_page.png}
+  \caption{Feedback Page}
 \end{figure}
 
 \subsection{Cancelling a Ride}
@@ -240,8 +296,9 @@ The Driver interface allows registered drivers to:
     \item Receive ride requests from passengers
     \item Accept or decline requests
     \item Navigate to pickup and drop-off locations
-    \item Manage their availability status
+    \item Manage their availability status and seat capacity
     \item Track earnings and ride history
+    \item View detailed ride and payment statistics
 \end{itemize}
 
 \begin{figure}[H]
@@ -252,9 +309,27 @@ The Driver interface allows registered drivers to:
 
 \begin{figure}[H]
   \centering
+  \includegraphics[width=0.4\textwidth]{driver_interface_2.png}
+  \caption{Driver Main Interface}
+\end{figure}
+
+\subsection{Managing Availability and Capacity}
+
+\subsubsection{Driver Online Interface}
+When online, drivers can:
+\begin{itemize}
+    \item Manually increase and decrease available seats
+    \item View current capacity status
+    \item Toggle availability on/off
+    \item See incoming ride requests
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
   \includegraphics[width=0.4\textwidth]{driver_online.png}
   \caption{Driver Online Interface}
 \end{figure}
+
 
 \subsection{Managing Ride Requests}
 \subsubsection{Receiving Requests}
@@ -272,13 +347,90 @@ To accept a ride request:
     \item Review the trip details
     \item Tap "Accept Ride" if you want to take the request
     \item Navigate to the passenger's pickup location
-    \item Confirm pickup when the passenger boards
+    \item Provide PIN to passenger for secure boarding confirmation
 \end{itemize}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.4\textwidth]{accept_ride.png}
-  \caption{Driver Online Interface}
+  \caption{Accept Ride Interface}
+\end{figure}
+
+\subsection{Earnings and Statistics}
+
+\subsubsection{Weekly Earnings}
+Drivers can view their earnings through a dedicated Earnings page:
+\begin{itemize}
+    \item Weekly earnings breakdown
+    \item Total rides completed
+    \item Average fare per ride
+    \item Payment status overview
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{weekly_earnings.png}
+  \caption{Weekly Earnings Page}
+\end{figure}
+
+\subsubsection{Ride and Payment Statistics}
+The statistics section provides comprehensive ride management:
+\begin{itemize}
+    \item Active rides currently in progress
+    \item Waiting payment rides (completed but payment pending)
+    \item Unpaid rides that require follow-up
+    \item Historical ride data and trends
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{ride_payment_stats.png}
+  \caption{Ride and Payment Statistics Overview}
+\end{figure}
+
+\subsubsection{Active Rides}
+View and manage rides currently in progress:
+\begin{itemize}
+    \item Passenger details and destinations
+    \item Current ride status and location
+    \item Estimated completion times
+    \item Direct communication options
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{active_rides.png}
+  \caption{Active Rides Dashboard}
+\end{figure}
+
+\subsubsection{Waiting Payment Rides}
+Track completed rides awaiting payment:
+\begin{itemize}
+    \item Recently completed trips
+    \item Payment processing status
+    \item Passenger contact information for follow-up
+    \item Expected payment timeline
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{waiting_payments.png}
+  \caption{Waiting Payment Rides}
+\end{figure}
+
+\subsubsection{Unpaid Rides}
+Manage rides that remain unpaid:
+\begin{itemize}
+    \item Overdue payment notifications
+    \item Passenger contact details
+    \item Options for payment follow-up
+    \item Dispute resolution tools
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{unpaid_rides.png}
+  \caption{Unpaid Rides Management}
 \end{figure}
 
 \section{Additional Features}
@@ -325,12 +477,12 @@ If you experience connectivity problems:
     \item Restart the app if necessary
 \end{itemize}
 
-
 \section{Safety Guidelines}
 
 \subsection{For Passengers}
 \begin{itemize}
     \item Verify driver and vehicle details before boarding
+    \item Confirm PIN with driver for secure ride start
     \item Share your trip details with trusted contacts
     \item Use in-app emergency features when needed
     \item Rate your experience to help maintain service quality
@@ -339,9 +491,10 @@ If you experience connectivity problems:
 \subsection{For Drivers}
 \begin{itemize}
     \item Maintain vehicle safety standards
-    \item Verify passenger identity before pickup
+    \item Verify passenger identity and provide PIN before pickup
     \item Follow designated routes and traffic laws
     \item Report any safety concerns immediately
+    \item Keep accurate records of payments and ride status
 \end{itemize}
 
 \section{Contact Information}
