@@ -69,9 +69,8 @@ Registers a new user account in the TaxiTap system using SMS-based verification.
 \hline
 \textbf{Interactions with other systems/components   } & 
 \begin{itemize}[nosep]
-\item SMS Gateway - Sends verification code
 \item Database Service - Stores user account data
-\item Authentication Service - Generates session token
+\item Authentication Service - Authenticates user information
 \item Validation Service - Validates input parameters
 \item Notification System - Sends welcome notification
 \end{itemize} \\
@@ -306,9 +305,6 @@ Handles ride cancellation requests from either passengers or drivers. Processes 
 \textbf{Outputs returned} & 
 \begin{itemize}[nosep]
 \item \texttt{cancellationStatus} ("cancelled" | "cancellation\_failed") - Result of cancellation attempt
-\item \texttt{cancellationFee} (object) - Fee details if applicable, including amount and reason
-\item \texttt{refundAmount} (object) - Refund details for any pre-payments
-\item \texttt{cancellationReason} (string) - Reason for cancellation as provided by user
 \item \texttt{affectedParties} (array) - List of users notified about the cancellation
 \item \texttt{driverCompensation} (optional object) - Compensation for driver if applicable
 \item \texttt{success} (boolean) - Cancellation processing result
@@ -320,9 +316,7 @@ Handles ride cancellation requests from either passengers or drivers. Processes 
 \item Database Service - Updates ride status and records cancellation details
 \item Payment System - Processes cancellation fees and refunds
 \item Notification System - Notifies all affected parties of cancellation
-\item Driver Availability Service - Updates driver status back to available
-\item Policy Engine - Applies cancellation policies and fee calculations
-\item Analytics Service - Records cancellation metrics for analysis
+\item Seat Availability Service - Updates driver seat status back to available
 \item Real-time Tracking Service - Terminates active tracking sessions
 \end{itemize} \\
 \hline
@@ -359,10 +353,7 @@ Finalizes a ride when the driver marks it as completed after reaching the destin
 \begin{itemize}[nosep]
 \item Database Service - Updates ride completion status and stores final details
 \item Payment System - Processes final payment and driver earnings
-\item Driver Availability Service - Updates driver status to available
 \item Notification System - Sends completion notifications and rating requests
-\item Receipt Generation Service - Creates digital receipts
-\item Analytics Service - Records ride completion metrics
 \item Real-time Tracking Service - Finalizes tracking data
 \end{itemize} \\
 \hline
@@ -399,9 +390,7 @@ Processes a driver's decision to decline a ride request. Records the decline rea
 \item Database Service - Records decline and updates ride request status
 \item Driver Matching Service - Continues search with remaining drivers
 \item Analytics Service - Records decline patterns for algorithm improvement
-\item Driver Performance Service - Updates driver response statistics
 \item Notification System - May notify passenger of continued search
-\item Machine Learning Service - Adjusts future matching predictions
 \end{itemize} \\
 \hline
 \end{longtable}
@@ -933,23 +922,14 @@ Provides two specialized functions for retrieving feedback: one for passengers t
 \begin{itemize}[nosep]
 \item Feedback Database - Retrieves feedback records by user
 \item User Database - Enriches feedback with driver details (passenger view)
-\item Sorting Service - Orders results by recency
 \item Data Enrichment Service - Adds driver names to passenger feedback
 \end{itemize} \\
 \hline
 \textbf{Special Features} & 
 \begin{itemize}[nosep]
 \item Dual perspective: passenger and driver views
-\item Data enrichment for better user experience
 \item Chronological sorting for easy review
 \item Efficient database indexing by user IDs
-\end{itemize} \\
-\hline
-\textbf{Differences between handlers} & 
-\begin{itemize}[nosep]
-\item Passenger handler: Returns own submissions + driver names
-\item Driver handler: Returns received feedback (no additional enrichment)
-\item Both: Ordered by most recent first
 \end{itemize} \\
 \hline
 \end{longtable}
