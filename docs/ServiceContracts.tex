@@ -6,19 +6,23 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
 
 \title{TaxiTap System\\Service Contracts Documentation}
 \author{Software Requirements Specification}
 \date{}
+
+\begin{document}
+
+
+\maketitle
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
 \end{figure}
 
-\begin{document}
-
-\maketitle
 \newpage
 
 \tableofcontents
@@ -36,7 +40,7 @@ The User Account Management service handles all user-related operations includin
 
 \subsection{signUpSMS Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -46,7 +50,7 @@ Registers a new user account in the TaxiTap system using SMS-based verification.
 \textbf{Inputs required} & 
 \begin{itemize}[nosep]
 \item \texttt{phoneNumber} (string) - Valid phone number in international format
-\item \texttt{name} (string) - User's full name (2-50 characters)
+\item \texttt{name} (string) - User's full name (2-0 characters)
 \item \texttt{password} (string) - Secure password (minimum 8 characters)
 \item \texttt{accountType} ("passenger" | "driver" | "both") - Account role type
 \item \texttt{email} (optional string) - Valid email address
@@ -76,7 +80,7 @@ Registers a new user account in the TaxiTap system using SMS-based verification.
 
 \subsection{loginSMS Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -112,7 +116,7 @@ Authenticates existing users using phone number and password combination. Valida
 
 \subsection{switchActiveRole Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -146,7 +150,7 @@ Allows users with multiple account types to switch between passenger and driver 
 
 \subsection{updateUserProfile Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -194,7 +198,7 @@ The Ride Request System service manages the complete ride request lifecycle from
 
 \subsection{requestRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -247,7 +251,7 @@ Initiates a new ride request from a passenger. Creates a ride record, calculates
 
 \subsection{acceptRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -286,7 +290,7 @@ Processes a driver's acceptance of a ride request. Updates ride status, establis
 
 \subsection{cancelRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -326,7 +330,7 @@ Handles ride cancellation requests from either passengers or drivers. Processes 
 
 \subsection{completeRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -366,7 +370,7 @@ Finalizes a ride when the driver marks it as completed after reaching the destin
 
 \subsection{declineRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -404,7 +408,7 @@ Processes a driver's decision to decline a ride request. Records the decline rea
 
 \subsection{endRideHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -447,7 +451,7 @@ The Notification System service manages all communication between the system and
 
 \subsection{sendNotificationHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -490,7 +494,7 @@ Sends notifications to users through appropriate channels based on user preferen
 
 \subsection{getNotificationsHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -528,7 +532,7 @@ Retrieves a user's notification history including unread messages, notification 
 
 \subsection{markNotificationAsReadHandler Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -569,7 +573,7 @@ Updates the read status of a specific notification when a user views it. Records
 
 \subsection{calculateRoute Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -620,7 +624,7 @@ Finds optimal transportation routes based on geographical proximity to user-spec
 
 \subsection{displayRoute Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -660,7 +664,7 @@ Provides comprehensive details for a specific route including all stops with opt
 
 \subsection{storeRecentRoute Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -707,7 +711,7 @@ Discovers all transportation stops within a specified radius of a given location
 
 \subsection{earnings Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -757,7 +761,7 @@ Calculates comprehensive weekly earnings and performance metrics for a driver ov
 
 \subsection{fare Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -800,7 +804,7 @@ Retrieves the fare amount from the most recent trip for a given user, checking b
 
 \subsection{averageRating Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -814,7 +818,7 @@ Calculates the average rating for a specific driver based on all submitted feedb
 \hline
 \textbf{Outputs returned} & 
 \begin{itemize}[nosep]
-\item \texttt{averageRating} (number) - Calculated average rating (0.0 to 5.0)
+\item \texttt{averageRating} (number) - Calculated average rating (0.0 to .0)
 \item Returns 0 if no valid ratings found
 \end{itemize} \\
 \hline
@@ -844,7 +848,7 @@ Calculates the average rating for a specific driver based on all submitted feedb
 
 \subsection{saveFeedback Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -856,7 +860,7 @@ Stores passenger feedback for a completed ride. Ensures only one feedback submis
 \item \texttt{rideId} (string) - Unique identifier of the ride
 \item \texttt{passengerId} (string) - Identifier of the passenger submitting feedback
 \item \texttt{driverId} (string) - Identifier of the driver being rated
-\item \texttt{rating} (number) - Numerical rating (typically 1-5)
+\item \texttt{rating} (number) - Numerical rating (typically 1-)
 \item \texttt{comment} (string) - Optional textual feedback
 \item \texttt{startLocation} (object) - Ride starting location details
 \item \texttt{endLocation} (object) - Ride ending location details
@@ -895,7 +899,7 @@ Stores passenger feedback for a completed ride. Ensures only one feedback submis
 
 \subsection{showFeedback Function}
 
-\begin{longtable}{|p{3cm}|p{12cm}|}
+\begin{longtable}{|p{4cm}|p{12cm}|}
 \hline
 \textbf{Field} & \textbf{Description} \\
 \hline
@@ -953,7 +957,5 @@ Provides two specialized functions for retrieving feedback: one for passengers t
 \section{Conclusion}
 
 These service contracts provide a comprehensive foundation for the TaxiTap system architecture. Each contract clearly defines the interface, behavior, and integration points for major system services, enabling reliable communication between components and facilitating system maintenance and expansion.
-
-Regular review and updates of these contracts should be conducted as the system evolves and new requirements emerge. All development teams should reference these contracts when implementing or modifying system components to ensure consistency and reliability across the platform.
 
 \end{document}
