@@ -1,0 +1,489 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+% Page setup
+\geometry{margin=1in}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{TaxiTap Installation Manual}
+\lhead{Version 1.0}
+\cfoot{\thepage}
+
+% Neutral colors
+\definecolor{lightgray}{rgb}{0.95,0.95,0.95}
+\definecolor{darkgray}{rgb}{0.3,0.3,0.3}
+\definecolor{linkblue}{rgb}{0,0.2,0.6}
+
+% Code styling
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{lightgray},   
+    commentstyle=\color{darkgray},
+    keywordstyle=\bfseries\color{black},
+    numberstyle=\tiny\color{darkgray},
+    stringstyle=\color{black},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showstringspaces=false,
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkblue,
+    urlcolor=linkblue
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries TaxiTap \par}
+    \vspace{1cm}
+    {\Large Technical Installation Manual\par}
+    \vspace{0.5cm}
+    {\large Revolutionizing South Africa's Minibus Taxi Industry\par}
+    
+    \vspace{2cm}
+    \vfill
+    
+    {\large Version 1.0\par}
+    {\large\today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+TaxiTap is a revolutionary mobile platform designed to transform South Africa's minibus taxi industry. Our solution bridges the gap between traditional taxi operations and modern technology, creating a seamless experience for both passengers and operators.
+
+\subsection{System Architecture}
+
+The TaxiTap system comprises the following key components that require installation and configuration:
+
+\begin{itemize}
+    \item \textbf{Frontend Mobile Application}: Built with React Native and Expo for cross-platform compatibility (Android and iOS)
+    \item \textbf{Backend Services}: Powered by Convex TypeScript serverless architecture for real-time data processing
+    \item \textbf{Database Layer}: Convex document-oriented database with real-time synchronization capabilities
+    \item \textbf{Cloud Infrastructure}: Hosted on Convex Cloud with automatic scaling and deployment
+\end{itemize}
+
+The installation process involves setting up the development environment, configuring the backend services, and deploying both frontend and backend components. This manual provides detailed instructions for multiple operating systems to ensure broad compatibility.
+
+\section{Prerequisites}
+
+Before beginning the installation process, ensure your system meets the following requirements and has the necessary software installed.
+
+\subsection{System Requirements}
+
+\begin{tcolorbox}[colback=lightgray,colframe=black,title=\textbf{Minimum System Requirements}]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Operating System}: Windows 10+, macOS 10.15+, or Ubuntu 18.04+
+    \item \textbf{RAM}: 8GB minimum, 16GB recommended
+    \item \textbf{Storage}: 10GB free space minimum
+    \item \textbf{Internet}: Stable broadband connection required
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Required Software}
+
+\subsubsection{Node.js (v18.0.0 or higher)}
+
+\textbf{Installation Instructions:}
+
+\begin{enumerate}
+    \item Visit \href{https://nodejs.org/}{https://nodejs.org/}
+    \item Download the LTS version (v18.19.0 or higher)
+    \item Run the installer and follow the setup wizard
+    \item Verify installation:
+\end{enumerate}
+
+\begin{lstlisting}[language=bash]
+node --version
+npm --version
+\end{lstlisting}
+
+Expected output: Node.js v18.19.0+ and npm 9.0.0+
+
+\subsubsection{Expo CLI (v6.3.0)}
+
+Install globally via npm:
+
+\begin{lstlisting}[language=bash]
+npm install -g @expo/cli@6.3.0
+\end{lstlisting}
+
+Verify installation:
+\begin{lstlisting}[language=bash]
+expo --version
+\end{lstlisting}
+
+\subsubsection{Git (Latest Stable)}
+
+\textbf{Windows:}
+\begin{enumerate}
+    \item Download from \href{https://git-scm.com/download/win}{https://git-scm.com/download/win}
+    \item Run installer with default settings
+\end{enumerate}
+
+\textbf{macOS:}
+\begin{lstlisting}[language=bash]
+brew install git
+\end{lstlisting}
+
+\textbf{Ubuntu/Linux:}
+\begin{lstlisting}[language=bash]
+sudo apt update
+sudo apt install git
+\end{lstlisting}
+
+\subsubsection{Development Tools}
+
+\textbf{For Android Development:}
+\begin{itemize}
+    \item Android Studio (2023.1.1 or higher)
+    \item Android SDK Platform-Tools
+    \item Android SDK Build-Tools (34.0.0)
+    \item Java Development Kit (JDK 11)
+\end{itemize}
+
+\textbf{For iOS Development (macOS only):}
+\begin{itemize}
+    \item Xcode (15.0 or higher)
+    \item Xcode Command Line Tools
+    \item iOS Simulator
+\end{itemize}
+
+\subsubsection{Package Manager}
+
+Either npm (included with Node.js) or Yarn (v1.22.0+):
+
+\begin{lstlisting}[language=bash]
+# Optional: Install Yarn
+npm install -g yarn@1.22.19
+\end{lstlisting}
+
+\section{Installation}
+
+\subsection{Repository Cloning}
+
+\begin{enumerate}
+    \item Open your terminal/command prompt
+    \item Navigate to your desired development directory
+    \item Clone the TaxiTap repository:
+\end{enumerate}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/COS301-SE-2025/TaxiTap.git
+cd TaxiTap
+\end{lstlisting}
+
+\subsection{Dependency Installation}
+
+Install all required project dependencies:
+
+\begin{lstlisting}[language=bash]
+# Using npm
+npm install
+
+# OR using Yarn
+yarn install
+\end{lstlisting}
+
+This will install all dependencies specified in \texttt{package.json}, including:
+\begin{itemize}
+    \item React Native and Expo SDK
+    \item TypeScript and related type definitions
+    \item Convex client libraries
+    \item Navigation and UI components
+    \item Development and testing utilities
+\end{itemize}
+
+\subsection{Environment Configuration}
+
+\subsubsection{Convex Backend Setup}
+
+\begin{enumerate}
+    \item Install Convex CLI globally:
+    \begin{lstlisting}[language=bash]
+npm install -g convex@1.16.4
+    \end{lstlisting}
+    
+    \item Initialize Convex in your project:
+    \begin{lstlisting}[language=bash]
+npx convex dev --configure
+    \end{lstlisting}
+    
+    \item Follow the prompts to:
+    \begin{itemize}
+        \item Create a Convex account (if needed)
+        \item Set up a new project
+        \item Configure authentication
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Environment Variables}
+
+Create a \texttt{.env} file in the project root:
+
+\begin{lstlisting}[language=bash]
+# Convex Configuration
+CONVEX_DEPLOYMENT=your_deployment_url
+CONVEX_SITE_URL=https://your_project.convex.site
+
+# Expo Configuration  
+EXPO_PUBLIC_CONVEX_URL=your_convex_url
+EXPO_PUBLIC_APP_ENV=development
+
+# Optional: Additional API Keys
+GOOGLE_MAPS_API_KEY=your_google_maps_key
+PUSH_NOTIFICATION_KEY=your_push_key
+\end{lstlisting}
+
+\subsection{Platform-Specific Setup}
+
+\subsubsection{Android Setup}
+
+\begin{enumerate}
+    \item Ensure Android Studio is installed
+    \item Set up Android SDK environment variables:
+    
+    \textbf{Windows:}
+    \begin{lstlisting}[language=bash]
+set ANDROID_HOME=C:\Users\%USERNAME%\AppData\Local\Android\Sdk
+set PATH=%PATH%;%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools
+    \end{lstlisting}
+    
+    \textbf{macOS/Linux:}
+    \begin{lstlisting}[language=bash]
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+    \end{lstlisting}
+    
+    \item Create or start an Android Virtual Device (AVD)
+    \item Enable Developer Options and USB Debugging on physical devices
+\end{enumerate}
+
+\subsubsection{iOS Setup (macOS only)}
+
+\begin{enumerate}
+    \item Install Xcode from the App Store
+    \item Install Xcode Command Line Tools:
+    \begin{lstlisting}[language=bash]
+xcode-select --install
+    \end{lstlisting}
+    
+    \item Accept Xcode license:
+    \begin{lstlisting}[language=bash]
+sudo xcodebuild -license accept
+    \end{lstlisting}
+    
+    \item Install iOS Simulator (included with Xcode)
+\end{enumerate}
+
+\section{Deployment and Running}
+
+\subsection{Development Environment}
+
+\subsubsection{Starting the Development Server}
+
+\begin{enumerate}
+    \item Navigate to the platform directory:
+    \begin{lstlisting}[language=bash]
+cd platform
+    \end{lstlisting}
+    
+    \item Start the Expo development server:
+    \begin{lstlisting}[language=bash]
+npx expo start
+    \end{lstlisting}
+    
+    \item For tunnel mode (useful for network connectivity issues):
+    \begin{lstlisting}[language=bash]
+npx expo start --tunnel
+    \end{lstlisting}
+    
+    \item This will display a QR code in the terminal
+    \item To run on different platforms:
+    \begin{itemize}
+        \item \textbf{iOS/Android Device:} Scan the QR code with the Expo Go app
+        \item \textbf{Android Emulator:} Press 'a' in the terminal
+        \item \textbf{iOS Simulator:} Press 'i' in the terminal (macOS only)
+    \end{itemize}
+\end{enumerate}
+
+\begin{tcolorbox}[colback=lightgray,colframe=black,title=\textbf{Running Options}]
+\textbf{From the platform directory:}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{npx expo start} - Standard development mode
+    \item \texttt{npx expo start --tunnel} - Tunnel mode for network issues
+    \item Press 'a' - Launch Android emulator
+    \item Press 'i' - Launch iOS simulator (macOS only)
+    \item Scan QR code - Run on physical device with Expo Go
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Backend Deployment}
+
+\subsubsection{Convex Backend}
+
+\begin{enumerate}
+    \item Deploy functions to Convex:
+    \begin{lstlisting}[language=bash]
+npx convex deploy
+    \end{lstlisting}
+    
+    \item Push database schema:
+    \begin{lstlisting}[language=bash]
+npx convex deploy --schema-only
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{Production Deployment}
+
+\subsubsection{Building for Production}
+
+\textbf{Android APK/AAB:}
+\begin{lstlisting}[language=bash]
+expo build:android -t apk
+expo build:android -t app-bundle
+\end{lstlisting}
+
+\textbf{iOS IPA:}
+\begin{lstlisting}[language=bash]
+expo build:ios
+\end{lstlisting}
+
+\textbf{Web Build:}
+\begin{lstlisting}[language=bash]
+expo export:web
+\end{lstlisting}
+
+\section{Testing and Verification}
+
+\subsection{Running Tests}
+
+Execute the test suite to verify installation and functionality:
+
+\begin{lstlisting}[language=bash]
+npm run test:frontend
+npm run test:backend
+npm run test:integration
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=lightgray,colframe=black,title=\textbf{Test Suite Overview}]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Frontend Tests:} Component testing, UI interactions, navigation
+    \item \textbf{Backend Tests:} API endpoints, database operations, business logic
+    \item \textbf{Integration Tests:} End-to-end workflows, system integration
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Verification Checklist}
+
+\begin{tcolorbox}[colback=lightgray,colframe=black,title=\textbf{Installation Verification}]
+\begin{itemize}[leftmargin=*]
+    \item[$\square$] Node.js and npm versions correct
+    \item[$\square$] Expo CLI installed and accessible
+    \item[$\square$] Repository cloned successfully
+    \item[$\square$] Dependencies installed without errors
+    \item[$\square$] Convex backend configured and deployed
+    \item[$\square$] Environment variables set correctly
+    \item[$\square$] \texttt{npx expo start} runs without issues
+    \item[$\square$] QR code displays for device scanning
+    \item[$\square$] App runs on target platform(s)
+    \item[$\square$] Frontend tests pass
+    \item[$\square$] Backend tests pass
+    \item[$\square$] Integration tests pass
+\end{itemize}
+\end{tcolorbox}
+
+\section{Troubleshooting}
+
+\subsection{Common Issues and Solutions}
+
+\subsubsection{Node.js Version Conflicts}
+Use Node Version Manager (nvm) to manage multiple Node.js versions:
+
+\begin{lstlisting}[language=bash]
+# macOS/Linux
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Windows
+# Download from: https://github.com/coreybutler/nvm-windows
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+nvm install 18.19.0
+nvm use 18.19.0
+\end{lstlisting}
+
+\subsubsection{Expo Go Connection Issues}
+\begin{itemize}
+    \item Ensure devices are on the same network
+    \item Try tunnel mode: \texttt{npx expo start --tunnel}
+    \item Clear cache: \texttt{npx expo start -c}
+\end{itemize}
+
+\subsubsection{Android Build Failures}
+\begin{itemize}
+    \item Clean Gradle cache: \texttt{cd android \&\& ./gradlew clean}
+    \item Update Android SDK and build tools
+    \item Check ANDROID\_HOME environment variable
+\end{itemize}
+
+\subsubsection{Convex Authentication Issues}
+\begin{lstlisting}[language=bash]
+npx convex login
+npx convex dev --configure
+\end{lstlisting}
+
+\subsubsection{Platform Directory Issues}
+\begin{itemize}
+    \item Ensure you're in the correct project root
+    \item Verify the platform directory exists
+    \item Check all dependencies are installed
+\end{itemize}
+
+\section{Support and Resources}
+
+\subsection{Additional Resources}
+
+\begin{itemize}
+    \item \textbf{Project Repository:} \href{https://github.com/COS301-SE-2025/TaxiTap}{https://github.com/COS301-SE-2025/TaxiTap}
+    \item \textbf{Issue Tracker:} \href{https://github.com/COS301-SE-2025/TaxiTap/issues}{GitHub Issues}
+    \item \textbf{Documentation Wiki:} \href{https://github.com/COS301-SE-2025/TaxiTap/wiki}{Project Wiki}
+    \item \textbf{Expo Documentation:} \href{https://docs.expo.dev/}{https://docs.expo.dev/}
+    \item \textbf{Convex Documentation:} \href{https://docs.convex.dev/}{https://docs.convex.dev/}
+    \item \textbf{React Native Documentation:} \href{https://reactnative.dev/docs/getting-started}{https://reactnative.dev/docs/getting-started}
+\end{itemize}
+
+\vfill
+\hrule
+\vspace{0.5cm}
+\begin{center}
+\textit{TaxiTap Technical Installation Manual v1.0}\\
+\textit{Revolutionizing South Africa's Minibus Taxi Industry}\\
+\textit{\today}
+\end{center}
+
+\end{document}
