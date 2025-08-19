@@ -148,7 +148,7 @@ export default function PassengerPinEntry() {
         // PIN verified successfully, redirect to payments page
         try {
           await router.push({
-            pathname: '../Payments',
+            pathname: '/Payments',
             params: {
               driverName: driverName || 'Unknown Driver',
               licensePlate: licensePlate || 'Unknown Plate',
@@ -271,8 +271,7 @@ export default function PassengerPinEntry() {
       <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: '#000000' }]}>Loading theme...</Text>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <LoadingSpinner size="large" />
+        </View>
       </SafeAreaView>
     );
   }
@@ -471,5 +470,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  // Loading spinner is used instead of these styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });

@@ -60,7 +60,7 @@ export default function SubmitFeedbackScreen() {
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: 'OK', onPress: () => router.push('/FeedbackHistoryScreen'), style: 'default' },
+          { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
         ],
       });
     } catch (err: any) {
@@ -389,7 +389,7 @@ export default function SubmitFeedbackScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={() => router.push('/HomeScreen')}
+            onPress={() => router.replace('/HomeScreen')}
             style={dynamicStyles.skipButton}
             activeOpacity={0.8}
           >

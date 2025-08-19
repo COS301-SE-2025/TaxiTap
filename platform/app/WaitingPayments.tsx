@@ -41,11 +41,11 @@ export default function WaitingPayments() {
                     <View style={dynamicStyles.headerSection}>
                         <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
                     </View>
+                    <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                        <LoadingSpinner size="large" />
+                    </View>
                 </View>
             </SafeAreaView>
-        <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-            <LoadingSpinner size="large" />
-        </View>
         );
     }
 
@@ -80,7 +80,7 @@ export default function WaitingPayments() {
                 </View>
 
                 <View style={dynamicStyles.contentSection}>
-                    {waitingPayments.map((p, idx) => (
+                    {waitingPayments.map((p: Passenger, idx: number) => (
                         <View key={idx} style={[dynamicStyles.passengerCard, { backgroundColor: theme.card }]}>
                             <View style={dynamicStyles.cardHeader}>
                                 <View style={dynamicStyles.passengerInfo}>
@@ -107,20 +107,6 @@ export default function WaitingPayments() {
                 </View>
             </ScrollView>
         </SafeAreaView>
-        <ScrollView style={dynamicStyles.container}>
-        {waitingPayments.map((p: Passenger, idx: number) => (
-            <View key={idx} style={dynamicStyles.passengerCard}>
-            <Text style={dynamicStyles.name}>{p.name}</Text>
-            <Text style={dynamicStyles.info}>📞 {p.phoneNumber}</Text>
-            <Text style={dynamicStyles.info}>💰 Fare: R{p.fare.toFixed(2)}</Text>
-            <Text
-                style={ dynamicStyles.noResponse }
-            >
-                ⌛ Waiting for Payment
-            </Text>
-            </View>
-        ))}
-        </ScrollView>
     );
 }
 
@@ -145,14 +131,7 @@ const dynamicStyles = StyleSheet.create({
         justifyContent: 'center',
         marginRight: 12,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#1a1a1a',
-        flex: 1,
-        textAlign: 'center',
-        marginRight: 52, // Compensate for back button width to center title
-    },
+
     container: {
         flex: 1,
         backgroundColor: 'transparent',
@@ -162,7 +141,7 @@ const dynamicStyles = StyleSheet.create({
         paddingVertical: 24,
         marginBottom: 16,
     },
-    headerTitle: {
+    headerSubtitleLarge: {
         fontSize: 32,
         fontWeight: '700',
         color: '#1a1a1a',

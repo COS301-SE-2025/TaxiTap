@@ -36,30 +36,6 @@ export default function ActiveRides() {
 
     if (!user || activeTrips === undefined) {
         return <LoadingSpinner />;
-        return (
-            <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-                {/* Custom Header with Back Button */}
-                <View style={dynamicStyles.header}>
-                    <Pressable 
-                        style={dynamicStyles.backButton} 
-                        onPress={handleBackPress}
-                        android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    >
-                        <Ionicons 
-                            name="chevron-back" 
-                            size={24} 
-                            color={theme.text} 
-                        />
-                    </Pressable>
-                </View>
-                <View style={dynamicStyles.container}>
-                    <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerTitle}>Active Rides</Text>
-                        <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
-                    </View>
-                </View>
-            </SafeAreaView>
-        );
     }
 
     if (!activeTrips || !activeTrips.passengers.length) {
@@ -91,7 +67,7 @@ export default function ActiveRides() {
                 </View>
 
                 <View style={dynamicStyles.contentSection}>
-                    {activeTrips.passengers.map((p, idx) => (
+                    {activeTrips.passengers.map((p: Passenger, idx: number) => (
                         <View key={idx} style={[dynamicStyles.passengerCard, { backgroundColor: theme.card }]}>
                             <View style={dynamicStyles.cardHeader}>
                                 <View style={dynamicStyles.passengerInfo}>
@@ -167,12 +143,6 @@ const dynamicStyles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 24,
         marginBottom: 16,
-    },
-    headerTitle: {
-        fontSize: 32,
-        fontWeight: '700',
-        color: '#1a1a1a',
-        marginBottom: 8,
     },
     headerSubtitle: {
         fontSize: 16,

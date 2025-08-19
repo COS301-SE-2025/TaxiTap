@@ -5,7 +5,6 @@ import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from "rea
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Id } from '../convex/_generated/dataModel';
-import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
@@ -18,7 +17,6 @@ export default function UnpaidPayments() {
     const router = useRouter();
     const navigation = useNavigation();
     
-    const { theme } = useTheme();
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
       user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"

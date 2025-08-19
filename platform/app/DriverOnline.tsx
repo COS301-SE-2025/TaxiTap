@@ -23,7 +23,6 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
 
@@ -306,11 +305,6 @@ export default function DriverOnline({
     { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
-
-  // Show loading spinner if essential data is not loaded
-  if (!user || taxiInfo === undefined || earnings === undefined) {
-    return <LoadingSpinner />;
-  }
 
   const styles = StyleSheet.create({
     container: {
@@ -670,326 +664,181 @@ export default function DriverOnline({
   }
 
   return (
-    <SafeAreaView style={dynamicStyles.safeArea}>
-      <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
-        backgroundColor={theme.background} 
-      />
-      <View style={dynamicStyles.container}>
-        <View style={dynamicStyles.mapContainer}>
-          {!currentLocation ? (
-            <LoadingSpinner />
-          ) : (
-            <>
-            {mapExpanded && (
-              <MapView
-                ref={mapRef}
-                style={dynamicStyles.map}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={{
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                showsUserLocation={true}
-                showsMyLocationButton={false}
-                showsCompass={false}
-                showsScale={false}
-                showsBuildings={true}
-                showsTraffic={false}
-                showsIndoors={false}
-                showsPointsOfInterest={true}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                  }}
-                  title="Your Location"
-                  pinColor="#FF0000"
-                />
-              </MapView>
-            )}
-
-              <TouchableOpacity 
-                style={dynamicStyles.menuButton}
-                onPress={handleMenuPress}
-                accessibilityLabel="Open menu"
-              >
-                <Icon name="menu" size={24} color={theme.primary} />
-              </TouchableOpacity>
-
-              {/* PIN Display - Compact version in top right */}
-              {driverPin && (
-                <TouchableOpacity 
-                  style={dynamicStyles.pinContainer}
-                  onPress={() => setShowPinDetails(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={dynamicStyles.pinLabel}>DRIVER PIN</Text>
-                  <Text style={dynamicStyles.pinText}>{driverPin}</Text>
-                  <TouchableOpacity style={dynamicStyles.pinInfoButton}>
-                    <Icon name="information-circle-outline" size={16} color={theme.textSecondary} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-
-              {/* PIN Details Modal */}
-              {showPinDetails && (
-                <Modal
-                  visible={showPinDetails}
-                  transparent={true}
-                  animationType="fade"
-                  onRequestClose={() => setShowPinDetails(false)}
-                >
-                  <TouchableOpacity 
-                    style={dynamicStyles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowPinDetails(false)}
-                  >
-                    <View style={dynamicStyles.pinDetailsModal}>
-                      <View style={dynamicStyles.pinDetailsHeader}>
-                        <Text style={dynamicStyles.pinDetailsTitle}>Your Driver PIN</Text>
-                        <TouchableOpacity 
-                          style={dynamicStyles.pinDetailsClose}
-                          onPress={() => setShowPinDetails(false)}
-                        >
-                          <Icon name="close" size={20} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                      </View>
-                      
-                      <View style={dynamicStyles.pinDetailsContent}>
-                        <View style={dynamicStyles.pinDisplayLarge}>
-                          {driverPin.split('').map((digit, index) => (
-                            <View key={index} style={dynamicStyles.pinDigitLarge}>
-                              <Text style={dynamicStyles.pinDigitTextLarge}>{digit}</Text>
-                            </View>
-                          ))}
-                        </View>
-                        
-                        <Text style={dynamicStyles.pinDetailsInfo}>
-                          Show this PIN to passengers when they need to verify your identity. 
-                          The PIN remains stable during active rides for consistent verification.
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Modal>
-              )}
-
-              <TouchableOpacity 
-                style={dynamicStyles.darkModeToggle}
-                onPress={handleToggleTheme}
-                activeOpacity={0.8}
-                accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              >
-                <Icon 
-                  name={isDark ? 'sunny' : 'moon'} 
-                  size={28} 
-                />
-              </TouchableOpacity>
-
-              <View style={dynamicStyles.earningsContainer}>
-                <TouchableOpacity 
-                  style={dynamicStyles.earningsCard}
-                  onPress={() => {}}
-                  activeOpacity={0.8}
-                >
-                  <Text style={dynamicStyles.earningsAmount}>
-                   R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Live Location Streaming Status for Drivers */}
-              <View style={dynamicStyles.locationStreamingStatus}>
-                {locationStreamError ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingError]}>
-                    Location Error: {locationStreamError}
-                  </Text>
-                ) : streamedLocation ? (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingSuccess]}>
-                    Live Location: {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}
-                  </Text>
-                ) : (
-                  <Text style={[dynamicStyles.locationStreamingText, dynamicStyles.locationStreamingLoading]}>
-                    Starting location streaming...
-                  </Text>
-                )}
-              </View>
-
-              {!mapExpanded && (
-                <View
-                  style={{
-                    backgroundColor: '#fff',
-                    alignItems: 'center',
-                    marginTop: 45,
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await increaseSeats();
-                      } catch (error) {
-                        console.error("Failed to update seat availability:", error);
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#28a745',
-                      borderRadius: 50,
-                      width: 100,
-                      height: 100,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Text style={{ fontSize: 60, color: '#fff' }}>+</Text>
-                  </TouchableOpacity>
-
-                  <Text style={[dynamicStyles.quickStatusValue, { fontSize: 50 }]}>
-                    {taxiInfo?.capacity === 0
-                      ? "No seats"
-                      : taxiInfo?.capacity?.toString() ?? "Loading..."}
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await decreaseSeats();
-                      } catch (error) {
-                        console.error("Failed to update seat availability:", error);
-                      }
-                    }}
-                    style={{
-                      backgroundColor: '#dc3545',
-                      borderRadius: 50,
-                      width: 100,
-                      height: 100,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginTop: 16,
-                    }}
-                  >
-                    <Text style={{ fontSize: 60, color: '#fff' }}>−</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <View style={dynamicStyles.bottomContainer}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-                  <TouchableOpacity
-                    style={[dynamicStyles.actionButton, { backgroundColor: '#FF4444' }]}
-                    onPress={handleSafetyPress}
-                  >
-                    <Icon name="call" size={20} color="#fff" />
-                    <Text style={dynamicStyles.actionButtonText}>Emergency</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={dynamicStyles.actionButton}
-                    onPress={() => setMapExpanded(prev => !prev)}
-                  >
-                    <Icon name="map" size={20} color="#fff" />
-                    <Text style={dynamicStyles.actionButtonText}>
-                      {mapExpanded ? "Hide Map" : "Show Map"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={dynamicStyles.offlineButton}
-                  onPress={onGoOffline}
-                  activeOpacity={0.8}
-                  accessibilityLabel="Go offline"
-                >
-                  <Text style={dynamicStyles.offlineButtonText}>GO OFFLINE</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={dynamicStyles.statsButton}
-                  onPress={() => router.push('/StatsPage')}
-                  activeOpacity={0.8}
-                  accessibilityLabel="Ride and Payment Stats"
-                >
-                  <Text style={dynamicStyles.statsButtonText}>Ride and Payment Stats</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Modal
-                visible={showMenu}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowMenu(false)}
-              >
-                <TouchableOpacity 
-                  style={dynamicStyles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowMenu(false)}
-                >
-                  <View style={dynamicStyles.menuModal}>
-                    <View style={dynamicStyles.menuModalHeader}>
-                      <Text style={dynamicStyles.menuModalHeaderText}>Menu</Text>
-                    </View>
-                    {menuItems.map((item, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={dynamicStyles.menuModalItem}
-                        onPress={() => {
-                          item.onPress();
-                          setShowMenu(false);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={dynamicStyles.menuModalItemIcon}>
-                          <Icon name={item.icon} size={20} color={isDark ? "#121212" : "#FF9900"} />
-                        </View>
-                        <View style={dynamicStyles.menuModalItemContent}>
-                          <Text style={dynamicStyles.menuModalItemTitle}>{item.title}</Text>
-                          <Text style={dynamicStyles.menuModalItemSubtitle}>{item.subtitle}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
-                      
-              {showSafetyMenu && (
-                <TouchableOpacity 
-                  style={dynamicStyles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowSafetyMenu(false)}
-                >
-                  <View style={dynamicStyles.safetyModal}>
-                    {safetyOptions.map((option, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={[
-                          dynamicStyles.safetyItem,
-                          index === safetyOptions.length - 1 && dynamicStyles.safetyItemLast
-                        ]}
-                        onPress={option.onPress}
-                        activeOpacity={0.8}
-                      >
-                        <View style={[dynamicStyles.safetyItemIcon, { backgroundColor: `${option.color}20` }]}>
-                          <Icon name={option.icon} size={16} color={option.color} />
-                        </View>
-                        <View style={dynamicStyles.safetyItemContent}>
-                          <Text style={dynamicStyles.safetyItemTitle}>{option.title}</Text>
-                          <Text style={dynamicStyles.safetyItemSubtitle}>{option.subtitle}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              {/* Location spoofer component removed - not needed */}
-            </>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
+            <Icon name="menu" size={20} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Driver Online</Text>
+        </View>
+        
+        <View style={styles.headerRight}>
+          {driverPin && (
+            <TouchableOpacity style={styles.pinButton} onPress={() => setShowPinModal(true)}>
+              <Text style={styles.pinText}>{driverPin}</Text>
+              <Icon name="information-circle-outline" size={16} color={theme.primary} />
+            </TouchableOpacity>
           )}
+          
+          <TouchableOpacity style={styles.offlineButton} onPress={handleGoOffline}>
+            <Icon name="power" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
       </View>
+
+      <View style={styles.mainContent}>
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Today's Earnings</Text>
+            <Text style={[styles.statValue, styles.earningsValue]}>
+              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
+            </Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Available Seats</Text>
+            <Text style={styles.statValue}>
+              {taxiInfo?.capacity?.toString() ?? "0"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Seat Control */}
+        <View style={styles.seatControlContainer}>
+          <View style={styles.seatCard}>
+            <Text style={styles.seatTitle}>Seat Management</Text>
+            <Text style={styles.seatSubtitle}>
+              Adjust available seats for passengers
+            </Text>
+            
+            <Text style={styles.seatDisplay}>
+              {taxiInfo?.capacity?.toString() ?? "0"}
+            </Text>
+            
+            <View style={styles.seatControls}>
+              <TouchableOpacity
+                style={[styles.seatButton, styles.decreaseButton]}
+                onPress={decreaseSeats}
+              >
+                <Text style={[styles.buttonText, styles.decreaseText]}>−</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.seatButton, styles.increaseButton]}
+                onPress={increaseSeats}
+              >
+                <Text style={[styles.buttonText, styles.increaseText]}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Bottom Actions */}
+      <View style={styles.bottomActions}>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={[styles.actionButton, styles.emergencyButton]} onPress={handleEmergency}>
+            <Icon name="warning" size={18} color="#EF4444" />
+            <Text style={styles.emergencyButtonText}>Emergency</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
+            <Icon name="map" size={18} color={theme.primary} />
+            <Text style={styles.mapButtonText}>View Map</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
+          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Map View */}
+      {showMap && (
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={{
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+            showsUserLocation={true}
+          >
+            <Marker
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}
+              title="Your Location"
+            />
+          </MapView>
+          
+          <TouchableOpacity style={styles.mapCloseButton} onPress={() => setShowMap(false)}>
+            <Icon name="close" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Menu Modal */}
+      <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowMenu(false)}>
+          <View style={styles.menuModal}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuHeaderText}>Menu</Text>
+            </View>
+            
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={() => {
+                  item.onPress();
+                  setShowMenu(false);
+                }}
+              >
+                <View style={styles.menuItemIcon}>
+                  <Icon name={item.icon} size={20} color={theme.primary} />
+                </View>
+                <Text style={styles.menuItemText}>{item.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* PIN Modal */}
+      <Modal visible={showPinModal} transparent animationType="fade" onRequestClose={() => setShowPinModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowPinModal(false)}>
+          <View style={styles.pinModal}>
+            <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
+            
+            <View style={styles.pinDisplay}>
+              {driverPin.split('').map((digit, index) => (
+                <View key={index} style={styles.pinDigit}>
+                  <Text style={styles.pinDigitText}>{digit}</Text>
+                </View>
+              ))}
+            </View>
+            
+            <Text style={styles.pinInfo}>
+              Show this PIN to passengers for secure verification.
+            </Text>
+            
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }

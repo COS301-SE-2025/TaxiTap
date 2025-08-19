@@ -36,6 +36,8 @@ const GOOGLE_MAPS_API_KEY =
     ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
     : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
+
+
 // Interface for autocomplete suggestions
 interface PlaceSuggestion {
   place_id: string;
@@ -1400,8 +1402,6 @@ export default function HomeScreen() {
 
       
       {isLoadingCurrentLocation ? (
-        <View style={dynamicStyles.map}>
-          <LoadingSpinner />
         <View style={[dynamicStyles.map, { 
           justifyContent: 'center', 
           alignItems: 'center',
@@ -1426,7 +1426,7 @@ export default function HomeScreen() {
             shadowRadius: 16,
             elevation: 8,
           }}>
-            <Image source={loading} style={{ width: 100, height: 100 }} resizeMode="contain" />
+            <LoadingSpinner />
             <Text style={{ 
               color: theme.text, 
               marginTop: 16, 
@@ -1448,15 +1448,15 @@ export default function HomeScreen() {
         >
           {origin && 
             typeof origin.latitude === 'number' &&
-            typeof origin.longitude === 'number' &&(
+            typeof origin.longitude === 'number' && (
               <Marker coordinate={origin} title="Origin" pinColor="blue" />
-          )}
+            )}
 
           {destination &&
             typeof destination.latitude === 'number' &&
             typeof destination.longitude === 'number' && (
               <Marker coordinate={destination} title={destination.name} pinColor="orange" />
-          )}
+            )}
           
           {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
             .filter(driver => 
@@ -1476,7 +1476,7 @@ export default function HomeScreen() {
                   <Icon name="car" size={36} color="green" />
                 </View>
               </Marker>
-          ))}
+            ))}
 
           {routeLoaded && routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
