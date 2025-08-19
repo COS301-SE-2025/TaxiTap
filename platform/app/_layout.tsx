@@ -368,10 +368,27 @@ function RootLayoutNav() {
           />
 
           <Stack.Screen
+            name="FeedbackHistoryScreen"
+            options={{
+              headerShown: true,
+              title: "Feedback",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
             name="UnpaidPayments"
             options={{
               headerShown: true,
-              title: "Unpaid Trips",
+              title: "Unpaid Rides",
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -388,7 +405,7 @@ function RootLayoutNav() {
             name="WaitingPayments"
             options={{
               headerShown: true,
-              title: "Waiting Trip Payments",
+              title: "Waiting Payments",
               headerStyle: {
                 backgroundColor: theme.surface,
               },

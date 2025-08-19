@@ -27,7 +27,6 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   const opacityValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start animation based on type
     const animations: Animated.CompositeAnimation[] = [];
 
     switch (alert.animation) {
@@ -106,7 +105,6 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         break;
     }
 
-    // Always fade in
     animations.push(
       Animated.timing(opacityValue, {
         toValue: 1,
@@ -187,7 +185,6 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
         break;
     }
 
-    // Always fade out
     animations.push(
       Animated.timing(opacityValue, {
         toValue: 0,
@@ -197,7 +194,6 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
     );
 
     Animated.parallel(animations).start(() => {
-      // Defer dismiss to next tick to avoid scheduling state updates during render/commit
       requestAnimationFrame(() => onDismiss(alert.id));
     });
   };
@@ -225,48 +221,46 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   // Native-style notification colors
   const getDefaultStyle = (): any => {
     const baseStyle = {
-      // Light transparent Amazon blue background
-      backgroundColor: 'rgba(29, 41, 57, 0.95)', // Amazon blue with transparency
+      backgroundColor: 'rgba(29, 41, 57, 0.95)',
       textColor: '#FFFFFF',
       titleColor: '#FFFFFF',
       messageColor: 'rgba(255, 255, 255, 0.9)',
-      borderRadius: 12, // Native iOS-style rounded corners
+      borderRadius: 16,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 12,
-      elevation: 10,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 12,
     };
 
-    // Subtle variations for different alert types
     switch (alert.type) {
       case 'success':
         return { 
           ...baseStyle, 
           backgroundColor: 'rgba(29, 41, 57, 0.95)',
           borderLeftColor: '#34C759',
-          borderLeftWidth: 3,
+          borderLeftWidth: 4,
         };
       case 'warning':
         return { 
           ...baseStyle, 
           backgroundColor: 'rgba(29, 41, 57, 0.95)',
           borderLeftColor: '#FF9500',
-          borderLeftWidth: 3,
+          borderLeftWidth: 4,
         };
       case 'error':
         return { 
           ...baseStyle, 
           backgroundColor: 'rgba(29, 41, 57, 0.95)',
           borderLeftColor: '#FF3B30',
-          borderLeftWidth: 3,
+          borderLeftWidth: 4,
         };
       case 'info':
         return { 
           ...baseStyle, 
           backgroundColor: 'rgba(29, 41, 57, 0.95)',
           borderLeftColor: '#007AFF',
-          borderLeftWidth: 3,
+          borderLeftWidth: 4,
         };
       default:
         return baseStyle;
@@ -278,11 +272,10 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   const finalStyle = { ...defaultStyle, ...customStyle };
 
   const getPositionStyle = (): any => {
-    // Native notification spacing
     const baseOffset = Platform.OS === 'ios' ? 60 : 40;
-    const spacing = 74; // Native notification spacing
+    const spacing = 100;
     const topOffset = baseOffset + (index * spacing);
-    const horizontalMargin = 12; // Native side margins
+    const horizontalMargin = 8;
 
     switch (alert.position) {
       case 'top':
@@ -308,8 +301,8 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       case 'center':
         return {
           top: '50%',
-          left: 20,
-          right: 20,
+          left: 16, // Decreased from 20 to 16
+          right: 16, // Decreased from 20 to 16
           transform: [
             { translateY: animatedValue },
             { scale: scaleValue },
@@ -374,7 +367,6 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
       styles.appIconContainer,
       { borderLeftColor: finalStyle.borderLeftColor }
     ]}>
-      {/* App Logo - Replace with your actual app logo/icon */}
       <View style={styles.appIcon}>
         <Text style={styles.appIconText}>A</Text>
       </View>
@@ -417,13 +409,13 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
           <View style={styles.textContainer}>
             <Text 
               style={[styles.title, { color: finalStyle.titleColor }]} 
-              numberOfLines={1}
+              numberOfLines={2}
             >
               {alert.title}
             </Text>
             <Text 
               style={[styles.message, { color: finalStyle.messageColor }]} 
-              numberOfLines={3}
+              numberOfLines={4}
             >
               {alert.message}
             </Text>
@@ -432,7 +424,7 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
           <TouchableOpacity
             style={styles.closeButton}
             onPress={handleDismiss}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Text style={[styles.closeText, { color: finalStyle.textColor }]}>
               ×
@@ -450,9 +442,9 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
                   style={[
                     styles.actionButton,
                     {
-                      minWidth: actionCount === 1 ? 100 : 80,
+                      minWidth: actionCount === 1 ? 120 : 100,
                       flex: actionCount <= 2 ? 1 : 0,
-                      marginHorizontal: actionCount > 2 ? 4 : 0,
+                      marginHorizontal: actionCount > 2 ? 6 : 0,
                     },
                     action.style === 'destructive' && styles.destructiveAction,
                     action.style === 'cancel' && styles.cancelAction,
@@ -513,9 +505,7 @@ export const AlertOverlay: React.FC = () => {
   const pathname = usePathname();
   const currentRoute = useRef<string>('');
 
-  // Navigation listener to dismiss local alerts on route change
   useEffect(() => {
-    // If route changed and we have local alerts, dismiss them
     if (currentRoute.current && currentRoute.current !== pathname && localAlerts.length > 0) {
       dismissAllLocalAlerts();
     }
@@ -567,9 +557,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   alertContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    minHeight: 70,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    minHeight: 90,
   },
   alertHeader: {
     flexDirection: 'row',
@@ -577,24 +567,24 @@ const styles = StyleSheet.create({
   },
   appIconContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: 16,
     marginTop: 2,
   },
   appIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8, // Native app icon corner radius
-    backgroundColor: '#1d2939', // Amazon blue for app icon
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#1d2939',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
   },
   appIconText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
@@ -602,9 +592,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
@@ -612,61 +602,61 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   globalBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#FFFFFF',
     fontWeight: 'bold',
-    lineHeight: 12,
+    lineHeight: 13,
   },
   textContainer: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
   },
   title: {
-    fontSize: 15,
+    fontSize: 18, // Increased from 17 to 18
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
     letterSpacing: -0.24,
-    lineHeight: 20,
+    lineHeight: 24, // Increased from 22 to 24
   },
   message: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 16, // Increased from 15 to 16
+    lineHeight: 22, // Increased from 20 to 22
     fontWeight: '400',
     letterSpacing: -0.08,
   },
   closeButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24, // Increased from 20 to 24
+    height: 24, // Increased from 20 to 24
+    borderRadius: 12, // Increased from 10 to 12
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
   },
   closeText: {
-    fontSize: 16,
+    fontSize: 18, // Increased from 16 to 18
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 18,
   },
   actionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    marginTop: 12,
-    marginLeft: 52, // Align with text content
-    gap: 10,
-    minHeight: 32,
+    marginTop: 16, // Increased from 12 to 16
+    marginLeft: 64, // Increased from 52 to 64 (48px icon + 16px margin)
+    gap: 12, // Increased from 10 to 12
+    minHeight: 36, // Increased from 32 to 36
   },
   actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 16, // Increased from 12 to 16
+    paddingVertical: 8, // Increased from 6 to 8
+    borderRadius: 8, // Increased from 6 to 8
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     maxWidth: '48%',
-    minHeight: 28,
+    minHeight: 32, // Increased from 28 to 32
   },
   destructiveAction: {
     backgroundColor: 'rgba(255, 59, 48, 0.2)',
@@ -675,7 +665,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(142, 142, 147, 0.2)',
   },
   actionText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     letterSpacing: -0.08,
   },
