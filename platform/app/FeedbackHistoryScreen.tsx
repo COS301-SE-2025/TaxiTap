@@ -14,13 +14,6 @@ export default function FeedbackHistoryScreen() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  // Hide the default header
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
-
   const feedbackList = useQuery(
     user?.role === 'driver' 
       ? api.functions.feedback.showFeedback.showFeedbackDriver
@@ -138,26 +131,6 @@ export default function FeedbackHistoryScreen() {
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Custom Header with Back Button */}
-        <View style={dynamicStyles.header}>
-          <Pressable 
-            style={dynamicStyles.backButton} 
-            onPress={() => {
-              // Route back to appropriate page based on user role
-              if (user.role === 'driver') {
-                router.push('/DriverOffline');
-              } else {
-                router.push('/(tabs)/PassengerProfile');
-              }
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color={theme.text} />
-          </Pressable>
-          <Text style={dynamicStyles.headerTitle}>
-            {user.role === 'driver' ? 'Feedback Received' : 'Your Feedback History'}
-          </Text>
-        </View>
-
         {/* Feedback List Section */}
         <View style={dynamicStyles.section}>
           {!feedbackList ? (

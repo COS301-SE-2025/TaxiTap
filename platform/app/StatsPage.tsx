@@ -16,13 +16,6 @@ export default function StatsPage() {
   const { user } = useUser();
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
-
-  // Hide default navigation header and add custom back button
-  useLayoutEffect(() => {
-    navigation.setOptions({ 
-      headerShown: false 
-    });
-  }, [navigation]);
   
   const activeTrips = useQuery(
     api.functions.rides.getActiveTrips.getActiveTrips,
@@ -36,20 +29,6 @@ export default function StatsPage() {
   if (!user || activeTrips === undefined) {
     return (
       <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-        {/* Custom Header with Back Button */}
-        <View style={dynamicStyles.header}>
-          <Pressable 
-            style={dynamicStyles.backButton} 
-            onPress={handleBackPress}
-            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-          >
-            <Ionicons 
-              name="chevron-back" 
-              size={24} 
-              color={theme.text} 
-            />
-          </Pressable>
-        </View>
         <View style={dynamicStyles.container}>
           <View style={dynamicStyles.headerSection}>
             <Text style={dynamicStyles.headerTitle}>Dashboard</Text>
@@ -62,29 +41,23 @@ export default function StatsPage() {
 
   return (
     <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-      {/* Custom Header with Back Button */}
-      <View style={dynamicStyles.header}>
-        <Pressable 
-          style={dynamicStyles.backButton} 
-          onPress={handleBackPress}
-          android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-        >
-          <Ionicons 
-            name="chevron-back" 
-            size={24} 
-            color={theme.text} 
-          />
-        </Pressable>
-      </View>
-
       <ScrollView 
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
         <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.sectionTitle}>Dashboard</Text>
           <Text style={dynamicStyles.headerSubtitle}>Ride and payment overview</Text>
+        </View>
+
+        {/* Summary Section */}
+        <View style={dynamicStyles.summarySection}>
+          <Text style={dynamicStyles.summaryTitle}>Quick Summary</Text>
+          <View style={dynamicStyles.summaryContent}>
+            <Text style={dynamicStyles.summaryText}>
+              You have {activeTrips?.activeCount || 0} active rides and {activeTrips?.noResponseCount || 0} payments pending.
+            </Text>
+          </View>
         </View>
 
         {/* Stats Grid */}
@@ -98,7 +71,7 @@ export default function StatsPage() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[dynamicStyles.statCard, dynamicStyles.waitingPaymentsCard]}
+            style={[dynamicStyles.statCard2, dynamicStyles.waitingPaymentsCard]}
             onPress={() => router.push("/WaitingPayments")}
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.noResponseCount || 0}</Text>
@@ -106,22 +79,12 @@ export default function StatsPage() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[dynamicStyles.statCard, dynamicStyles.unpaidAccountsCard]}
+            style={[dynamicStyles.statCard3, dynamicStyles.unpaidAccountsCard]}
             onPress={() => router.push("/UnpaidPayments")}
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.unpaidCount || 0}</Text>
             <Text style={dynamicStyles.statLabel}>Unpaid Accounts</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Summary Section */}
-        <View style={dynamicStyles.summarySection}>
-          <Text style={dynamicStyles.summaryTitle}>Quick Summary</Text>
-          <View style={dynamicStyles.summaryContent}>
-            <Text style={dynamicStyles.summaryText}>
-              You have {activeTrips?.activeCount || 0} active rides and {activeTrips?.noResponseCount || 0} payments pending.
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -165,22 +128,15 @@ const dynamicStyles = StyleSheet.create({
   },
   headerSection: {
     alignItems: 'flex-start',
-    paddingVertical: 24,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    marginBottom: 20,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#666',
     fontWeight: '400',
   },
   statsGrid: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     marginBottom: 32,
   },
@@ -197,7 +153,40 @@ const dynamicStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#22C55E',
+    marginBottom: 16,
+  },
+  statCard2: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF9900',
+    marginBottom: 16,
+  },
+  statCard3: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    marginBottom: 16,
   },
   statNumber: {
     fontSize: 28,
@@ -235,6 +224,7 @@ const dynamicStyles = StyleSheet.create({
     shadowRadius: 4,
     borderWidth: 1,
     borderColor: '#f0f0f0',
+    marginBottom: 16,
   },
   summaryTitle: {
     fontSize: 18,

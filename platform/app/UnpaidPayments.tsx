@@ -16,13 +16,6 @@ export default function UnpaidPayments() {
     const router = useRouter();
     const navigation = useNavigation();
     
-    // Hide default navigation header and add custom back button
-    useLayoutEffect(() => {
-        navigation.setOptions({ 
-            headerShown: false 
-        });
-    }, [navigation]);
-    
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
       user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -35,23 +28,8 @@ export default function UnpaidPayments() {
     if (!user || activeTrips === undefined) {
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-                {/* Custom Header with Back Button */}
-                <View style={dynamicStyles.header}>
-                    <Pressable 
-                        style={dynamicStyles.backButton} 
-                        onPress={handleBackPress}
-                        android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    >
-                        <Ionicons 
-                            name="chevron-back" 
-                            size={24} 
-                            color={theme.text} 
-                        />
-                    </Pressable>
-                </View>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerTitle}>Unpaid Payments</Text>
                         <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
                     </View>
                 </View>
@@ -64,24 +42,8 @@ export default function UnpaidPayments() {
     if (!unpaid.length) {
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-                {/* Custom Header with Back Button */}
-                <View style={dynamicStyles.header}>
-                    <Pressable 
-                        style={dynamicStyles.backButton} 
-                        onPress={handleBackPress}
-                        android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    >
-                        <Ionicons 
-                            name="chevron-back" 
-                            size={24} 
-                            color={theme.text} 
-                        />
-                    </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>Unpaid Payments</Text>
-                </View>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerTitle}>Unpaid Payments</Text>
                         <Text style={dynamicStyles.headerSubtitle}>All users have paid</Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
@@ -95,21 +57,6 @@ export default function UnpaidPayments() {
 
     return (
         <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-            {/* Custom Header with Back Button */}
-            <View style={dynamicStyles.header}>
-                <Pressable 
-                    style={dynamicStyles.backButton} 
-                    onPress={handleBackPress}
-                    android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                >
-                    <Ionicons 
-                        name="chevron-back" 
-                        size={24} 
-                        color={theme.text} 
-                    />
-                </Pressable>
-            </View>
-
             <ScrollView 
                 style={dynamicStyles.container}
                 showsVerticalScrollIndicator={false}
