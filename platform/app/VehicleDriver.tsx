@@ -79,12 +79,24 @@ export default function VehicleDriver() {
             });
             return;
         }
+
+        // Validate seats - maximum 14 seats allowed
+        const seatsNumber = parseInt(seats, 10);
+        if (seatsNumber > 14) {
+            showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            });
+            return;
+        }
+
         try {
             await updateTaxi({
                 userId: user.id as Id<"taxiTap_users">,
                 model: vehicleType,
                 licensePlate,
-                capacity: parseInt(seats, 10),
+                capacity: seatsNumber,
                 image: imageUri || undefined,
                 color,
                 year: parseInt(year, 10)

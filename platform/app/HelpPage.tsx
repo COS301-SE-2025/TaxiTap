@@ -13,13 +13,6 @@ export default function HelpPage() {
   const { t } = useLanguage();
   const { showInfo } = useAlertHelpers();
 
-  // Hide default navigation header and add custom back button
-  useLayoutEffect(() => {
-    navigation.setOptions({ 
-      headerShown: false 
-    });
-  }, [navigation]);
-
   const handleContactSupport = () => {
     showInfo(t('help:support'), t('help:supportEmail'));
   };
@@ -113,7 +106,7 @@ export default function HelpPage() {
     },
     headerSection: {
       alignItems: 'center',
-      paddingVertical: 32,
+      // paddingVertical: 32,
       marginBottom: 24,
     },
     headerTitle: {
@@ -184,31 +177,10 @@ export default function HelpPage() {
 
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
-      {/* Custom Header with Back Button */}
-      <View style={dynamicStyles.header}>
-        <Pressable 
-          style={dynamicStyles.backButton} 
-          onPress={handleBackPress}
-          android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-        >
-          <Ionicons 
-            name="chevron-back" 
-            size={24} 
-            color={theme.text} 
-          />
-        </Pressable>
-        <Text style={dynamicStyles.headerTitle}>Help Manual</Text>
-      </View>
-
       <ScrollView 
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
-        <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.headerTitle}>Help Manual</Text>
-        </View>
-
         {/* User Manual Section */}
         <Text style={dynamicStyles.sectionHeader}>User Manual</Text>
         <View style={dynamicStyles.section}>

@@ -86,6 +86,24 @@ function RootLayoutNav() {
   const { theme, isDark } = useTheme();
   const { user, loading } = useUser();
   
+  // Configure Android Navigation Bar so it does not overlap content
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      (async () => {
+        try {
+          // @ts-ignore - module may not be installed in dev yet
+          const NavigationBar = await import('expo-navigation-bar');
+          await NavigationBar.setBehaviorAsync('inset-swipe');
+          await NavigationBar.setPositionAsync('relative');
+          await NavigationBar.setBackgroundColorAsync(theme.background);
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+        } catch (e) {
+          // ignore if not available
+        }
+      })();
+    }
+  }, [isDark, theme.background]);
+  
   const navigationTheme = {
     dark: isDark,
     colors: {
@@ -150,8 +168,32 @@ function RootLayoutNav() {
           <Stack.Screen
             name="DriverProfile"
             options={{
-              headerShown: true,
-              title: "Driver Profile"
+              title: "Driver Profile",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="DriverEdit"
+            options={{
+              title: "Driver Personal Information",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           
@@ -159,7 +201,16 @@ function RootLayoutNav() {
             name="DriverRequestPage"
             options={{
               headerShown: true,
-              title: "My Taxi & Route"
+              title: "My Taxi & Route",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           
@@ -167,7 +218,16 @@ function RootLayoutNav() {
             name="EarningsPage"
             options={{
               headerShown: true,
-              title: "Earnings"
+              title: "Earnings",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           
@@ -175,7 +235,16 @@ function RootLayoutNav() {
             name="SetRoute"
             options={{
               headerShown: true,
-              title: "Set Route"
+              title: "Set Route",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           
@@ -226,7 +295,16 @@ function RootLayoutNav() {
             name="VehicleDriver"
             options={{
               headerShown: true,
-              title: "Vehicle Details"
+              title: "Vehicle Details",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           
@@ -241,7 +319,85 @@ function RootLayoutNav() {
           <Stack.Screen
             name="HelpPage"
             options={{
-              headerShown: false
+              headerShown: true,
+              title: "Help Page",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="StatsPage"
+            options={{
+              headerShown: true,
+              title: "Dashboard",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="ActiveRides"
+            options={{
+              headerShown: true,
+              title: "Active Rides",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="UnpaidPayments"
+            options={{
+              headerShown: true,
+              title: "Unpaid Trips",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="WaitingPayments"
+            options={{
+              headerShown: true,
+              title: "Waiting Trip Payments",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
             }}
           />
           

@@ -157,7 +157,7 @@ common: {
 
   // Booking flow
   booking: {
-    selectRoute: "Select Route",
+    selectRoute: "Routes",
     availableSeats: "Available Seats",
     reserveSeat: "Reserve Seat",
     bookingConfirmed: "Booking Confirmed",
@@ -396,7 +396,7 @@ common: {
     failedToAccept: "Failed to accept request",
     failedToDecline: "Failed to decline request",
     setRoute: "Set Route",
-    selectRoute: "Select Route",
+    selectRoute: "Routes",
     routeInformation: "Route Information",
     routeName: "Route Name",
     routeDescription: "Route Description",

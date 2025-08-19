@@ -66,6 +66,7 @@ interface UserProfile {
   };
   driverPin?: string;
 }
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -94,6 +95,7 @@ export default function DriverOnline({
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
   const userId = user?.id;
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   

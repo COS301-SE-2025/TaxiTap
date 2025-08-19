@@ -106,13 +106,6 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
   const currentWeek = weeklyData[selectedWeek] ?? weeklyData[0];
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-      tabBarStyle: { display: 'none' },
-    });
-  }, [navigation]);
-
   const handleGoBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleWeekSelect = useCallback((index: number) => {
     setSelectedWeek(index);
@@ -231,18 +224,6 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
     <SafeAreaView style={dynamicStyles.safeArea}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.surface} />
       <View style={dynamicStyles.container}>
-        {/* Header */}
-        <View style={dynamicStyles.header}>
-          <TouchableOpacity
-            style={dynamicStyles.backButton}
-            onPress={handleGoBack}
-            testID="back-button"
-          >
-            <Icon name="arrow-back" size={24} color={isDark ? '#121212' : '#FF9900'} />
-          </TouchableOpacity>
-          <Text style={dynamicStyles.headerTitle}>{t('weeklySummary')}</Text>
-        </View>
-
         <ScrollView style={dynamicStyles.content} contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Week Dropdown */}
           <View style={dynamicStyles.dropdownContainer}>

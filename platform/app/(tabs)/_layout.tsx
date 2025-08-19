@@ -144,6 +144,16 @@ const TabNavigation: React.FC = () => {
       />
 
       <Tabs.Screen
+        name="FeedbackHistoryScreen"
+        options={{
+          title: t('navigation:feedback'),
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="feedback" size={24} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="PassengerProfile"
         options={{
           title: t('navigation:profile'),

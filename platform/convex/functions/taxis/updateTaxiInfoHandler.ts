@@ -19,6 +19,11 @@ export async function updateTaxiInfoHandler(
     isAvailable?: boolean,
   }
 ) {
+  // Validate capacity if provided - maximum 14 seats allowed
+  if (args.capacity !== undefined && args.capacity > 14) {
+    throw new Error("Maximum 14 seats are allowed for taxis.");
+  }
+
   // Find the driver profile for the given user
   const driverProfile = await ctx.db
     .query("drivers")
