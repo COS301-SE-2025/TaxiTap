@@ -132,6 +132,13 @@ export default function SubmitFeedbackScreen() {
       marginBottom: 4,
       textAlign: 'center',
     },
+    userRole: {
+      fontSize: 16,
+      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+      fontWeight: '500',
+      textTransform: 'capitalize',
+      marginBottom: 16,
+    },
     rideInfoContainer: {
       backgroundColor: theme.card,
       borderRadius: 16,
@@ -303,6 +310,7 @@ export default function SubmitFeedbackScreen() {
           </Pressable>
           
           <Text style={dynamicStyles.userName}>{name}</Text>
+          <Text style={dynamicStyles.userRole}>Passenger</Text>
           
           {/* Ride Info Section - styled exactly like PassengerProfile */}
           <View style={dynamicStyles.rideInfoContainer}>
@@ -327,11 +335,11 @@ export default function SubmitFeedbackScreen() {
           </View>
         </View>
 
-        {/* Rating Section */}
-        <Text style={dynamicStyles.sectionHeader}>Rate Your Experience</Text>
+        {/* Driver Feedback Section */}
+        <Text style={dynamicStyles.sectionHeader}>Rate Your Driver</Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.ratingSection}>
-            <Text style={dynamicStyles.ratingTitle}>How was your ride?</Text>
+            <Text style={dynamicStyles.ratingTitle}>How was your driver?</Text>
             <View style={dynamicStyles.starsContainer}>
               {[1, 2, 3, 4, 5].map(star => (
                 <TouchableOpacity 
@@ -355,11 +363,11 @@ export default function SubmitFeedbackScreen() {
         <Text style={dynamicStyles.sectionHeader}>Share Your Feedback</Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.commentSection}>
-            <Text style={dynamicStyles.commentTitle}>Tell us about your experience</Text>
+            <Text style={dynamicStyles.commentTitle}>Tell us about your driver</Text>
             <TextInput
               value={comment}
               onChangeText={setComment}
-              placeholder="Share your thoughts about the ride..."
+              placeholder="Share your thoughts about the driver..."
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               style={dynamicStyles.commentInput}
               multiline
