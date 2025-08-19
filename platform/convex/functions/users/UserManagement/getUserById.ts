@@ -36,6 +36,7 @@ export const getUserByIdHandler = async (
     lastLoginAt: user.lastLoginAt,
     homeAddress: user.homeAddress,
     workAddress: user.workAddress,
+    driverPin: user.driverPin,
   };
 };
 

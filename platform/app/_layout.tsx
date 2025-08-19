@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { View, Platform } from 'react-native';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import regular from '../assets/fonts/Amazon_Ember_Display.otf';
 import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
 import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
@@ -59,24 +60,26 @@ export default function RootLayout() {
   }
 
   return (
-    <ConvexProvider client={convex}>
-      <ThemeProvider>
-        <LanguageProvider>
-          <UserProvider>
-            <MapProvider>
-              <RouteProvider>
-                <AlertProvider>
-                  <NotificationProvider>
-                    <RootLayoutNav />
-                    <AlertOverlay />
-                  </NotificationProvider>
-                </AlertProvider>
-              </RouteProvider>
-            </MapProvider>
-          </UserProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </ConvexProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ConvexProvider client={convex}>
+        <ThemeProvider>
+          <LanguageProvider>
+            <UserProvider>
+              <MapProvider>
+                <RouteProvider>
+                  <AlertProvider>
+                    <NotificationProvider>
+                      <RootLayoutNav />
+                      <AlertOverlay />
+                    </NotificationProvider>
+                  </AlertProvider>
+                </RouteProvider>
+              </MapProvider>
+            </UserProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </ConvexProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -354,10 +357,27 @@ function RootLayoutNav() {
           />
 
           <Stack.Screen
+            name="FeedbackHistoryScreen"
+            options={{
+              headerShown: true,
+              title: "Feedback",
+              headerStyle: {
+                backgroundColor: theme.surface,
+              },
+              headerTintColor: theme.primary,
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "black",
+              },
+            }}
+          />
+
+          <Stack.Screen
             name="UnpaidPayments"
             options={{
               headerShown: true,
-              title: "Unpaid Trips",
+              title: "Unpaid Rides",
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -374,7 +394,7 @@ function RootLayoutNav() {
             name="WaitingPayments"
             options={{
               headerShown: true,
-              title: "Waiting Trip Payments",
+              title: "Waiting Payments",
               headerStyle: {
                 backgroundColor: theme.surface,
               },

@@ -36,6 +36,8 @@ const GOOGLE_MAPS_API_KEY =
     ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
     : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
+
+
 // Interface for autocomplete suggestions
 interface PlaceSuggestion {
   place_id: string;
@@ -231,7 +233,7 @@ export default function HomeScreen() {
 
   // NEW: Google Places Autocomplete function
   const fetchPlaceSuggestions = async (input: string, location?: { latitude: number; longitude: number }): Promise<PlaceSuggestion[]> => {
-    if (!GOOGLE_MAPS_API_KEY || input.trim().length < 2) {
+    if (!GOOGLE_MAPS_API_KEY || input.trim().length < 3) {
       return [];
     }
 
@@ -301,7 +303,7 @@ export default function HomeScreen() {
     if (justSelectedOrigin) return;
     
     const timeoutId = setTimeout(async () => {
-      if (originAddress.trim().length >= 2) {
+      if (originAddress.trim().length >= 3) {
         setIsLoadingOriginSuggestions(true);
         const suggestions = await fetchPlaceSuggestions(originAddress, detectedLocation || undefined);
         setOriginSuggestions(suggestions);
@@ -321,7 +323,7 @@ export default function HomeScreen() {
     if (justSelectedDestination) return;
     
     const timeoutId = setTimeout(async () => {
-      if (destinationAddress.trim().length >= 2) {
+      if (destinationAddress.trim().length >= 3) {
         setIsLoadingDestinationSuggestions(true);
         const suggestions = await fetchPlaceSuggestions(destinationAddress, detectedLocation || undefined);
         setDestinationSuggestions(suggestions);
@@ -627,7 +629,10 @@ export default function HomeScreen() {
   }, [recentRoutes, routes, manualDestinations]);
 
   const displayRoutes = fullRecentRoutes.filter(
-    (r: any): r is NonNullable<typeof r> => r !== null
+    (r: any): r is NonNullable<typeof r> => 
+      r !== null && 
+      r.startName && 
+      r.routeName
   );
 
   // Only clear state on first load, not every focus
@@ -1040,6 +1045,7 @@ export default function HomeScreen() {
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
     setSelectedRouteId(routeIdToUse);
 
+    // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
     setShowDestinationSuggestions(false);
   };
@@ -1051,102 +1057,122 @@ export default function HomeScreen() {
 
   const dynamicStyles = StyleSheet.create({
     container: { 
-      flex: 1, backgroundColor: theme.background
+      flex: 1, 
+      backgroundColor: theme.background 
     },
     map: { 
       height: keyboardVisible ? '30%' : '40%'
     },
     bottomSheet: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.95)' 
+        : 'rgba(255, 255, 255, 0.95)',
       borderTopLeftRadius: 25,
       borderTopRightRadius: 25,
-      padding: 16,
-      paddingTop: 24,
-      paddingBottom: keyboardVisible ? Math.max(keyboardHeight - 100, 16) : 16,
+      padding: 24,
+      paddingTop: 32,
+      paddingBottom: keyboardVisible ? Math.max(keyboardHeight - 100, 24) : 24,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     locationBox: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? theme.surface : "#ECD9C3",
-      borderColor: isDark ? theme.border : "#D4A57D",
-      borderRadius: 20,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 24,
       borderWidth: 1,
-      paddingVertical: 11,
-      paddingHorizontal: 13,
-      marginBottom: keyboardVisible ? 16 : 36,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      marginBottom: keyboardVisible ? 20 : 32,
       width: '100%',
       alignSelf: 'center',
       shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
+      shadowOpacity: isDark ? 0.4 : 0.15,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 8,
+      elevation: 6,
     },
     locationIndicator: {
-      marginRight: 10,
+      marginRight: 16,
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingTop: 5,
+      paddingTop: 8,
     },
     currentLocationCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       backgroundColor: theme.primary,
       borderWidth: 2,
-      borderColor: '#FFB84D',
-      marginBottom: 8,
+      borderColor: '#F59E0B',
+      marginBottom: 12,
       justifyContent: 'center',
       alignItems: 'center',
+      shadowColor: theme.primary,
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+      elevation: 3,
     },
     currentLocationDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
       backgroundColor: theme.primary,
     },
     dottedLineContainer: {
-      height: 35,
+      height: 40,
       width: 1,
-      marginBottom: 8,
+      marginBottom: 12,
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     dottedLineDot: {
-      width: 2,
-      height: 3,
+      width: 3,
+      height: 4,
       backgroundColor: theme.primary,
-      borderRadius: 1,
+      borderRadius: 1.5,
     },
     locationTextContainer: {
       flex: 1,
       position: 'relative',
     },
     inputContainer: {
-      marginBottom: 6,
+      marginBottom: 8,
       position: 'relative',
     },
     addressInput: {
       color: theme.text,
-      fontSize: 14,
-      fontWeight: "bold",
+      fontSize: 16,
+      fontWeight: "600",
       backgroundColor: 'transparent',
       padding: 0,
       margin: 0,
+      letterSpacing: -0.2,
     },
     originInput: {
-      color: isDark ? theme.primary : "#A66400",
-      marginBottom: 17,
+      color: isDark ? theme.primary : "#F59E0B",
+      marginBottom: 20,
     },
     destinationInput: {
       marginLeft: 2,
     },
     locationSeparator: {
-      height: 1,
-      backgroundColor: isDark ? theme.border : "#D4A57D",
-      marginBottom: 19,
-      marginHorizontal: 2,
+      height: 2,
+      backgroundColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
+      marginBottom: 24,
+      marginHorizontal: 4,
+      borderRadius: 1,
     },
     geocodingText: {
       color: theme.textSecondary,
@@ -1158,20 +1184,24 @@ export default function HomeScreen() {
     inputSuggestionsContainer: {
       position: 'absolute',
       top: '100%',
-      left: -13,
-      right: -13,
-      backgroundColor: theme.card,
-      borderRadius: 12,
+      left: 0,
+      right: 0,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.95)' 
+        : 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 16,
       maxHeight: 200,
       zIndex: 1000,
-      elevation: 10,
+      elevation: 12,
       shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.4 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? theme.border : 'transparent',
-      marginTop: 8,
+      shadowOpacity: isDark ? 0.5 : 0.2,
+      shadowOffset: { width: 0, height: 8 },
+      shadowRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.4)' 
+        : 'rgba(226, 232, 240, 0.9)',
+      marginTop: 12,
     },
     suggestionScrollView: {
       maxHeight: 200,
@@ -1179,22 +1209,30 @@ export default function HomeScreen() {
     suggestionItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 16,
+      padding: 18,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? theme.border : '#F0F0F0',
-      minHeight: 56,
+      borderBottomColor: isDark 
+        ? 'rgba(71, 85, 105, 0.2)' 
+        : 'rgba(226, 232, 240, 0.5)',
+      minHeight: 64,
     },
     suggestionItemLast: {
       borderBottomWidth: 0,
     },
     suggestionIcon: {
-      marginRight: 12,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: isDark ? theme.surface : '#F5F5F5',
+      marginRight: 16,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: isDark 
+        ? 'rgba(245, 158, 11, 0.1)' 
+        : 'rgba(245, 158, 11, 0.05)',
       justifyContent: 'center',
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(245, 158, 11, 0.2)' 
+        : 'rgba(245, 158, 11, 0.1)',
     },
     suggestionTextContainer: {
       flex: 1,
@@ -1211,55 +1249,76 @@ export default function HomeScreen() {
       lineHeight: 16,
     },
     searchResultsContainer: {
-      marginBottom: 20,
+      marginBottom: 24,
     },
     searchResultsTitle: {
-      fontWeight: 'bold',
-      fontSize: 16,
-      marginBottom: 8,
+      fontWeight: '700',
+      fontSize: 18,
+      marginBottom: 16,
       color: theme.text,
+      letterSpacing: -0.5,
     },
     searchResultsCard: {
-      backgroundColor: theme.card,
-      borderRadius: 12,
-      padding: 12,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? theme.border : 'transparent',
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 20,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(71, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 4,
     },
     searchResultsText: {
-      fontSize: 14,
+      fontSize: 15,
       color: theme.text,
-      marginBottom: 4,
+      marginBottom: 8,
+      fontWeight: '500',
+      letterSpacing: -0.2,
     },
     savedRoutesTitle: {
-      fontWeight: 'bold',
-      fontSize: 16,
-      marginBottom: 8,
+      fontWeight: '700',
+      fontSize: 18,
+      marginBottom: 16,
       color: theme.text,
+      letterSpacing: -0.5,
     },
     routeCard: {
-      backgroundColor: theme.card,
-      borderRadius: 12,
+      backgroundColor: isDark 
+        ? 'rgba(30, 41, 59, 0.8)' 
+        : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 20,
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 12,
-      marginBottom: 12,
+      padding: 20,
+      marginBottom: 16,
       shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.05,
-      shadowRadius: 4,
-      elevation: 2,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? theme.border : 'transparent',
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: isDark 
+        ? 'rgba(25, 85, 105, 0.3)' 
+        : 'rgba(226, 232, 240, 0.8)',
     },
     routeTitle: {
-      fontWeight: 'bold',
-      fontSize: 14,
+      fontWeight: '600',
+      fontSize: 16,
       color: theme.text,
+      letterSpacing: -0.3,
     },
     routeSubtitle: {
       color: theme.textSecondary,
-      fontSize: 12,
-      marginTop: 2,
+      fontSize: 13,
+      marginTop: 4,
+      fontWeight: '500',
+      opacity: 0.8,
     },
     routeLoadingText: {
       color: theme.textSecondary,
@@ -1270,29 +1329,34 @@ export default function HomeScreen() {
     reserveButton: {
       position: 'absolute',
       bottom: 80,
-      left: 20,
-      right: 20,
-      backgroundColor: availableTaxis.length > 0 ? theme.primary : theme.textSecondary,
-      borderRadius: 25,
-      paddingVertical: 15,
+      left: 24,
+      right: 24,
+      backgroundColor: availableTaxis.length > 0 ? '#F59E0B' : theme.textSecondary,
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: theme.shadow,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 5,
-      minHeight: 50,
+      shadowOpacity: 0.4,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 12,
+      elevation: 8,
+      minHeight: 56,
+      borderWidth: 2,
+      borderColor: availableTaxis.length > 0 ? '#D97706' : 'transparent',
     },
     reserveButtonText: {
-      color: theme.buttonText || '#FFFFFF',
+      color: '#FFFFFF',
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
     reserveButtonSubtext: {
-      color: theme.buttonText || '#FFFFFF',
-      fontSize: 12,
-      marginTop: 4,
+      color: '#FFFFFF',
+      fontSize: 13,
+      marginTop: 6,
+      fontWeight: '500',
+      opacity: 0.9,
     },
   });
 
@@ -1335,20 +1399,44 @@ export default function HomeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
-      {/* Live Location Streaming Status */}
-      <View style={{ padding: 8, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
-        {locationStreamError ? (
-          <Text style={{ color: 'red' }}>{t('home:locationStreamingError')} {locationStreamError}</Text>
-        ) : streamedLocation ? (
-          <Text style={{ color: 'green' }}>{t('home:liveLocationStreaming')} {streamedLocation.latitude.toFixed(5)}, {streamedLocation.longitude.toFixed(5)}</Text>
-        ) : (
-          <Text>{t('home:streamingLocation')}</Text>
-        )}
-      </View>
+
       
       {isLoadingCurrentLocation ? (
-        <View style={dynamicStyles.map}>
-          <LoadingSpinner />
+        <View style={[dynamicStyles.map, { 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          backgroundColor: isDark 
+            ? 'rgba(30, 41, 59, 0.1)' 
+            : 'rgba(255, 255, 255, 0.1)'
+        }]}>
+          <View style={{
+            backgroundColor: isDark 
+              ? 'rgba(30, 41, 59, 0.9)' 
+              : 'rgba(255, 255, 255, 0.9)',
+            borderRadius: 24,
+            padding: 32,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: isDark 
+              ? 'rgba(71, 85, 105, 0.3)' 
+              : 'rgba(226, 232, 240, 0.8)',
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowOffset: { width: 0, height: 8 },
+            shadowRadius: 16,
+            elevation: 8,
+          }}>
+            <LoadingSpinner />
+            <Text style={{ 
+              color: theme.text, 
+              marginTop: 16, 
+              fontSize: 16, 
+              fontWeight: '600',
+              letterSpacing: -0.2
+            }}>
+              {t('home:gettingLocation')}
+            </Text>
+          </View>
         </View>
       ) : (
         <MapView
@@ -1360,15 +1448,15 @@ export default function HomeScreen() {
         >
           {origin && 
             typeof origin.latitude === 'number' &&
-            typeof origin.longitude === 'number' &&(
+            typeof origin.longitude === 'number' && (
               <Marker coordinate={origin} title="Origin" pinColor="blue" />
-          )}
+            )}
 
           {destination &&
             typeof destination.latitude === 'number' &&
             typeof destination.longitude === 'number' && (
               <Marker coordinate={destination} title={destination.name} pinColor="orange" />
-          )}
+            )}
           
           {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
             .filter(driver => 
@@ -1388,7 +1476,7 @@ export default function HomeScreen() {
                   <Icon name="car" size={36} color="green" />
                 </View>
               </Marker>
-          ))}
+            ))}
 
           {routeLoaded && routeCoordinates.length > 0 && (
             <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
@@ -1534,17 +1622,29 @@ export default function HomeScreen() {
               )}
               
               {isLoadingRoute && (
-                <Text style={dynamicStyles.routeLoadingText}>
+                <Text style={[dynamicStyles.routeLoadingText, { 
+                  color: '#F59E0B', 
+                  fontWeight: '600',
+                  fontSize: 13
+                }]}>
                   {t('home:loadingRoute')}
                 </Text>
               )}
               {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { color: theme.primary }]}>
-                  {t('home:routeLoaded')} ✓
+                <Text style={[dynamicStyles.routeLoadingText, { 
+                  color: '#10B981', 
+                  fontWeight: '600',
+                  fontSize: 13
+                }]}>
+                  {t('home:routeLoaded')}
                 </Text>
               )}
               {isSearchingTaxis && (
-                <Text style={dynamicStyles.routeLoadingText}>
+                <Text style={[dynamicStyles.routeLoadingText, { 
+                  color: '#3B82F6', 
+                  fontWeight: '600',
+                  fontSize: 13
+                }]}>
                   {t('home:searchingTaxis')}
                 </Text>
               )}
@@ -1589,41 +1689,147 @@ export default function HomeScreen() {
         </View>
 
         {/* Journey Status */}
-        {routeMatchResults && !keyboardVisible && (
+        {routeMatchResults && !keyboardVisible && !routeLoaded && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
-              {t('home:journeyStatus')}
+              🚗 {t('home:journeyStatus')}
             </Text>
             <View style={dynamicStyles.searchResultsCard}>
-              <Text style={dynamicStyles.searchResultsText}>
-                📍 {t('home:availableTaxis')} {routeMatchResults.availableTaxis?.length || 0}
-              </Text>
-              <Text style={dynamicStyles.searchResultsText}>
-                🛣 {t('home:matchingRoutes')} {routeMatchResults.matchingRoutes?.length || 0}
-              </Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 12,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: isDark 
+                  ? 'rgba(71, 85, 105, 0.2)' 
+                  : 'rgba(226, 232, 240, 0.5)',
+              }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#F59E0B',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 16,
+                }}>
+                  <Icon name="car" size={20} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[dynamicStyles.searchResultsText, { 
+                    fontSize: 16, 
+                    fontWeight: '600',
+                    marginBottom: 4
+                  }]}>
+                    {routeMatchResults.availableTaxis?.length || 0} {t('home:availableTaxis')}
+                  </Text>
+                  <Text style={[dynamicStyles.searchResultsText, { 
+                    fontSize: 13,
+                    opacity: 0.8
+                  }]}>
+                    {routeMatchResults.matchingRoutes?.length || 0} {t('home:matchingRoutes')}
+                  </Text>
+                </View>
+              </View>
+              
               {routeMatchResults.availableTaxis?.length > 0 && routeMatchResults.availableTaxis[0]?.routeInfo?.calculatedFare && (
-                <Text style={[dynamicStyles.searchResultsText, { color: theme.primary, fontWeight: 'bold' }]}>
-                  💰 Estimated Fare: R{routeMatchResults.availableTaxis[0].routeInfo.calculatedFare.toFixed(2)}
-                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                  paddingBottom: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: isDark 
+                    ? 'rgba(71, 85, 105, 0.2)' 
+                    : 'rgba(226, 232, 240, 0.5)',
+                }}>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: '#10B981',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 16,
+                  }}>
+                    <Icon name="cash" size={20} color="#FFFFFF" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[dynamicStyles.searchResultsText, { 
+                      fontSize: 16, 
+                      fontWeight: '600',
+                      marginBottom: 4
+                    }]}>
+                      Estimated Fare
+                    </Text>
+                    <Text style={[dynamicStyles.searchResultsText, { 
+                      fontSize: 18,
+                      fontWeight: '700',
+                      color: '#10B981'
+                    }]}>
+                      R{routeMatchResults.availableTaxis[0].routeInfo.calculatedFare.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
               )}
-              {(routeMatchResults.availableTaxis?.length || 0) > 0 && (
-                <Text style={[dynamicStyles.searchResultsText, { color: theme.primary }]}>
-                  ✅ {t('home:readyToBook')}
-                </Text>
-              )}
-              {(routeMatchResults.availableTaxis?.length || 0) === 0 && (
-                <Text style={[dynamicStyles.searchResultsText, { color: theme.textSecondary }]}>
-                  ⚠ {t('home:noTaxisAvailable')}
-                </Text>
-              )}
+              
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: 8,
+              }}>
+                {(routeMatchResults.availableTaxis?.length || 0) > 0 ? (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#10B981',
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                  }}>
+                    <Icon name="checkmark-circle" size={16} color="#FFFFFF" />
+                    <Text style={{
+                      color: '#FFFFFF',
+                      fontSize: 14,
+                      fontWeight: '600',
+                      marginLeft: 8,
+                    }}>
+                      {t('home:readyToBook')}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#F59E0B',
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                  }}>
+                    <Icon name="warning" size={16} color="#FFFFFF" />
+                    <Text style={{
+                      color: '#FFFFFF',
+                      fontSize: 14,
+                      fontWeight: '600',
+                      marginLeft: 8,
+                    }}>
+                      {t('home:noTaxisAvailable')}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         )}
 
-        {!keyboardVisible && (
+        {!keyboardVisible && !routeLoaded && (
           <>
-            <Text style={dynamicStyles.savedRoutesTitle}>{t('home:recentlyUsedRanks')}</Text>
-            <View style={{ marginTop: 10 }}>
+            <Text style={dynamicStyles.savedRoutesTitle}>
+              Recently Used Routes
+            </Text>
+            <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (
                 displayRoutes.map((route: any, index: number) => (
                   <TouchableOpacity
@@ -1644,13 +1850,29 @@ export default function HomeScreen() {
                         startLng: route.startLng,
                       })
                     }
+                    activeOpacity={0.8}
                   >
-                    <Icon
-                      name="location-sharp"
-                      size={20}
-                      color={theme.primary}
-                      style={{ marginRight: 12 }}
-                    />
+                    <View style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: isDark 
+                        ? 'rgba(245, 158, 11, 0.1)' 
+                        : 'rgba(245, 158, 11, 0.05)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginRight: 16,
+                      borderWidth: 1,
+                      borderColor: isDark 
+                        ? 'rgba(245, 158, 11, 0.2)' 
+                        : 'rgba(245, 158, 11, 0.1)',
+                    }}>
+                      <Icon
+                        name="location-sharp"
+                        size={24}
+                        color="#F59E0B"
+                      />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={dynamicStyles.routeTitle}>
                         {route.startName && route.routeName 
@@ -1658,18 +1880,55 @@ export default function HomeScreen() {
                           : 'Unknown Route'
                         }
                       </Text>
+
                     </View>
-                    <Icon
-                      name="chevron-forward"
-                      size={16}
-                      color={theme.textSecondary}
-                    />
+                    <View style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: isDark 
+                        ? 'rgba(71, 85, 105, 0.2)' 
+                        : 'rgba(226, 232, 240, 0.5)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <Icon
+                        name="chevron-forward"
+                        size={16}
+                        color={theme.textSecondary}
+                      />
+                    </View>
                   </TouchableOpacity>
                 ))
               ) : (
-                <Text style={{ textAlign: 'center', marginTop: 8, color: theme.textSecondary }}>
-                  {t('home:noRecentRoutes')}
-                </Text>
+                <View style={{
+                  backgroundColor: isDark 
+                    ? 'rgba(30, 41, 59, 0.5)' 
+                    : 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: 20,
+                  padding: 32,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: isDark 
+                    ? 'rgba(71, 85, 105, 0.2)' 
+                    : 'rgba(226, 232, 240, 0.5)',
+                }}>
+                  <Icon
+                    name="location-outline"
+                    size={48}
+                    color={theme.textSecondary}
+                    style={{ marginBottom: 16, opacity: 0.5 }}
+                  />
+                  <Text style={{ 
+                    textAlign: 'center', 
+                    color: theme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: '500',
+                    opacity: 0.8
+                  }}>
+                    {t('home:noRecentRoutes')}
+                  </Text>
+                </View>
               )}
             </View>
           </>
@@ -1679,15 +1938,30 @@ export default function HomeScreen() {
       {/* Reserve a Seat Button */}
       {routeLoaded && !isLoadingRoute && !keyboardVisible && (
         <Animated.View style={{ opacity: buttonOpacity }}>
-          <TouchableOpacity style={dynamicStyles.reserveButton} onPress={handleReserveSeat}>
-            <Text style={dynamicStyles.reserveButtonText}>
-              {isSearchingTaxis 
-                ? t('home:findingTaxis')
-                : availableTaxis.length > 0 
-                  ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
-                  : t('home:reserveSeat')
-              }
-            </Text>
+          <TouchableOpacity 
+            style={dynamicStyles.reserveButton} 
+            onPress={handleReserveSeat}
+            activeOpacity={0.9}
+          >
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {isSearchingTaxis ? (
+                <Icon name="search" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              ) : (
+                <Icon name="location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              )}
+              <Text style={dynamicStyles.reserveButtonText}>
+                {isSearchingTaxis 
+                  ? t('home:findingTaxis')
+                  : availableTaxis.length > 0 
+                    ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
+                    : t('home:reserveSeat')
+                }
+              </Text>
+            </View>
             {isSearchingTaxis && (
               <Text style={dynamicStyles.reserveButtonSubtext}>
                 {t('home:searchingDrivers')}

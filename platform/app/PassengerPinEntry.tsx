@@ -28,6 +28,14 @@ export default function PassengerPinEntry() {
   
   const [pin, setPin] = useState(['', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // Reset PIN if it gets corrupted
+  useEffect(() => {
+    if (pin.length !== 4 || !Array.isArray(pin)) {
+      console.warn('PIN state corrupted, resetting...');
+      setPin(['', '', '', '']);
+    }
+  }, [pin]);
   
   // Get ride information from params
   const rideId = params.rideId as string;
@@ -38,37 +46,79 @@ export default function PassengerPinEntry() {
   const startName = params.startName as string;
   const endName = params.endName as string;
 
+  // Debug logging
+  useEffect(() => {
+    console.log('PassengerPinEntry mounted with params:', {
+      rideId,
+      driverId,
+      driverName,
+      licensePlate,
+      fare,
+      startName,
+      endName,
+      user: user?.id
+    });
+  }, [rideId, driverId, driverName, licensePlate, fare, startName, endName, user?.id]);
+
   const verifyDriverPin = useMutation(api.functions.rides.verifyDriverPin.verifyDriverPin);
 
   // Handle PIN input
   const handlePinChange = (value: string, index: number) => {
-    if (value.length > 1) return; // Only allow single digit
-    
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-    
-    // Auto-advance to next input
-    if (value && index < 3) {
-      // Focus next input (handled by auto-advance)
-    }
-    
-    // Auto-verify when all digits are entered
-    if (index === 3 && value && newPin.every(digit => digit !== '')) {
-      handleVerifyPin(newPin.join(''));
+    try {
+      // Validate input and PIN state
+      if (!value || value.length > 1 || !/^\d$/.test(value)) {
+        return; // Only allow single digit
+      }
+      
+      if (!Array.isArray(pin) || pin.length !== 4) {
+        console.warn('PIN state corrupted, resetting...');
+        setPin(['', '', '', '']);
+        return;
+      }
+      
+      const newPin = [...pin];
+      newPin[index] = value;
+      setPin(newPin);
+      
+      // Auto-verify when all digits are entered
+      if (index === 3 && value && newPin.every(digit => digit !== '')) {
+        const fullPin = newPin.join('');
+        if (fullPin.length === 4 && /^\d{4}$/.test(fullPin)) {
+          handleVerifyPin(fullPin);
+        }
+      }
+    } catch (error) {
+      console.error('PIN input error:', error);
+      Alert.alert('Error', 'Failed to process PIN input. Please try again.');
+      // Reset PIN state on error
+      setPin(['', '', '', '']);
     }
   };
 
   // Handle backspace
   const handleBackspace = () => {
-    const lastFilledIndex = pin.map((digit, index) => digit !== '' ? index : -1)
-      .filter(index => index !== -1)
-      .pop();
-    
-    if (lastFilledIndex !== undefined) {
-      const newPin = [...pin];
-      newPin[lastFilledIndex] = '';
-      setPin(newPin);
+    try {
+      // Validate PIN state
+      if (!Array.isArray(pin) || pin.length !== 4) {
+        console.warn('PIN state corrupted, resetting...');
+        setPin(['', '', '', '']);
+        return;
+      }
+      
+      const lastFilledIndex = pin.map((digit, index) => digit !== '' ? index : -1)
+        .filter(index => index !== -1)
+        .pop();
+      
+      if (lastFilledIndex !== undefined && lastFilledIndex >= 0) {
+        const newPin = [...pin];
+        newPin[lastFilledIndex] = '';
+        setPin(newPin);
+      }
+    } catch (error) {
+      console.error('Backspace error:', error);
+      Alert.alert('Error', 'Failed to process backspace. Please try again.');
+      // Reset PIN state on error
+      setPin(['', '', '', '']);
     }
   };
 
@@ -76,6 +126,12 @@ export default function PassengerPinEntry() {
   const handleVerifyPin = async (enteredPin: string) => {
     if (!user || !rideId || !driverId) {
       Alert.alert('Error', 'Missing ride or user information.');
+      return;
+    }
+
+    // Validate PIN format
+    if (!enteredPin || enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
+      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
       return;
     }
 
@@ -88,32 +144,38 @@ export default function PassengerPinEntry() {
         enteredPin: enteredPin,
       });
 
-      if (result.success) {
+      if (result && result.success) {
         // PIN verified successfully, redirect to payments page
-        router.push({
-          pathname: './Payments',
-          params: {
-            driverName: driverName || 'Unknown Driver',
-            licensePlate: licensePlate || 'Unknown Plate',
-            fare: fare || '0',
-            rideId: rideId,
-            startName: startName || 'Current Location',
-            endName: endName || 'Destination',
-            driverId: driverId || '',
-            // Pass through location parameters
-            currentLat: params.currentLat,
-            currentLng: params.currentLng,
-            currentName: params.currentName,
-            destinationLat: params.destinationLat,
-            destinationLng: params.destinationLng,
-            destinationName: params.destinationName,
-          },
-        });
+        try {
+          await router.push({
+            pathname: '/Payments',
+            params: {
+              driverName: driverName || 'Unknown Driver',
+              licensePlate: licensePlate || 'Unknown Plate',
+              fare: fare || '0',
+              rideId: rideId,
+              startName: startName || 'Current Location',
+              endName: endName || 'Destination',
+              driverId: driverId || '',
+              // Pass through location parameters
+              currentLat: params.currentLat,
+              currentLng: params.currentLng,
+              currentName: params.currentName,
+              destinationLat: params.destinationLat,
+              destinationLng: params.destinationLng,
+              destinationName: params.destinationName,
+            },
+          });
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          Alert.alert('Navigation Error', 'Failed to navigate to payments. Please try again.');
+        }
       } else {
         Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
         setPin(['', '', '', '']);
       }
     } catch (error: any) {
+      console.error('PIN verification error:', error);
       Alert.alert('Error', error?.message || 'Failed to verify PIN. Please try again.');
       setPin(['', '', '', '']);
     } finally {
@@ -123,48 +185,93 @@ export default function PassengerPinEntry() {
 
   // Render number pad
   const renderNumberPad = () => {
-    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'backspace'];
-    
-    return (
-      <View style={styles.numberPad}>
-        {numbers.map((item, index) => {
-          if (item === '') {
-            return <View key={index} style={styles.numberButtonEmpty} />;
-          }
-          
-          if (item === 'backspace') {
+    try {
+      const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'backspace'];
+      
+      return (
+        <View style={styles.numberPad}>
+          {numbers.map((item, index) => {
+            if (item === '') {
+              return <View key={index} style={styles.numberButtonEmpty} />;
+            }
+            
+            if (item === 'backspace') {
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.numberButton}
+                  onPress={handleBackspace}
+                  activeOpacity={0.7}
+                  disabled={isVerifying}
+                >
+                  <Icon name="backspace-outline" size={24} color={theme.text} />
+                </TouchableOpacity>
+              );
+            }
+            
             return (
               <TouchableOpacity
                 key={index}
                 style={styles.numberButton}
-                onPress={handleBackspace}
+                onPress={() => handlePinChange(item, pin.findIndex(digit => digit === ''))}
                 activeOpacity={0.7}
+                disabled={isVerifying}
               >
-                <Icon name="backspace-outline" size={24} color={theme.text} />
+                <Text style={styles.numberButtonText}>{item}</Text>
               </TouchableOpacity>
             );
-          }
-          
-          return (
-            <TouchableOpacity
-              key={index}
-              style={styles.numberButton}
-              onPress={() => handlePinChange(item, pin.findIndex(digit => digit === ''))}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.numberButtonText}>{item}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
+          })}
+        </View>
+      );
+    } catch (error) {
+      console.error('Number pad rendering error:', error);
+      return (
+        <View style={styles.numberPad}>
+          <Text style={[styles.loadingText, { color: theme.text }]}>
+            Error loading number pad
+          </Text>
+        </View>
+      );
+    }
   };
 
   // Early return if no user
   if (!user) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <LoadingSpinner size="large" />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme?.background || '#FFFFFF' }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Early return if missing required parameters
+  if (!rideId || !driverId) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme?.background || '#FFFFFF' }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>Missing ride information. Please go back and try again.</Text>
+          <TouchableOpacity 
+            style={[styles.cancelButton, { marginTop: 20 }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.cancelButtonText, { color: theme?.text || '#000000' }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Early return if theme is not loaded
+  if (!theme) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: '#000000' }]}>Loading theme...</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -221,22 +328,28 @@ export default function PassengerPinEntry() {
 
           {/* PIN Display */}
           <View style={styles.pinDisplay}>
-            {pin.map((digit, index) => (
-              <View 
-                key={index} 
-                style={[
-                  styles.pinDot,
-                  digit !== '' && styles.pinDotFilled,
-                  { borderColor: theme.primary }
-                ]}
-              >
-                {digit !== '' && (
-                  <Text style={[styles.pinDigit, { color: theme.primary }]}>
-                    {digit}
-                  </Text>
-                )}
-              </View>
-            ))}
+            {Array.isArray(pin) && pin.length === 4 ? (
+              pin.map((digit, index) => (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.pinDot,
+                    digit !== '' && styles.pinDotFilled,
+                    { borderColor: theme.primary }
+                  ]}
+                >
+                  {digit !== '' && (
+                    <Text style={[styles.pinDigit, { color: theme.primary }]}>
+                      {digit}
+                    </Text>
+                  )}
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.loadingText, { color: theme.text }]}>
+                Loading PIN display...
+              </Text>
+            )}
           </View>
 
           {/* Number Pad */}
@@ -245,12 +358,22 @@ export default function PassengerPinEntry() {
           {/* Cancel Button */}
           <TouchableOpacity 
             style={[styles.cancelButton]}
-            onPress={() => router.push("/PassengerReservation")}
+            onPress={() => router.push("../PassengerReservation")}
+            disabled={isVerifying}
           >
             <Text style={[styles.cancelButtonText, { color: theme.text }]}>
               Cancel
             </Text>
           </TouchableOpacity>
+
+          {/* Loading Indicator */}
+          {isVerifying && (
+            <View style={styles.loadingContainer}>
+              <Text style={[styles.loadingText, { color: theme.text }]}>
+                Verifying PIN...
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -347,5 +470,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  // Loading spinner is used instead of these styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });

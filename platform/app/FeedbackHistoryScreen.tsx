@@ -15,16 +15,14 @@ export default function FeedbackHistoryScreen() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  // Hide the default header
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
-
   const feedbackList = useQuery(
-    api.functions.feedback.showFeedback.showFeedbackPassenger,
-    user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+    user?.role === 'driver' 
+      ? api.functions.feedback.showFeedback.showFeedbackDriver
+      : api.functions.feedback.showFeedback.showFeedbackPassenger,
+    user?.id ? (user?.role === 'driver' 
+      ? { driverId: user.id as Id<"taxiTap_users"> }
+      : { passengerId: user.id as Id<"taxiTap_users"> }
+    ) : "skip"
   );
 
   const dynamicStyles = StyleSheet.create({
@@ -129,14 +127,6 @@ export default function FeedbackHistoryScreen() {
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Custom Header with Back Button */}
-        <View style={dynamicStyles.header}>
-          <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
-            <Ionicons name="arrow-back" size={24} color={theme.text} />
-          </Pressable>
-          <Text style={dynamicStyles.headerTitle}>Your Feedback History</Text>
-        </View>
-
         {/* Feedback List Section */}
         <View style={dynamicStyles.section}>
           {!feedbackList ? (
@@ -145,11 +135,21 @@ export default function FeedbackHistoryScreen() {
             </View>
           ) : feedbackList.length === 0 ? (
             <View style={dynamicStyles.emptyState}>
-              <Text style={dynamicStyles.emptyStateText}>You haven't left any reviews yet.</Text>
-              <Text style={dynamicStyles.emptyStateText}>Your feedback helps improve our service!</Text>
+              <Text style={dynamicStyles.emptyStateText}>
+                {user.role === 'driver' 
+                  ? "You haven't received any feedback yet." 
+                  : "You haven't left any reviews yet."
+                }
+              </Text>
+              <Text style={dynamicStyles.emptyStateText}>
+                {user.role === 'driver' 
+                  ? "Passenger feedback helps improve your service!" 
+                  : "Your feedback helps improve our service!"
+                }
+              </Text>
             </View>
           ) : (
-            feedbackList.map((entry, index) => (
+            feedbackList.map((entry: any, index: number) => (
               <View
                 key={entry._id}
                 style={[
@@ -164,8 +164,16 @@ export default function FeedbackHistoryScreen() {
                   {entry.comment && (
                     <Text style={dynamicStyles.feedbackText}>📝 Comment: {entry.comment}</Text>
                   )}
-                  {entry.driverName && (
-                    <Text style={dynamicStyles.feedbackSecondary}>Driver: {entry.driverName}</Text>
+                  {user.role === 'driver' ? (
+                    // For drivers, show passenger name
+                    entry.passengerName && (
+                      <Text style={dynamicStyles.feedbackSecondary}>Passenger: {entry.passengerName}</Text>
+                    )
+                  ) : (
+                    // For passengers, show driver name
+                    entry.driverName && (
+                      <Text style={dynamicStyles.feedbackSecondary}>Driver: {entry.driverName}</Text>
+                    )
                   )}
                   {(entry.startLocation || entry.endLocation) && (
                     <View>

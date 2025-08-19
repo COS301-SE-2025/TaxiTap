@@ -75,15 +75,21 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
   };
 
   const getNotificationStyle = () => {
+    // All notifications use the same Amazon blue base with accent colors
+    const baseStyle = {
+      backgroundColor: 'rgba(29, 41, 57, 0.95)', // Amazon blue with transparency
+      borderLeftWidth: 3,
+    };
+
     switch (notification.type) {
       case 'success':
-        return styles.successNotification;
+        return { ...baseStyle, borderLeftColor: '#34C759' };
       case 'warning':
-        return styles.warningNotification;
+        return { ...baseStyle, borderLeftColor: '#FF9500' };
       case 'error':
-        return styles.errorNotification;
+        return { ...baseStyle, borderLeftColor: '#FF3B30' };
       default:
-        return styles.infoNotification;
+        return { ...baseStyle, borderLeftColor: '#007AFF' };
     }
   };
 
@@ -100,6 +106,43 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
     }
   };
 
+  const formatTime = (timestamp: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / 60000);
+    
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    return timestamp.toLocaleDateString();
+  };
+
+  const renderAppIcon = () => (
+    <View style={styles.appIconContainer}>
+      {/* App Logo - Replace with your actual app logo/icon */}
+      <View style={styles.appIcon}>
+        <Text style={styles.appIconText}>A</Text>
+      </View>
+      <View style={[styles.statusIndicator, getStatusIndicatorColor()]}>
+        <Text style={styles.statusIcon}>{getNotificationIcon()}</Text>
+      </View>
+    </View>
+  );
+
+  const getStatusIndicatorColor = () => {
+    switch (notification.type) {
+      case 'success':
+        return { backgroundColor: '#34C759' };
+      case 'warning':
+        return { backgroundColor: '#FF9500' };
+      case 'error':
+        return { backgroundColor: '#FF3B30' };
+      default:
+        return { backgroundColor: '#007AFF' };
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -107,7 +150,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
         {
           transform: [{ translateX: slideAnim }],
           opacity: opacityAnim,
-          top: Platform.OS === 'ios' ? 60 + (index * 80) : 20 + (index * 80),
+          top: Platform.OS === 'ios' ? 60 + (index * 74) : 40 + (index * 74),
         },
       ]}
     >
@@ -117,19 +160,31 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
         activeOpacity={0.9}
       >
         <View style={styles.notificationContent}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.icon}>{getNotificationIcon()}</Text>
-          </View>
+          {renderAppIcon()}
           
           <View style={styles.textContainer}>
+            <View style={styles.headerRow}>
+              <Text style={styles.appName} numberOfLines={1}>
+                Your App
+              </Text>
+              <Text style={styles.timestamp}>{formatTime(notification.timestamp)}</Text>
+            </View>
+            
             <Text style={styles.title} numberOfLines={1}>
               {notification.title}
             </Text>
+            
             <Text style={styles.message} numberOfLines={2}>
               {notification.message}
             </Text>
+            
             {notification.action && (
-              <Text style={styles.actionText}>{notification.action.label}</Text>
+              <TouchableOpacity 
+                style={styles.actionContainer}
+                onPress={handleActionPress}
+              >
+                <Text style={styles.actionText}>{notification.action.label}</Text>
+              </TouchableOpacity>
             )}
           </View>
           
@@ -155,7 +210,7 @@ export const InAppNotificationOverlay: React.FC = () => {
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      {inAppNotifications.map((notification, index) => (
+      {inAppNotifications.map((notification: any, index: number) => (
         <NotificationItem
           key={notification.id}
           notification={notification}
@@ -178,88 +233,131 @@ const styles = StyleSheet.create({
   },
   notificationContainer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 12,
+    right: 12,
     zIndex: 1000,
   },
   notification: {
-    borderRadius: 12,
-    marginVertical: 4,
+    borderRadius: 12, // Native iOS-style rounded corners
+    marginVertical: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 12,
+    elevation: 10,
   },
   notificationContent: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+    alignItems: 'flex-start',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     minHeight: 70,
   },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  appIconContainer: {
+    position: 'relative',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  appIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8, // Native app icon corner radius
+    backgroundColor: '#1d2939', // Amazon blue for app icon
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
-  icon: {
-    fontSize: 16,
-    color: '#fff',
+  appIconText: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  statusIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  statusIcon: {
+    fontSize: 8,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    lineHeight: 10,
   },
   textContainer: {
     flex: 1,
     marginRight: 8,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 2,
+  },
+  appName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: -0.08,
+  },
+  timestamp: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '400',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    letterSpacing: -0.24,
+    lineHeight: 20,
   },
   message: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 18,
+    fontWeight: '400',
+    letterSpacing: -0.08,
+  },
+  actionContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   actionText: {
-    fontSize: 12,
-    color: '#fff',
+    fontSize: 14,
+    color: '#007AFF',
     fontWeight: '600',
-    marginTop: 4,
-    textDecorationLine: 'underline',
+    letterSpacing: -0.08,
   },
   closeButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   closeText: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
-    lineHeight: 18,
-  },
-  infoNotification: {
-    backgroundColor: '#007AFF',
-  },
-  successNotification: {
-    backgroundColor: '#34C759',
-  },
-  warningNotification: {
-    backgroundColor: '#FF9500',
-  },
-  errorNotification: {
-    backgroundColor: '#FF3B30',
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
+    lineHeight: 16,
   },
 });
