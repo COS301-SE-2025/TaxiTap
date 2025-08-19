@@ -188,7 +188,7 @@ export default function HelpPage() {
             icon="document-text-outline"
             title={t('help:howToNavigateApp')}
             subtitle={t('help:linkToManual')}
-            onPress={() => Linking.openURL('https://raw.githubusercontent.com/COS301-SE-2025/Taxi-Tap/main/docs/Taxi%20Tap%20User%20Manual.pdf')}
+            onPress={() => Linking.openURL('https://drive.google.com/file/d/1jbRkhZWS7fsNdYvHlI6o9QoXA5lHsZj4/view?usp=drive_link')}
             isLink={true}
           />
         </View>
