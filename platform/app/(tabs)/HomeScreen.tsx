@@ -187,6 +187,9 @@ export default function HomeScreen() {
   const [justSelectedOrigin, setJustSelectedOrigin] = useState(false);
   const [justSelectedDestination, setJustSelectedDestination] = useState(false);
 
+  // NEW: Route programmatically selected state
+  const [routeProgrammaticallySelected, setRouteProgrammaticallySelected] = useState(false);
+
   // NEW: Keyboard handling states
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -300,7 +303,7 @@ export default function HomeScreen() {
 
   // NEW: Debounced autocomplete for origin
   useEffect(() => {
-    if (justSelectedOrigin) return;
+    if (justSelectedOrigin || routeProgrammaticallySelected) return;
     
     const timeoutId = setTimeout(async () => {
       if (originAddress.trim().length >= 3) {
@@ -316,11 +319,11 @@ export default function HomeScreen() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [originAddress, detectedLocation, justSelectedOrigin]);
+  }, [originAddress, detectedLocation, justSelectedOrigin, routeProgrammaticallySelected]);
 
   // NEW: Debounced autocomplete for destination
   useEffect(() => {
-    if (justSelectedDestination) return;
+    if (justSelectedDestination || routeProgrammaticallySelected) return;
     
     const timeoutId = setTimeout(async () => {
       if (destinationAddress.trim().length >= 3) {
@@ -336,7 +339,7 @@ export default function HomeScreen() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [destinationAddress, detectedLocation, justSelectedDestination]);
+  }, [destinationAddress, detectedLocation, justSelectedDestination, routeProgrammaticallySelected]);
 
   // NEW: Handle origin suggestion selection
   const handleOriginSuggestionSelect = async (suggestion: PlaceSuggestion) => {
@@ -742,6 +745,27 @@ export default function HomeScreen() {
     }
   }, [taxiSearchResult]);
 
+  // NEW: Handle address changes with programmatic flag reset
+  const handleOriginAddressChange = (text: string) => {
+    setOriginAddress(text);
+    setJustSelectedOrigin(false);
+    
+    // If user is manually typing, allow autocomplete again
+    if (routeProgrammaticallySelected) {
+      setRouteProgrammaticallySelected(false);
+    }
+  };
+
+  const handleDestinationAddressChange = (text: string) => {
+    setDestinationAddress(text);
+    setJustSelectedDestination(false);
+    
+    // If user is manually typing, allow autocomplete again
+    if (routeProgrammaticallySelected) {
+      setRouteProgrammaticallySelected(false);
+    }
+  };
+
   // Handle origin address submission (fallback for manual entry)
   const handleOriginSubmit = async () => {
     if (!originAddress.trim()) return;
@@ -1011,6 +1035,9 @@ export default function HomeScreen() {
       !userId
     ) return;
 
+    // Set the flag to prevent autocomplete
+    setRouteProgrammaticallySelected(true);
+
     const displayName = route.routeId.startsWith("manual-") 
       ? route.routeName || route.destination
       : route.destination;
@@ -1048,6 +1075,10 @@ export default function HomeScreen() {
     // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
     setShowDestinationSuggestions(false);
+    setOriginSuggestions([]);
+    setDestinationSuggestions([]);
+    setJustSelectedOrigin(true);
+    setJustSelectedDestination(true);
   };
 
   // Show loading spinner if essential data is loading
@@ -1516,10 +1547,7 @@ export default function HomeScreen() {
                 style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
                 placeholder={origin ? origin.name : t('home:enterOriginAddress')}
                 value={originAddress}
-                onChangeText={(text) => {
-                  setOriginAddress(text);
-                  setJustSelectedOrigin(false);
-                }}
+                onChangeText={handleOriginAddressChange}
                 onSubmitEditing={handleOriginSubmit}
                 onFocus={() => {
                   setJustSelectedOrigin(false);
@@ -1593,10 +1621,7 @@ export default function HomeScreen() {
                 style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
                 placeholder={t('home:enterDestinationAddress')}
                 value={destinationAddress}
-                onChangeText={(text) => {
-                  setDestinationAddress(text);
-                  setJustSelectedDestination(false);
-                }}
+                onChangeText={handleDestinationAddressChange}
                 onSubmitEditing={handleDestinationSubmit}
                 onFocus={() => {
                   setJustSelectedDestination(false);
