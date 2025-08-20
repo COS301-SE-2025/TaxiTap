@@ -58,7 +58,7 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 ### 📊 Demo 3
 | Resource | Link |
 |----------|------|
-| **🎥 Presentation** | [Watch Video] |
+| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1rjfv6kMCcu7E4tIUm8bzvzDWVmagnSBz/view?usp=drive_link) |
 | **🚀 Live Demo** | [Watch Video] |
 | **📄 SRS Document** | [View PDF](https://drive.google.com/file/d/1cVcnNRBMGz8FHW-sJ4GjtsidP9-ZwlGq/view?usp=drive_link) |
 | **🏗️ Architecture Document** | [View PDF](https://drive.google.com/file/d/1tdwLBUg0rqhwuDzBwusLdB9wAielVv7W/view?usp=drive_link) |
@@ -68,6 +68,7 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 | **🗠 Domain Model** | [View PDF](https://drive.google.com/file/d/1_2hOXEPfQb0cWvu6iWpEnHbJC_Izsk2P/view?usp=drive_link) |
 | **🗠 Architecture Diagram** | [View PDF](https://drive.google.com/file/d/1Zr1sdzwk3v1HNTBNvswXvv6wGQvxZbjq/view?usp=drive_link) |
 | **🗠 Deployment Diagram** | [View PDF](https://drive.google.com/file/d/1dCMVTM4NRoEbgOD886oPib4O09xFEatC/view?usp=drive_link) |
+| **👥👥 Project Management** | [View PDF](https://github.com/orgs/COS301-SE-2025/projects/265/views/1) |
 
 ---
 
