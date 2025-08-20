@@ -8,10 +8,7 @@ import {
   Modal,
   StatusBar,
   SafeAreaView,
-  Animated,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PanGestureHandler } from 'react-native-gesture-handler';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as Location from 'expo-location';
@@ -47,6 +44,7 @@ export default function DriverOnline({
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
   const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
+  const copyDriverPinToRide = useMutation(api.functions.rides.getDriverPin.copyDriverPinToRide);
 
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
@@ -58,14 +56,6 @@ export default function DriverOnline({
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [driverPin, setDriverPin] = useState<string>('');
-  
-  // Prevent PIN from being cleared on re-renders
-  const setDriverPinStable = (pin: string) => {
-    if (pin && pin !== driverPin) {
-      setDriverPin(pin);
-    }
-  };
   const [showPinModal, setShowPinModal] = useState(false);
   
   const mapRef = useRef<MapView | null>(null);
@@ -74,6 +64,24 @@ export default function DriverOnline({
   
   const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
   
+  // Get driver PIN from profile (this will always work)
+  const getOrCreateDriverPin = useMutation(api.functions.rides.getDriverPin.getOrCreateDriverPin);
+
+  const [driverPinData, setDriverPinData] = useState<{ pin: string; isNew: boolean } | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      (async () => {
+        try {
+          const result = await getOrCreateDriverPin({ driverId: user.id as Id<"taxiTap_users"> });
+          setDriverPinData(result);
+        } catch (e) {
+          console.error("Failed to get or create driver pin", e);
+        }
+      })();
+    }
+  }, [user?.id, getOrCreateDriverPin]);
+
   const taxiInfo = useQuery(
     api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
     user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -93,53 +101,15 @@ export default function DriverOnline({
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
 
-  // Generate or use existing PIN - only once per session
-  const pinGeneratedRef = useRef(false);
-  const sessionPinRef = useRef<string>('');
-  
-  // Try to get PIN from AsyncStorage or generate new one
-  useEffect(() => {
-    const getStoredPin = async () => {
-      try {
-        // Check if we have a stored PIN for this user session
-        const storedPin = await AsyncStorage.getItem(`driverPin_${userId}`);
-        
-        if (storedPin) {
-          sessionPinRef.current = storedPin;
-          setDriverPinStable(storedPin);
-          pinGeneratedRef.current = true;
-          return;
-        }
-        
-        // If there's an active ride with a PIN, use that
-        if (activeRide?.ridePin) {
-          sessionPinRef.current = activeRide.ridePin;
-          await AsyncStorage.setItem(`driverPin_${userId}`, activeRide.ridePin);
-          setDriverPinStable(activeRide.ridePin);
-          pinGeneratedRef.current = true;
-        } 
-        // If no active ride and we haven't generated a PIN yet, generate one
-        else if (user && !pinGeneratedRef.current) {
-          const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-          sessionPinRef.current = newPin;
-          await AsyncStorage.setItem(`driverPin_${userId}`, newPin);
-          setDriverPinStable(newPin);
-          pinGeneratedRef.current = true;
-        }
-      } catch (error) {
-        console.error('Error with PIN storage:', error);
-      }
-    };
-    
-    getStoredPin();
-  }, [user, activeRide?.ridePin, userId]);
+  // Get driver PIN from the query result
+  const driverPin = driverPinData?.pin || '';
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
       tabBarStyle: { display: 'none' },
     });
-  });
+  }, [navigation]);
 
   // Location setup
   useEffect(() => {
@@ -185,11 +155,14 @@ export default function DriverOnline({
   }, []);
 
   // Handle notifications
+  const shownRequests = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (!user) return;
     
     const rideRequest = notifications.find(n => n.type === "ride_request" && !n.isRead);
-    if (rideRequest) {
+    if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
+      shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
         title: "New Ride Request",
         message: rideRequest.message,
@@ -203,7 +176,7 @@ export default function DriverOnline({
             style: 'destructive',
             onPress: async () => {
               try {
-                await declineRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<'taxiTap_users'> });
+                await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
                 showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
               }
@@ -215,8 +188,18 @@ export default function DriverOnline({
             style: 'default',
             onPress: async () => {
               try {
-                await acceptRide({ rideId: rideRequest.metadata.rideId, driverId: user.id as Id<"taxiTap_users"> });
-                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata.rideId, action: "decrease" });
+                // Accept the ride first
+                await acceptRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<"taxiTap_users"> });
+                
+                // Copy driver PIN to the ride
+                await copyDriverPinToRide({ 
+                  rideId: rideRequest.metadata?.rideId, 
+                  driverId: user.id as Id<"taxiTap_users"> 
+                });
+                
+                // Update taxi seat availability
+                await updateTaxiSeatAvailability({ rideId: rideRequest.metadata?.rideId, action: "decrease" });
+                
                 markAsRead(rideRequest._id);
               } catch (error) {
                 showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
@@ -226,7 +209,7 @@ export default function DriverOnline({
         ],
       });
     }
-  }, [notifications, user]);
+  }, [notifications, user, acceptRide, copyDriverPinToRide, updateTaxiSeatAvailability, declineRide, showGlobalAlert, showGlobalError, markAsRead]);
 
   const handleEmergency = () => {
     showGlobalAlert({
@@ -248,38 +231,6 @@ export default function DriverOnline({
       ],
     });
   };
-
-  // Clear PIN when going offline
-  const handleGoOffline = async () => {
-    try {
-      // Clear the stored PIN
-      if (userId) {
-        await AsyncStorage.removeItem(`driverPin_${userId}`);
-      }
-      // Call the parent's onGoOffline function
-      onGoOffline();
-    } catch (error) {
-      console.error('Error clearing PIN:', error);
-      // Still call onGoOffline even if clearing fails
-      onGoOffline();
-    }
-  };
-
-  // Clear PIN when ride ends (status changes from in_progress)
-  useEffect(() => {
-    if (activeRide?.status === 'completed' || activeRide?.status === 'cancelled') {
-      const clearRidePin = async () => {
-        try {
-          if (userId) {
-            await AsyncStorage.removeItem(`driverPin_${userId}`);
-          }
-        } catch (error) {
-          console.error('Error clearing ride PIN:', error);
-        }
-      };
-      clearRidePin();
-    }
-  }, [activeRide?.status, userId]);
 
   const increaseSeats = async () => {
     if (!user) return;
@@ -650,14 +601,23 @@ export default function DriverOnline({
       fontSize: 14,
       fontWeight: '600',
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      color: theme.text,
+      fontSize: 16,
+    },
   });
 
   if (!currentLocation) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: theme.text, fontSize: 16 }}>Loading location...</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading location...</Text>
         </View>
       </SafeAreaView>
     );
@@ -684,7 +644,7 @@ export default function DriverOnline({
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={styles.offlineButton} onPress={handleGoOffline}>
+          <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
             <Icon name="power" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -759,7 +719,7 @@ export default function DriverOnline({
       </View>
 
       {/* Map View */}
-      {showMap && (
+      {showMap && currentLocation && (
         <View style={styles.mapContainer}>
           <MapView
             ref={mapRef}
@@ -790,53 +750,66 @@ export default function DriverOnline({
 
       {/* Menu Modal */}
       <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowMenu(false)}>
-          <View style={styles.menuModal}>
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuHeaderText}>Menu</Text>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowMenu(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <View style={styles.menuModal}>
+              <View style={styles.menuHeader}>
+                <Text style={styles.menuHeaderText}>Menu</Text>
+              </View>
+              
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={() => {
+                    item.onPress();
+                    setShowMenu(false);
+                  }}
+                >
+                  <View style={styles.menuItemIcon}>
+                    <Icon name={item.icon} size={20} color={theme.primary} />
+                  </View>
+                  <Text style={styles.menuItemText}>{item.title}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.menuItem}
-                onPress={() => {
-                  item.onPress();
-                  setShowMenu(false);
-                }}
-              >
-                <View style={styles.menuItemIcon}>
-                  <Icon name={item.icon} size={20} color={theme.primary} />
-                </View>
-                <Text style={styles.menuItemText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
       {/* PIN Modal */}
       <Modal visible={showPinModal} transparent animationType="fade" onRequestClose={() => setShowPinModal(false)}>
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowPinModal(false)}>
-          <View style={styles.pinModal}>
-            <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
-            
-            <View style={styles.pinDisplay}>
-              {driverPin.split('').map((digit, index) => (
-                <View key={index} style={styles.pinDigit}>
-                  <Text style={styles.pinDigitText}>{digit}</Text>
-                </View>
-              ))}
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowPinModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <View style={styles.pinModal}>
+              <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
+              
+              <View style={styles.pinDisplay}>
+                {driverPin.split('').map((digit, index) => (
+                  <View key={index} style={styles.pinDigit}>
+                    <Text style={styles.pinDigitText}>{digit}</Text>
+                  </View>
+                ))}
+              </View>
+              
+              <Text style={styles.pinInfo}>
+                Show this PIN to passengers for secure verification.
+                {driverPinData?.isNew && " (PIN was just generated)"}
+              </Text>
+              
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
             </View>
-            
-            <Text style={styles.pinInfo}>
-              Show this PIN to passengers for secure verification.
-            </Text>
-            
-            <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>

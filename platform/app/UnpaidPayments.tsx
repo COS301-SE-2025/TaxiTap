@@ -62,7 +62,6 @@ export default function UnpaidPayments() {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.headerSection}>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>Unpaid Payments</Text>
                     <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
                         {unpaid.length} unpaid account{unpaid.length !== 1 ? 's' : ''}
                     </Text>
