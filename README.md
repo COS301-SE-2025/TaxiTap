@@ -59,7 +59,7 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 | Resource | Link |
 |----------|------|
 | **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1rjfv6kMCcu7E4tIUm8bzvzDWVmagnSBz/view?usp=drive_link) |
-| **🚀 Live Demo** | [Watch Video] |
+| **🚀 Live Demo** | [Watch Video] |(https://drive.google.com/file/d/15MRPuIiESY16Hri2QC5YofEiCCjHwn0R/view?usp=sharing) |
 | **📄 SRS Document** | [View PDF](https://drive.google.com/file/d/1cVcnNRBMGz8FHW-sJ4GjtsidP9-ZwlGq/view?usp=drive_link) |
 | **🏗️ Architecture Document** | [View PDF](https://drive.google.com/file/d/1tdwLBUg0rqhwuDzBwusLdB9wAielVv7W/view?usp=drive_link) |
 | **📝 Coding Standards** | [View PDF](https://drive.google.com/file/d/146BTwZXbjiIoXnUQvd8RJXFtnq2DKrnk/view?usp=drive_link) |
