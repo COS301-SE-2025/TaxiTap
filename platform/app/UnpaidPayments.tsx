@@ -3,12 +3,11 @@ import { useQuery } from "convex/react";
 import React, { useLayoutEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from "react-native";
 import { useUser } from '../contexts/UserContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { Id } from '../convex/_generated/dataModel';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function UnpaidPayments() {
     const { user } = useUser();
@@ -25,45 +24,13 @@ export default function UnpaidPayments() {
     const handleBackPress = () => {
         router.back();
     };
-    const dynamicStyles = StyleSheet.create({
-        container: {
-        flex: 1,
-        padding: 10,
-        backgroundColor: theme.background,
-        },
-        passengerCard: {
-        backgroundColor: theme.card,
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
-        elevation: 1,
-        shadowColor: theme.shadow,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-        },
-        name: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 5,
-        color: theme.text,
-        },
-        info: {
-        fontSize: 14,
-        marginBottom: 3,
-        color: theme.text,
-        },
-        paid: { color: '#2ECC71', fontWeight: "bold" },
-        unpaid: { color: '#E74C3C', fontWeight: "bold" },
-        noResponse: { color: '#FF9900', fontWeight: "bold" },
-    });
 
     if (!user || activeTrips === undefined) {
         return (
-            <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-                <View style={dynamicStyles.container}>
-                    <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+            <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={styles.container}>
+                    <View style={styles.headerSection}>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>Loading...</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -74,69 +41,61 @@ export default function UnpaidPayments() {
 
     if (!unpaid.length) {
         return (
-            <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-                <View style={dynamicStyles.container}>
-                    <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>All users have paid</Text>
+            <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={styles.container}>
+                    <View style={styles.headerSection}>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>All users have paid</Text>
                     </View>
-                    <View style={dynamicStyles.emptyState}>
+                    <View style={styles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No unpaid accounts</Text>
+                        <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No unpaid accounts</Text>
                     </View>
                 </View>
             </SafeAreaView>
         );
     }
 
-    // Define interface for passenger data
-    interface PassengerData {
-        name: string;
-        phoneNumber: string;
-        fare: number;
-        requestedAt: number | string | Date;
-    }
-    
     return (
-        <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
             <ScrollView 
-                style={dynamicStyles.container}
+                style={styles.container}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerTitle}>Unpaid Payments</Text>
-                    <Text style={dynamicStyles.headerSubtitle}>
+                <View style={styles.headerSection}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Unpaid Payments</Text>
+                    <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
                         {unpaid.length} unpaid account{unpaid.length !== 1 ? 's' : ''}
                     </Text>
                 </View>
 
-                <View style={dynamicStyles.contentSection}>
-                    {unpaid.map((p, idx) => {
+                <View style={styles.contentSection}>
+                    {unpaid.map((p: any, idx: number) => {
                         const date = new Date(p.requestedAt);
                         const dateString = date.toLocaleDateString() + " " + date.toLocaleTimeString();
                         return (
-                            <View key={idx} style={[dynamicStyles.passengerCard, { backgroundColor: theme.card }]}>
-                                <View style={dynamicStyles.cardHeader}>
-                                    <View style={dynamicStyles.passengerInfo}>
-                                        <Text style={[dynamicStyles.name, { color: theme.text }]}>{p.name}</Text>
-                                        <Text style={[dynamicStyles.phoneNumber, { color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)' }]}>
+                            <View key={idx} style={[styles.passengerCard, { backgroundColor: theme.card }]}>
+                                <View style={styles.cardHeader}>
+                                    <View style={styles.passengerInfo}>
+                                        <Text style={[styles.name, { color: theme.text }]}>{p.name}</Text>
+                                        <Text style={[styles.phoneNumber, { color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)' }]}>
                                             {p.phoneNumber}
                                         </Text>
                                     </View>
-                                    <View style={[dynamicStyles.statusBadge, dynamicStyles.statusUnpaid]}>
-                                        <Text style={dynamicStyles.statusText}>Unpaid</Text>
+                                    <View style={[styles.statusBadge, styles.statusUnpaid]}>
+                                        <Text style={styles.statusText}>Unpaid</Text>
                                     </View>
                                 </View>
                                 
-                                <View style={dynamicStyles.cardDetails}>
-                                    <View style={dynamicStyles.detailRow}>
+                                <View style={[styles.cardDetails, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#f0f0f0' }]}>
+                                    <View style={styles.detailRow}>
                                         <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
-                                        <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
+                                        <Text style={[styles.detailText, { color: theme.text }]}>
                                             Fare: R{p.fare.toFixed(2)}
                                         </Text>
                                     </View>
-                                    <View style={dynamicStyles.detailRow}>
+                                    <View style={styles.detailRow}>
                                         <Ionicons name="time-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
-                                        <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
+                                        <Text style={[styles.detailText, { color: theme.text }]}>
                                             Requested: {dateString}
                                         </Text>
                                     </View>
@@ -150,7 +109,7 @@ export default function UnpaidPayments() {
     );
 }
 
-const dynamicStyles = StyleSheet.create({
+const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
@@ -171,14 +130,6 @@ const dynamicStyles = StyleSheet.create({
         justifyContent: 'center',
         marginRight: 12,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#1a1a1a',
-        flex: 1,
-        textAlign: 'center',
-        marginRight: 52, // Compensate for back button width to center title
-    },
     container: {
         flex: 1,
         backgroundColor: 'transparent',
@@ -191,12 +142,10 @@ const dynamicStyles = StyleSheet.create({
     headerTitle: {
         fontSize: 32,
         fontWeight: '700',
-        color: '#1a1a1a',
         marginBottom: 8,
     },
     headerSubtitle: {
         fontSize: 16,
-        color: '#666',
         fontWeight: '400',
     },
     contentSection: {
@@ -252,7 +201,6 @@ const dynamicStyles = StyleSheet.create({
     },
     cardDetails: {
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
         paddingTop: 16,
     },
     detailRow: {
@@ -273,7 +221,6 @@ const dynamicStyles = StyleSheet.create({
     },
     emptyStateText: {
         fontSize: 16,
-        color: '#666',
         marginTop: 16,
         textAlign: 'center',
     },
