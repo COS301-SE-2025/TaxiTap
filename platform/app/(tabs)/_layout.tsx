@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Image, View } from 'react-native';
+import { TouchableOpacity, Image, View, Platform } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { router } from 'expo-router';
@@ -81,17 +81,15 @@ const HeaderRightButtons: React.FC = () => {
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingBottom: Math.max(insets.bottom, 10),
+          height: 60,
+          paddingBottom: 10,
           backgroundColor: theme.tabBarBackground,
           borderTopColor: theme.border,
           borderTopWidth: 1,
@@ -108,8 +106,8 @@ const TabNavigation: React.FC = () => {
               : light
             }
             style={{ 
-              width: 150,
-              height: 150,
+              width: Platform.OS === 'ios' ? 130 : 150,
+              height: Platform.OS === 'ios' ? 130 : 150,
               resizeMode: 'contain',
             }}
           />
@@ -121,6 +119,8 @@ const TabNavigation: React.FC = () => {
           elevation: 2,
           borderBottomColor: theme.border,
           borderBottomWidth: 1,
+          // Slightly increase header height on iOS for better spacing
+          height: Platform.OS === 'ios' ? 100 : undefined,
         },
         headerTintColor: theme.text,
         headerRight: () => <HeaderRightButtons />,
