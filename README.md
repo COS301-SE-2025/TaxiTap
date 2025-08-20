@@ -65,6 +65,7 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 | **📝 Coding Standards** | [View PDF](https://drive.google.com/file/d/146BTwZXbjiIoXnUQvd8RJXFtnq2DKrnk/view?usp=drive_link) |
 | **📖 User Manual** | [View PDF](https://drive.google.com/file/d/1jbRkhZWS7fsNdYvHlI6o9QoXA5lHsZj4/view?usp=drive_link) |
 | **📄 Technical Installation Manual** | [View PDF](https://drive.google.com/file/d/1bQVSCOg5YIk8BMPRdcnYcna9q9_5RH1I/view?usp=drive_link) |
+| **📄 Service Contracts** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/main/docs/ServiceContracts.pdf) |
 | **🗠 Domain Model** | [View Diagram](https://drive.google.com/file/d/1_2hOXEPfQb0cWvu6iWpEnHbJC_Izsk2P/view?usp=drive_link) |
 | **🗠 Architecture Diagram** | [View Diagram](https://drive.google.com/file/d/1Zr1sdzwk3v1HNTBNvswXvv6wGQvxZbjq/view?usp=drive_link) |
 | **🗠 Deployment Diagram** | [View Diagram](https://drive.google.com/file/d/1dCMVTM4NRoEbgOD886oPib4O09xFEatC/view?usp=drive_link) |
