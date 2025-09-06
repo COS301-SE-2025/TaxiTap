@@ -103,7 +103,6 @@ import type * as functions_work_sessions_endWorkSession from "../functions/work_
 import type * as functions_work_sessions_endWorkSessionHandler from "../functions/work_sessions/endWorkSessionHandler.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
 import type * as functions_work_sessions_startWorkSessionHandler from "../functions/work_sessions/startWorkSessionHandler.js";
-import type * as types_multiLegJourney from "../types/multiLegJourney.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -204,7 +203,6 @@ declare const fullApi: ApiFromModules<{
   "functions/work_sessions/endWorkSessionHandler": typeof functions_work_sessions_endWorkSessionHandler;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;
   "functions/work_sessions/startWorkSessionHandler": typeof functions_work_sessions_startWorkSessionHandler;
-  "types/multiLegJourney": typeof types_multiLegJourney;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
