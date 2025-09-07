@@ -264,4 +264,92 @@ export const scoreTransferPoints = internalQuery({
       }
     },
   });
+/**
+ * Order transfer points for optimal journey flow
+ */
+export const optimizeTransferSequence = internalQuery({
+    args: {
+      originLat: v.number(),
+      originLng: v.number(),
+      destinationLat: v.number(),
+      destinationLng: v.number(),
+      transferPoints: v.array(v.any()),
+      optimizationCriteria: v.union(
+        v.literal("shortest_time"),
+        v.literal("fewest_transfers"),
+        v.literal("most_reliable"),
+        v.literal("lowest_cost")
+      ),
+    },
+    handler: async (ctx, args) => {
+      const { 
+        originLat, 
+        originLng, 
+        destinationLat, 
+        destinationLng, 
+        transferPoints, 
+        optimizationCriteria 
+      } = args;
+      
+      try {
+        // If no transfer points, return empty sequence
+        if (!transferPoints || transferPoints.length === 0) {
+          return {
+            success: true,
+            optimizedSequence: [],
+            journeyLegs: [],
+            summary: {
+              totalTransfers: 0,
+              estimatedTotalTime: 0,
+              estimatedTotalCost: 0,
+            },
+          };
+        }
+        
+        // For single transfer point (2-leg journey)
+        if (transferPoints.length === 1) {
+          const transferPoint = transferPoints[0];
+          const sequence = await createTwoLegSequence(
+            ctx,
+            { lat: originLat, lng: originLng },
+            { lat: destinationLat, lng: destinationLng },
+            transferPoint
+          );
+          
+          return {
+            success: true,
+            optimizedSequence: [transferPoint],
+            journeyLegs: sequence.legs,
+            summary: sequence.summary,
+          };
+        }
+        
+        // For multiple transfer points, find optimal combination
+        const optimizationResults = await findOptimalTransferCombination(
+          ctx,
+          { lat: originLat, lng: originLng },
+          { lat: destinationLat, lng: destinationLng },
+          transferPoints,
+          optimizationCriteria
+        );
+        
+        return {
+          success: true,
+          optimizedSequence: optimizationResults.sequence,
+          journeyLegs: optimizationResults.legs,
+          summary: optimizationResults.summary,
+          alternativeOptions: optimizationResults.alternatives,
+        };
+        
+      } catch (error) {
+        console.error("Error optimising transfer sequence:", error);
+        return {
+          success: false,
+          error: "Failed to optimize transfer sequence",
+          optimizedSequence: [],
+        };
+      }
+    },
+  });
+  
   
