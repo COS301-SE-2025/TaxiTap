@@ -421,6 +421,7 @@ export default function HomeScreen() {
     setRouteLoaded,
     getCachedRoute,
     setCachedRoute,
+    resetMapState,
   } = useMapContext();
 
   // Integrate live location streaming
@@ -638,23 +639,40 @@ export default function HomeScreen() {
       r.routeName
   );
 
-  // Only clear state on first load, not every focus
   useFocusEffect(
     React.useCallback(() => {
-      if (isFirstLoad) {
-        setRouteLoaded(false);
-        setOrigin(null);
-        setDestination(null);
-        setRouteCoordinates([]);
-        setSelectedRouteId(null);
-        setOriginAddress('');
-        setDestinationAddress('');
-        setAvailableTaxis([]);
-        setRouteMatchResults(null);
+      resetMapState();
+      
+      setSelectedRouteId(null);
+      setOriginAddress('');
+      setDestinationAddress('');
+      
+      setAvailableTaxis([]);
+      setRouteMatchResults(null);
+      setIsSearchingTaxis(false);
+      setTaxiSearchParams(null);
+      
+      setOriginSuggestions([]);
+      setDestinationSuggestions([]);
+      setShowOriginSuggestions(false);
+      setShowDestinationSuggestions(false);
+      setJustSelectedOrigin(false);
+      setJustSelectedDestination(false);
+      setRouteProgrammaticallySelected(false);
+      
+      setIsGeocodingOrigin(false);
+      setIsGeocodingDestination(false);
+      setIsLoadingOriginSuggestions(false);
+      setIsLoadingDestinationSuggestions(false);
+      
+      setIsLoadingCurrentLocation(true);
+      setDetectedLocation(null);
+      
+      return () => {
+        setTaxiSearchParams(null);
         setIsSearchingTaxis(false);
-        setIsFirstLoad(false);
-      }
-    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
+      };
+    }, [resetMapState])
   );
 
   useLayoutEffect(() => {
