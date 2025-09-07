@@ -3,7 +3,7 @@ import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 import { QueryCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 
 const EARTH_RADIUS_KM = 6371;
 const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -679,3 +679,242 @@ export const getNearbyTaxisForRouteRequest = query({
   },
   handler: getNearbyTaxisForRouteRequestHandler
 });
+
+// Type definitions for multi-leg journey analysis
+type MultiLegJourneyResult = {
+  requiresMultiLeg: boolean;
+  directRoute?: TaxiSearchResult | null;
+  multiLegOptions?: Array<{
+    optionId: string;
+    totalLegs: number;
+    legs: any[];
+    transferPoints: any[];
+    summary: any;
+    estimatedTotalTime: number;
+    estimatedTotalCost: number;
+    optimizationCriteria: string;
+    confidence: string;
+  }>;
+  analysis?: {
+    totalTransferPointsFound: number;
+    scoredTransferPoints: number;
+    generatedOptions: number;
+    optimizationPreference: string;
+  };
+  message?: string;
+  error?: string;
+};
+
+/**
+ * Analyze multi-leg journey options for routes that don't have direct connections
+ */
+export const analyzeMultiLegJourneyOptions = query({
+  args: {
+    originLat: v.number(),
+    originLng: v.number(),
+    destinationLat: v.number(),
+    destinationLng: v.number(),
+    optimizationPreference: v.string(),
+  },
+  handler: async (ctx, args): Promise<MultiLegJourneyResult> => {
+    try {
+      console.log('🔍 Analyzing multi-leg journey options:', {
+        origin: { lat: args.originLat, lng: args.originLng },
+        destination: { lat: args.destinationLat, lng: args.destinationLng },
+        preference: args.optimizationPreference
+      });
+
+      // Check direct route first
+      const directRouteResult = await findAvailableTaxisForJourneyHandler(ctx, {
+        originLat: args.originLat,
+        originLng: args.originLng,
+        destinationLat: args.destinationLat,
+        destinationLng: args.destinationLng,
+        maxOriginDistance: 1.0,
+        maxDestinationDistance: 1.0,
+        maxTaxiDistance: 2.0,
+        maxResults: 10
+      });
+
+      if (directRouteResult.success && directRouteResult.availableTaxis.length > 0) {
+        console.log('✅ Direct route found, no multi-leg needed');
+        return { 
+          requiresMultiLeg: false, 
+          directRoute: directRouteResult 
+        };
+      }
+
+      console.log('🔄 No direct route found, generating multi-leg options');
+      // Generate multi-leg options
+      return await generateMultiLegOptions(ctx, args);
+      
+    } catch (error) {
+      console.error("❌ Error analyzing multi-leg journey options:", error);
+      return {
+        requiresMultiLeg: false,
+        error: "Failed to analyze journey options",
+        directRoute: null
+      };
+    }
+  }
+});
+
+/**
+ * Generate multi-leg journey options using route analysis and transfer points
+ */
+async function generateMultiLegOptions(ctx: QueryCtx, args: {
+  originLat: number;
+  originLng: number;
+  destinationLat: number;
+  destinationLng: number;
+  optimizationPreference: string;
+}): Promise<MultiLegJourneyResult> {
+  try {
+    // Step 1: Find route intersections (transfer points)
+    const intersectionResult: {
+      success: boolean;
+      intersectionPoints: any[];
+      analysis?: any;
+      error?: string;
+    } = await ctx.runQuery(internal.functions.journeys.transferPoints.findNearbyRouteIntersections, {
+      originLat: args.originLat,
+      originLng: args.originLng,
+      destinationLat: args.destinationLat,
+      destinationLng: args.destinationLng,
+      maxTransferDistance: 1000 // 1km
+    });
+
+    if (!intersectionResult.success || intersectionResult.intersectionPoints.length === 0) {
+      return {
+        requiresMultiLeg: true,
+        multiLegOptions: [],
+        message: "No transfer points found for multi-leg journey"
+      };
+    }
+
+    // Step 2: Score transfer points
+    const scoredPointsResult: {
+      success: boolean;
+      scoredPoints: any[];
+      scoringWeights?: any;
+      analysis?: any;
+      error?: string;
+    } = await ctx.runQuery(internal.functions.journeys.transferPoints.scoreTransferPoints, {
+      intersectionPoints: intersectionResult.intersectionPoints,
+      weights: {
+        taxiAvailability: 0.3,
+        walkingDistance: 0.25,
+        routeReliability: 0.2,
+        transferTime: 0.15,
+        intersectionQuality: 0.1,
+      }
+    });
+
+    if (!scoredPointsResult.success || scoredPointsResult.scoredPoints.length === 0) {
+      return {
+        requiresMultiLeg: true,
+        multiLegOptions: [],
+        message: "No viable transfer points found after scoring"
+      };
+    }
+
+    // Step 3: Optimize transfer sequence
+    const optimizationResult: {
+      success: boolean;
+      optimizedSequence: any[];
+      journeyLegs?: any[];
+      summary?: any;
+      alternativeOptions?: any[];
+      error?: string;
+    } = await ctx.runQuery(internal.functions.journeys.transferPoints.optimizeTransferSequence, {
+      originLat: args.originLat,
+      originLng: args.originLng,
+      destinationLat: args.destinationLat,
+      destinationLng: args.destinationLng,
+      transferPoints: scoredPointsResult.scoredPoints.slice(0, 5), // Top 5 transfer points
+      optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost"
+    });
+
+    if (!optimizationResult.success) {
+      return {
+        requiresMultiLeg: true,
+        multiLegOptions: [],
+        message: "Failed to optimize transfer sequence"
+      };
+    }
+
+    // Step 4: Generate final multi-leg options
+    const multiLegOptions = [];
+    
+    // Primary option (best transfer point)
+    if (optimizationResult.optimizedSequence.length > 0 && optimizationResult.journeyLegs && optimizationResult.summary) {
+      multiLegOptions.push({
+        optionId: "primary",
+        totalLegs: optimizationResult.journeyLegs.length,
+        legs: optimizationResult.journeyLegs,
+        transferPoints: optimizationResult.optimizedSequence,
+        summary: optimizationResult.summary,
+        estimatedTotalTime: optimizationResult.summary.estimatedTotalTime,
+        estimatedTotalCost: optimizationResult.summary.estimatedTotalCost,
+        optimizationCriteria: args.optimizationPreference,
+        confidence: "high"
+      });
+    }
+
+    // Alternative options (other good transfer points)
+    for (let i = 1; i < Math.min(3, scoredPointsResult.scoredPoints.length); i++) {
+      const altTransferPoint = scoredPointsResult.scoredPoints[i];
+      const altSequence: {
+        success: boolean;
+        optimizedSequence: any[];
+        journeyLegs?: any[];
+        summary?: any;
+        alternativeOptions?: any[];
+        error?: string;
+      } = await ctx.runQuery(internal.functions.journeys.transferPoints.optimizeTransferSequence, {
+        originLat: args.originLat,
+        originLng: args.originLng,
+        destinationLat: args.destinationLat,
+        destinationLng: args.destinationLng,
+        transferPoints: [altTransferPoint],
+        optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost"
+      });
+
+      if (altSequence.success && altSequence.journeyLegs && altSequence.journeyLegs.length > 0 && altSequence.summary) {
+        multiLegOptions.push({
+          optionId: `alternative_${i}`,
+          totalLegs: altSequence.journeyLegs.length,
+          legs: altSequence.journeyLegs,
+          transferPoints: altSequence.optimizedSequence,
+          summary: altSequence.summary,
+          estimatedTotalTime: altSequence.summary.estimatedTotalTime,
+          estimatedTotalCost: altSequence.summary.estimatedTotalCost,
+          optimizationCriteria: args.optimizationPreference,
+          confidence: "medium"
+        });
+      }
+    }
+
+    console.log(`🎯 Generated ${multiLegOptions.length} multi-leg journey options`);
+
+    return {
+      requiresMultiLeg: true,
+      multiLegOptions,
+      analysis: {
+        totalTransferPointsFound: intersectionResult.intersectionPoints.length,
+        scoredTransferPoints: scoredPointsResult.scoredPoints.length,
+        generatedOptions: multiLegOptions.length,
+        optimizationPreference: args.optimizationPreference
+      },
+      message: `Found ${multiLegOptions.length} multi-leg journey options`
+    };
+
+  } catch (error) {
+    console.error("❌ Error generating multi-leg options:", error);
+    return {
+      requiresMultiLeg: true,
+      multiLegOptions: [],
+      error: "Failed to generate multi-leg journey options"
+    };
+  }
+}
