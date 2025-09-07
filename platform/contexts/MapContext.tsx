@@ -55,7 +55,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const resetMapState = useCallback(() => {
     console.log('Resetting all map state');
-    setCurrentLocation(null);
+    // setCurrentLocation(null);
     setOrigin(null);
     setDestination(null);
     setRouteCoordinates([]);
