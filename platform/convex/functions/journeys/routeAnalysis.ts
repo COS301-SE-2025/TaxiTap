@@ -173,7 +173,151 @@ export const findRouteIntersections = query({
       }
     },
   });
-    
+/**
+ * Generate route combinations based on user preference
+ */
+export const calculateOptimalPath = query({
+    args: {
+      originLat: v.number(),
+      originLng: v.number(),
+      destinationLat: v.number(),
+      destinationLng: v.number(),
+      optimisationPreference: v.union(
+        v.literal("shortest_time"),
+        v.literal("fewest_transfers"),
+        v.literal("most_reliable")
+      ),
+    },
+    handler: async (ctx, args) => {
+      const { originLat, originLng, destinationLat, destinationLng, optimisationPreference } = args;
+      
+      try {
+        // First check if direct route is available
+        const directRoute = await analyseDirectRouteAvailabilityHandler(ctx, {
+          originLat, originLng, destinationLat, destinationLng
+        });
+        
+        if (directRoute.hasDirectRoute) {
+          const bestDirectRoute = directRoute.availableRoutes
+            .sort((a: any, b: any) => (a.originDistance + a.destinationDistance) - (b.originDistance + b.destinationDistance))[0];
+          
+          return {
+            optimalPath: {
+              type: "direct",
+              totalLegs: 1,
+              legs: [{
+                legIndex: 0,
+                routeId: bestDirectRoute.route._id,
+                fromCoordinates: { latitude: originLat, longitude: originLng },
+                toCoordinates: { latitude: destinationLat, longitude: destinationLng },
+                estimatedDuration: await estimateLegDuration(bestDirectRoute.route, originLat, originLng, destinationLat, destinationLng),
+                estimatedFare: await calculateLegFare(originLat, originLng, destinationLat, destinationLng),
+              }],
+              totalEstimatedDuration: await estimateLegDuration(bestDirectRoute.route, originLat, originLng, destinationLat, destinationLng),
+              totalEstimatedFare: await calculateLegFare(originLat, originLng, destinationLat, destinationLng),
+            },
+          };
+        }
+        
+        // Generate multi-leg options
+        const intersections = await findRouteIntersectionsHandler(ctx, {
+          originLat, originLng, destinationLat, destinationLng
+        });
+        
+        if (intersections.intersections.length === 0) {
+          return {
+            optimalPath: null,
+            error: "No viable route combinations found",
+          };
+        }
+        
+        // Generate possible journey combinations
+        const journeyOptions = [];
+        
+        for (const intersection of intersections.intersections) {
+          const leg1Duration = await estimateLegDuration(
+            intersection.fromRoute,
+            originLat, originLng,
+            intersection.coordinates.latitude, intersection.coordinates.longitude
+          );
+          
+          const leg2Duration = await estimateLegDuration(
+            intersection.toRoute,
+            intersection.coordinates.latitude, intersection.coordinates.longitude,
+            destinationLat, destinationLng
+          );
+          
+          const leg1Fare = await calculateLegFare(
+            originLat, originLng,
+            intersection.coordinates.latitude, intersection.coordinates.longitude
+          );
+          
+          const leg2Fare = await calculateLegFare(
+            intersection.coordinates.latitude, intersection.coordinates.longitude,
+            destinationLat, destinationLng
+          );
+          
+          journeyOptions.push({
+            totalLegs: 2,
+            legs: [
+              {
+                legIndex: 0,
+                routeId: intersection.fromRoute._id,
+                fromCoordinates: { latitude: originLat, longitude: originLng },
+                toCoordinates: { 
+                  latitude: intersection.coordinates.latitude, 
+                  longitude: intersection.coordinates.longitude 
+                },
+                estimatedDuration: leg1Duration,
+                estimatedFare: leg1Fare,
+              },
+              {
+                legIndex: 1,
+                routeId: intersection.toRoute._id,
+                fromCoordinates: { 
+                  latitude: intersection.coordinates.latitude, 
+                  longitude: intersection.coordinates.longitude 
+                },
+                toCoordinates: { latitude: destinationLat, longitude: destinationLng },
+                estimatedDuration: leg2Duration,
+                estimatedFare: leg2Fare,
+              },
+            ],
+            totalEstimatedDuration: leg1Duration + leg2Duration + 300, // 5 min transfer time
+            totalEstimatedFare: leg1Fare + leg2Fare,
+            transferPoint: intersection,
+          });
+        }
+        
+        // Sort based on optimisation preference
+        let sortedOptions = [...journeyOptions];
+        switch (optimisationPreference) {
+          case "shortest_time":
+            sortedOptions.sort((a, b) => a.totalEstimatedDuration - b.totalEstimatedDuration);
+            break;
+          case "fewest_transfers":
+            sortedOptions.sort((a, b) => a.totalLegs - b.totalLegs);
+            break;
+          case "most_reliable":
+            // Sort by route with most available taxis
+            sortedOptions = await sortByReliability(ctx, sortedOptions);
+            break;
+        }
+        
+        return {
+          optimalPath: sortedOptions[0] || null,
+          alternativeOptions: sortedOptions.slice(1, 3), // Return top 3 alternatives
+        };
+      } catch (error) {
+        console.error("Error calculating optimal path:", error);
+        return {
+          optimalPath: null,
+          error: "Failed to calculate optimal path",
+        };
+      }
+    },
+  });
+  
 
 // ============================================================================
 // HELPER FUNCTIONS
