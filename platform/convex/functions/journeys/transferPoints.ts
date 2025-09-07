@@ -147,3 +147,121 @@ export const findNearbyRouteIntersections = internalQuery({
     }
   },
 });
+/**
+ * Rate based on route connectivity and taxi availability
+ */
+export const scoreTransferPoints = internalQuery({
+    args: {
+      intersectionPoints: v.array(v.object({
+        coordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number(),
+        }),
+        fromRoute: v.object({
+          id: v.string(),
+          name: v.string(),
+          distanceFromOrigin: v.number(),
+        }),
+        toRoute: v.object({
+          id: v.string(),
+          name: v.string(),
+          distanceFromDestination: v.number(),
+        }),
+        transferDetails: v.object({
+          walkingDistance: v.number(),
+          estimatedTransferTime: v.number(),
+        }),
+        intersectionType: v.string(),
+        confidence: v.number(),
+      })),
+      weights: v.optional(v.object({
+        taxiAvailability: v.number(),
+        walkingDistance: v.number(),
+        routeReliability: v.number(),
+        transferTime: v.number(),
+        intersectionQuality: v.number(),
+      })),
+    },
+    handler: async (ctx, args) => {
+      const { intersectionPoints, weights = {
+        taxiAvailability: 0.3,
+        walkingDistance: 0.25,
+        routeReliability: 0.2,
+        transferTime: 0.15,
+        intersectionQuality: 0.1,
+      }} = args;
+      
+      try {
+        const scoredPoints = [];
+        
+        for (const point of intersectionPoints) {
+          // Taxi Availability (0-100)
+          const fromRouteTaxis = await getTaxiAvailabilityScore(ctx, point.fromRoute.id);
+          const toRouteTaxis = await getTaxiAvailabilityScore(ctx, point.toRoute.id);
+          const taxiAvailabilityScore = (fromRouteTaxis + toRouteTaxis) / 2;
+          
+          // Walking Distance (0-100, lower distance = higher score)
+          const walkingDistanceScore = Math.max(0, 100 - (point.transferDetails.walkingDistance / 10));
+          
+          // Route Reliability (0-100)
+          const fromRouteReliability = await getRouteReliabilityScore(ctx, point.fromRoute.id);
+          const toRouteReliability = await getRouteReliabilityScore(ctx, point.toRoute.id);
+          const routeReliabilityScore = (fromRouteReliability + toRouteReliability) / 2;
+          
+          // Transfer Time (0-100, lower time = higher score)
+          const transferTimeScore = Math.max(0, 100 - (point.transferDetails.estimatedTransferTime / 60)); // convert to minutes
+          
+          // Intersection Quality (based on confidence and type)
+          const intersectionQualityScore = point.confidence * getIntersectionTypeMultiplier(point.intersectionType);
+          
+          // Calculate weighted total score
+          const totalScore = 
+            (taxiAvailabilityScore * weights.taxiAvailability) +
+            (walkingDistanceScore * weights.walkingDistance) +
+            (routeReliabilityScore * weights.routeReliability) +
+            (transferTimeScore * weights.transferTime) +
+            (intersectionQualityScore * weights.intersectionQuality);
+          
+          scoredPoints.push({
+            ...point,
+            scores: {
+              taxiAvailability: Math.round(taxiAvailabilityScore),
+              walkingDistance: Math.round(walkingDistanceScore),
+              routeReliability: Math.round(routeReliabilityScore),
+              transferTime: Math.round(transferTimeScore),
+              intersectionQuality: Math.round(intersectionQualityScore),
+              total: Math.round(totalScore),
+            },
+            ranking: 0, // Will be set after sorting
+          });
+        }
+        
+        // Sort by total score (highest first) and assign rankings
+        scoredPoints.sort((a, b) => b.scores.total - a.scores.total);
+        scoredPoints.forEach((point, index) => {
+          point.ranking = index + 1;
+        });
+        
+        return {
+          success: true,
+          scoredPoints,
+          scoringWeights: weights,
+          analysis: {
+            totalPoints: scoredPoints.length,
+            averageScore: Math.round(scoredPoints.reduce((sum, p) => sum + p.scores.total, 0) / scoredPoints.length),
+            bestScore: scoredPoints[0]?.scores.total || 0,
+            worstScore: scoredPoints[scoredPoints.length - 1]?.scores.total || 0,
+          },
+        };
+        
+      } catch (error) {
+        console.error("Error scoring transfer points:", error);
+        return {
+          success: false,
+          error: "Failed to score transfer points",
+          scoredPoints: [],
+        };
+      }
+    },
+  });
+  
