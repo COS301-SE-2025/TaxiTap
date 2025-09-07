@@ -775,7 +775,7 @@ export default function SeatReserved() {
 							label: t('passengerReservation:ok'),
 							onPress: () => {
 								markAsRead(rideDeclined._id);
-								router.push('/HomeScreen');
+								router.replace('/HomeScreen');
 							},
 							style: 'default',
 						},
@@ -815,7 +815,7 @@ export default function SeatReserved() {
 									label: t('passengerReservation:ok'),
 									onPress: () => {
 										setHasShownDeclinedAlert(true);
-										router.push('/HomeScreen');
+										router.replace('/HomeScreen');
 									},
 									style: 'default',
 								},
@@ -993,7 +993,7 @@ export default function SeatReserved() {
 						{
 							label: 'Skip Feedback',
 							onPress: () => {
-								router.push('/HomeScreen');
+								router.replace('/HomeScreen');
 							},
 							style: 'cancel',
 						}
@@ -1068,7 +1068,7 @@ export default function SeatReserved() {
 				animation: 'slide-down',
 			});
 			
-			router.push('/HomeScreen');
+			router.replace('/HomeScreen');
 		} catch (error: any) {
 			showGlobalError('Error', error?.message || 'Failed to cancel ride.', {
 				duration: 4000,
