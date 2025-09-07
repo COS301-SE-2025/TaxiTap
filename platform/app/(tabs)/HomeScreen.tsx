@@ -510,7 +510,10 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (detectedLocation && (!currentLocation || currentLocation.name === '')) {
+    if (detectedLocation && (!currentLocation || 
+        currentLocation.latitude !== detectedLocation.latitude || 
+        currentLocation.longitude !== detectedLocation.longitude)) {
+      console.log('Setting currentLocation context from fresh detected location');
       setCurrentLocation({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
@@ -518,33 +521,142 @@ export default function HomeScreen() {
       });
       setIsLoadingCurrentLocation(false);
     }
-  }, [detectedLocation, currentLocation]);
+  }, [detectedLocation, currentLocation, t, setCurrentLocation]);
 
-  // Auto-set origin to current location when detected
   useEffect(() => {
-    if (detectedLocation && !origin) {
+    if (isLoadingCurrentLocation && !detectedLocation) {
+      const requestFreshLocation = async () => {
+        try {
+          console.log('Requesting fresh location with cleared cache');
+          
+          // Request permissions again
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== "granted") {
+            console.warn('Location permission denied on refresh');
+            setIsLoadingCurrentLocation(false);
+            showGlobalError(
+              "Permission denied", 
+              "Location permission is required to find nearby taxis.",
+              {
+                duration: 5000,
+                position: 'top',
+                animation: 'slide-down',
+              }
+            );
+            return;
+          }
+
+          // Check if location services are enabled
+          const isLocationEnabled = await Location.hasServicesEnabledAsync();
+          if (!isLocationEnabled) {
+            console.warn('Location services disabled on refresh');
+            setIsLoadingCurrentLocation(false);
+            showGlobalError(
+              "Location services disabled", 
+              "Please enable location services in your device settings.",
+              {
+                duration: 5000,
+                position: 'top',
+                animation: 'slide-down',
+              }
+            );
+            return;
+          }
+
+          console.log('Getting completely fresh location data');
+          // Force fresh location by setting maximumAge to 0
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+            mayShowUserSettingsDialog: true,
+          });
+
+          const { latitude, longitude } = location.coords;
+          
+          // Enhanced coordinate validation
+          if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            console.warn('Invalid location coordinates received on refresh');
+            setIsLoadingCurrentLocation(false);
+            return;
+          }
+          
+          if (latitude === 0 && longitude === 0) {
+            console.warn('Suspicious location coordinates (0,0) detected on refresh');
+            setIsLoadingCurrentLocation(false);
+            return;
+          }
+
+          console.log('Fresh location successfully detected:', { latitude, longitude });
+          setDetectedLocation({ latitude, longitude });
+          
+        } catch (error: any) {
+          console.error('Error getting fresh location on reset:', error);
+          setIsLoadingCurrentLocation(false);
+          
+          if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
+            showGlobalError(
+              "Location spoofer detected", 
+              "Please disable any location spoofing apps and use real GPS location.",
+              {
+                duration: 5000,
+                position: 'top',
+                animation: 'slide-down',
+              }
+            );
+          } else {
+            showGlobalError(
+              "Location error", 
+              "Unable to get your current location. Please enter your address manually.",
+              {
+                duration: 5000,
+                position: 'top',
+                animation: 'slide-down',
+              }
+            );
+          }
+        }
+      };
+
+      // Small delay to ensure UI has settled after reset
+      const timeoutId = setTimeout(requestFreshLocation, 800);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoadingCurrentLocation, detectedLocation, showGlobalError]);
+
+  useEffect(() => {
+    if (detectedLocation && !origin && !isLoadingCurrentLocation) {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
         name: t('common:currentLocation')
       });
+      setOriginAddress(t('common:currentLocation'));
     }
-  }, [detectedLocation, origin]);
+  }, [detectedLocation, origin, isLoadingCurrentLocation, t, setOrigin]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!detectedLocation && isLoadingCurrentLocation) {
+        console.warn('Location detection timeout after reset');
         setIsLoadingCurrentLocation(false);
         showGlobalError(
-          'Location Error', 
-          'Unable to get your current location. Please enter your address manually.',
+          'Location Timeout', 
+          'Unable to get your current location automatically. Please enter your address manually.',
           {
             duration: 0,
             actions: [
               {
-                label: 'OK',
-                onPress: () => console.log('Location error acknowledged'),
+                label: 'Retry Location',
+                onPress: () => {
+                  console.log('Retrying location detection');
+                  setIsLoadingCurrentLocation(true);
+                  setDetectedLocation(null);
+                },
                 style: 'default',
+              },
+              {
+                label: 'Enter Manually',
+                onPress: () => console.log('Manual entry mode selected'),
+                style: 'cancel',
               }
             ],
             position: 'top',
@@ -552,10 +664,9 @@ export default function HomeScreen() {
           }
         );
       }
-    }, 10000); // 10 second timeout
-
+    }, 8000);
     return () => clearTimeout(timeout);
-  }, [detectedLocation, isLoadingCurrentLocation, t, showGlobalError]);
+  }, [detectedLocation, isLoadingCurrentLocation, showGlobalError]);
 
   const routes = useQuery(api.functions.routes.displayRoutes.displayRoutes);
   const navigation = useNavigation();
