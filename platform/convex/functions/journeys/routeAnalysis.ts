@@ -94,6 +94,86 @@ export const analyzeDirectRouteAvailability = query({
     }
   },
 });
+/**
+ * Identify transfer points within 1km of multiple routes
+ */
+export const findRouteIntersections = query({
+    args: {
+      originLat: v.number(),
+      originLng: v.number(),
+      destinationLat: v.number(),
+      destinationLng: v.number(),
+    },
+    handler: async (ctx, args) => {
+      const { originLat, originLng, destinationLat, destinationLng } = args;
+      
+      try {
+        const routes = await ctx.db.query("routes").collect();
+        const intersections = [];
+        const proximityThreshold = 1000; // 1km
+        
+        // Find routes that can serve origin
+        const originRoutes: any[] = [];
+        for (const route of routes) {
+          const proximity = await checkRouteProximity(
+            route,
+            { lat: originLat, lng: originLng },
+            proximityThreshold
+          );
+          if (proximity.withinRange) {
+            originRoutes.push({ route, distance: proximity.distance });
+          }
+        }
+        
+        // Find routes that can serve destination
+        const destinationRoutes: any[] = [];
+        for (const route of routes) {
+          const proximity = await checkRouteProximity(
+            route,
+            { lat: destinationLat, lng: destinationLng },
+            proximityThreshold
+          );
+          if (proximity.withinRange) {
+            destinationRoutes.push({ route, distance: proximity.distance });
+          }
+        }
+        
+        // Find intersection points between origin and destination routes
+        for (const originRoute of originRoutes) {
+          for (const destRoute of destinationRoutes) {
+            if (originRoute.route._id !== destRoute.route._id) {
+              const intersectionPoints = await findRouteIntersectionPoints(
+                originRoute.route,
+                destRoute.route
+              );
+              
+              intersections.push(...intersectionPoints.map(point => ({
+                ...point,
+                fromRoute: originRoute.route,
+                toRoute: destRoute.route,
+                originDistance: originRoute.distance,
+                destinationDistance: destRoute.distance,
+              })));
+            }
+          }
+        }
+        
+        return {
+          intersections,
+          originRoutes: originRoutes.length,
+          destinationRoutes: destinationRoutes.length,
+          totalIntersections: intersections.length,
+        };
+      } catch (error) {
+        console.error("Error finding route intersections:", error);
+        return {
+          intersections: [],
+          error: "Failed to find route intersections",
+        };
+      }
+    },
+  });
+    
 
 // ============================================================================
 // HELPER FUNCTIONS
