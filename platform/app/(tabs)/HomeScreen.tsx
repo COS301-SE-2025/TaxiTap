@@ -509,6 +509,8 @@ export default function HomeScreen() {
     loadManualDestinations();
   }, []);
 
+  const [hasSetCurrentLocation, setHasSetCurrentLocation] = useState(false);
+
   useEffect(() => {
     if (detectedLocation && (!currentLocation || 
         currentLocation.latitude !== detectedLocation.latitude || 
@@ -520,6 +522,7 @@ export default function HomeScreen() {
         name: t('common:currentLocation')
       });
       setIsLoadingCurrentLocation(false);
+      setHasSetCurrentLocation(true);
     }
   }, [detectedLocation, currentLocation, t, setCurrentLocation]);
 
@@ -753,37 +756,41 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       resetMapState();
-      
       setSelectedRouteId(null);
-      setOriginAddress('');
-      setDestinationAddress('');
+      setHasSetCurrentLocation(false);
+
+      if (!detectedLocation) {
+        setIsLoadingCurrentLocation(true);
+      }
+      // setOriginAddress('');
+      // setDestinationAddress('');
       
-      setAvailableTaxis([]);
-      setRouteMatchResults(null);
-      setIsSearchingTaxis(false);
-      setTaxiSearchParams(null);
+      // setAvailableTaxis([]);
+      // setRouteMatchResults(null);
+      // setIsSearchingTaxis(false);
+      // setTaxiSearchParams(null);
       
-      setOriginSuggestions([]);
-      setDestinationSuggestions([]);
-      setShowOriginSuggestions(false);
-      setShowDestinationSuggestions(false);
-      setJustSelectedOrigin(false);
-      setJustSelectedDestination(false);
-      setRouteProgrammaticallySelected(false);
+      // setOriginSuggestions([]);
+      // setDestinationSuggestions([]);
+      // setShowOriginSuggestions(false);
+      // setShowDestinationSuggestions(false);
+      // setJustSelectedOrigin(false);
+      // setJustSelectedDestination(false);
+      // setRouteProgrammaticallySelected(false);
       
-      setIsGeocodingOrigin(false);
-      setIsGeocodingDestination(false);
-      setIsLoadingOriginSuggestions(false);
-      setIsLoadingDestinationSuggestions(false);
+      // setIsGeocodingOrigin(false);
+      // setIsGeocodingDestination(false);
+      // setIsLoadingOriginSuggestions(false);
+      // setIsLoadingDestinationSuggestions(false);
       
-      setIsLoadingCurrentLocation(true);
-      setDetectedLocation(null);
+      // setIsLoadingCurrentLocation(true);
+      // setDetectedLocation(null);
       
-      return () => {
-        setTaxiSearchParams(null);
-        setIsSearchingTaxis(false);
-      };
-    }, [resetMapState])
+      // return () => {
+      //   setTaxiSearchParams(null);
+      //   setIsSearchingTaxis(false);
+      // };
+    }, [resetMapState, detectedLocation])
   );
 
   useLayoutEffect(() => {
