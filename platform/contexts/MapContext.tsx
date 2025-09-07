@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 interface Location {
   latitude: number;
@@ -25,6 +25,9 @@ interface MapContextType {
   cachedRoutes: Map<string, { latitude: number; longitude: number }[]>;
   setCachedRoute: (key: string, coords: { latitude: number; longitude: number }[]) => void;
   getCachedRoute: (key: string) => { latitude: number; longitude: number }[] | null;
+
+  resetMapState: () => void;
+  clearRouteCache: () => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -38,13 +41,28 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [routeLoaded, setRouteLoaded] = useState(false);
   const [cachedRoutes] = useState(new Map<string, { latitude: number; longitude: number }[]>());
 
-  const setCachedRoute = (key: string, coords: { latitude: number; longitude: number }[]) => {
+  const setCachedRoute = useCallback((key: string, coords: { latitude: number; longitude: number }[]) => {
     cachedRoutes.set(key, coords);
-  };
+  }, [cachedRoutes]);
 
-  const getCachedRoute = (key: string) => {
+  const getCachedRoute = useCallback((key: string) => {
     return cachedRoutes.get(key) || null;
-  };
+  }, [cachedRoutes]);
+
+  const clearRouteCache = useCallback(() => {
+    cachedRoutes.clear();
+  }, [cachedRoutes]);
+
+  const resetMapState = useCallback(() => {
+    console.log('Resetting all map state');
+    setCurrentLocation(null);
+    setOrigin(null);
+    setDestination(null);
+    setRouteCoordinates([]);
+    setIsLoadingRoute(false);
+    setRouteLoaded(false);
+    clearRouteCache();
+  }, [clearRouteCache]);
 
   const value: MapContextType = {
     currentLocation,
@@ -62,6 +80,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     cachedRoutes,
     setCachedRoute,
     getCachedRoute,
+    resetMapState,
+    clearRouteCache,
   };
 
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
