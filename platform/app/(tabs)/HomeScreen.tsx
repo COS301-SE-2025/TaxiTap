@@ -698,6 +698,10 @@ export default function HomeScreen() {
     }
   };
 
+    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+    const [userPreference, setUserPreference] = useState('shortest_time');
+
   // Enhanced function to search for available taxis
   const searchForAvailableTaxis = async (
     origin: { latitude: number; longitude: number; name: string },
@@ -729,10 +733,6 @@ export default function HomeScreen() {
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
-    
-    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
-    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
-    const [userPreference, setUserPreference] = useState('shortest_time');
 
     const journeyAnalysis = await useQuery(
       api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
@@ -2016,6 +2016,16 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </Animated.View>
+      )}
+
+      {/* I think this is where Unathi's code comes in; import your page? Not sure..? */}
+      {/* There are some errors since I don't know if this is part of your thing and you can fix it, but let me know if there is anything I need to add or change */}
+      {showMultiLegPreview && multiLegOptions && (
+        <MultiLegJourneyPreview
+          options={multiLegOptions}
+          onConfirm={handleMultiLegJourneyConfirm}
+          onCancel={() => setShowMultiLegPreview(false)}
+        />
       )}
     </KeyboardAvoidingView>
   );
