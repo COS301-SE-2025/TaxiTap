@@ -728,6 +728,27 @@ export default function HomeScreen() {
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
+    
+    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+    const [userPreference, setUserPreference] = useState('shortest_time');
+
+    const journeyAnalysis = await useQuery(
+      api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+      {
+      originLat: origin.latitude,
+      originLng: origin.longitude,
+      destinationLat: dest.latitude,
+      destinationLng: dest.longitude,
+      optimizationPreference: userPreference || 'shortest_time'
+      }
+    );
+    if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
+      setShowMultiLegPreview(true);
+      setMultiLegOptions(journeyAnalysis.multiLegOptions);
+    } else {
+      setTaxiSearchParams(taxiSearchParams);
+    }
   };
 
   // Handle taxi search results
