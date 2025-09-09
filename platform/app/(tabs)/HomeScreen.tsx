@@ -30,6 +30,7 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import type { MultiLegJourneyResult } from "../../convex/functions/routes/enhancedTaxiMatching";
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
