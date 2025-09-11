@@ -79,3 +79,31 @@ export const useMapContext = () => {
 export const createRouteKey = (origin: Location, destination: Location) => {
   return `${origin.latitude},${origin.longitude}-${destination.latitude},${destination.longitude}`;
 };
+
+//UNATHI: i made the following additions for multi-leg journey functionality. not sure if the edits i made to the provided code in the document are correct but please check and let me know if anything needs to be changed
+
+// Define a type for Journey
+interface Journey {
+  totalLegs: number;
+  // add other properties as needed
+}
+
+// Add to existing context
+const [currentJourney, setCurrentJourney] = useState<Journey | null>(null);
+const [isMultiLegMode, setIsMultiLegMode] = useState(false);
+const [currentLegIndex, setCurrentLegIndex] = useState(0);
+
+// New functions
+const startMultiLegJourney = (journey: Journey) => {
+  setCurrentJourney(journey);
+  setIsMultiLegMode(true);
+  setCurrentLegIndex(0);
+};
+
+const progressToNextLeg = () => {
+  if (currentJourney && currentLegIndex < currentJourney.totalLegs - 1) {
+    setCurrentLegIndex(prev => prev + 1);
+  }
+};
+
+//end of Unathi's additions
