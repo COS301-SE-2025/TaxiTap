@@ -30,6 +30,7 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import type { MultiLegJourneyResult } from "../../convex/functions/routes/enhancedTaxiMatching";
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -697,6 +698,10 @@ export default function HomeScreen() {
     }
   };
 
+    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+    const [userPreference, setUserPreference] = useState('shortest_time');
+
   // Enhanced function to search for available taxis
   const searchForAvailableTaxis = async (
     origin: { latitude: number; longitude: number; name: string },
@@ -727,6 +732,23 @@ export default function HomeScreen() {
       );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
+    }
+
+    const journeyAnalysis = await useQuery(
+      api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+      {
+      originLat: origin.latitude,
+      originLng: origin.longitude,
+      destinationLat: dest.latitude,
+      destinationLng: dest.longitude,
+      optimizationPreference: userPreference || 'shortest_time'
+      }
+    );
+    if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
+      setShowMultiLegPreview(true);
+      setMultiLegOptions(journeyAnalysis.multiLegOptions);
+    } else {
+      setTaxiSearchParams(taxiSearchParams);
     }
   };
 
@@ -1994,6 +2016,16 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </Animated.View>
+      )}
+
+      {/* I think this is where Unathi's code comes in; import your page? Not sure..? */}
+      {/* There are some errors since I don't know if this is part of your thing and you can fix it, but let me know if there is anything I need to add or change */}
+      {showMultiLegPreview && multiLegOptions && (
+        <MultiLegJourneyPreview
+          options={multiLegOptions}
+          onConfirm={handleMultiLegJourneyConfirm}
+          onCancel={() => setShowMultiLegPreview(false)}
+        />
       )}
     </KeyboardAvoidingView>
   );
