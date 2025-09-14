@@ -7,12 +7,14 @@ import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from "react";
+import { TextInput } from "react-native";
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
   const userId = user?.id;
-  
+  const [customAmount, setCustomAmount] = useState("");
   const { 
     driverName, 
     licensePlate, 
@@ -54,6 +56,20 @@ export default function PaymentConfirmation() {
     });
   };
 
+  const handleOverpaid = () => {
+    const numericAmount = parseFloat(customAmount);
+    if (isNaN(numericAmount)) return;
+
+    markTripPaid({
+      rideId: rideId as string,
+      userId: userId as Id<"taxiTap_users">,
+      paid: true,
+      amountPaid: numericAmount,
+      paymentType: "overpaid",
+    });
+    router.push({ pathname: "/PassengerReservation", params: { /* ... */ } });
+  };
+
   const handleNotPaid = () => {
     markTripPaid({
         rideId: rideId as string,
@@ -90,17 +106,39 @@ export default function PaymentConfirmation() {
           <Ionicons name="card-outline" size={20} color="#2B2B2B" />
           <Text style={[styles.paymentText, styles.infoText]}>License Plate: {licensePlate}</Text>
         </View>
-        <Text style={styles.amount}>R{(fare ?? 0)}</Text>
+        <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+          Fare: R{fare}
+        </Text>
+
+        <TextInput
+          placeholder="Enter amount you paid"
+          keyboardType="numeric"
+          style={{
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 8,
+            padding: 10,
+            marginBottom: 20,
+            width: "100%",
+          }}
+          value={customAmount}
+          onChangeText={setCustomAmount}
+        />
 
         <View style={styles.buttonRow}>
           <TouchableOpacity style={[styles.button, styles.paid]} onPress={handlePaid}>
             <Ionicons name="checkmark" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Paid</Text>
+            <Text style={styles.buttonText} numberOfLines={1}>Exact Paid</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.button, styles.overpaid]} onPress={handleOverpaid}>
+            <Ionicons name="cash-outline" size={20} color="#fff" />
+            <Text style={styles.buttonText} numberOfLines={1}>Overpaid</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.notPaid]} onPress={handleNotPaid}>
             <Ionicons name="close" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Not Paid</Text>
+            <Text style={styles.buttonText} numberOfLines={1}>Not Paid</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -149,39 +187,41 @@ const styles = StyleSheet.create({
     textAlign: "left",
     width: "auto",
   },
-  amount: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#FF7B00",
-    marginBottom: 40,
-    textAlign: "center",
-    width: "100%",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 16,
-    justifyContent: "center",
-    width: "100%",
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    flex: 1,
-    justifyContent: "center",
-  },
   paid: {
     backgroundColor: "#2ECC71",
   },
   notPaid: {
     backgroundColor: "#E74C3C",
   },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 20,
+  },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
+    flexShrink: 1,
+    textAlign: "center",
+  },
+  overpaid: {
+    backgroundColor: "#F59E0B",
   },
 });
