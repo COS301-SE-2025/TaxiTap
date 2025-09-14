@@ -644,9 +644,6 @@ export default function DriverOffline({
           <View style={dynamicStyles.headerRight}>
             <View style={dynamicStyles.statusContainer}>
               <View style={dynamicStyles.statusDot} />
-              {showFullStatus && (
-                <Text style={dynamicStyles.statusText}>{t('driver:offline')}</Text>
-              )}
             </View>
             
             <TouchableOpacity
