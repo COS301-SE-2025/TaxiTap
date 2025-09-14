@@ -126,7 +126,14 @@ export default defineSchema({
     // Trip relationship
     tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
-    
+    amountPaid: v.optional(v.number()),
+    changeDue: v.optional(v.number()),
+    paymentType: v.optional(v.union(
+      v.literal("exact"),
+      v.literal("overpaid"),
+      v.literal("not_paid")
+    )),
+
     // Legacy PIN verification fields - kept for backward compatibility
     ridePin: v.optional(v.string()),
     pinRegeneratedAt: v.optional(v.number()),
