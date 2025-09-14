@@ -681,7 +681,7 @@ export const getNearbyTaxisForRouteRequest = query({
 });
 
 // Type definitions for multi-leg journey analysis
-type MultiLegJourneyResult = {
+export type MultiLegJourneyResult = {
   requiresMultiLeg: boolean;
   directRoute?: TaxiSearchResult | null;
   multiLegOptions?: Array<{

@@ -30,6 +30,8 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import type { MultiLegJourneyResult, MultiLegJourneyOption } from "../../convex/functions/routes/enhancedTaxiMatching/analyzeMultiLegJourneyOptions "; //unsure about these added imports - unathi
+import { MultiLegJourneyPreview } from './MultiLegJourneyPreview';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -697,6 +699,10 @@ export default function HomeScreen() {
     }
   };
 
+    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+    const [userPreference, setUserPreference] = useState('shortest_time');
+
   // Enhanced function to search for available taxis
   const searchForAvailableTaxis = async (
     origin: { latitude: number; longitude: number; name: string },
@@ -727,6 +733,23 @@ export default function HomeScreen() {
       );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
+    }
+
+    const journeyAnalysis = await useQuery(
+      api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+      {
+      originLat: origin.latitude,
+      originLng: origin.longitude,
+      destinationLat: dest.latitude,
+      destinationLng: dest.longitude,
+      optimizationPreference: userPreference || 'shortest_time'
+      }
+    );
+    if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
+      setShowMultiLegPreview(true);
+      setMultiLegOptions(journeyAnalysis.multiLegOptions);
+    } else {
+      setTaxiSearchParams(taxiSearchParams);
     }
   };
 
@@ -1424,6 +1447,10 @@ export default function HomeScreen() {
     };
   };
 
+  function handleMultiLegJourneyConfirm(selectedOption: MultiLegJourneyOption, preference: string): void {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <KeyboardAvoidingView 
       style={dynamicStyles.container}
@@ -1994,6 +2021,22 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </Animated.View>
+      )}
+
+      {/* I think this is where Unathi's code comes in; import your page? Not sure..? */}
+      {/* Annie: the issues were due to a variable using anytype so i changed it to infer the types. it should work now im just unsure about the imports*/}
+      {showMultiLegPreview && multiLegOptions && (
+        <MultiLegJourneyPreview
+          options={multiLegOptions.map((opt: any) => ({
+            ...opt,
+            journeyId: opt.journeyId ?? opt.optionId ?? '',
+            estimatedTotalFare: opt.estimatedTotalFare ?? opt.estimatedTotalCost ?? 0,
+            estimatedTotalDuration: opt.estimatedTotalDuration ?? opt.estimatedTotalTime ?? 0,
+            optimizationPreference: opt.optimizationPreference ?? opt.optimizationCriteria ?? '',
+          }))}
+          onConfirm={handleMultiLegJourneyConfirm}
+          onCancel={() => setShowMultiLegPreview(false)}
+        />
       )}
     </KeyboardAvoidingView>
   );
