@@ -103,12 +103,20 @@ export default function DriverOffline({
     return () => clearTimeout(timer);
   }, []);
 
-  // Helper function to parse route name
   const parseRouteName = (routeName: string) => {
-    const parts = routeName?.split(" to ").map(part => part.trim()) ?? ["Unknown", "Unknown"];
+    if (!routeName) return { start: "Unknown", destination: "Unknown" };
+
+    let parts = routeName.split(" to ");
+    if (parts.length < 2) {
+      parts = routeName.split("-");
+    }
+    if (parts.length < 2) {
+      return { start: "Unknown", destination: "Unknown" };
+    }
+
     return {
-      start: parts[0] ?? "Unknown",
-      destination: parts[1] ?? "Unknown"
+      start: parts[0].trim(),
+      destination: parts[1].trim(),
     };
   };
 
