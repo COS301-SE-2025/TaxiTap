@@ -206,6 +206,7 @@ export default function HomeScreen() {
   const [radiusExpansionTimer, setRadiusExpansionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [currentSearchRadius, setCurrentSearchRadius] = useState<number>(1.0);
   const [radiusExpansionInfo, setRadiusExpansionInfo] = useState<any>(null);
+  const [nextExpansionCountdown, setNextExpansionCountdown] = useState<number>(0);
 
   // Enhanced state to trigger taxi search
   const [taxiSearchParams, setTaxiSearchParams] = useState<{
@@ -215,6 +216,30 @@ export default function HomeScreen() {
     destinationLng: number;
     searchStartTime?: number;
   } | null>(null);
+
+  // Countdown timer for radius expansion
+  useEffect(() => {
+    let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+    if (isSearchingTaxis && searchStartTime && currentSearchRadius < 3.0) {
+      countdownInterval = setInterval(() => {
+        const elapsedTime = Date.now() - searchStartTime;
+        const currentExpansionCycle = Math.floor(elapsedTime / 30000);
+        const nextExpansionTime = (currentExpansionCycle + 1) * 30000;
+        const timeUntilNext = Math.max(0, nextExpansionTime - elapsedTime);
+
+        setNextExpansionCountdown(Math.ceil(timeUntilNext / 1000));
+      }, 1000);
+    } else {
+      setNextExpansionCountdown(0);
+    }
+
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+    };
+  }, [isSearchingTaxis, searchStartTime, currentSearchRadius]);
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
@@ -1787,12 +1812,15 @@ export default function HomeScreen() {
                 </Text>
               )}
               {isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { 
-                  color: '#3B82F6', 
+                <Text style={[dynamicStyles.routeLoadingText, {
+                  color: '#3B82F6',
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  {t('home:searchingTaxis')}
+                  🔍 Searching at {currentSearchRadius}km radius
+                  {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 &&
+                    ` • Expanding in ${nextExpansionCountdown}s`
+                  }
                 </Text>
               )}
 
@@ -1834,6 +1862,79 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        {/* Radius Expansion Status */}
+        {isSearchingTaxis && !keyboardVisible && searchStartTime && (
+          <View style={dynamicStyles.searchResultsContainer}>
+            <Text style={dynamicStyles.searchResultsTitle}>
+              🎯 Search Radius Status
+            </Text>
+            <View style={dynamicStyles.searchResultsCard}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 12,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: isDark
+                  ? 'rgba(71, 85, 105, 0.2)'
+                  : 'rgba(226, 232, 240, 0.5)',
+              }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: currentSearchRadius >= 3.0 ? '#EF4444' : '#3B82F6',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 16,
+                }}>
+                  <Icon name="radio" size={20} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[dynamicStyles.searchResultsText, {
+                    fontSize: 16,
+                    fontWeight: '600',
+                    marginBottom: 4
+                  }]}>
+                    Current Radius: {currentSearchRadius}km
+                  </Text>
+                  <Text style={[dynamicStyles.searchResultsText, {
+                    fontSize: 13,
+                    opacity: 0.8
+                  }]}>
+                    {currentSearchRadius >= 3.0
+                      ? 'Maximum radius reached'
+                      : `Expanding to ${currentSearchRadius + 0.5}km`
+                    }
+                  </Text>
+                </View>
+              </View>
+
+              {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 && (
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 8,
+                  backgroundColor: isDark
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(59, 130, 246, 0.05)',
+                  borderRadius: 12,
+                }}>
+                  <Icon name="time" size={16} color="#3B82F6" style={{ marginRight: 8 }} />
+                  <Text style={{
+                    color: '#3B82F6',
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}>
+                    Next expansion in {nextExpansionCountdown}s
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Journey Status */}
         {routeMatchResults && !keyboardVisible && !routeLoaded && (
@@ -2101,9 +2202,9 @@ export default function HomeScreen() {
                 <Icon name="location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
               )}
               <Text style={dynamicStyles.reserveButtonText}>
-                {isSearchingTaxis 
-                  ? t('home:findingTaxis')
-                  : availableTaxis.length > 0 
+                {isSearchingTaxis
+                  ? `Finding Taxis (${currentSearchRadius}km radius)`
+                  : availableTaxis.length > 0
                     ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
                     : t('home:reserveSeat')
                 }
@@ -2111,7 +2212,12 @@ export default function HomeScreen() {
             </View>
             {isSearchingTaxis && (
               <Text style={dynamicStyles.reserveButtonSubtext}>
-                {t('home:searchingDrivers')}
+                {currentSearchRadius < 3.0 && nextExpansionCountdown > 0
+                  ? `Expanding to ${currentSearchRadius + 0.5}km in ${nextExpansionCountdown}s`
+                  : currentSearchRadius >= 3.0
+                    ? 'Searching at maximum radius (3km)'
+                    : t('home:searchingDrivers')
+                }
               </Text>
             )}
           </TouchableOpacity>
