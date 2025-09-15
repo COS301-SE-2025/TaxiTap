@@ -215,7 +215,11 @@ export default function HomeScreen() {
     destinationLat: number;
     destinationLng: number;
     searchStartTime?: number;
+    _pollTime?: number; // Internal timestamp to force re-queries
   } | null>(null);
+
+  // Use ref to prevent infinite loops
+  const expansionInProgress = useRef(false);
 
   // Countdown timer for radius expansion - made safer for Hermes
   useEffect(() => {
@@ -251,6 +255,7 @@ export default function HomeScreen() {
   }, [isSearchingTaxis, searchStartTime, currentSearchRadius]);
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const lastProcessedSearchTime = useRef<number | null>(null);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
 
@@ -441,10 +446,14 @@ export default function HomeScreen() {
   const taxiSearchResult = useQuery(
     api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
     taxiSearchParams ? {
-      ...taxiSearchParams,
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      searchStartTime: taxiSearchParams.searchStartTime,
       maxOriginDistance: 3.0,      // 3km radius from origin
       maxDestinationDistance: 3.0, // 3km radius from destination
-      maxTaxiDistance: 3.0,        // 3km radius for taxi proximity
+      // Remove maxTaxiDistance to let function handle dynamic radius expansion
       maxResults: 10
     } : "skip"
   );
@@ -744,48 +753,7 @@ export default function HomeScreen() {
     const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
     const [userPreference, setUserPreference] = useState('shortest_time');
 
-  // Function to monitor radius expansion - made safer for Hermes
-  const startRadiusExpansionMonitoring = (startTime: number) => {
-    const checkExpansion = () => {
-      try {
-        const elapsedTime = Date.now() - startTime;
-        const currentRadius = Math.min(1.0 + Math.floor(elapsedTime / 30000) * 0.5, 3.0);
-
-        setCurrentSearchRadius(currentRadius);
-
-        // If we haven't reached max radius and still searching, schedule next check
-        if (currentRadius < 3.0 && isSearchingTaxis) {
-          const nextExpansionTime = Math.ceil(elapsedTime / 30000) * 30000;
-          const timeUntilNextExpansion = Math.max(1000, nextExpansionTime - elapsedTime); // Minimum 1 second
-
-          const timer = setTimeout(() => {
-            // Trigger a new search with expanded radius
-            if (taxiSearchParams && isSearchingTaxis) {
-              console.log(`🔄 Expanding search radius to ${currentRadius + 0.5}km`);
-              setTaxiSearchParams({
-                ...taxiSearchParams,
-                searchStartTime: startTime, // Keep original start time
-              });
-            }
-            checkExpansion();
-          }, timeUntilNextExpansion);
-
-          setRadiusExpansionTimer(timer);
-        }
-      } catch (error) {
-        console.warn('Radius expansion monitoring error:', error);
-        setIsSearchingTaxis(false);
-      }
-    };
-
-    // Start monitoring after 30 seconds with error handling
-    try {
-      const initialTimer = setTimeout(checkExpansion, 30000);
-      setRadiusExpansionTimer(initialTimer);
-    } catch (error) {
-      console.warn('Failed to start radius expansion monitoring:', error);
-    }
-  };
+  // Removed old radius expansion monitoring - now handled by Convex function
 
   // Enhanced function to search for available taxis with radius expansion
   const searchForAvailableTaxis = async (
@@ -801,11 +769,13 @@ export default function HomeScreen() {
     setRouteMatchResults(null);
     setIsSearchingTaxis(true);
 
-    // Clear any existing timer
+    // Clear any existing timer and reset expansion flag
     if (radiusExpansionTimer) {
       clearTimeout(radiusExpansionTimer);
       setRadiusExpansionTimer(null);
     }
+    expansionInProgress.current = false;
+    lastProcessedSearchTime.current = null;
 
     // Initialize search with timestamp for radius expansion
     const startTime = Date.now();
@@ -813,7 +783,7 @@ export default function HomeScreen() {
     setCurrentSearchRadius(1.0);
 
     try {
-      // Set up taxi search parameters with search start time for radius expansion
+      // Set up taxi search parameters - let Convex function handle radius expansion
       setTaxiSearchParams({
         originLat: origin.latitude,
         originLng: origin.longitude,
@@ -821,9 +791,6 @@ export default function HomeScreen() {
         destinationLng: dest.longitude,
         searchStartTime: startTime,
       });
-
-      // Set up radius expansion monitoring
-      startRadiusExpansionMonitoring(startTime);
 
     } catch (error) {
       setIsSearchingTaxis(false);
@@ -856,12 +823,12 @@ export default function HomeScreen() {
     // }
   };
 
-  // Handle taxi search results with radius expansion
+  // Handle taxi search results - simplified to avoid infinite loops
   useEffect(() => {
     if (taxiSearchResult) {
       const { radiusInfo } = taxiSearchResult;
 
-      // Update radius info if available
+      // Update radius info from Convex function
       if (radiusInfo) {
         setRadiusExpansionInfo(radiusInfo);
         setCurrentSearchRadius(radiusInfo.currentRadius);
@@ -871,8 +838,10 @@ export default function HomeScreen() {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
 
-        // If we found taxis, stop searching and clear timer
-        if (taxiSearchResult.availableTaxis.length > 0) {
+        // If we found taxis or reached max radius, stop searching
+        if (taxiSearchResult.availableTaxis.length > 0 ||
+           (radiusInfo && radiusInfo.currentRadius >= radiusInfo.maxRadius)) {
+          console.log(`✅ Search complete: ${taxiSearchResult.availableTaxis.length} taxis found`);
           setIsSearchingTaxis(false);
           setSearchStartTime(null);
           if (radiusExpansionTimer) {
@@ -880,21 +849,35 @@ export default function HomeScreen() {
             setRadiusExpansionTimer(null);
           }
         }
-        // If no taxis found but haven't reached max radius, continue searching
+        // Set up polling for radius expansion
         else if (radiusInfo && radiusInfo.currentRadius < radiusInfo.maxRadius) {
-          // Keep searching, radius will expand automatically
-          console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will expand to ${radiusInfo.currentRadius + 0.5}km in ${radiusInfo.nextExpansionTime ? Math.ceil((radiusInfo.nextExpansionTime - Date.now()) / 1000) : 30} seconds`);
-        }
-        // If reached max radius and still no taxis, stop searching
-        else {
-          setIsSearchingTaxis(false);
-          setSearchStartTime(null);
-          if (radiusExpansionTimer) {
-            clearTimeout(radiusExpansionTimer);
-            setRadiusExpansionTimer(null);
+          console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will check for expansion`);
+
+          // Set up a timer to poll the Convex function again for radius expansion
+          if (!radiusExpansionTimer && radiusInfo.nextExpansionTime) {
+            const timeUntilExpansion = radiusInfo.nextExpansionTime - Date.now();
+            const pollTime = Math.max(1000, Math.min(timeUntilExpansion + 1000, 31000)); // Poll 1 second after expansion time
+
+            console.log(`⏰ Will check for expansion in ${Math.ceil(pollTime / 1000)}s`);
+
+            const expansionTimer = setTimeout(() => {
+              setRadiusExpansionTimer(null);
+
+              // Force re-query by updating timestamp
+              if (taxiSearchParams && isSearchingTaxis) {
+                console.log(`🔄 Polling for radius expansion...`);
+                setTaxiSearchParams({
+                  ...taxiSearchParams,
+                  _pollTime: Date.now(), // Add poll timestamp to force re-query
+                });
+              }
+            }, pollTime);
+
+            setRadiusExpansionTimer(expansionTimer);
           }
         }
       } else {
+        console.log(`❌ Search failed: ${taxiSearchResult.message || 'Unknown error'}`);
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
         setIsSearchingTaxis(false);
@@ -905,7 +888,7 @@ export default function HomeScreen() {
         }
       }
     }
-  }, [taxiSearchResult, radiusExpansionTimer]);
+  }, [taxiSearchResult]);
 
   // NEW: Handle address changes with programmatic flag reset
   const handleOriginAddressChange = (text: string) => {
