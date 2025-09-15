@@ -201,15 +201,48 @@ export default function HomeScreen() {
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
 
+  // States for progressive radius expansion
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  const [radiusExpansionTimer, setRadiusExpansionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [currentSearchRadius, setCurrentSearchRadius] = useState<number>(1.0);
+  const [radiusExpansionInfo, setRadiusExpansionInfo] = useState<any>(null);
+  const [nextExpansionCountdown, setNextExpansionCountdown] = useState<number>(0);
+
   // Enhanced state to trigger taxi search
   const [taxiSearchParams, setTaxiSearchParams] = useState<{
     originLat: number;
     originLng: number;
     destinationLat: number;
     destinationLng: number;
+    searchStartTime?: number;
+    _pollTime?: number; // Internal timestamp to force re-queries
   } | null>(null);
 
+  // Use ref to prevent infinite loops
+  const expansionInProgress = useRef(false);
+
+  // Update countdown from Convex function's radiusInfo
+  useEffect(() => {
+    if (radiusExpansionInfo && radiusExpansionInfo.nextExpansionTime && isSearchingTaxis) {
+      const interval = setInterval(() => {
+        const timeUntilNext = Math.max(0, radiusExpansionInfo.nextExpansionTime - Date.now());
+        const countdownValue = Math.ceil(timeUntilNext / 1000);
+        setNextExpansionCountdown(countdownValue);
+
+        // Stop countdown when it reaches 0
+        if (countdownValue <= 0) {
+          setNextExpansionCountdown(0);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setNextExpansionCountdown(0);
+    }
+  }, [radiusExpansionInfo, isSearchingTaxis]);
+
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const lastProcessedSearchTime = useRef<number | null>(null);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
 
@@ -400,10 +433,14 @@ export default function HomeScreen() {
   const taxiSearchResult = useQuery(
     api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
     taxiSearchParams ? {
-      ...taxiSearchParams,
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      searchStartTime: taxiSearchParams.searchStartTime,
       maxOriginDistance: 3.0,      // 3km radius from origin
       maxDestinationDistance: 3.0, // 3km radius from destination
-      maxTaxiDistance: 3.0,        // 3km radius for taxi proximity
+      // Remove maxTaxiDistance to let function handle dynamic radius expansion
       maxResults: 10
     } : "skip"
   );
@@ -703,7 +740,9 @@ export default function HomeScreen() {
     const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
     const [userPreference, setUserPreference] = useState('shortest_time');
 
-  // Enhanced function to search for available taxis
+  // Removed old radius expansion monitoring - now handled by Convex function
+
+  // Enhanced function to search for available taxis with radius expansion
   const searchForAvailableTaxis = async (
     origin: { latitude: number; longitude: number; name: string },
     dest: { latitude: number; longitude: number; name: string }
@@ -712,22 +751,39 @@ export default function HomeScreen() {
       return;
     }
 
+    // Clear previous search state
     setAvailableTaxis([]);
     setRouteMatchResults(null);
     setIsSearchingTaxis(true);
-    
+
+    // Clear any existing timer and reset expansion flag
+    if (radiusExpansionTimer) {
+      clearTimeout(radiusExpansionTimer);
+      setRadiusExpansionTimer(null);
+    }
+    expansionInProgress.current = false;
+    lastProcessedSearchTime.current = null;
+
+    // Initialize search with timestamp for radius expansion
+    const startTime = Date.now();
+    setSearchStartTime(startTime);
+    setCurrentSearchRadius(1.0);
+
     try {
+      // Set up taxi search parameters - let Convex function handle radius expansion
       setTaxiSearchParams({
         originLat: origin.latitude,
         originLng: origin.longitude,
         destinationLat: dest.latitude,
         destinationLng: dest.longitude,
+        searchStartTime: startTime,
       });
-      
+
     } catch (error) {
       setIsSearchingTaxis(false);
+      setSearchStartTime(null);
       Alert.alert(
-        t('home:searchError'), 
+        t('home:searchError'),
         t('home:unableToFindTaxis'),
         [{ text: t('common:ok') }]
       );
@@ -735,35 +791,83 @@ export default function HomeScreen() {
       setRouteMatchResults(null);
     }
 
-    const journeyAnalysis = await useQuery(
-      api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-      {
-      originLat: origin.latitude,
-      originLng: origin.longitude,
-      destinationLat: dest.latitude,
-      destinationLng: dest.longitude,
-      optimizationPreference: userPreference || 'shortest_time'
-      }
-    );
-    if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
-      setShowMultiLegPreview(true);
-      setMultiLegOptions(journeyAnalysis.multiLegOptions);
-    } else {
-      setTaxiSearchParams(taxiSearchParams);
-    }
+    // TODO: Fix this - cannot await useQuery hook, this causes Hermes crash
+    // const journeyAnalysis = await useQuery(
+    //   api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+    //   {
+    //   originLat: origin.latitude,
+    //   originLng: origin.longitude,
+    //   destinationLat: dest.latitude,
+    //   destinationLng: dest.longitude,
+    //   optimizationPreference: userPreference || 'shortest_time'
+    //   }
+    // );
+    // if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
+    //   setShowMultiLegPreview(true);
+    //   setMultiLegOptions(journeyAnalysis.multiLegOptions);
+    // } else {
+    //   setTaxiSearchParams(taxiSearchParams);
+    // }
   };
 
-  // Handle taxi search results
+  // Handle taxi search results - simplified to avoid infinite loops
   useEffect(() => {
     if (taxiSearchResult) {
-      setIsSearchingTaxis(false);
-      
-      if (taxiSearchResult.success) { 
+      const { radiusInfo } = taxiSearchResult;
+
+      // Update radius info from Convex function
+      if (radiusInfo) {
+        setRadiusExpansionInfo(radiusInfo);
+        setCurrentSearchRadius(radiusInfo.currentRadius);
+      }
+
+      if (taxiSearchResult.success) {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
+
+        // If we found taxis or reached max radius, stop searching
+        if (taxiSearchResult.availableTaxis.length > 0 ||
+           (radiusInfo && radiusInfo.currentRadius >= radiusInfo.maxRadius)) {
+          console.log(`✅ Search complete: ${taxiSearchResult.availableTaxis.length} taxis found`);
+          setIsSearchingTaxis(false);
+          setSearchStartTime(null);
+          if (radiusExpansionTimer) {
+            clearTimeout(radiusExpansionTimer);
+            setRadiusExpansionTimer(null);
+          }
+        }
+        // Continue searching - set up polling to check for radius expansion
+        else if (radiusInfo && radiusInfo.currentRadius < radiusInfo.maxRadius) {
+          console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will check again in 5 seconds`);
+
+          // Set up a timer to poll the Convex function again
+          if (!radiusExpansionTimer) {
+            const expansionTimer = setTimeout(() => {
+              setRadiusExpansionTimer(null);
+
+              // Force re-query by updating poll timestamp
+              if (taxiSearchParams && isSearchingTaxis) {
+                console.log(`🔄 Checking for updates...`);
+                setTaxiSearchParams({
+                  ...taxiSearchParams,
+                  _pollTime: Date.now(), // Add poll timestamp to force re-query
+                });
+              }
+            }, 5000); // Check every 5 seconds
+
+            setRadiusExpansionTimer(expansionTimer);
+          }
+        }
       } else {
+        console.log(`❌ Search failed: ${taxiSearchResult.message || 'Unknown error'}`);
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
+        setIsSearchingTaxis(false);
+        setSearchStartTime(null);
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
       }
     }
   }, [taxiSearchResult]);
@@ -1692,12 +1796,15 @@ export default function HomeScreen() {
                 </Text>
               )}
               {isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { 
-                  color: '#3B82F6', 
+                <Text style={[dynamicStyles.routeLoadingText, {
+                  color: '#3B82F6',
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  {t('home:searchingTaxis')}
+                  🔍 Searching at {currentSearchRadius}km radius
+                  {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 &&
+                    ` • Expanding in ${nextExpansionCountdown}s`
+                  }
                 </Text>
               )}
 
@@ -1739,6 +1846,79 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        {/* Radius Expansion Status */}
+        {isSearchingTaxis && !keyboardVisible && searchStartTime && (
+          <View style={dynamicStyles.searchResultsContainer}>
+            <Text style={dynamicStyles.searchResultsTitle}>
+              🎯 Search Radius Status
+            </Text>
+            <View style={dynamicStyles.searchResultsCard}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: 12,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: isDark
+                  ? 'rgba(71, 85, 105, 0.2)'
+                  : 'rgba(226, 232, 240, 0.5)',
+              }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: currentSearchRadius >= 3.0 ? '#EF4444' : '#3B82F6',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 16,
+                }}>
+                  <Icon name="radio" size={20} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[dynamicStyles.searchResultsText, {
+                    fontSize: 16,
+                    fontWeight: '600',
+                    marginBottom: 4
+                  }]}>
+                    Current Radius: {currentSearchRadius}km
+                  </Text>
+                  <Text style={[dynamicStyles.searchResultsText, {
+                    fontSize: 13,
+                    opacity: 0.8
+                  }]}>
+                    {currentSearchRadius >= 3.0
+                      ? 'Maximum radius reached'
+                      : `Expanding to ${currentSearchRadius + 0.5}km`
+                    }
+                  </Text>
+                </View>
+              </View>
+
+              {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 && (
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 8,
+                  backgroundColor: isDark
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(59, 130, 246, 0.05)',
+                  borderRadius: 12,
+                }}>
+                  <Icon name="time" size={16} color="#3B82F6" style={{ marginRight: 8 }} />
+                  <Text style={{
+                    color: '#3B82F6',
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}>
+                    Next expansion in {nextExpansionCountdown}s
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Journey Status */}
         {routeMatchResults && !keyboardVisible && !routeLoaded && (
@@ -2006,9 +2186,9 @@ export default function HomeScreen() {
                 <Icon name="location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
               )}
               <Text style={dynamicStyles.reserveButtonText}>
-                {isSearchingTaxis 
-                  ? t('home:findingTaxis')
-                  : availableTaxis.length > 0 
+                {isSearchingTaxis
+                  ? `Finding Taxis (${currentSearchRadius}km radius)`
+                  : availableTaxis.length > 0
                     ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
                     : t('home:reserveSeat')
                 }
@@ -2016,7 +2196,12 @@ export default function HomeScreen() {
             </View>
             {isSearchingTaxis && (
               <Text style={dynamicStyles.reserveButtonSubtext}>
-                {t('home:searchingDrivers')}
+                {currentSearchRadius < 3.0 && nextExpansionCountdown > 0
+                  ? `Expanding to ${currentSearchRadius + 0.5}km in ${nextExpansionCountdown}s`
+                  : currentSearchRadius >= 3.0
+                    ? 'Searching at maximum radius (3km)'
+                    : t('home:searchingDrivers')
+                }
               </Text>
             )}
           </TouchableOpacity>
