@@ -67,7 +67,21 @@ export default function PaymentConfirmation() {
       amountPaid: numericAmount,
       paymentType: "overpaid",
     });
-    router.push({ pathname: "/PassengerReservation", params: { /* ... */ } });
+    router.push({
+      pathname: '/PassengerReservation',
+      params: {
+        currentLat,
+        currentLng,
+        currentName,
+        destinationLat,
+        destinationLng,
+        destinationName,
+        driverId,
+        driverName,
+        fare,
+        rideId,
+      }
+    });
   };
 
   const handleNotPaid = () => {
@@ -194,10 +208,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E74C3C",
   },
   buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     width: "100%",
+    height: 20,
     marginTop: 20,
+    gap: 12,
   },
   button: {
     flexDirection: "row",
