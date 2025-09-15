@@ -221,38 +221,25 @@ export default function HomeScreen() {
   // Use ref to prevent infinite loops
   const expansionInProgress = useRef(false);
 
-  // Countdown timer for radius expansion - made safer for Hermes
+  // Update countdown from Convex function's radiusInfo
   useEffect(() => {
-    let countdownInterval: ReturnType<typeof setInterval> | null = null;
+    if (radiusExpansionInfo && radiusExpansionInfo.nextExpansionTime && isSearchingTaxis) {
+      const interval = setInterval(() => {
+        const timeUntilNext = Math.max(0, radiusExpansionInfo.nextExpansionTime - Date.now());
+        const countdownValue = Math.ceil(timeUntilNext / 1000);
+        setNextExpansionCountdown(countdownValue);
 
-    if (isSearchingTaxis && searchStartTime && currentSearchRadius < 3.0) {
-      // Use a more conservative update interval to avoid overwhelming Hermes
-      countdownInterval = setInterval(() => {
-        try {
-          const now = Date.now();
-          const elapsedTime = now - searchStartTime;
-          const currentExpansionCycle = Math.floor(elapsedTime / 30000);
-          const nextExpansionTime = (currentExpansionCycle + 1) * 30000;
-          const timeUntilNext = Math.max(0, nextExpansionTime - elapsedTime);
-
-          const countdownValue = Math.ceil(timeUntilNext / 1000);
-
-          // Only update if the value actually changed to reduce renders
-          setNextExpansionCountdown(prev => prev !== countdownValue ? countdownValue : prev);
-        } catch (error) {
-          console.warn('Countdown timer error:', error);
+        // Stop countdown when it reaches 0
+        if (countdownValue <= 0) {
+          setNextExpansionCountdown(0);
         }
       }, 1000);
+
+      return () => clearInterval(interval);
     } else {
       setNextExpansionCountdown(0);
     }
-
-    return () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-      }
-    };
-  }, [isSearchingTaxis, searchStartTime, currentSearchRadius]);
+  }, [radiusExpansionInfo, isSearchingTaxis]);
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const lastProcessedSearchTime = useRef<number | null>(null);
@@ -849,29 +836,24 @@ export default function HomeScreen() {
             setRadiusExpansionTimer(null);
           }
         }
-        // Set up polling for radius expansion
+        // Continue searching - set up polling to check for radius expansion
         else if (radiusInfo && radiusInfo.currentRadius < radiusInfo.maxRadius) {
-          console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will check for expansion`);
+          console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will check again in 5 seconds`);
 
-          // Set up a timer to poll the Convex function again for radius expansion
-          if (!radiusExpansionTimer && radiusInfo.nextExpansionTime) {
-            const timeUntilExpansion = radiusInfo.nextExpansionTime - Date.now();
-            const pollTime = Math.max(1000, Math.min(timeUntilExpansion + 1000, 31000)); // Poll 1 second after expansion time
-
-            console.log(`⏰ Will check for expansion in ${Math.ceil(pollTime / 1000)}s`);
-
+          // Set up a timer to poll the Convex function again
+          if (!radiusExpansionTimer) {
             const expansionTimer = setTimeout(() => {
               setRadiusExpansionTimer(null);
 
-              // Force re-query by updating timestamp
+              // Force re-query by updating poll timestamp
               if (taxiSearchParams && isSearchingTaxis) {
-                console.log(`🔄 Polling for radius expansion...`);
+                console.log(`🔄 Checking for updates...`);
                 setTaxiSearchParams({
                   ...taxiSearchParams,
                   _pollTime: Date.now(), // Add poll timestamp to force re-query
                 });
               }
-            }, pollTime);
+            }, 5000); // Check every 5 seconds
 
             setRadiusExpansionTimer(expansionTimer);
           }

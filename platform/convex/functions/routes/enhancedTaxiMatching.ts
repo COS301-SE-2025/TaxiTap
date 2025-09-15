@@ -74,7 +74,7 @@ function calculateFare(passengerDisplacement: number): number {
 
 // Radius expansion configuration
 const RADIUS_CONFIG = {
-  INITIAL_RADIUS: 1.0,     // Start at 1km
+  INITIAL_RADIUS: 2.0,     // Start at 2km (increased from 1km for faster driver discovery)
   MAX_RADIUS: 3.0,         // Maximum radius of 3km
   EXPANSION_INTERVAL: 0.5, // Increase by 0.5km each time
   TIME_INTERVAL: 30000,    // Wait 30 seconds (30000ms) between expansions
@@ -377,6 +377,12 @@ export const _findAvailableTaxisForJourneyHandler = async (
         expansionsRemaining,
         nextExpansionIn: nextExpansionTime ? ((nextExpansionTime - Date.now()) / 1000).toFixed(1) + 's' : 'none'
       }
+    });
+
+    console.log('📍 Passenger location being used for search:', {
+      latitude: originLat,
+      longitude: originLng,
+      searchRadius: currentRadius + 'km'
     });
 
     // Calculate passenger displacement once
