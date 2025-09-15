@@ -72,6 +72,41 @@ function calculateFare(passengerDisplacement: number): number {
   return Math.ceil(BASE_FARE + overageFee);
 }
 
+// Radius expansion configuration
+const RADIUS_CONFIG = {
+  INITIAL_RADIUS: 1.0,     // Start at 1km
+  MAX_RADIUS: 3.0,         // Maximum radius of 3km
+  EXPANSION_INTERVAL: 0.5, // Increase by 0.5km each time
+  TIME_INTERVAL: 30000,    // Wait 30 seconds (30000ms) between expansions
+} as const;
+
+/**
+ * Calculate the current search radius based on elapsed time
+ */
+function calculateCurrentRadius(startTime: number): number {
+  const elapsedTime = Date.now() - startTime;
+  const intervalsPassed = Math.floor(elapsedTime / RADIUS_CONFIG.TIME_INTERVAL);
+  const currentRadius = RADIUS_CONFIG.INITIAL_RADIUS + (intervalsPassed * RADIUS_CONFIG.EXPANSION_INTERVAL);
+  
+  // Cap at maximum radius
+  return Math.min(currentRadius, RADIUS_CONFIG.MAX_RADIUS);
+}
+
+/**
+ * Get the next radius expansion time
+ */
+function getNextExpansionTime(startTime: number, currentRadius: number): number | null {
+  if (currentRadius >= RADIUS_CONFIG.MAX_RADIUS) {
+    return null; // No more expansions
+  }
+  
+  const elapsedTime = Date.now() - startTime;
+  const intervalsPassed = Math.floor(elapsedTime / RADIUS_CONFIG.TIME_INTERVAL);
+  const nextExpansionTime = startTime + ((intervalsPassed + 1) * RADIUS_CONFIG.TIME_INTERVAL);
+  
+  return nextExpansionTime;
+}
+
 type RouteStop = {
   coordinates: number[];
   name: string;
@@ -282,6 +317,16 @@ type TaxiSearchResult = {
     maxTaxiDistance: number;
     maxResults: number;
   };
+  // Enhanced with radius expansion info
+  radiusInfo: {
+    currentRadius: number;
+    initialRadius: number;
+    maxRadius: number;
+    searchStartTime: number;
+    elapsedTime: number;
+    nextExpansionTime: number | null;
+    expansionsRemaining: number;
+  };
   message: string;
 };
 
@@ -294,10 +339,11 @@ type FindAvailableTaxisArgs = {
   maxDestinationDistance?: number;
   maxTaxiDistance?: number;
   maxResults?: number;
+  searchStartTime?: number; // New parameter for radius expansion
 };
 
 /**
- * Exported handler function for internal taxi matching logic
+ * Exported handler function for internal taxi matching logic with gradual radius expansion
  */
 export const _findAvailableTaxisForJourneyHandler = async (
   ctx: QueryCtx,
@@ -308,14 +354,29 @@ export const _findAvailableTaxisForJourneyHandler = async (
     destinationLng,
     maxOriginDistance = 1.0,
     maxDestinationDistance = 1.0,
-    maxTaxiDistance = 2.0,
-    maxResults = 10
+    maxTaxiDistance,
+    maxResults = 10,
+    searchStartTime
   }: FindAvailableTaxisArgs
 ): Promise<TaxiSearchResult> => {
   try {
-    console.log('🔍 Finding available taxis for journey:', {
+    // Initialize search start time if not provided
+    const startTime = searchStartTime || Date.now();
+    
+    // Calculate current radius based on elapsed time
+    const currentRadius = maxTaxiDistance || calculateCurrentRadius(startTime);
+    const nextExpansionTime = getNextExpansionTime(startTime, currentRadius);
+    const expansionsRemaining = Math.floor((RADIUS_CONFIG.MAX_RADIUS - currentRadius) / RADIUS_CONFIG.EXPANSION_INTERVAL);
+    
+    console.log('🔍 Finding available taxis for journey with dynamic radius:', {
       origin: { lat: originLat, lng: originLng },
-      destination: { lat: destinationLat, lng: destinationLng }
+      destination: { lat: destinationLat, lng: destinationLng },
+      radiusInfo: {
+        currentRadius: currentRadius.toFixed(1) + 'km',
+        elapsedTime: ((Date.now() - startTime) / 1000).toFixed(1) + 's',
+        expansionsRemaining,
+        nextExpansionIn: nextExpansionTime ? ((nextExpansionTime - Date.now()) / 1000).toFixed(1) + 's' : 'none'
+      }
     });
 
     // Calculate passenger displacement once
@@ -327,12 +388,12 @@ export const _findAvailableTaxisForJourneyHandler = async (
       fare: 'R' + calculatedFare.toFixed(2)
     });
 
-    // Step 1: Get all drivers with current locations who are nearby
+    // Step 1: Get all drivers with current locations who are nearby (using current radius)
     const locations = await ctx.db.query("locations").collect();
     const nearbyDriverLocations = locations.filter((loc) => {
       if (loc.role !== "driver" && loc.role !== "both") return false;
       const distanceToOrigin = getDistanceKm(originLat, originLng, loc.latitude, loc.longitude);
-      return distanceToOrigin <= maxTaxiDistance;
+      return distanceToOrigin <= currentRadius;
     });
 
     if (nearbyDriverLocations.length === 0) {
@@ -343,19 +404,28 @@ export const _findAvailableTaxisForJourneyHandler = async (
         totalTaxisFound: 0,
         totalRoutesChecked: 0,
         validRoutesFound: 0,
-        message: "No drivers found within range",
+        message: `No drivers found within ${currentRadius.toFixed(1)}km radius. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
           maxOriginDistance,
           maxDestinationDistance,
-          maxTaxiDistance,
+          maxTaxiDistance: currentRadius,
           maxResults
+        },
+        radiusInfo: {
+          currentRadius,
+          initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+          maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+          searchStartTime: startTime,
+          elapsedTime: Date.now() - startTime,
+          nextExpansionTime,
+          expansionsRemaining
         }
       };
     }
 
-    console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers`);
+    console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers within ${currentRadius.toFixed(1)}km`);
 
     // Step 2: Get driver profiles for nearby drivers
     const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
@@ -372,14 +442,23 @@ export const _findAvailableTaxisForJourneyHandler = async (
         totalTaxisFound: 0,
         totalRoutesChecked: 0,
         validRoutesFound: 0,
-        message: "No driver profiles found for nearby drivers",
+        message: `No driver profiles found for nearby drivers within ${currentRadius.toFixed(1)}km. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
           maxOriginDistance,
           maxDestinationDistance,
-          maxTaxiDistance,
+          maxTaxiDistance: currentRadius,
           maxResults
+        },
+        radiusInfo: {
+          currentRadius,
+          initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+          maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+          searchStartTime: startTime,
+          elapsedTime: Date.now() - startTime,
+          nextExpansionTime,
+          expansionsRemaining
         }
       };
     }
@@ -487,7 +566,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
       }
     }
 
-    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis`);
+    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis within ${currentRadius.toFixed(1)}km`);
 
     if (availableTaxis.length === 0) {
       return {
@@ -497,14 +576,23 @@ export const _findAvailableTaxisForJourneyHandler = async (
         totalTaxisFound: 0,
         totalRoutesChecked: routes.length,
         validRoutesFound: 0,
-        message: "No taxi routes found that pass near both your pickup location and destination",
+        message: `No taxi routes found that pass near both your pickup location and destination within ${currentRadius.toFixed(1)}km. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
           maxOriginDistance,
           maxDestinationDistance,
-          maxTaxiDistance,
+          maxTaxiDistance: currentRadius,
           maxResults
+        },
+        radiusInfo: {
+          currentRadius,
+          initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+          maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+          searchStartTime: startTime,
+          elapsedTime: Date.now() - startTime,
+          nextExpansionTime,
+          expansionsRemaining
         }
       };
     }
@@ -532,7 +620,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
       calculatedFare: Math.round(calculatedFare * 100) / 100
     }));
 
-    console.log(`🎯 Final result: ${finalResults.length} available taxis found`);
+    console.log(`🎯 Final result: ${finalResults.length} available taxis found within ${currentRadius.toFixed(1)}km`);
 
     return {
       success: true,
@@ -546,14 +634,28 @@ export const _findAvailableTaxisForJourneyHandler = async (
         destination: { latitude: destinationLat, longitude: destinationLng },
         maxOriginDistance,
         maxDestinationDistance,
-        maxTaxiDistance,
+        maxTaxiDistance: currentRadius,
         maxResults
       },
-      message: `Found ${finalResults.length} available taxis on ${routeDetails.length} matching routes`
+      radiusInfo: {
+        currentRadius,
+        initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+        maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+        searchStartTime: startTime,
+        elapsedTime: Date.now() - startTime,
+        nextExpansionTime,
+        expansionsRemaining
+      },
+      message: `Found ${finalResults.length} available taxis on ${routeDetails.length} matching routes within ${currentRadius.toFixed(1)}km radius`
     };
     
   } catch (error) {
     console.error("❌ Error in _findAvailableTaxisForJourney:", error);
+    const startTime = searchStartTime || Date.now();
+    const currentRadius = maxTaxiDistance || calculateCurrentRadius(startTime);
+    const nextExpansionTime = getNextExpansionTime(startTime, currentRadius);
+    const expansionsRemaining = Math.floor((RADIUS_CONFIG.MAX_RADIUS - currentRadius) / RADIUS_CONFIG.EXPANSION_INTERVAL);
+    
     return {
       success: false,
       availableTaxis: [],
@@ -567,8 +669,17 @@ export const _findAvailableTaxisForJourneyHandler = async (
         destination: { latitude: destinationLat, longitude: destinationLng },
         maxOriginDistance,
         maxDestinationDistance,
-        maxTaxiDistance,
+        maxTaxiDistance: currentRadius,
         maxResults
+      },
+      radiusInfo: {
+        currentRadius,
+        initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+        maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+        searchStartTime: startTime,
+        elapsedTime: Date.now() - startTime,
+        nextExpansionTime,
+        expansionsRemaining
       }
     };
   }
@@ -586,7 +697,8 @@ export const _findAvailableTaxisForJourney = internalQuery({
     maxOriginDistance: v.optional(v.number()),
     maxDestinationDistance: v.optional(v.number()),
     maxTaxiDistance: v.optional(v.number()),
-    maxResults: v.optional(v.number())
+    maxResults: v.optional(v.number()),
+    searchStartTime: v.optional(v.number())
   },
   handler: _findAvailableTaxisForJourneyHandler
 });
@@ -613,7 +725,8 @@ export const findAvailableTaxisForJourney = query({
     maxOriginDistance: v.optional(v.number()),
     maxDestinationDistance: v.optional(v.number()),
     maxTaxiDistance: v.optional(v.number()),
-    maxResults: v.optional(v.number())
+    maxResults: v.optional(v.number()),
+    searchStartTime: v.optional(v.number())
   },
   handler: findAvailableTaxisForJourneyHandler
 });
@@ -639,7 +752,7 @@ export const getNearbyTaxisForRouteRequestHandler = async (
     destinationLng: args.passengerEndLng,
     maxOriginDistance: 3.0,
     maxDestinationDistance: 3.0,
-    maxTaxiDistance: 3.0,
+    maxTaxiDistance: 3.0, // Use fixed 3km for backward compatibility
     maxResults: 10
   });
   
@@ -732,7 +845,7 @@ export const analyzeMultiLegJourneyOptions = query({
         destinationLng: args.destinationLng,
         maxOriginDistance: 1.0,
         maxDestinationDistance: 1.0,
-        maxTaxiDistance: 2.0,
+        maxTaxiDistance: 1.0, // Start with initial radius
         maxResults: 10
       });
 
@@ -918,3 +1031,30 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     };
   }
 }
+
+/**
+ * Utility function to get current radius expansion info without performing a search
+ */
+export const getRadiusExpansionInfo = query({
+  args: {
+    searchStartTime: v.number()
+  },
+  handler: async (ctx, args) => {
+    const currentRadius = calculateCurrentRadius(args.searchStartTime);
+    const nextExpansionTime = getNextExpansionTime(args.searchStartTime, currentRadius);
+    const expansionsRemaining = Math.floor((RADIUS_CONFIG.MAX_RADIUS - currentRadius) / RADIUS_CONFIG.EXPANSION_INTERVAL);
+    
+    return {
+      currentRadius,
+      initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+      maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+      searchStartTime: args.searchStartTime,
+      elapsedTime: Date.now() - args.searchStartTime,
+      nextExpansionTime,
+      expansionsRemaining,
+      expansionInterval: RADIUS_CONFIG.EXPANSION_INTERVAL,
+      timeInterval: RADIUS_CONFIG.TIME_INTERVAL,
+      nextExpansionIn: nextExpansionTime ? nextExpansionTime - Date.now() : null
+    };
+  }
+});
