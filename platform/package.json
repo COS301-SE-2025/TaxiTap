@@ -28,7 +28,7 @@
     "axios": "^1.9.0",
     "convex": "^1.24.1",
     "cors": "^2.8.5",
-    "expo": "53.0.20",
+    "expo": "^54.0.7",
     "expo-av": "~15.1.4",
     "expo-constants": "~17.1.6",
     "expo-device": "~7.1.4",
