@@ -250,29 +250,33 @@ export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
   const { t } = useTranslation();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
-  let currentLocation, destination;
-  
+
+  // Safely get map context
+  let currentLocation: any = undefined;
+  let destination: any = undefined;
+
   try {
-    ({ currentLocation, destination } = useMapContext());
+    const mapContext = useMapContext();
+    currentLocation = mapContext.currentLocation;
+    destination = mapContext.destination;
   } catch (e) {
-    currentLocation = undefined;
-    destination = undefined;
+    console.warn('MapContext not available in TabLayout');
   }
 
   const processedNotificationsRef = useRef(new Set<string>());
   
   // Ride declined notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideDeclined = notifications.find(
-			n => n.type === 'ride_declined' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-        );
+    const rideDeclined = notifications.find(
+      n => n.type === 'ride_declined' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     if (rideDeclined) {
-
-      processedNotificationsRef.current.add(rideDeclined._id);// Mark as processed
+      processedNotificationsRef.current.add(rideDeclined._id); // Mark as processed
 
       showGlobalError(
         t('notifications:rideDeclined'),
@@ -296,14 +300,15 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead, showGlobalError]);
 
-  // Ride accepted notification handler  
+  // Ride accepted notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideAccepted = notifications.find(
-			n => n.type === 'ride_accepted' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-		);
+    const rideAccepted = notifications.find(
+      n => n.type === 'ride_accepted' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     
     if (rideAccepted) {
@@ -344,12 +349,13 @@ export default function TabLayout() {
 
   // Ride cancelled notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideCancelled = notifications.find(
-			n => n.type === 'ride_cancelled' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-		);
+    const rideCancelled = notifications.find(
+      n => n.type === 'ride_cancelled' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     if (rideCancelled) {
 
