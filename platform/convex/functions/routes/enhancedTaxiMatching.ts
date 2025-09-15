@@ -427,14 +427,20 @@ export const _findAvailableTaxisForJourneyHandler = async (
 
     console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers within ${currentRadius.toFixed(1)}km`);
 
-    // Step 2: Get driver profiles for nearby drivers
+    // Step 2: Filter drivers who are actually online (have active work sessions)
     const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
-    const driverProfiles = await ctx.db
-      .query("drivers")
-      .filter((q) => q.or(...driverUserIds.map(id => q.eq(q.field("userId"), id))))
+    const activeWorkSessions = await ctx.db
+      .query("work_sessions")
+      .filter((q) => q.and(
+        q.or(...driverUserIds.map(id => q.eq(q.field("driverId"), id))),
+        q.eq(q.field("endTime"), undefined) // Only get sessions without end time (still active)
+      ))
       .collect();
 
-    if (driverProfiles.length === 0) {
+    const onlineDriverIds = new Set(activeWorkSessions.map(session => session.driverId));
+    const onlineDriverLocations = nearbyDriverLocations.filter(loc => onlineDriverIds.has(loc.userId));
+
+    if (onlineDriverLocations.length === 0) {
       return {
         success: true,
         availableTaxis: [],
@@ -442,7 +448,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
         totalTaxisFound: 0,
         totalRoutesChecked: 0,
         validRoutesFound: 0,
-        message: `No driver profiles found for nearby drivers within ${currentRadius.toFixed(1)}km. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
+        message: `No online drivers found within ${currentRadius.toFixed(1)}km radius. Found ${nearbyDriverLocations.length} drivers nearby but none are currently online. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
@@ -463,7 +469,45 @@ export const _findAvailableTaxisForJourneyHandler = async (
       };
     }
 
-    // Step 3: Get unique routes for these drivers
+    console.log(`✅ Found ${onlineDriverLocations.length} online drivers out of ${nearbyDriverLocations.length} nearby drivers`);
+
+    // Step 4: Get driver profiles for online drivers only
+    const onlineDriverUserIds = onlineDriverLocations.map(loc => loc.userId);
+    const driverProfiles = await ctx.db
+      .query("drivers")
+      .filter((q) => q.or(...onlineDriverUserIds.map(id => q.eq(q.field("userId"), id))))
+      .collect();
+
+    if (driverProfiles.length === 0) {
+      return {
+        success: true,
+        availableTaxis: [],
+        matchingRoutes: [],
+        totalTaxisFound: 0,
+        totalRoutesChecked: 0,
+        validRoutesFound: 0,
+        message: `No driver profiles found for online drivers within ${currentRadius.toFixed(1)}km. ${expansionsRemaining > 0 ? `Search will expand to ${(currentRadius + RADIUS_CONFIG.EXPANSION_INTERVAL).toFixed(1)}km in ${nextExpansionTime ? Math.ceil((nextExpansionTime - Date.now()) / 1000) : 0} seconds.` : 'Maximum search radius reached.'}`,
+        searchCriteria: {
+          origin: { latitude: originLat, longitude: originLng },
+          destination: { latitude: destinationLat, longitude: destinationLng },
+          maxOriginDistance,
+          maxDestinationDistance,
+          maxTaxiDistance: currentRadius,
+          maxResults
+        },
+        radiusInfo: {
+          currentRadius,
+          initialRadius: RADIUS_CONFIG.INITIAL_RADIUS,
+          maxRadius: RADIUS_CONFIG.MAX_RADIUS,
+          searchStartTime: startTime,
+          elapsedTime: Date.now() - startTime,
+          nextExpansionTime,
+          expansionsRemaining
+        }
+      };
+    }
+
+    // Step 5: Get unique routes for these online drivers
     const routeIds = [...new Set(driverProfiles.map(d => d.assignedRoute).filter(Boolean))];
     const routes = await ctx.db
       .query("routes")
@@ -473,16 +517,16 @@ export const _findAvailableTaxisForJourneyHandler = async (
       ))
       .collect();
 
-    console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} drivers`);
+    console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} online drivers`);
 
-    // Step 4: Only calculate route scores for routes that have drivers
+    // Step 6: Only calculate route scores for routes that have online drivers
     const validRoutes = [];
     const availableTaxis: AvailableTaxi[] = [];
 
     for (const route of routes) {
       // Get drivers on this specific route
       const driversOnRoute = driverProfiles.filter(d => d.assignedRoute === route._id);
-      const driversOnRouteLocations = nearbyDriverLocations.filter(loc => 
+      const driversOnRouteLocations = onlineDriverLocations.filter(loc =>
         driversOnRoute.some(d => d.userId === loc.userId)
       );
 
@@ -515,17 +559,18 @@ export const _findAvailableTaxisForJourneyHandler = async (
           .withIndex("by_driver_id", (q) => q.eq("driverId", driverProfile._id))
           .first();
 
-        if (userProfile) {
+        // Only include drivers with available taxis
+        if (userProfile && taxi && taxi.isAvailable) {
           const taxiData: AvailableTaxi = {
             driverId: driverProfile._id,
             userId: driverLocation.userId,
             name: userProfile.name,
             phoneNumber: userProfile.phoneNumber,
-            vehicleRegistration: taxi?.licensePlate || 'Not available',
-            vehicleModel: taxi?.model || 'Not available',
-            vehicleColor: taxi?.color || 'Not specified',
-            vehicleYear: taxi?.year || null,
-            isAvailable: taxi?.isAvailable || true,
+            vehicleRegistration: taxi.licensePlate || 'Not available',
+            vehicleModel: taxi.model || 'Not available',
+            vehicleColor: taxi.color || 'Not specified',
+            vehicleYear: taxi.year || null,
+            isAvailable: taxi.isAvailable,
             numberOfRidesCompleted: driverProfile.numberOfRidesCompleted,
             averageRating: driverProfile.averageRating || 0,
             taxiAssociation: driverProfile.taxiAssociation || route.taxiAssociation,
