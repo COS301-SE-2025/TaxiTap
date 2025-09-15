@@ -201,6 +201,12 @@ export default function HomeScreen() {
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
 
+  // States for progressive radius expansion
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  const [radiusExpansionTimer, setRadiusExpansionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [currentSearchRadius, setCurrentSearchRadius] = useState<number>(1.0);
+  const [radiusExpansionInfo, setRadiusExpansionInfo] = useState<any>(null);
+
   // Enhanced state to trigger taxi search
   const [taxiSearchParams, setTaxiSearchParams] = useState<{
     originLat: number;
