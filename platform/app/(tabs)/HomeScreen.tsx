@@ -217,18 +217,27 @@ export default function HomeScreen() {
     searchStartTime?: number;
   } | null>(null);
 
-  // Countdown timer for radius expansion
+  // Countdown timer for radius expansion - made safer for Hermes
   useEffect(() => {
     let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
     if (isSearchingTaxis && searchStartTime && currentSearchRadius < 3.0) {
+      // Use a more conservative update interval to avoid overwhelming Hermes
       countdownInterval = setInterval(() => {
-        const elapsedTime = Date.now() - searchStartTime;
-        const currentExpansionCycle = Math.floor(elapsedTime / 30000);
-        const nextExpansionTime = (currentExpansionCycle + 1) * 30000;
-        const timeUntilNext = Math.max(0, nextExpansionTime - elapsedTime);
+        try {
+          const now = Date.now();
+          const elapsedTime = now - searchStartTime;
+          const currentExpansionCycle = Math.floor(elapsedTime / 30000);
+          const nextExpansionTime = (currentExpansionCycle + 1) * 30000;
+          const timeUntilNext = Math.max(0, nextExpansionTime - elapsedTime);
 
-        setNextExpansionCountdown(Math.ceil(timeUntilNext / 1000));
+          const countdownValue = Math.ceil(timeUntilNext / 1000);
+
+          // Only update if the value actually changed to reduce renders
+          setNextExpansionCountdown(prev => prev !== countdownValue ? countdownValue : prev);
+        } catch (error) {
+          console.warn('Countdown timer error:', error);
+        }
       }, 1000);
     } else {
       setNextExpansionCountdown(0);
@@ -735,38 +744,47 @@ export default function HomeScreen() {
     const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
     const [userPreference, setUserPreference] = useState('shortest_time');
 
-  // Function to monitor radius expansion
+  // Function to monitor radius expansion - made safer for Hermes
   const startRadiusExpansionMonitoring = (startTime: number) => {
     const checkExpansion = () => {
-      const elapsedTime = Date.now() - startTime;
-      const currentRadius = Math.min(1.0 + Math.floor(elapsedTime / 30000) * 0.5, 3.0);
+      try {
+        const elapsedTime = Date.now() - startTime;
+        const currentRadius = Math.min(1.0 + Math.floor(elapsedTime / 30000) * 0.5, 3.0);
 
-      setCurrentSearchRadius(currentRadius);
+        setCurrentSearchRadius(currentRadius);
 
-      // If we haven't reached max radius and still searching, schedule next check
-      if (currentRadius < 3.0 && isSearchingTaxis) {
-        const nextExpansionTime = Math.ceil(elapsedTime / 30000) * 30000;
-        const timeUntilNextExpansion = nextExpansionTime - elapsedTime;
+        // If we haven't reached max radius and still searching, schedule next check
+        if (currentRadius < 3.0 && isSearchingTaxis) {
+          const nextExpansionTime = Math.ceil(elapsedTime / 30000) * 30000;
+          const timeUntilNextExpansion = Math.max(1000, nextExpansionTime - elapsedTime); // Minimum 1 second
 
-        const timer = setTimeout(() => {
-          // Trigger a new search with expanded radius
-          if (taxiSearchParams && isSearchingTaxis) {
-            console.log(`🔄 Expanding search radius to ${currentRadius + 0.5}km`);
-            setTaxiSearchParams({
-              ...taxiSearchParams,
-              searchStartTime: startTime, // Keep original start time
-            });
-          }
-          checkExpansion();
-        }, timeUntilNextExpansion);
+          const timer = setTimeout(() => {
+            // Trigger a new search with expanded radius
+            if (taxiSearchParams && isSearchingTaxis) {
+              console.log(`🔄 Expanding search radius to ${currentRadius + 0.5}km`);
+              setTaxiSearchParams({
+                ...taxiSearchParams,
+                searchStartTime: startTime, // Keep original start time
+              });
+            }
+            checkExpansion();
+          }, timeUntilNextExpansion);
 
-        setRadiusExpansionTimer(timer);
+          setRadiusExpansionTimer(timer);
+        }
+      } catch (error) {
+        console.warn('Radius expansion monitoring error:', error);
+        setIsSearchingTaxis(false);
       }
     };
 
-    // Start monitoring after 30 seconds
-    const initialTimer = setTimeout(checkExpansion, 30000);
-    setRadiusExpansionTimer(initialTimer);
+    // Start monitoring after 30 seconds with error handling
+    try {
+      const initialTimer = setTimeout(checkExpansion, 30000);
+      setRadiusExpansionTimer(initialTimer);
+    } catch (error) {
+      console.warn('Failed to start radius expansion monitoring:', error);
+    }
   };
 
   // Enhanced function to search for available taxis with radius expansion
@@ -819,22 +837,23 @@ export default function HomeScreen() {
       setRouteMatchResults(null);
     }
 
-    const journeyAnalysis = await useQuery(
-      api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-      {
-      originLat: origin.latitude,
-      originLng: origin.longitude,
-      destinationLat: dest.latitude,
-      destinationLng: dest.longitude,
-      optimizationPreference: userPreference || 'shortest_time'
-      }
-    );
-    if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
-      setShowMultiLegPreview(true);
-      setMultiLegOptions(journeyAnalysis.multiLegOptions);
-    } else {
-      setTaxiSearchParams(taxiSearchParams);
-    }
+    // TODO: Fix this - cannot await useQuery hook, this causes Hermes crash
+    // const journeyAnalysis = await useQuery(
+    //   api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+    //   {
+    //   originLat: origin.latitude,
+    //   originLng: origin.longitude,
+    //   destinationLat: dest.latitude,
+    //   destinationLng: dest.longitude,
+    //   optimizationPreference: userPreference || 'shortest_time'
+    //   }
+    // );
+    // if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
+    //   setShowMultiLegPreview(true);
+    //   setMultiLegOptions(journeyAnalysis.multiLegOptions);
+    // } else {
+    //   setTaxiSearchParams(taxiSearchParams);
+    // }
   };
 
   // Handle taxi search results with radius expansion
