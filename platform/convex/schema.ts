@@ -133,6 +133,7 @@ export default defineSchema({
       v.literal("overpaid"),
       v.literal("not_paid")
     )),
+    changeReceived: v.optional(v.boolean()),
 
     // Legacy PIN verification fields - kept for backward compatibility
     ridePin: v.optional(v.string()),

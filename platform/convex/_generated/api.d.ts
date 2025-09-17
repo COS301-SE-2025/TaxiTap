@@ -60,6 +60,7 @@ import type * as functions_rides_endRideHandler from "../functions/rides/endRide
 import type * as functions_rides_getActiveRideByDriver from "../functions/rides/getActiveRideByDriver.js";
 import type * as functions_rides_getActiveTrips from "../functions/rides/getActiveTrips.js";
 import type * as functions_rides_getActiveTripsHandler from "../functions/rides/getActiveTripsHandler.js";
+import type * as functions_rides_getChange from "../functions/rides/getChange.js";
 import type * as functions_rides_getDriverPin from "../functions/rides/getDriverPin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
 import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
@@ -162,6 +163,7 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/getActiveRideByDriver": typeof functions_rides_getActiveRideByDriver;
   "functions/rides/getActiveTrips": typeof functions_rides_getActiveTrips;
   "functions/rides/getActiveTripsHandler": typeof functions_rides_getActiveTripsHandler;
+  "functions/rides/getChange": typeof functions_rides_getChange;
   "functions/rides/getDriverPin": typeof functions_rides_getDriverPin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
