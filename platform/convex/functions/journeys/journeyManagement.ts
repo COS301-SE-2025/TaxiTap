@@ -17,44 +17,9 @@ import { Id } from "../../_generated/dataModel";
 // ============================================================================
 
 /**
- * Creates a new multi-leg journey with all associated leg records
+ * Handler function for creating a new multi-leg journey
  */
-export const createMultiLegJourney = mutation({
-  args: {
-    passengerId: v.id("taxiTap_users"),
-    journeyPlan: v.object({
-      originAddress: v.string(),
-      destinationAddress: v.string(),
-      originCoordinates: v.object({
-        latitude: v.number(),
-        longitude: v.number()
-      }),
-      destinationCoordinates: v.object({
-        latitude: v.number(),
-        longitude: v.number()
-      }),
-      legs: v.array(v.object({
-        legIndex: v.number(),
-        fromAddress: v.string(),
-        toAddress: v.string(),
-        fromCoordinates: v.object({
-          latitude: v.number(),
-          longitude: v.number()
-        }),
-        toCoordinates: v.object({
-          latitude: v.number(),
-          longitude: v.number()
-        }),
-        routeId: v.optional(v.string()),
-        estimatedDuration: v.number(),
-        estimatedFare: v.number()
-      })),
-      optimizationPreference: v.string(),
-      estimatedTotalFare: v.number(),
-      estimatedTotalDuration: v.number()
-    })
-  },
-  handler: async (ctx, args) => {
+export async function createMultiLegJourneyHandler(ctx: any, args: any): Promise<any> {
     try {
       console.log('🚀 Creating multi-leg journey for passenger:', args.passengerId);
 
@@ -129,7 +94,47 @@ export const createMultiLegJourney = mutation({
         journeyId: null
       };
     }
-  }
+}
+
+/**
+ * Creates a new multi-leg journey with all associated leg records
+ */
+export const createMultiLegJourney = mutation({
+  args: {
+    passengerId: v.id("taxiTap_users"),
+    journeyPlan: v.object({
+      originAddress: v.string(),
+      destinationAddress: v.string(),
+      originCoordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number()
+      }),
+      destinationCoordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number()
+      }),
+      legs: v.array(v.object({
+        legIndex: v.number(),
+        fromAddress: v.string(),
+        toAddress: v.string(),
+        fromCoordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number()
+        }),
+        toCoordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number()
+        }),
+        routeId: v.optional(v.string()),
+        estimatedDuration: v.number(),
+        estimatedFare: v.number()
+      })),
+      optimizationPreference: v.string(),
+      estimatedTotalFare: v.number(),
+      estimatedTotalDuration: v.number()
+    })
+  },
+  handler: createMultiLegJourneyHandler
 });
 
 /**
@@ -387,7 +392,7 @@ export const getJourneyStatus = query({
         .collect();
 
       // Sort legs by index
-      legs.sort((a, b) => a.legIndex - b.legIndex);
+      legs.sort((a: any, b: any) => a.legIndex - b.legIndex);
 
       // Get any active rides associated with legs
       const activeRides = [];
@@ -594,7 +599,7 @@ export const getPassengerJourneys = query({
           .withIndex("by_journey_id", (q: any) => q.eq("journeyId", journey.journeyId))
           .collect();
 
-        legs.sort((a, b) => a.legIndex - b.legIndex);
+        legs.sort((a: any, b: any) => a.legIndex - b.legIndex);
 
         journeysWithLegs.push({
           ...journey,
@@ -715,3 +720,456 @@ export const updateLegEstimatedArrival = mutation({
     }
   }
 });
+
+// Handler function exports for testing
+export async function progressJourneyToNextLegHandler(ctx: any, args: any): Promise<any> {
+  try {
+    console.log(`🔄 Progressing journey ${args.journeyId} from leg ${args.completedLegIndex} to next leg`);
+
+    // Get journey record
+    const journey = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .unique();
+
+    if (!journey) {
+      return {
+        success: false,
+        error: "Journey not found"
+      };
+    }
+
+    // Get the completed leg
+    const completedLeg = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_and_leg", (q: any) =>
+        q.eq("journeyId", args.journeyId).eq("legIndex", args.completedLegIndex)
+      )
+      .unique();
+
+    if (!completedLeg) {
+      return {
+        success: false,
+        error: "Completed leg not found"
+      };
+    }
+
+    // Update completed leg with actual fare if provided
+    if (args.actualFare !== undefined) {
+      await ctx.db.patch(completedLeg._id, {
+        actualFare: args.actualFare,
+        status: "completed"
+      });
+    } else {
+      await ctx.db.patch(completedLeg._id, {
+        status: "completed"
+      });
+    }
+
+    // Check if this was the last leg
+    const allLegs = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    const nextLegIndex = args.completedLegIndex + 1;
+    const isLastLeg = nextLegIndex >= allLegs.length;
+
+    if (isLastLeg) {
+      // Journey completed
+      await ctx.db.patch(journey._id, {
+        status: "completed",
+        actualEndTime: Date.now()
+      });
+
+      console.log(`🎯 Journey ${args.journeyId} completed successfully`);
+
+      return {
+        success: true,
+        journeyCompleted: true,
+        nextLegIndex: null,
+        message: "Journey completed successfully"
+      };
+    }
+
+    // Get next leg
+    const nextLeg = allLegs.find((leg: any) => leg.legIndex === nextLegIndex);
+    if (!nextLeg) {
+      return {
+        success: false,
+        error: "Next leg not found"
+      };
+    }
+
+    // Update journey status to active if not already
+    if (journey.status !== "active") {
+      await ctx.db.patch(journey._id, {
+        status: "active",
+        actualStartTime: Date.now()
+      });
+    }
+
+    // Update next leg status
+    await ctx.db.patch(nextLeg._id, {
+      status: "active"
+    });
+
+    console.log(`✅ Journey ${args.journeyId} progressed to leg ${nextLegIndex}`);
+
+    // Try to request taxi for next leg
+    const taxiRequestResult = await requestNextLegTaxiHandler(ctx, {
+      journeyId: args.journeyId,
+      legIndex: nextLegIndex,
+      transferLocation: args.passengerLocation,
+      destinationLocation: nextLeg.toCoordinates
+    });
+
+    return {
+      success: true,
+      journeyCompleted: false,
+      nextLegIndex,
+      taxiRequestResult,
+      message: `Journey progressed to leg ${nextLegIndex}`
+    };
+
+  } catch (error) {
+    console.error("❌ Error progressing journey to next leg:", error);
+    return {
+      success: false,
+      error: `Failed to progress journey: ${error}`
+    };
+  }
+}
+
+export async function getJourneyStatusHandler(ctx: any, args: any): Promise<any> {
+  try {
+    // Get journey record
+    const journey = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .unique();
+
+    if (!journey) {
+      return {
+        success: false,
+        error: "Journey not found"
+      };
+    }
+
+    // Get all legs for this journey
+    const legs = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    // Sort legs by index
+    legs.sort((a: any, b: any) => a.legIndex - b.legIndex);
+
+    // Get any active rides associated with legs
+    const activeRides = [];
+    for (const leg of legs) {
+      if (leg.rideId) {
+        const ride = await ctx.db.get(leg.rideId);
+        if (ride && ride.status !== "completed" && ride.status !== "cancelled") {
+          activeRides.push({
+            legIndex: leg.legIndex,
+            rideId: leg.rideId,
+            status: ride.status
+          });
+        }
+      }
+    }
+
+    // Calculate progress
+    const completedLegs = legs.filter((leg: any) => leg.status === "completed").length;
+    const totalLegs = legs.length;
+    const percentComplete = totalLegs > 0 ? Math.round((completedLegs / totalLegs) * 100) : 0;
+    const currentLegIndex = legs.findIndex((leg: any) => leg.status === "active");
+
+    return {
+      success: true,
+      journey,
+      legs,
+      activeRides,
+      progress: {
+        completedLegs,
+        totalLegs,
+        percentComplete,
+        currentLeg: currentLegIndex >= 0 ? currentLegIndex : completedLegs
+      }
+    };
+
+  } catch (error) {
+    console.error("❌ Error getting journey status:", error);
+    return {
+      success: false,
+      error: `Failed to get journey status: ${error}`
+    };
+  }
+}
+
+export async function associateRideWithLegHandler(ctx: any, args: any): Promise<any> {
+  try {
+    // Get the leg record
+    const leg = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_and_leg", (q: any) =>
+        q.eq("journeyId", args.journeyId).eq("legIndex", args.legIndex)
+      )
+      .unique();
+
+    if (!leg) {
+      return {
+        success: false,
+        error: "Leg not found"
+      };
+    }
+
+    // Update leg with ride association
+    await ctx.db.patch(leg._id, {
+      rideId: args.rideId,
+      status: "active"
+    });
+
+    // Update ride with journey information
+    await ctx.db.patch(args.rideId, {
+      parentJourneyId: args.journeyId,
+      legIndex: args.legIndex,
+      isMultiLegRide: true
+    });
+
+    console.log(`🔗 Associated ride ${args.rideId} with journey ${args.journeyId}, leg ${args.legIndex}`);
+
+    return {
+      success: true,
+      message: "Ride associated with journey leg successfully"
+    };
+
+  } catch (error) {
+    console.error("❌ Error associating ride with leg:", error);
+    return {
+      success: false,
+      error: `Failed to associate ride with leg: ${error}`
+    };
+  }
+}
+
+export async function cancelMultiLegJourneyHandler(ctx: any, args: any): Promise<any> {
+  try {
+    console.log(`❌ Cancelling multi-leg journey ${args.journeyId}`);
+
+    // Get journey
+    const journey = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .unique();
+
+    if (!journey) {
+      return {
+        success: false,
+        error: "Journey not found"
+      };
+    }
+
+    // Get all legs
+    const legs = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    // Cancel any active rides
+    let cancelledRides = 0;
+    for (const leg of legs) {
+      if (leg.rideId) {
+        const ride = await ctx.db.get(leg.rideId);
+        if (ride && ride.status !== "completed" && ride.status !== "cancelled") {
+          await ctx.db.patch(leg.rideId, {
+            status: "cancelled",
+            cancellationReason: args.reason || "Multi-leg journey cancelled"
+          });
+          cancelledRides++;
+        }
+      }
+
+      // Update leg status
+      if (leg.status !== "completed") {
+        await ctx.db.patch(leg._id, {
+          status: "cancelled"
+        });
+      }
+    }
+
+    // Update journey status
+    await ctx.db.patch(journey._id, {
+      status: "cancelled",
+      cancellationReason: args.reason || "Journey cancelled by passenger",
+      actualEndTime: Date.now()
+    });
+
+    console.log(`❌ Journey ${args.journeyId} cancelled. Cancelled ${cancelledRides} rides`);
+
+    return {
+      success: true,
+      cancelledRides,
+      message: "Journey cancelled successfully"
+    };
+
+  } catch (error) {
+    console.error("❌ Error cancelling multi-leg journey:", error);
+    return {
+      success: false,
+      error: `Failed to cancel journey: ${error}`
+    };
+  }
+}
+
+export async function getPassengerJourneysHandler(ctx: any, args: any): Promise<any> {
+  try {
+    // Get all journeys for the passenger first
+    const allJourneys = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_passenger", (q: any) => q.eq("passengerId", args.passengerId))
+      .collect();
+
+    // Apply status filter manually if provided
+    let journeys = allJourneys;
+    if (args.status) {
+      journeys = allJourneys.filter((journey: any) => journey.status === args.status);
+    }
+
+    // Apply limit if provided
+    const limit = args.limit || 20;
+
+    // Sort by creation time (newest first) and apply limit
+    const sortedJourneys = journeys
+      .sort((a: any, b: any) => b._creationTime - a._creationTime)
+      .slice(0, limit);
+
+    // Get legs for each journey
+    const journeysWithLegs = await Promise.all(
+      sortedJourneys.map(async (journey: any) => {
+        const legs = await ctx.db
+          .query("journeyLegs")
+          .withIndex("by_journey_id", (q: any) => q.eq("journeyId", journey.journeyId))
+          .collect();
+
+        // Sort legs by index
+        legs.sort((a: any, b: any) => a.legIndex - b.legIndex);
+
+        return {
+          ...journey,
+          legs
+        };
+      })
+    );
+
+    console.log(`📋 Found ${journeysWithLegs.length} journeys for passenger ${args.passengerId}`);
+
+    return {
+      success: true,
+      journeys: journeysWithLegs,
+      totalFound: journeys.length,
+      hasMore: journeys.length > limit
+    };
+
+  } catch (error) {
+    console.error("❌ Error getting passenger journeys:", error);
+    return {
+      success: false,
+      error: `Failed to get passenger journeys: ${error}`
+    };
+  }
+}
+
+export async function calculateJourneyTotalCostHandler(ctx: any, args: any): Promise<any> {
+  try {
+    // Get all legs for the journey
+    const legs = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    if (legs.length === 0) {
+      return {
+        success: false,
+        error: "No legs found for journey"
+      };
+    }
+
+    // Calculate totals
+    let totalEstimatedCost = 0;
+    let totalActualCost = 0;
+    let completedLegs = 0;
+
+    for (const leg of legs) {
+      totalEstimatedCost += leg.estimatedFare || 0;
+
+      if (leg.actualFare !== undefined && leg.status === "completed") {
+        totalActualCost += leg.actualFare;
+        completedLegs++;
+      }
+    }
+
+    const totalLegs = legs.length;
+    const costVariance = totalActualCost - (totalEstimatedCost * (completedLegs / totalLegs));
+
+    console.log(`💰 Journey ${args.journeyId}: Est: ${totalEstimatedCost}, Actual: ${totalActualCost}, Variance: ${costVariance}`);
+
+    return {
+      success: true,
+      totalEstimatedCost,
+      totalActualCost,
+      completedLegs,
+      totalLegs,
+      costVariance
+    };
+
+  } catch (error) {
+    console.error("❌ Error calculating journey total cost:", error);
+    return {
+      success: false,
+      error: `Failed to calculate total cost: ${error}`
+    };
+  }
+}
+
+export async function requestNextLegTaxiHandlerExported(ctx: any, args: any): Promise<any> {
+  return await requestNextLegTaxiHandler(ctx, args);
+}
+
+export async function updateLegEstimatedArrivalHandler(ctx: any, args: any): Promise<any> {
+  try {
+    // Get the leg record
+    const leg = await ctx.db
+      .query("journeyLegs")
+      .withIndex("by_journey_and_leg", (q: any) =>
+        q.eq("journeyId", args.journeyId).eq("legIndex", args.legIndex)
+      )
+      .unique();
+
+    if (!leg) {
+      return {
+        success: false,
+        error: "Leg not found"
+      };
+    }
+
+    await ctx.db.patch(leg._id, {
+      estimatedDuration: args.newEstimatedDuration
+    });
+
+    console.log(`⏱️ Updated leg ${args.legIndex} estimated duration to ${args.newEstimatedDuration}s`);
+
+    return {
+      success: true,
+      message: "Leg estimated arrival updated successfully"
+    };
+
+  } catch (error) {
+    console.error("❌ Error updating leg estimated arrival:", error);
+    return {
+      success: false,
+      error: `Failed to update leg estimated arrival: ${error}`
+    };
+  }
+}
