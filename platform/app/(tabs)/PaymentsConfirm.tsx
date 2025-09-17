@@ -20,14 +20,8 @@ export default function PaymentConfirmation() {
 
   const handlePaid = async () => {
     try {
-      console.log('Marking trip as paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: true,
-      });
-
       const result = await markTripPaid({
-        rideId: rideId as string,
+        rideId: rideId as Id<"rides">,
         userId: userId as Id<"taxiTap_users">,
         paid: true,
       });
@@ -44,7 +38,6 @@ export default function PaymentConfirmation() {
         }
       );
 
-      // Navigate to feedback after confirming payment
       setTimeout(() => {
         router.push({
           pathname: '/SubmitFeedback',
@@ -75,14 +68,8 @@ export default function PaymentConfirmation() {
 
   const handleNotPaid = async () => {
     try {
-      console.log('Marking trip as not paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
-
       const result = await markTripPaid({
-        rideId: rideId as string,
+        rideId: rideId as Id<"rides">,
         userId: userId as Id<"taxiTap_users">,
         paid: false,
       });

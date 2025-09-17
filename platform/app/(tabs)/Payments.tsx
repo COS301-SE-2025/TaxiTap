@@ -1,5 +1,5 @@
 import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from '../../contexts/UserContext';
@@ -33,9 +33,14 @@ export default function PaymentConfirmation() {
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
 
-  const handlePaid = () => {
+  const rideDocId = useQuery(api.functions.rides.tripPaidHandler.getRideDocId, {
+    rideIdStr: rideId as string,
+  });
+
+  const handlePaid = async () => {
+    if (!rideDocId) return;
     markTripPaid({
-        rideId: rideId as string,
+        rideId: rideDocId,
         userId: userId as Id<"taxiTap_users">,
         paid: true,
     });
@@ -56,12 +61,13 @@ export default function PaymentConfirmation() {
     });
   };
 
-  const handleOverpaid = () => {
+  const handleOverpaid = async () => {
+    if (!rideDocId) return;
     const numericAmount = parseFloat(customAmount);
     if (isNaN(numericAmount)) return;
 
     markTripPaid({
-      rideId: rideId as string,
+      rideId: rideDocId,
       userId: userId as Id<"taxiTap_users">,
       paid: true,
       amountPaid: numericAmount,
@@ -84,9 +90,10 @@ export default function PaymentConfirmation() {
     });
   };
 
-  const handleNotPaid = () => {
+  const handleNotPaid = async () => {
+    if (!rideDocId) return;
     markTripPaid({
-        rideId: rideId as string,
+        rideId: rideDocId,
         userId: userId as Id<"taxiTap_users">,
         paid: false,
     });
@@ -210,7 +217,6 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "column",
     width: "100%",
-    height: 20,
     marginTop: 20,
     gap: 12,
   },
@@ -218,10 +224,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
-    marginHorizontal: 5,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     borderRadius: 12,
     elevation: 3,
     shadowColor: "#000",
