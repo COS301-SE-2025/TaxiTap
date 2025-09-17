@@ -529,7 +529,7 @@ export const checkMultiLegTransferProximity = mutation({
           await ctx.db.insert("notifications", {
             notificationId: `transfer_approach_${journey.journeyId}_${currentLeg.legIndex}_${Date.now()}`,
             userId: journey.passengerId,
-            type: "driver_5min_away" as const,
+            type: "transfer_approaching" as const,
             title: notificationTitle,
             message: notificationMessage,
             isRead: false,
@@ -601,7 +601,7 @@ export const checkMultiLegTransferProximity = mutation({
           await ctx.db.insert("notifications", {
             notificationId: `transfer_arrival_${journey.journeyId}_${currentLeg.legIndex}_${Date.now()}`,
             userId: journey.passengerId,
-            type: "driver_arrived" as const,
+            type: "transfer_arrived" as const,
             title: "Transfer Point Reached",
             message: arrivalMessage,
             isRead: false,
@@ -1035,7 +1035,7 @@ export const handlePassengerTransferCoordination = mutation({
           await ctx.db.insert("notifications", {
             notificationId: `transfer_assistance_${args.journeyId}_${args.currentLegIndex}_${Date.now()}`,
             userId: journey.passengerId,
-            type: "emergency_alert" as const,
+            type: "transfer_assistance_requested" as const,
             title: "Transfer Assistance Requested",
             message: "Passenger has requested assistance at transfer point. Customer service will contact you shortly.",
             isRead: false,
@@ -1177,7 +1177,7 @@ export const cleanupExpiredTransferWindows = mutation({
         await ctx.db.insert("notifications", {
           notificationId: `transfer_window_expired_${leg.journeyId}_${leg.legIndex}_${Date.now()}`,
           userId: journey.passengerId,
-          type: "system_maintenance" as const,
+          type: "transfer_window_expired" as const,
           title: "Transfer Window Expired",
           message: "Your transfer window has expired. Please contact customer service if you need assistance.",
           isRead: false,
@@ -1220,22 +1220,39 @@ export const cleanupOldProximityData = mutation({
     try {
       const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
 
-      const oldNotifications = await ctx.db
-        .query("notifications")
-        .withIndex("by_type", (q) => q.eq("type", "driver_5min_away" as const))
-        .filter((q) => q.lt(q.field("createdAt"), cutoffTime))
-        .take(100); // Limit cleanup to 100 notifications at a time
+      // Clean up both old proximity notifications and transfer notifications
+      const proximityTypes = [
+        "driver_5min_away",
+        "transfer_approaching",
+        "transfer_arrived",
+        "transfer_window_started",
+        "transfer_window_extended",
+        "transfer_window_expired",
+        "next_leg_requested",
+        "next_leg_ready"
+      ] as const;
 
-      const deletePromises = oldNotifications.map(notification =>
-        ctx.db.delete(notification._id).catch(err => {
-          console.error("Failed to delete notification:", err);
-          return null;
-        })
-      );
+      let totalDeleted = 0;
 
-      await Promise.all(deletePromises);
+      for (const notificationType of proximityTypes) {
+        const oldNotifications = await ctx.db
+          .query("notifications")
+          .withIndex("by_type", (q) => q.eq("type", notificationType))
+          .filter((q) => q.lt(q.field("createdAt"), cutoffTime))
+          .take(50); // Limit per type to prevent overwhelming
 
-      return { deletedCount: oldNotifications.length };
+        const deletePromises = oldNotifications.map(notification =>
+          ctx.db.delete(notification._id).catch(err => {
+            console.error("Failed to delete notification:", err);
+            return null;
+          })
+        );
+
+        await Promise.all(deletePromises);
+        totalDeleted += oldNotifications.length;
+      }
+
+      return { deletedCount: totalDeleted };
 
     } catch (error) {
       console.error("Cleanup error:", error);
