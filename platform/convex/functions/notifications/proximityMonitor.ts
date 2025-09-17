@@ -735,6 +735,484 @@ export const checkSpecificJourneyTransferProximity = mutation({
   }
 });
 
+// MULTI-LEG JOURNEY TRANSFER WINDOW MANAGEMENT
+// ============================================================================
+
+// Manage transfer window timing and coordination
+export const manageTransferWindow = mutation({
+  args: {
+    journeyId: v.string(),
+    legIndex: v.number(),
+    action: v.union(
+      v.literal("start_window"),
+      v.literal("extend_window"),
+      v.literal("close_window"),
+      v.literal("check_status")
+    ),
+    extensionMinutes: v.optional(v.number()),
+    passengerConfirmation: v.optional(v.boolean())
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    transferWindow?: {
+      isActive: boolean;
+      startTime: number;
+      endTime: number;
+      remainingTime: number;
+      status: 'active' | 'expired' | 'extended' | 'closed';
+    };
+    nextLegStatus?: string;
+    message?: string;
+    error?: string;
+  }> => {
+    try {
+      // Get the journey leg
+      const leg = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_journey_and_leg", (q) =>
+          q.eq("journeyId", args.journeyId).eq("legIndex", args.legIndex)
+        )
+        .unique();
+
+      if (!leg) {
+        return { success: false, error: "Journey leg not found" };
+      }
+
+      const currentTime = Date.now();
+
+      switch (args.action) {
+        case "start_window":
+          // Start a new transfer window
+          const windowStart = currentTime;
+          const windowEnd = currentTime + (15 * 60 * 1000); // 15 minutes default
+
+          await ctx.db.patch(leg._id, {
+            transferWindowStart: windowStart,
+            transferWindowEnd: windowEnd
+          });
+
+          return {
+            success: true,
+            transferWindow: {
+              isActive: true,
+              startTime: windowStart,
+              endTime: windowEnd,
+              remainingTime: 15 * 60 * 1000,
+              status: 'active' as const
+            },
+            message: "Transfer window started successfully"
+          };
+
+        case "extend_window":
+          // Extend existing transfer window
+          if (!leg.transferWindowStart || !leg.transferWindowEnd) {
+            return { success: false, error: "No active transfer window to extend" };
+          }
+
+          const extensionTime = (args.extensionMinutes || 10) * 60 * 1000;
+          const newEndTime = leg.transferWindowEnd + extensionTime;
+
+          await ctx.db.patch(leg._id, {
+            transferWindowEnd: newEndTime
+          });
+
+          return {
+            success: true,
+            transferWindow: {
+              isActive: currentTime < newEndTime,
+              startTime: leg.transferWindowStart,
+              endTime: newEndTime,
+              remainingTime: Math.max(0, newEndTime - currentTime),
+              status: 'extended' as const
+            },
+            message: `Transfer window extended by ${args.extensionMinutes || 10} minutes`
+          };
+
+        case "close_window":
+          // Close transfer window (passenger confirmed or leg completed)
+          await ctx.db.patch(leg._id, {
+            transferWindowEnd: currentTime
+          });
+
+          return {
+            success: true,
+            transferWindow: {
+              isActive: false,
+              startTime: leg.transferWindowStart || currentTime,
+              endTime: currentTime,
+              remainingTime: 0,
+              status: 'closed' as const
+            },
+            message: "Transfer window closed"
+          };
+
+        case "check_status":
+          // Check current transfer window status
+          if (!leg.transferWindowStart || !leg.transferWindowEnd) {
+            return {
+              success: true,
+              transferWindow: {
+                isActive: false,
+                startTime: 0,
+                endTime: 0,
+                remainingTime: 0,
+                status: 'closed' as const
+              },
+              message: "No transfer window active"
+            };
+          }
+
+          const isActive = currentTime >= leg.transferWindowStart && currentTime <= leg.transferWindowEnd;
+          const remainingTime = Math.max(0, leg.transferWindowEnd - currentTime);
+          const isExpired = currentTime > leg.transferWindowEnd;
+
+          return {
+            success: true,
+            transferWindow: {
+              isActive,
+              startTime: leg.transferWindowStart,
+              endTime: leg.transferWindowEnd,
+              remainingTime,
+              status: isExpired ? 'expired' as const : (isActive ? 'active' as const : 'closed' as const)
+            },
+            message: isActive ? "Transfer window is active" : (isExpired ? "Transfer window expired" : "Transfer window not started")
+          };
+
+        default:
+          return { success: false, error: "Invalid action specified" };
+      }
+
+    } catch (error) {
+      console.error("Transfer window management error:", error);
+      return {
+        success: false,
+        error: `Failed to manage transfer window: ${error}`
+      };
+    }
+  }
+});
+
+// Handle passenger transfer coordination
+export const handlePassengerTransferCoordination = mutation({
+  args: {
+    journeyId: v.string(),
+    currentLegIndex: v.number(),
+    passengerLocation: v.object({
+      latitude: v.number(),
+      longitude: v.number()
+    }),
+    action: v.union(
+      v.literal("arrived_at_transfer"),
+      v.literal("confirm_ready_for_next"),
+      v.literal("request_assistance"),
+      v.literal("cancel_next_leg")
+    )
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    coordinationStatus?: {
+      currentLegCompleted: boolean;
+      nextLegStatus: string;
+      waitingTime: number;
+      assistanceRequested: boolean;
+    };
+    nextActions?: string[];
+    message?: string;
+    error?: string;
+  }> => {
+    try {
+      // Get journey
+      const journey = await ctx.db
+        .query("multiLegJourneys")
+        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .unique();
+
+      if (!journey) {
+        return { success: false, error: "Journey not found" };
+      }
+
+      // Get current leg
+      const currentLeg = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_journey_and_leg", (q) =>
+          q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex)
+        )
+        .unique();
+
+      if (!currentLeg) {
+        return { success: false, error: "Current leg not found" };
+      }
+
+      const isLastLeg = args.currentLegIndex >= journey.totalLegs - 1;
+
+      switch (args.action) {
+        case "arrived_at_transfer":
+          // Mark current leg as completed and start transfer window
+          await ctx.db.patch(currentLeg._id, {
+            status: "completed",
+            completedAt: Date.now()
+          });
+
+          if (!isLastLeg) {
+            // Start transfer window for next leg coordination
+            await ctx.runMutation(
+              api.functions.notifications.proximityMonitor.manageTransferWindow,
+              {
+                journeyId: args.journeyId,
+                legIndex: args.currentLegIndex,
+                action: "start_window"
+              }
+            );
+
+            // Update journey progress
+            await ctx.db.patch(journey._id, {
+              currentLegIndex: args.currentLegIndex + 1,
+              updatedAt: Date.now()
+            });
+          } else {
+            // Complete entire journey
+            await ctx.db.patch(journey._id, {
+              status: "completed",
+              completedAt: Date.now(),
+              updatedAt: Date.now()
+            });
+          }
+
+          return {
+            success: true,
+            coordinationStatus: {
+              currentLegCompleted: true,
+              nextLegStatus: isLastLeg ? "journey_completed" : "preparing",
+              waitingTime: 0,
+              assistanceRequested: false
+            },
+            nextActions: isLastLeg ? ["journey_completed"] : ["wait_for_next_taxi", "confirm_ready"],
+            message: isLastLeg ? "Journey completed successfully!" : "Arrived at transfer point. Preparing next leg..."
+          };
+
+        case "confirm_ready_for_next":
+          if (isLastLeg) {
+            return { success: false, error: "Journey already completed" };
+          }
+
+          // Get next leg status
+          const nextLeg = await ctx.db
+            .query("journeyLegs")
+            .withIndex("by_journey_and_leg", (q) =>
+              q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
+            )
+            .unique();
+
+          if (!nextLeg) {
+            return { success: false, error: "Next leg not found" };
+          }
+
+          // Close current transfer window
+          await ctx.runMutation(
+            api.functions.notifications.proximityMonitor.manageTransferWindow,
+            {
+              journeyId: args.journeyId,
+              legIndex: args.currentLegIndex,
+              action: "close_window",
+              passengerConfirmation: true
+            }
+          );
+
+          return {
+            success: true,
+            coordinationStatus: {
+              currentLegCompleted: true,
+              nextLegStatus: nextLeg.status,
+              waitingTime: nextLeg.transferWindowStart ? Date.now() - nextLeg.transferWindowStart : 0,
+              assistanceRequested: false
+            },
+            nextActions: nextLeg.status === "active" ? ["board_next_taxi"] : ["wait_for_taxi_arrival"],
+            message: "Ready for next leg. " + (nextLeg.status === "active" ? "Your taxi is ready!" : "Please wait for your taxi.")
+          };
+
+        case "request_assistance":
+          // Create assistance notification
+          await ctx.db.insert("notifications", {
+            notificationId: `transfer_assistance_${args.journeyId}_${args.currentLegIndex}_${Date.now()}`,
+            userId: journey.passengerId,
+            type: "emergency_alert" as const,
+            title: "Transfer Assistance Requested",
+            message: "Passenger has requested assistance at transfer point. Customer service will contact you shortly.",
+            isRead: false,
+            isPush: true,
+            metadata: {
+              additionalData: {
+                journeyId: args.journeyId,
+                legIndex: args.currentLegIndex,
+                passengerLocation: args.passengerLocation,
+                assistanceType: "transfer_coordination"
+              }
+            },
+            priority: "urgent" as const,
+            createdAt: Date.now(),
+          });
+
+          // Extend transfer window
+          await ctx.runMutation(
+            api.functions.notifications.proximityMonitor.manageTransferWindow,
+            {
+              journeyId: args.journeyId,
+              legIndex: args.currentLegIndex,
+              action: "extend_window",
+              extensionMinutes: 20
+            }
+          );
+
+          return {
+            success: true,
+            coordinationStatus: {
+              currentLegCompleted: true,
+              nextLegStatus: "assistance_requested",
+              waitingTime: currentLeg.transferWindowStart ? Date.now() - currentLeg.transferWindowStart : 0,
+              assistanceRequested: true
+            },
+            nextActions: ["wait_for_assistance", "contact_support"],
+            message: "Assistance requested. Customer service will contact you shortly. Transfer window extended."
+          };
+
+        case "cancel_next_leg":
+          if (isLastLeg) {
+            return { success: false, error: "Cannot cancel - journey already completed" };
+          }
+
+          // Cancel next leg and mark journey as completed at current point
+          const nextLegToCancel = await ctx.db
+            .query("journeyLegs")
+            .withIndex("by_journey_and_leg", (q) =>
+              q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
+            )
+            .unique();
+
+          if (nextLegToCancel) {
+            await ctx.db.patch(nextLegToCancel._id, {
+              status: "failed"
+            });
+          }
+
+          await ctx.db.patch(journey._id, {
+            status: "completed",
+            completedAt: Date.now(),
+            updatedAt: Date.now()
+          });
+
+          return {
+            success: true,
+            coordinationStatus: {
+              currentLegCompleted: true,
+              nextLegStatus: "cancelled",
+              waitingTime: 0,
+              assistanceRequested: false
+            },
+            nextActions: ["journey_completed_early"],
+            message: "Next leg cancelled. Journey completed at current location."
+          };
+
+        default:
+          return { success: false, error: "Invalid coordination action" };
+      }
+
+    } catch (error) {
+      console.error("Transfer coordination error:", error);
+      return {
+        success: false,
+        error: `Failed to handle transfer coordination: ${error}`
+      };
+    }
+  }
+});
+
+// Monitor and cleanup expired transfer windows
+export const cleanupExpiredTransferWindows = mutation({
+  args: {
+    batchSize: v.optional(v.number())
+  },
+  handler: async (ctx, args): Promise<{
+    processedWindows: number;
+    expiredWindowsClosed: number;
+    notificationsSent: number;
+  }> => {
+    const batchSize = Math.min(args.batchSize || 10, 15);
+
+    try {
+      const currentTime = Date.now();
+
+      // Find legs with expired transfer windows
+      const expiredLegs = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_status", (q) => q.eq("status", "completed"))
+        .filter((q) =>
+          q.and(
+            q.neq(q.field("transferWindowStart"), undefined),
+            q.neq(q.field("transferWindowEnd"), undefined),
+            q.lt(q.field("transferWindowEnd"), currentTime)
+          )
+        )
+        .take(batchSize);
+
+      let expiredWindowsClosed = 0;
+      let notificationsSent = 0;
+
+      for (const leg of expiredLegs as Array<any>) {
+        // Get associated journey
+        const journey = await ctx.db
+          .query("multiLegJourneys")
+          .withIndex("by_journey_id", (q) => q.eq("journeyId", leg.journeyId))
+          .unique();
+
+        if (!journey) continue;
+
+        // Close the expired window
+        await ctx.db.patch(leg._id, {
+          transferWindowEnd: currentTime - 1000 // Mark as definitely expired
+        });
+
+        expiredWindowsClosed++;
+
+        // Send notification about expired window
+        await ctx.db.insert("notifications", {
+          notificationId: `transfer_window_expired_${leg.journeyId}_${leg.legIndex}_${Date.now()}`,
+          userId: journey.passengerId,
+          type: "system_maintenance" as const,
+          title: "Transfer Window Expired",
+          message: "Your transfer window has expired. Please contact customer service if you need assistance.",
+          isRead: false,
+          isPush: true,
+          metadata: {
+            additionalData: {
+              journeyId: leg.journeyId,
+              legIndex: leg.legIndex,
+              expiredAt: currentTime
+            }
+          },
+          priority: "medium" as const,
+          createdAt: Date.now(),
+        });
+
+        notificationsSent++;
+      }
+
+      return {
+        processedWindows: expiredLegs.length,
+        expiredWindowsClosed,
+        notificationsSent
+      };
+
+    } catch (error) {
+      console.error("Transfer window cleanup error:", error);
+      return {
+        processedWindows: 0,
+        expiredWindowsClosed: 0,
+        notificationsSent: 0
+      };
+    }
+  }
+});
+
 // Cleanup function for old notifications
 export const cleanupOldProximityData = mutation({
   args: {},
