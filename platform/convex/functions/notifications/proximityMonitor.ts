@@ -382,20 +382,373 @@ export const checkRideProximity = mutation({
   }
 });
 
+// MULTI-LEG JOURNEY PROXIMITY MONITORING
+// ============================================================================
+
+// Get active multi-leg journeys that need transfer point monitoring
+export const getActiveMultiLegJourneysForMonitoring = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<Array<{
+    journey: any;
+    currentLeg: any;
+    ride: any;
+    driverLocation: {
+      latitude: number;
+      longitude: number;
+      updatedAt: number;
+    };
+    transferPoint: {
+      latitude: number;
+      longitude: number;
+    };
+  }>> => {
+    const limit = Math.min(args.limit || 10, 15); // Cap at 15 journeys maximum
+
+    // Get active multi-leg journeys
+    const activeJourneys = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .take(limit);
+
+    if (activeJourneys.length === 0) return [];
+
+    const journeysWithActiveRides: Array<{
+      journey: any;
+      currentLeg: any;
+      ride: any;
+      driverLocation: {
+        latitude: number;
+        longitude: number;
+        updatedAt: number;
+      };
+      transferPoint: {
+        latitude: number;
+        longitude: number;
+      };
+    }> = [];
+
+    for (const journey of activeJourneys) {
+      // Get current active leg
+      const currentLeg = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_journey_and_leg", (q) =>
+          q.eq("journeyId", journey.journeyId).eq("legIndex", journey.currentLegIndex)
+        )
+        .unique();
+
+      if (!currentLeg || !currentLeg.rideId) continue;
+
+      // Get the active ride for this leg
+      const ride = await ctx.db.get(currentLeg.rideId);
+      if (!ride || ride.status !== "in_progress") continue;
+
+      // Get driver location
+      const driverLocation = await ctx.db
+        .query("locations")
+        .filter((q) => q.eq(q.field("userId"), ride.driverId))
+        .first();
+
+      if (!driverLocation || driverLocation.updatedAt < Date.now() - 5 * 60 * 1000) continue;
+
+      journeysWithActiveRides.push({
+        journey,
+        currentLeg,
+        ride,
+        driverLocation: {
+          latitude: driverLocation.latitude,
+          longitude: driverLocation.longitude,
+          updatedAt: driverLocation.updatedAt,
+        },
+        transferPoint: currentLeg.toCoordinates, // Destination of current leg = transfer point
+      });
+
+      if (journeysWithActiveRides.length >= 10) break; // Safety limit
+    }
+
+    return journeysWithActiveRides;
+  }
+});
+
+// Check multi-leg journey transfer point proximity and trigger next leg requests
+export const checkMultiLegTransferProximity = mutation({
+  args: {
+    batchSize: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<{
+    processedJourneys: number;
+    transferAlertsCreated: number;
+    nextLegRequestsTriggered: number;
+    hasMore: boolean;
+  }> => {
+    const batchSize = Math.min(args.batchSize || 5, 5);
+
+    try {
+      const journeysToMonitor = await ctx.runQuery(
+        api.functions.notifications.proximityMonitor.getActiveMultiLegJourneysForMonitoring,
+        { limit: batchSize }
+      ) as Array<{
+        journey: any;
+        currentLeg: any;
+        ride: any;
+        driverLocation: { latitude: number; longitude: number; updatedAt: number };
+        transferPoint: { latitude: number; longitude: number };
+      }>;
+
+      if (journeysToMonitor.length === 0) {
+        return {
+          processedJourneys: 0,
+          transferAlertsCreated: 0,
+          nextLegRequestsTriggered: 0,
+          hasMore: false,
+        };
+      }
+
+      let transferAlertsCreated = 0;
+      let nextLegRequestsTriggered = 0;
+
+      for (const { journey, currentLeg, ride, driverLocation, transferPoint } of journeysToMonitor) {
+        const distance = calculateDistance(
+          driverLocation.latitude,
+          driverLocation.longitude,
+          transferPoint.latitude,
+          transferPoint.longitude
+        );
+
+        const status = getProximityStatus(distance);
+        const eta = calculateETA(distance);
+
+        // Check if approaching transfer point (5-minute window)
+        if ((status === 'approaching' || status === 'near') && eta <= 5) {
+
+          // Create transfer approach notification
+          const notificationTitle = `Approaching Transfer Point`;
+          const notificationMessage = `You'll reach your transfer point in ${formatTime(eta)}. Preparing next leg...`;
+
+          await ctx.db.insert("notifications", {
+            notificationId: `transfer_approach_${journey.journeyId}_${currentLeg.legIndex}_${Date.now()}`,
+            userId: journey.passengerId,
+            type: "driver_5min_away" as const,
+            title: notificationTitle,
+            message: notificationMessage,
+            isRead: false,
+            isPush: true,
+            metadata: {
+              rideId: ride.rideId,
+              additionalData: {
+                journeyId: journey.journeyId,
+                currentLegIndex: currentLeg.legIndex,
+                transferPoint,
+                distance,
+                eta,
+                status,
+                isTransferProximity: true
+              }
+            },
+            priority: "high" as const,
+            createdAt: Date.now(),
+          });
+
+          transferAlertsCreated++;
+
+          // Update journey leg with transfer window timing
+          await ctx.db.patch(currentLeg._id, {
+            transferWindowStart: Date.now(),
+            transferWindowEnd: Date.now() + (15 * 60 * 1000) // 15-minute window
+          });
+
+          // Trigger next leg taxi request if not already done
+          const isLastLeg = currentLeg.legIndex >= journey.totalLegs - 1;
+          if (!isLastLeg) {
+            // Check if next leg request already triggered
+            const nextLeg = await ctx.db
+              .query("journeyLegs")
+              .withIndex("by_journey_and_leg", (q) =>
+                q.eq("journeyId", journey.journeyId).eq("legIndex", currentLeg.legIndex + 1)
+              )
+              .unique();
+
+            if (nextLeg && nextLeg.status === "pending") {
+              // Trigger automatic next leg request
+              try {
+                await ctx.runMutation(
+                  api.functions.journeys.journeyManagement.requestNextLegTaxi,
+                  {
+                    journeyId: journey.journeyId,
+                    legIndex: nextLeg.legIndex,
+                    transferLocation: transferPoint,
+                    destinationLocation: nextLeg.toCoordinates,
+                    expandedRadius: 2.0 // Larger radius for transfer points
+                  }
+                );
+                nextLegRequestsTriggered++;
+              } catch (error) {
+                console.error(`Failed to request next leg for journey ${journey.journeyId}:`, error);
+              }
+            }
+          }
+        }
+
+        // Check if arrived at transfer point
+        if (status === 'arrived') {
+          const arrivalMessage = `You've arrived at the transfer point. ${
+            currentLeg.legIndex >= journey.totalLegs - 1
+              ? 'Journey completed!'
+              : 'Please wait for your next taxi.'
+          }`;
+
+          await ctx.db.insert("notifications", {
+            notificationId: `transfer_arrival_${journey.journeyId}_${currentLeg.legIndex}_${Date.now()}`,
+            userId: journey.passengerId,
+            type: "driver_arrived" as const,
+            title: "Transfer Point Reached",
+            message: arrivalMessage,
+            isRead: false,
+            isPush: true,
+            metadata: {
+              rideId: ride.rideId,
+              additionalData: {
+                journeyId: journey.journeyId,
+                currentLegIndex: currentLeg.legIndex,
+                transferPoint,
+                isTransferArrival: true
+              }
+            },
+            priority: "urgent" as const,
+            createdAt: Date.now(),
+          });
+
+          transferAlertsCreated++;
+        }
+      }
+
+      return {
+        processedJourneys: journeysToMonitor.length,
+        transferAlertsCreated,
+        nextLegRequestsTriggered,
+        hasMore: journeysToMonitor.length >= batchSize,
+      };
+
+    } catch (error) {
+      console.error("Multi-leg transfer proximity monitoring error:", error);
+      return {
+        processedJourneys: 0,
+        transferAlertsCreated: 0,
+        nextLegRequestsTriggered: 0,
+        hasMore: false,
+      };
+    }
+  }
+});
+
+// Check specific multi-leg journey transfer proximity
+export const checkSpecificJourneyTransferProximity = mutation({
+  args: {
+    journeyId: v.string(),
+    driverLocation: v.object({
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
+    transferPoint: v.object({
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
+    forceCheck: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    reason?: string;
+    status?: string;
+    distance?: string;
+    eta?: string;
+    nextLegRequested?: boolean;
+  }> => {
+    try {
+      const journey = await ctx.db
+        .query("multiLegJourneys")
+        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .unique();
+
+      if (!journey) return { success: false, reason: "Journey not found" };
+
+      const distance = calculateDistance(
+        args.driverLocation.latitude,
+        args.driverLocation.longitude,
+        args.transferPoint.latitude,
+        args.transferPoint.longitude
+      );
+
+      const status = getProximityStatus(distance);
+      const eta = calculateETA(distance);
+
+      let nextLegRequested = false;
+
+      if (status === 'approaching' || status === 'near' || status === 'arrived') {
+        // Handle transfer point proximity logic
+        if ((status === 'approaching' || status === 'near') && eta <= 5) {
+          // Trigger next leg request if not last leg
+          const isLastLeg = journey.currentLegIndex >= journey.totalLegs - 1;
+          if (!isLastLeg) {
+            const nextLeg = await ctx.db
+              .query("journeyLegs")
+              .withIndex("by_journey_and_leg", (q) =>
+                q.eq("journeyId", args.journeyId).eq("legIndex", journey.currentLegIndex + 1)
+              )
+              .unique();
+
+            if (nextLeg && nextLeg.status === "pending") {
+              try {
+                await ctx.runMutation(
+                  api.functions.journeys.journeyManagement.requestNextLegTaxi,
+                  {
+                    journeyId: args.journeyId,
+                    legIndex: nextLeg.legIndex,
+                    transferLocation: args.transferPoint,
+                    destinationLocation: nextLeg.toCoordinates,
+                    expandedRadius: 2.0
+                  }
+                );
+                nextLegRequested = true;
+              } catch (error) {
+                console.error("Failed to request next leg:", error);
+              }
+            }
+          }
+        }
+
+        return {
+          success: true,
+          status,
+          distance: formatDistance(distance),
+          eta: formatTime(eta),
+          nextLegRequested
+        };
+      }
+
+      return { success: false, reason: "Not close enough to transfer point" };
+
+    } catch (error) {
+      console.error("Specific journey transfer proximity check error:", error);
+      return { success: false, reason: "Error occurred during proximity check" };
+    }
+  }
+});
+
 // Cleanup function for old notifications
 export const cleanupOldProximityData = mutation({
   args: {},
   handler: async (ctx): Promise<{ deletedCount: number }> => {
     try {
       const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
-      
+
       const oldNotifications = await ctx.db
         .query("notifications")
         .withIndex("by_type", (q) => q.eq("type", "driver_5min_away" as const))
         .filter((q) => q.lt(q.field("createdAt"), cutoffTime))
         .take(100); // Limit cleanup to 100 notifications at a time
 
-      const deletePromises = oldNotifications.map(notification => 
+      const deletePromises = oldNotifications.map(notification =>
         ctx.db.delete(notification._id).catch(err => {
           console.error("Failed to delete notification:", err);
           return null;
@@ -403,7 +756,7 @@ export const cleanupOldProximityData = mutation({
       );
 
       await Promise.all(deletePromises);
-      
+
       return { deletedCount: oldNotifications.length };
 
     } catch (error) {
