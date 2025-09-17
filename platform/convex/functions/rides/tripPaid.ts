@@ -4,7 +4,7 @@ import { tripPaidHandler } from "./tripPaidHandler";
 
 export const tripPaid = mutation({
   args: { 
-    rideId: v.string(),
+    rideId: v.id("rides"),
     userId: v.id("taxiTap_users"),
     paid: v.boolean(),
     amountPaid: v.optional(v.number()),
