@@ -29,16 +29,38 @@ describe('acceptRide Integration', () => {
     ctx.db.patch = jest.fn().mockResolvedValue('ride1');
     
     // Mock the query for rides
-    ctx.db.query = jest.fn().mockReturnValue({
-      withIndex: jest.fn().mockReturnValue({
-        first: jest.fn().mockResolvedValue({
-          _id: 'ride1',
-          rideId: 'ride1',
-          status: 'requested',
-          passengerId: 'user1',
-          driverId: null,
+    ctx.db.query = jest.fn().mockImplementation((table: string) => {
+      if (table === 'rides') {
+        return {
+          withIndex: jest.fn().mockImplementation((indexName: string) => {
+            if (indexName === 'by_ride_id') {
+              return {
+                first: jest.fn().mockResolvedValue({
+                  _id: 'ride1',
+                  rideId: 'ride1',
+                  status: 'requested',
+                  passengerId: 'user1',
+                  driverId: null,
+                })
+              };
+            } else if (indexName === 'by_driver') {
+              return {
+                filter: jest.fn().mockReturnValue({
+                  first: jest.fn().mockResolvedValue(null) // No existing active rides
+                })
+              };
+            }
+            return {
+              first: jest.fn().mockResolvedValue(null)
+            };
+          })
+        };
+      }
+      return {
+        withIndex: jest.fn().mockReturnValue({
+          first: jest.fn().mockResolvedValue(null)
         })
-      })
+      };
     });
     
     try {

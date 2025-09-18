@@ -19,7 +19,14 @@ describe('RequestRide Integration', () => {
 
     const ctx = {
       db: {
-        insert: jest.fn(() => Promise.resolve(mockRideId))
+        insert: jest.fn(() => Promise.resolve(mockRideId)),
+        query: jest.fn(() => ({
+          withIndex: jest.fn(() => ({
+            filter: jest.fn(() => ({
+              first: jest.fn(() => Promise.resolve(null)) // No existing active rides
+            }))
+          }))
+        }))
       },
       runQuery: jest.fn(() => Promise.resolve(mockTaxiMatchingResult)),
       runMutation: jest.fn(() => Promise.resolve())
