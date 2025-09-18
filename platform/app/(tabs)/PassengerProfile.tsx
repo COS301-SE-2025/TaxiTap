@@ -11,6 +11,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { Badge } from '../../components/Badge';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -55,6 +56,18 @@ export default function PassengerProfile() {
     const recentFeedback = useQuery(
         api.functions.feedback.showFeedback.showFeedbackPassenger,
         user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
+    // Query user badges
+    const userBadges = useQuery(
+        api.functions.badges.getUserBadges.getUserBadgesQuery,
+        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
+    // Query loyal member status
+    const loyalMemberStatus = useQuery(
+        api.functions.users.UserManagement.getLoyalMemberStatus.getLoyalMemberStatus,
+        user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
     );
 
     // Mutations for switching roles
@@ -254,6 +267,13 @@ export default function PassengerProfile() {
             fontWeight: '500',
             textTransform: 'capitalize',
         },
+        badgesContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginTop: 12,
+            gap: 8,
+        },
         sectionHeader: {
             fontSize: 13,
             fontWeight: '600',
@@ -354,6 +374,13 @@ export default function PassengerProfile() {
             color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
             fontWeight: '500',
         },
+        loyalMemberBadge: {
+            backgroundColor: '#34C759',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 16,
+            marginBottom: 8,
+        },
     });
     
     if (!user) {
@@ -392,6 +419,35 @@ export default function PassengerProfile() {
                 </Pressable>
                 <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
                 <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
+                
+                {/* Badges Section */}
+                <View style={dynamicStyles.badgesContainer}>
+                    {/* Loyal Member Badge */}
+                    {loyalMemberStatus?.isLoyalMember && (
+                        <Badge
+                            text="🏆 Loyal Member"
+                            type="success"
+                            style={dynamicStyles.loyalMemberBadge}
+                        />
+                    )}
+                    
+                    {/* Existing badges */}
+                    {userBadges && userBadges.length > 0 && (
+                        <>
+                            {userBadges.map((badge, index) => (
+                                <Badge
+                                    key={index}
+                                    badgeType={badge.badgeType}
+                                    name={badge.name}
+                                    description={badge.description}
+                                    icon={badge.icon}
+                                    color={badge.color}
+                                    size="medium"
+                                />
+                            ))}
+                        </>
+                    )}
+                </View>
             </View>
 
             {/* Account Section */}
