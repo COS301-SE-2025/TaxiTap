@@ -5,20 +5,40 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } fr
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useUser } from "../contexts/UserContext";
 import { Id } from "@/convex/_generated/dataModel";
 
 export default function ChangeDue() {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
+  const { user } = useUser();
 
-  const changeDueRides = useQuery(api.functions.rides.getChange.getChangeDueRides);
-  const markChangeReceived = useMutation(api.functions.rides.getChange.markChangeReceived);
+  const changeDueData = useQuery(
+    api.functions.rides.getActiveTrips.getPassengersNeedingChange,
+    user ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
 
-  const handleMarkReceived = async (rideId: Id<"rides">) => {
-    await markChangeReceived({ rideId });
+  const markChangeReceived = useMutation(api.functions.rides.getActiveTrips.markChangeGiven);
+
+  const handleMarkReceived = async (rideId: string, paymentType: string) => {
+    try {
+      const result = await markChangeReceived({ rideId });
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
   };
 
-  if (!changeDueRides) {
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
+          <Text style={[styles.loadingText, { color: theme.text }]}>Please log in to continue</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!changeDueData) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
@@ -28,20 +48,24 @@ export default function ChangeDue() {
     );
   }
 
-  if (!changeDueRides.length) {
+  const { count, passengers } = changeDueData;
+
+  if (!passengers || passengers.length === 0) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
           <View style={styles.headerSection}>
-            <Text style={[styles.headerSubtitle, { color: theme.text }]}>No users need change</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.text }]}>No passengers need change or owe money</Text>
           </View>
           <View style={styles.emptyState}>
             <Ionicons
               name="cash-outline"
               size={64}
-              color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'}
+              color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"}
             />
-            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No change needed</Text>
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
+              All passengers have received their correct change and fulfilled their payments
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -51,46 +75,78 @@ export default function ChangeDue() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={[styles.headerSubtitle, { color: theme.textSecondary, marginBottom: 16 }]}>
-          {changeDueRides.length} passenger{changeDueRides.length !== 1 ? "s" : ""} need change
-        </Text>
+        <View style={styles.headerSection}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Change Due or Money Owed</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+            {count} passenger{count !== 1 ? "s" : ""} need{count === 1 ? "s" : ""} change or owe money
+          </Text>
+        </View>
 
-        {changeDueRides.map((ride) => (
-          <View key={ride.rideId.toString()} style={[styles.passengerCard, { backgroundColor: theme.card }]}>
-            <View style={styles.cardHeader}>
-              <View style={styles.passengerInfo}>
-                <Text style={[styles.name, { color: theme.text }]}>{ride.passengerName}</Text>
-                <Text style={[styles.phoneNumber, { color: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)" }]}>
-                  {ride.passengerPhone}
-                </Text>
-              </View>
-              <View style={[styles.statusBadge, styles.statusChange]}>
-                <Text style={styles.statusText}>Change Due</Text>
-              </View>
-            </View>
+        {passengers.map((ride) => {
+            let statusText = "Change Due";
+            let statusColor = "#ef4444";
+            let statusBackground = "rgba(239, 68, 68, 0.1)";
+            let changeLabel = "Change Due";
+            let buttonText = "Mark Change Given";
+            let buttonColor = "#22c55e";
+            let iconName: "cash-outline" | "wallet-outline" = "cash-outline";
 
-            <View style={[styles.cardDetails, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#f0f0f0" }]}>
-              <View style={styles.detailRow}>
-                <Ionicons name="cash-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
-                <Text style={[styles.detailText, { color: theme.text }]}>Fare: R{ride.fare.toFixed(2)}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Ionicons name="wallet-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
-                <Text style={[styles.detailText, { color: theme.text }]}>Paid: R{ride.amountPaid.toFixed(2)}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Ionicons name="cash-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
-                <Text style={[styles.detailText, { color: theme.text }]}>Change Due: R{ride.changeDue.toFixed(2)}</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "#3b82f6" }]}
-                onPress={() => handleMarkReceived(ride.rideId)}
-              >
-                <Text style={styles.buttonText}>Mark as Received</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+            if (ride.paymentType === "underpaid") {
+                statusText = "Owes Driver";
+                statusColor = "#f59e0b";
+                statusBackground = "rgba(245, 158, 11, 0.1)";
+                changeLabel = `Owes: R${ride.changeDue.toFixed(2)}`;
+                buttonText = "Mark Money Received";
+                buttonColor = "#3b82f6";
+                iconName = "wallet-outline";
+            } else if (ride.paymentType === "overpaid") {
+                statusText = "Change Due";
+                statusColor = "#ef4444";
+                statusBackground = "rgba(239, 68, 68, 0.1)";
+                changeLabel = `Change: R${ride.changeDue.toFixed(2)}`;
+                buttonText = "Mark Change Given";
+                buttonColor = "#22c55e";
+                iconName = "cash-outline";
+            }
+
+            return (
+                <View key={ride.rideId} style={[styles.passengerCard, { backgroundColor: theme.card }]}>
+                <View style={styles.cardHeader}>
+                    <View style={styles.passengerInfo}>
+                    <Text style={[styles.name, { color: theme.text }]}>{ride.name}</Text>
+                    <Text style={[styles.phoneNumber, { color: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)" }]}>
+                        {ride.phoneNumber}
+                    </Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: statusBackground }]}>
+                    <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.cardDetails, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#f0f0f0" }]}>
+                    <View style={styles.detailRow}>
+                    <Ionicons name="cash-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
+                    <Text style={[styles.detailText, { color: theme.text }]}>Fare: R{ride.fare.toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                    <Ionicons name="wallet-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
+                    <Text style={[styles.detailText, { color: theme.text }]}>Paid: R{ride.amountPaid.toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                    <Ionicons name={iconName} size={16} color={statusColor} />
+                    <Text style={[styles.detailText, { color: statusColor, fontWeight: "600" }]}>{changeLabel}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                    style={[styles.button, { backgroundColor: buttonColor }]}
+                    onPress={() => handleMarkReceived(ride.rideId, ride.paymentType)}
+                    >
+                    <Text style={styles.buttonText}>{buttonText}</Text>
+                    </TouchableOpacity>
+                </View>
+                </View>
+            );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -99,7 +155,8 @@ export default function ChangeDue() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: { padding: 20 },
-  headerSection: { marginBottom: 16 },
+  headerSection: { marginBottom: 24 },
+  headerTitle: { fontSize: 24, fontWeight: "700", marginBottom: 4 },
   headerSubtitle: { fontSize: 16, fontWeight: "400" },
   passengerCard: {
     borderRadius: 16,
@@ -111,21 +168,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: "rgba(0,0,0,0.08)",
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
   passengerInfo: { flex: 1 },
   name: { fontSize: 20, fontWeight: "600", marginBottom: 4 },
   phoneNumber: { fontSize: 15, fontWeight: "400" },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, minWidth: 90, alignItems: "center" },
-  statusChange: { backgroundColor: "rgba(59, 130, 246, 0.1)" },
-  statusText: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: "#3b82f6" },
+  statusChange: { backgroundColor: "rgba(239, 68, 68, 0.1)" },
+  statusText: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: "#ef4444" },
   cardDetails: { borderTopWidth: 1, paddingTop: 16 },
   detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   detailText: { fontSize: 15, fontWeight: "500", marginLeft: 8 },
-  button: { marginTop: 10, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
+  button: { marginTop: 10, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, alignItems: "center" },
   buttonText: { color: "#fff", fontWeight: "600" },
   loadingText: { textAlign: "center", fontSize: 16, marginTop: 40 },
-  emptyState: { alignItems: "center", justifyContent: "center", marginTop: 40 },
-  emptyStateText: { fontSize: 16, fontWeight: "500", marginTop: 16 },
+  emptyState: { alignItems: "center", justifyContent: "center", marginTop: 60 },
+  emptyStateText: { fontSize: 16, fontWeight: "500", marginTop: 16, textAlign: "center", maxWidth: 250 },
 });

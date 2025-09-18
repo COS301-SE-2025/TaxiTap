@@ -23,14 +23,19 @@ export default function StatsPage() {
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
-  const changeDueStats = useQuery(api.functions.rides.getChange.getChangeDueRides);
-  const changeDueCount = changeDueStats?.length ?? 0;
+  // Use getPassengersNeedingChange for more accurate change due count
+  const changeDueData = useQuery(
+    api.functions.rides.getActiveTrips.getPassengersNeedingChange,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+  const changeDueCount = changeDueData?.count ?? 0;
 
   const handleBackPress = () => {
     router.back();
   };
 
-  if (!user || activeTrips === undefined || changeDueStats === undefined) {
+  if (!user || activeTrips === undefined || changeDueData === undefined) {
     return (
       <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
         <View style={dynamicStyles.container}>
@@ -79,7 +84,7 @@ export default function StatsPage() {
             onPress={() => router.push("/ChangePage")}
           >
             <Text style={dynamicStyles.statNumber}>{changeDueCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Change Due</Text>
+            <Text style={dynamicStyles.statLabel}>Change Due and Money Owed</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
