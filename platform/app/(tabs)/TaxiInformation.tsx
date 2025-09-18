@@ -416,7 +416,7 @@ export default function TaxiInformation() {
       flex: 1,
     },
     loadingContainer: {
-      paddingVertical: 60,
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
     },

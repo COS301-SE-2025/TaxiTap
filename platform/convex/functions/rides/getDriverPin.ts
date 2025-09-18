@@ -69,78 +69,7 @@ export const copyDriverPinToRide = mutation({
   },
 });
 
-// Verify PIN against both driver profile and ride
-export const verifyDriverPin = mutation({
-  args: {
-    rideId: v.string(),
-    passengerId: v.id("taxiTap_users"),
-    driverId: v.id("taxiTap_users"),
-    enteredPin: v.string(),
-  },
-  handler: async (ctx, { rideId, passengerId, driverId, enteredPin }) => {
-    // Find the ride
-    const ride = await ctx.db
-      .query("rides")
-      .filter(q => q.eq(q.field("rideId"), rideId))
-      .first();
-
-    if (!ride) {
-      throw new Error("Ride not found");
-    }
-
-    // Verify passenger authorization
-    if (ride.passengerId !== passengerId) {
-      throw new Error("Unauthorized: You are not the passenger for this ride");
-    }
-
-    // Verify driver matches
-    if (ride.driverId !== driverId) {
-      throw new Error("Driver mismatch");
-    }
-
-    // Check ride status
-    if (ride.status !== 'accepted') {
-      throw new Error(`Cannot start ride. Current status: ${ride.status}`);
-    }
-
-    // Get driver's PIN from profile as fallback
-    const driver = await ctx.db.get(driverId);
-    const correctPin = ride.ridePin || driver?.driverPin;
-
-    if (!correctPin || correctPin !== enteredPin) {
-      return {
-        success: false,
-        message: "Invalid PIN. Please check with the driver.",
-        attemptsRemaining: 3,
-      };
-    }
-
-    // PIN verified - start the ride
-    const startTime = Date.now();
-    
-    const tripId = await ctx.db.insert("trips", {
-      driverId,
-      passengerId,
-      startTime,
-      endTime: 0,
-      fare: 0,
-      reservation: true,
-    });
-
-    await ctx.db.patch(ride._id, {
-      status: 'in_progress',
-      startedAt: startTime,
-      pinVerifiedAt: startTime,
-      tripId: tripId,
-    });
-
-    return {
-      success: true,
-      message: "PIN verified successfully! Ride started.",
-      tripId: tripId,
-    };
-  },
-});
+// Note: verifyDriverPin function moved to verifyDriverPin.ts to avoid conflicts
 
 // Force regenerate PIN (useful for testing or security)
 export const regenerateDriverPin = mutation({

@@ -24,7 +24,7 @@ interface JourneyLeg {
   transferWindowEnd?: number;
 }
 
-interface MultiLegJourneyOption {
+export interface MultiLegJourneyOption {
   journeyId: string;
   totalLegs: number;
   legs: JourneyLeg[];
