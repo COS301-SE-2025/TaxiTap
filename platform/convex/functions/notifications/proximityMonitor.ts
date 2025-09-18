@@ -1213,6 +1213,442 @@ export const cleanupExpiredTransferWindows = mutation({
   }
 });
 
+// JOURNEY PROGRESSION INTEGRATION
+// ============================================================================
+
+// Monitor journey progression proximity and trigger journey management actions
+export const monitorJourneyProgressionProximity = mutation({
+  args: {
+    journeyId: v.string(),
+    currentLegIndex: v.number(),
+    driverLocation: v.object({
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
+    rideId: v.string(),
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    progressionTriggered: boolean;
+    nextLegRequested: boolean;
+    transferWindowActive: boolean;
+    journeyCompleted: boolean;
+    message?: string;
+    error?: string;
+  }> => {
+    try {
+      // Get journey and current leg
+      const journey = await ctx.db
+        .query("multiLegJourneys")
+        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .unique();
+
+      if (!journey) {
+        return { success: false, progressionTriggered: false, nextLegRequested: false, transferWindowActive: false, journeyCompleted: false, error: "Journey not found" };
+      }
+
+      const currentLeg = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_journey_and_leg", (q) =>
+          q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex)
+        )
+        .unique();
+
+      if (!currentLeg) {
+        return { success: false, progressionTriggered: false, nextLegRequested: false, transferWindowActive: false, journeyCompleted: false, error: "Current leg not found" };
+      }
+
+      const isLastLeg = args.currentLegIndex >= journey.totalLegs - 1;
+      const transferPoint = isLastLeg ? journey.destinationCoordinates : currentLeg.toCoordinates;
+
+      // Calculate distance to transfer/final destination
+      const distance = calculateDistance(
+        args.driverLocation.latitude,
+        args.driverLocation.longitude,
+        transferPoint.latitude,
+        transferPoint.longitude
+      );
+
+      const status = getProximityStatus(distance);
+      const eta = calculateETA(distance);
+
+      let progressionTriggered = false;
+      let nextLegRequested = false;
+      let transferWindowActive = false;
+      let journeyCompleted = false;
+
+      // Handle final destination arrival
+      if (isLastLeg && status === 'arrived') {
+        // Trigger journey completion
+        await ctx.runMutation(
+          api.functions.journeys.journeyManagement.progressJourneyToNextLeg,
+          {
+            journeyId: args.journeyId,
+            completedLegIndex: args.currentLegIndex,
+            passengerLocation: args.driverLocation, // Assume passenger is with driver
+            actualFare: currentLeg.actualFare
+          }
+        );
+
+        // Send journey completion notification
+        await ctx.db.insert("notifications", {
+          notificationId: `journey_completed_${args.journeyId}_${Date.now()}`,
+          userId: journey.passengerId,
+          type: "journey_completed" as const,
+          title: "Journey Completed!",
+          message: "Your multi-leg journey has been completed successfully. Thank you for using TaxiTap!",
+          isRead: false,
+          isPush: true,
+          metadata: {
+            rideId: args.rideId,
+            additionalData: {
+              journeyId: args.journeyId,
+              totalLegs: journey.totalLegs,
+              finalDestination: journey.destinationAddress
+            }
+          },
+          priority: "high" as const,
+          createdAt: Date.now(),
+        });
+
+        progressionTriggered = true;
+        journeyCompleted = true;
+      }
+      // Handle transfer point approach for non-final legs
+      else if (!isLastLeg && (status === 'approaching' || status === 'near') && eta <= 5) {
+        // Check if transfer window is already active
+        const hasActiveWindow = currentLeg.transferWindowStart && currentLeg.transferWindowEnd &&
+                               Date.now() >= currentLeg.transferWindowStart && Date.now() <= currentLeg.transferWindowEnd;
+
+        if (!hasActiveWindow) {
+          // Start transfer window management
+          await ctx.runMutation(
+            api.functions.notifications.proximityMonitor.manageTransferWindow,
+            {
+              journeyId: args.journeyId,
+              legIndex: args.currentLegIndex,
+              action: "start_window"
+            }
+          );
+          transferWindowActive = true;
+        }
+
+        // Check if next leg taxi request is needed
+        const nextLeg = await ctx.db
+          .query("journeyLegs")
+          .withIndex("by_journey_and_leg", (q) =>
+            q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
+          )
+          .unique();
+
+        if (nextLeg && nextLeg.status === "pending") {
+          try {
+            await ctx.runMutation(
+              api.functions.journeys.journeyManagement.requestNextLegTaxi,
+              {
+                journeyId: args.journeyId,
+                legIndex: nextLeg.legIndex,
+                transferLocation: transferPoint,
+                destinationLocation: nextLeg.toCoordinates,
+                expandedRadius: 2.0
+              }
+            );
+            nextLegRequested = true;
+
+            // Send next leg requested notification
+            await ctx.db.insert("notifications", {
+              notificationId: `next_leg_requested_${args.journeyId}_${nextLeg.legIndex}_${Date.now()}`,
+              userId: journey.passengerId,
+              type: "next_leg_requested" as const,
+              title: "Next Taxi Requested",
+              message: `Approaching transfer point in ${formatTime(eta)}. Next leg taxi has been requested automatically.`,
+              isRead: false,
+              isPush: true,
+              metadata: {
+                rideId: args.rideId,
+                additionalData: {
+                  journeyId: args.journeyId,
+                  currentLegIndex: args.currentLegIndex,
+                  nextLegIndex: nextLeg.legIndex,
+                  transferPoint,
+                  eta
+                }
+              },
+              priority: "high" as const,
+              createdAt: Date.now(),
+            });
+          } catch (error) {
+            console.error("Failed to request next leg taxi:", error);
+          }
+        }
+      }
+      // Handle transfer point arrival for non-final legs
+      else if (!isLastLeg && status === 'arrived') {
+        // Trigger leg completion and journey progression
+        await ctx.runMutation(
+          api.functions.journeys.journeyManagement.progressJourneyToNextLeg,
+          {
+            journeyId: args.journeyId,
+            completedLegIndex: args.currentLegIndex,
+            passengerLocation: args.driverLocation,
+            actualFare: currentLeg.actualFare
+          }
+        );
+
+        // Send leg completion notification
+        await ctx.db.insert("notifications", {
+          notificationId: `journey_leg_completed_${args.journeyId}_${args.currentLegIndex}_${Date.now()}`,
+          userId: journey.passengerId,
+          type: "journey_leg_completed" as const,
+          title: "Transfer Point Reached",
+          message: `Leg ${args.currentLegIndex + 1} of ${journey.totalLegs} completed. Preparing for next leg...`,
+          isRead: false,
+          isPush: true,
+          metadata: {
+            rideId: args.rideId,
+            additionalData: {
+              journeyId: args.journeyId,
+              completedLegIndex: args.currentLegIndex,
+              totalLegs: journey.totalLegs,
+              transferPoint
+            }
+          },
+          priority: "high" as const,
+          createdAt: Date.now(),
+        });
+
+        progressionTriggered = true;
+      }
+
+      return {
+        success: true,
+        progressionTriggered,
+        nextLegRequested,
+        transferWindowActive,
+        journeyCompleted,
+        message: `Proximity monitoring successful. Status: ${status}, ETA: ${formatTime(eta)}`
+      };
+
+    } catch (error) {
+      console.error("Journey progression proximity monitoring error:", error);
+      return {
+        success: false,
+        progressionTriggered: false,
+        nextLegRequested: false,
+        transferWindowActive: false,
+        journeyCompleted: false,
+        error: `Failed to monitor journey progression proximity: ${error}`
+      };
+    }
+  }
+});
+
+// Sync proximity monitoring with journey status updates
+export const syncProximityWithJourneyStatus = mutation({
+  args: {
+    journeyId: v.string(),
+    newStatus: v.union(
+      v.literal("planning"),
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed"),
+      v.literal("cancelled")
+    ),
+    currentLegIndex: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    monitoringEnabled: boolean;
+    transferWindowsClosed: number;
+    message?: string;
+    error?: string;
+  }> => {
+    try {
+      const journey = await ctx.db
+        .query("multiLegJourneys")
+        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .unique();
+
+      if (!journey) {
+        return { success: false, monitoringEnabled: false, transferWindowsClosed: 0, error: "Journey not found" };
+      }
+
+      let transferWindowsClosed = 0;
+
+      // Handle status changes
+      switch (args.newStatus) {
+        case "completed":
+        case "cancelled":
+          // Close all active transfer windows for this journey
+          const allLegs = await ctx.db
+            .query("journeyLegs")
+            .filter((q) => q.eq(q.field("journeyId"), args.journeyId))
+            .collect();
+
+          for (const leg of allLegs) {
+            if (leg.transferWindowStart && leg.transferWindowEnd &&
+                Date.now() < leg.transferWindowEnd) {
+              await ctx.db.patch(leg._id, {
+                transferWindowEnd: Date.now()
+              });
+              transferWindowsClosed++;
+            }
+          }
+
+          return {
+            success: true,
+            monitoringEnabled: false,
+            transferWindowsClosed,
+            message: `Journey ${args.newStatus}. All transfer windows closed.`
+          };
+
+        case "paused":
+          // Extend any active transfer windows by 30 minutes
+          const activeLegs = await ctx.db
+            .query("journeyLegs")
+            .filter((q) =>
+              q.and(
+                q.eq(q.field("journeyId"), args.journeyId),
+                q.neq(q.field("transferWindowStart"), undefined),
+                q.neq(q.field("transferWindowEnd"), undefined),
+                q.gt(q.field("transferWindowEnd"), Date.now())
+              )
+            )
+            .collect();
+
+          for (const leg of activeLegs) {
+            if (leg.transferWindowEnd) {
+              await ctx.db.patch(leg._id, {
+                transferWindowEnd: leg.transferWindowEnd + (30 * 60 * 1000) // Add 30 minutes
+              });
+            }
+          }
+
+          return {
+            success: true,
+            monitoringEnabled: false,
+            transferWindowsClosed: 0,
+            message: "Journey paused. Transfer windows extended by 30 minutes."
+          };
+
+        case "active":
+          return {
+            success: true,
+            monitoringEnabled: true,
+            transferWindowsClosed: 0,
+            message: "Journey active. Proximity monitoring enabled."
+          };
+
+        default:
+          return {
+            success: true,
+            monitoringEnabled: false,
+            transferWindowsClosed: 0,
+            message: `Journey status updated to ${args.newStatus}`
+          };
+      }
+
+    } catch (error) {
+      console.error("Journey status sync error:", error);
+      return {
+        success: false,
+        monitoringEnabled: false,
+        transferWindowsClosed: 0,
+        error: `Failed to sync proximity with journey status: ${error}`
+      };
+    }
+  }
+});
+
+// Trigger journey progression events from proximity detection
+export const triggerJourneyProgression = mutation({
+  args: {
+    rideId: v.string(),
+    driverLocation: v.object({
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
+    triggerType: v.union(
+      v.literal("approaching_transfer"),
+      v.literal("arrived_transfer"),
+      v.literal("approaching_destination"),
+      v.literal("arrived_destination")
+    ),
+    forceProgression: v.optional(v.boolean())
+  },
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    journeyProgressed: boolean;
+    nextLegTriggered: boolean;
+    journeyCompleted: boolean;
+    message?: string;
+    error?: string;
+  }> => {
+    try {
+      // Get ride and associated journey
+      const ride = await ctx.db
+        .query("rides")
+        .withIndex("by_ride_id", (q) => q.eq("rideId", args.rideId))
+        .first();
+
+      if (!ride || !ride.parentJourneyId) {
+        return {
+          success: false,
+          journeyProgressed: false,
+          nextLegTriggered: false,
+          journeyCompleted: false,
+          error: "No associated multi-leg journey found for this ride"
+        };
+      }
+
+      const journey = await ctx.db
+        .query("multiLegJourneys")
+        .withIndex("by_journey_id", (q) => q.eq("journeyId", ride.parentJourneyId as string))
+        .unique();
+
+      if (!journey) {
+        return {
+          success: false,
+          journeyProgressed: false,
+          nextLegTriggered: false,
+          journeyCompleted: false,
+          error: "Journey not found"
+        };
+      }
+
+      // Use the integrated monitoring function
+      const result = await ctx.runMutation(
+        api.functions.notifications.proximityMonitor.monitorJourneyProgressionProximity,
+        {
+          journeyId: journey.journeyId,
+          currentLegIndex: ride.legIndex || journey.currentLegIndex,
+          driverLocation: args.driverLocation,
+          rideId: args.rideId
+        }
+      );
+
+      return {
+        success: result.success,
+        journeyProgressed: result.progressionTriggered,
+        nextLegTriggered: result.nextLegRequested,
+        journeyCompleted: result.journeyCompleted,
+        message: result.message || `Journey progression triggered for ${args.triggerType}`,
+        error: result.error
+      };
+
+    } catch (error) {
+      console.error("Journey progression trigger error:", error);
+      return {
+        success: false,
+        journeyProgressed: false,
+        nextLegTriggered: false,
+        journeyCompleted: false,
+        error: `Failed to trigger journey progression: ${error}`
+      };
+    }
+  }
+});
+
 // Cleanup function for old notifications
 export const cleanupOldProximityData = mutation({
   args: {},
