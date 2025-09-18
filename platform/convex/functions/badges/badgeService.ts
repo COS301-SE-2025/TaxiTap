@@ -9,7 +9,7 @@ export interface BadgeEligibility {
 }
 
 export interface BadgeInfo {
-  badgeType: "trusted_payer" | "frequent_rider";
+  badgeType: "trusted_payer" | "frequent_rider" | "loyal_member"; // Add loyal_member
   name: string;
   description: string;
   icon: string;
@@ -30,6 +30,13 @@ export const BADGE_DEFINITIONS: Record<string, BadgeInfo> = {
     description: "Taken 50+ rides",
     icon: "car-sport",
     color: "#3B82F6", // Blue
+  },
+  loyal_member: {
+    badgeType: "loyal_member",
+    name: "Loyal Member",
+    description: "Completed 1+ rides",
+    icon: "trophy",
+    color: "#34C759", // Green
   },
 };
 

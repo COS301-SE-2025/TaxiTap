@@ -477,6 +477,7 @@ routes: defineTable({
     badgeType: v.union(
       v.literal("trusted_payer"),
       v.literal("frequent_rider"),
+      v.literal("loyal_member"), // Add this new badge type
     ),
     earnedAt: v.number(),
     isActive: v.boolean(),

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface BadgeProps {
-  badgeType: "trusted_payer" | "frequent_rider";
+  badgeType: "trusted_payer" | "frequent_rider" | "loyal_member"; // Add loyal_member
   name: string;
   description: string;
   icon: string;
