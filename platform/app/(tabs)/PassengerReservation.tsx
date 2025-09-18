@@ -257,22 +257,24 @@ export default function SeatReserved() {
 	
 	// Fetch taxi and driver info for the current reservation using Convex
 	// FIXED: Skip query when ride has ended to prevent continuous error logs
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; fare?: number; tripPaid?: boolean; } | undefined;
-	let taxiInfoError: unknown;
-	try {
-		taxiInfo = useQuery(
-			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-			user && !rideJustEnded ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-		);
-	} catch (err) {
-		taxiInfoError = err;
-	}
+	const taxiInfo = useQuery(
+		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+		user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
 
-	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
-	const endRide = useMutation(api.functions.rides.endRide.endRide);
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+
+	// Automatically set rideJustEnded when ride is completed or cancelled
+	useEffect(() => {
+		if (rideStatus === 'completed' || rideStatus === 'cancelled') {
+			setRideJustEnded(true);
+		}
+	}, [rideStatus]);
+
+	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
+	const endRide = useMutation(api.functions.rides.endRide.endRide);
 	const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
 
 	const passengerId = user?.id;
@@ -645,26 +647,10 @@ export default function SeatReserved() {
 
 	// Driver location updates with validation - REMOVED HARDCODING
 	useEffect(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.driver?.currentLocation) {
-			try {
-				const driverLoc = {
-					latitude: taxiInfo.driver.currentLocation.latitude,
-					longitude: taxiInfo.driver.currentLocation.longitude
-				};
-				
-				setDriverLocation(prev => {
-					if (!prev || 
-						Math.abs(prev.latitude - driverLoc.latitude) > 0.0001 ||
-						Math.abs(prev.longitude - driverLoc.longitude) > 0.0001) {
-						return driverLoc;
-					}
-					return prev;
-				});
-			} catch (error) {
-				console.error('Error updating driver location:', error);
-			}
-		}
-	}, [rideStatus, taxiInfo?.driver?.currentLocation]);
+		// Note: Driver location is not available in the current driver object structure
+		// This would need to be implemented separately if driver location tracking is needed
+		console.log('Driver location tracking not implemented in current driver object structure');
+	}, [rideStatus, taxiInfo?.driver]);
 
 	// Calculate ETA/proximity for display
 	const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -696,18 +682,7 @@ export default function SeatReserved() {
 	};
 
 	const getDisplayTime = (): string => {
-		// Only calculate ETA if we have real driver location data from the backend
-		if (driverLocation && currentLocation && rideStatus === 'accepted' && taxiInfo?.driver?.currentLocation) {
-			const distance = calculateDistance(
-				driverLocation.latitude,
-				driverLocation.longitude,
-				currentLocation.latitude,
-				currentLocation.longitude
-			);
-			const eta = calculateETA(distance);
-			return formatTime(eta);
-		}
-		
+		// Note: Driver location tracking not implemented in current structure
 		// Fall back to the original time parameter or show appropriate message
 		if (vehicleInfo.time && vehicleInfo.time !== t('passengerReservation:unknown')) {
 			return vehicleInfo.time;
@@ -791,71 +766,16 @@ export default function SeatReserved() {
 		// Don't show error alerts if the ride has ended or if we've already shown the alert
 		if (rideJustEnded || hasShownDeclinedAlert) return;
 		
-		if (taxiInfoError) {
-			console.log('TaxiInfo error detected:', taxiInfoError);
-			
-			// Only show error for legitimate ride declines, not after successful ride completion
-			const errorMessage = taxiInfoError?.toString() || '';
-			if (errorMessage.includes('No active reservation found')) {
-				// This is expected after ride completion, don't show error
-				console.log('No active reservation - ride likely completed successfully');
-				return;
-			}
-			
-			// Add a small delay to prevent immediate triggering after ride end
-			const timeoutId = setTimeout(() => {
-				if (!rideJustEnded && !hasShownDeclinedAlert) {
-					showGlobalError(
-						t('passengerReservation:rideDeclined'),
-						t('passengerReservation:noActiveReservation'),
-						{
-							duration: 0,
-							actions: [
-								{
-									label: t('passengerReservation:ok'),
-									onPress: () => {
-										setHasShownDeclinedAlert(true);
-										router.push('/HomeScreen');
-									},
-									style: 'default',
-								},
-							],
-							position: 'top',
-							animation: 'slide-down',
-						}
-					);
-				}
-			}, 1000); // 1 second delay
-
-			return () => clearTimeout(timeoutId);
+		// Handle taxi info loading states
+		if (taxiInfo === null) {
+			console.log('No active reservation found - ride likely completed successfully');
 		}
-	}, [taxiInfoError, hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError]);
+	}, [hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError, taxiInfo]);
 
 	// FIXED: Debounced proximity monitoring with ref tracking
 	const startProximityMonitoring = useCallback(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.rideId && currentLocation && !rideJustEnded && !isMonitoringRef.current) {
-			console.log('Started proximity monitoring for ride', taxiInfo.rideId);
-			
-			const driverLoc = {
-				latitude: taxiInfo.driver?.currentLocation?.latitude || 0,
-				longitude: taxiInfo.driver?.currentLocation?.longitude || 0,
-			};
-
-			const pickupLocation = {
-				latitude: currentLocation.latitude,
-				longitude: currentLocation.longitude,
-			};
-
-			startMonitoringRide({
-				rideId: taxiInfo.rideId,
-				driverId: taxiInfo.driver?.userId || '',
-				passengerId: user?.id || '',
-				driverLocation: driverLoc,
-				pickupLocation,
-			});
-			
-			isMonitoringRef.current = true;
-		}
+		// Note: Driver location tracking not implemented in current structure
+		console.log('Proximity monitoring not implemented - driver location not available');
 	}, [rideStatus, taxiInfo?.rideId, currentLocation, user?.id, rideJustEnded, startMonitoringRide, taxiInfo?.driver]);
 
 	useEffect(() => {
@@ -872,17 +792,13 @@ export default function SeatReserved() {
 
 	// Update driver location when we receive location updates
 	useEffect(() => {
-		if (rideStatus === 'accepted' && taxiInfo?.rideId && taxiInfo?.driver?.currentLocation && isMonitoringRef.current) {
-			updateDriverLocation(taxiInfo.rideId, {
-				latitude: taxiInfo.driver.currentLocation.latitude,
-				longitude: taxiInfo.driver.currentLocation.longitude,
-			});
-		}
-	}, [taxiInfo?.driver?.currentLocation, rideStatus, taxiInfo?.rideId, updateDriverLocation]);
+		// Note: Driver location tracking not implemented in current structure
+		console.log('Driver location updates not implemented - driver location not available');
+	}, [rideStatus, taxiInfo?.rideId, updateDriverLocation]);
 
 	// Driver contact functions - REMOVED HARDCODED PHONE NUMBER
 	const handleCall = () => {
-		const phoneNumber = taxiInfo?.driver?.phoneNumber || taxiInfo?.driver?.phone;
+		const phoneNumber = taxiInfo?.driver?.phoneNumber;
 		if (phoneNumber) {
 			Linking.openURL(`tel:${phoneNumber}`);
 		} else {
@@ -895,7 +811,7 @@ export default function SeatReserved() {
 	};
 
 	const handleMessage = () => {
-		const phoneNumber = taxiInfo?.driver?.phoneNumber || taxiInfo?.driver?.phone;
+		const phoneNumber = taxiInfo?.driver?.phoneNumber;
 		if (phoneNumber) {
 			Linking.openURL(`sms:${phoneNumber}`);
 		} else {
@@ -1530,28 +1446,42 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{/* Driver Info Section */}
-						{!taxiInfoError && (
+						{/* Driver Info Section - Only show when driver is assigned */}
+						{taxiInfo === undefined ? (
 							<View style={dynamicStyles.driverInfoSection}>
 								<View style={dynamicStyles.driverAvatar}>
 									<Icon name="person" size={24} color={theme.text} />
 								</View>
 								<View style={dynamicStyles.driverDetails}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo?.driver?.name || "Unknown Driver"}
+										Loading ride information...
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo?.taxi?.model || "Unknown Vehicle"} • {taxiInfo?.taxi?.licensePlate || vehicleInfo.plate || "Unknown Plate"}
+										Please wait while we fetch your ride details
+									</Text>
+								</View>
+							</View>
+						) : taxiInfo && taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={24} color={theme.text} />
+								</View>
+								<View style={dynamicStyles.driverDetails}>
+									<Text style={dynamicStyles.driverName}>
+										{taxiInfo.driver.name || "Driver details not available"}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										{taxiInfo.taxi?.model || "Vehicle details not available"} • {taxiInfo.taxi?.licensePlate || vehicleInfo.plate || "Plate not available"}
 									</Text>
 									<View style={dynamicStyles.driverRating}>
-										<Text style={dynamicStyles.ratingText}>
-											{taxiInfo?.driver?.averageRating ? taxiInfo.driver.averageRating.toFixed(1) : 'N/A'}
-										</Text>
-										<View style={{ flexDirection: 'row' }}>
-											{taxiInfo?.driver?.averageRating ? [1, 2, 3, 4, 5].map((star, index) => {
-												const rating = taxiInfo.driver.averageRating;
-												const full = rating >= star;
-												const half = rating >= star - 0.5 && !full;
+									<Text style={dynamicStyles.ratingText}>
+										{taxiInfo.driver?.rating ? taxiInfo.driver.rating.toFixed(1) : 'N/A'}
+									</Text>
+									<View style={{ flexDirection: 'row' }}>
+										{taxiInfo.driver?.rating ? [1, 2, 3, 4, 5].map((star, index) => {
+											const rating = taxiInfo.driver?.rating ?? 0;
+											const full = rating >= star;
+											const half = rating >= star - 0.5 && !full;
 
 												return (
 													<FontAwesome
@@ -1565,6 +1495,34 @@ export default function SeatReserved() {
 											}) : null}
 										</View>
 									</View>
+								</View>
+							</View>
+						) : taxiInfo && !taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={24} color={theme.text} />
+								</View>
+								<View style={dynamicStyles.driverDetails}>
+									<Text style={dynamicStyles.driverName}>
+										Waiting for driver...
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Your ride request has been sent. A driver will be assigned soon.
+									</Text>
+								</View>
+							</View>
+						) : (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={24} color={theme.text} />
+								</View>
+								<View style={dynamicStyles.driverDetails}>
+									<Text style={dynamicStyles.driverName}>
+										No active reservation found
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Please book a ride to see driver details
+									</Text>
 								</View>
 							</View>
 						)}
@@ -1603,7 +1561,7 @@ export default function SeatReserved() {
 						</View>
 						
 						{/* Action Buttons - Only show if ride hasn't ended */}
-						{!rideJustEnded && rideStatus !== 'completed' && (
+						{rideStatus !== 'completed' && rideStatus !== 'cancelled' && (
 							<View style={dynamicStyles.actionButtonsContainer}>
 								{/* Before ride is accepted: show only Cancel Request */}
 								{rideStatus === 'requested' && (

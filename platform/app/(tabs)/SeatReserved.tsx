@@ -43,23 +43,29 @@ export default function SeatReserved() {
 
 	const mapRef = useRef<MapView | null>(null);
 	
+	// State to track if ride has ended to prevent query errors
+	const [rideJustEnded, setRideJustEnded] = useState(false);
+
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
-	try {
-		taxiInfo = useQuery(
-			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-		);
-	} catch (err) {
-		taxiInfoError = err;
-	}
+	const taxiInfo = useQuery(
+		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+		user && !rideJustEnded ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Helper to determine ride status
+	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+
+	// Automatically set rideJustEnded when ride is completed or cancelled
+	useEffect(() => {
+		if (rideStatus === 'completed' || rideStatus === 'cancelled') {
+			setRideJustEnded(true);
+		}
+	}, [rideStatus]);
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
 	const verifyDriverPin = useMutation(api.functions.rides.verifyDriverPin.verifyDriverPin);
 
-	// Helper to determine ride status
-	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 	const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
@@ -74,7 +80,6 @@ export default function SeatReserved() {
 
 	// Remove averageRating usage if not available
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
-	const [rideJustEnded, setRideJustEnded] = useState(false);
 
 	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
@@ -505,24 +510,11 @@ export default function SeatReserved() {
 	useEffect(() => {
 		if (rideJustEnded) return;
 		
-		if (taxiInfoError && !hasShownDeclinedAlert) {
-			Alert.alert(
-				'Ride Declined',
-				'No active reservation found. Your ride may have been cancelled or declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							setHasShownDeclinedAlert(true);
-							router.push('/HomeScreen');
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
+		// Handle taxi info loading states
+		if (taxiInfo === null && !hasShownDeclinedAlert) {
+			console.log('No active reservation found');
 		}
-	}, [taxiInfoError, hasShownDeclinedAlert]);
+	}, [hasShownDeclinedAlert, taxiInfo]);
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
@@ -530,6 +522,9 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			// Set this FIRST to prevent the error alert from triggering
+			setRideJustEnded(true);
+			
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
@@ -554,8 +549,9 @@ export default function SeatReserved() {
 					driverId: driverId,
 				},
 			});
-			setRideJustEnded(true);
 		} catch (error: any) {
+			// Reset the flag if there's an error
+			setRideJustEnded(false);
 			Alert.alert('Error', error?.message || 'Failed to end ride.');
 		}
 	};
@@ -566,11 +562,16 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			// Set this FIRST to prevent the error alert from triggering
+			setRideJustEnded(true);
+			
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			Alert.alert('Success', 'Ride cancelled.');
 			router.push('/HomeScreen');
 		} catch (error: any) {
+			// Reset the flag if there's an error
+			setRideJustEnded(false);
 			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
 		}
 	};
@@ -983,17 +984,31 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{!taxiInfoError && (
+						{taxiInfo === undefined ? (
 							<View style={dynamicStyles.driverInfoSection}>
 								<View style={dynamicStyles.driverAvatar}>
 									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+										Loading ride information...
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+										Please wait while we fetch your ride details
+									</Text>
+								</View>
+							</View>
+						) : taxiInfo && taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										{taxiInfo.driver.name || "Driver details not available"}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										{taxiInfo.taxi?.model || "Vehicle details not available"}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
@@ -1001,12 +1016,12 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 									<Text style={dynamicStyles.ratingText}>
-										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+										{(taxiInfo?.driver?.rating ?? 0).toFixed(1)}
 									</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
 										{[1, 2, 3, 4, 5].map((star, index) => {
-											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
-											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+											const full = (taxiInfo?.driver?.rating ?? 0) >= star;
+											const half = (taxiInfo?.driver?.rating ?? 0) >= star - 0.5 && !full;
 
 											return (
 												<FontAwesome
@@ -1019,6 +1034,34 @@ export default function SeatReserved() {
 											);
 										})}
 									</View>
+								</View>
+							</View>
+						) : taxiInfo && !taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										Waiting for driver...
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Your ride request has been sent. A driver will be assigned soon.
+									</Text>
+								</View>
+							</View>
+						) : (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										No active reservation found
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Please book a ride to see driver details
+									</Text>
 								</View>
 							</View>
 						)}
