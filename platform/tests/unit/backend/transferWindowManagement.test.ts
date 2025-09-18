@@ -273,7 +273,7 @@ describe("Transfer Window Management Functions", () => {
       const result = await manageTransferWindowHandler(ctx, args);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Unknown action");
+      expect(result.error).toContain("Invalid action");
     });
 
     it("should handle database errors gracefully", async () => {
