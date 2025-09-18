@@ -66,7 +66,7 @@ export const getActiveRidesForProximityMonitoring = query({
     // Only get rides that are accepted and need proximity monitoring
     const activeRides = await ctx.db
       .query("rides")
-      .withIndex("by_status", (q) => q.eq("status", "accepted"))
+      .withIndex("by_status", (q: any) => q.eq("status", "accepted"))
       .filter((q) => 
         // Only include rides where we haven't sent an alert in the last 3 minutes
         q.or(
@@ -293,7 +293,7 @@ export const checkRideProximity = mutation({
     try {
       const ride = await ctx.db
         .query("rides")
-        .withIndex("by_ride_id", (q) => q.eq("rideId", args.rideId))
+        .withIndex("by_ride_id", (q: any) => q.eq("rideId", args.rideId))
         .first();
 
       if (!ride) return { success: false, reason: "Ride not found" };
@@ -385,31 +385,16 @@ export const checkRideProximity = mutation({
 // MULTI-LEG JOURNEY PROXIMITY MONITORING
 // ============================================================================
 
-// Get active multi-leg journeys that need transfer point monitoring
-export const getActiveMultiLegJourneysForMonitoring = query({
-  args: {
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args): Promise<Array<{
-    journey: any;
-    currentLeg: any;
-    ride: any;
-    driverLocation: {
-      latitude: number;
-      longitude: number;
-      updatedAt: number;
-    };
-    transferPoint: {
-      latitude: number;
-      longitude: number;
-    };
-  }>> => {
+/**
+ * Handler function for getting active multi-leg journeys for monitoring
+ */
+export async function getActiveMultiLegJourneysForMonitoringHandler(ctx: any, args: any): Promise<any> {
     const limit = Math.min(args.limit || 10, 15); // Cap at 15 journeys maximum
 
     // Get active multi-leg journeys
     const activeJourneys = await ctx.db
       .query("multiLegJourneys")
-      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .withIndex("by_status", (q: any) => q.eq("status", "active"))
       .take(limit);
 
     if (activeJourneys.length === 0) return [];
@@ -433,7 +418,7 @@ export const getActiveMultiLegJourneysForMonitoring = query({
       // Get current active leg
       const currentLeg = await ctx.db
         .query("journeyLegs")
-        .withIndex("by_journey_and_leg", (q) =>
+        .withIndex("by_journey_and_leg", (q: any) =>
           q.eq("journeyId", journey.journeyId).eq("legIndex", journey.currentLegIndex)
         )
         .unique();
@@ -447,7 +432,7 @@ export const getActiveMultiLegJourneysForMonitoring = query({
       // Get driver location
       const driverLocation = await ctx.db
         .query("locations")
-        .filter((q) => q.eq(q.field("userId"), ride.driverId))
+        .filter((q: any) => q.eq(q.field("userId"), ride.driverId))
         .first();
 
       if (!driverLocation || driverLocation.updatedAt < Date.now() - 5 * 60 * 1000) continue;
@@ -468,20 +453,20 @@ export const getActiveMultiLegJourneysForMonitoring = query({
     }
 
     return journeysWithActiveRides;
-  }
+}
+
+// Get active multi-leg journeys that need transfer point monitoring
+export const getActiveMultiLegJourneysForMonitoring = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: getActiveMultiLegJourneysForMonitoringHandler
 });
 
-// Check multi-leg journey transfer point proximity and trigger next leg requests
-export const checkMultiLegTransferProximity = mutation({
-  args: {
-    batchSize: v.optional(v.number()),
-  },
-  handler: async (ctx, args): Promise<{
-    processedJourneys: number;
-    transferAlertsCreated: number;
-    nextLegRequestsTriggered: number;
-    hasMore: boolean;
-  }> => {
+/**
+ * Handler function for checking multi-leg journey transfer point proximity
+ */
+export async function checkMultiLegTransferProximityHandler(ctx: any, args: any): Promise<any> {
     const batchSize = Math.min(args.batchSize || 5, 5);
 
     try {
@@ -564,7 +549,7 @@ export const checkMultiLegTransferProximity = mutation({
             // Check if next leg request already triggered
             const nextLeg = await ctx.db
               .query("journeyLegs")
-              .withIndex("by_journey_and_leg", (q) =>
+              .withIndex("by_journey_and_leg", (q: any) =>
                 q.eq("journeyId", journey.journeyId).eq("legIndex", currentLeg.legIndex + 1)
               )
               .unique();
@@ -639,7 +624,14 @@ export const checkMultiLegTransferProximity = mutation({
         hasMore: false,
       };
     }
-  }
+}
+
+// Check multi-leg journey transfer point proximity and trigger next leg requests
+export const checkMultiLegTransferProximity = mutation({
+  args: {
+    batchSize: v.optional(v.number()),
+  },
+  handler: checkMultiLegTransferProximityHandler
 });
 
 // Check specific multi-leg journey transfer proximity
@@ -667,7 +659,7 @@ export const checkSpecificJourneyTransferProximity = mutation({
     try {
       const journey = await ctx.db
         .query("multiLegJourneys")
-        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
         .unique();
 
       if (!journey) return { success: false, reason: "Journey not found" };
@@ -692,7 +684,7 @@ export const checkSpecificJourneyTransferProximity = mutation({
           if (!isLastLeg) {
             const nextLeg = await ctx.db
               .query("journeyLegs")
-              .withIndex("by_journey_and_leg", (q) =>
+              .withIndex("by_journey_and_leg", (q: any) =>
                 q.eq("journeyId", args.journeyId).eq("legIndex", journey.currentLegIndex + 1)
               )
               .unique();
@@ -738,38 +730,15 @@ export const checkSpecificJourneyTransferProximity = mutation({
 // MULTI-LEG JOURNEY TRANSFER WINDOW MANAGEMENT
 // ============================================================================
 
-// Manage transfer window timing and coordination
-export const manageTransferWindow = mutation({
-  args: {
-    journeyId: v.string(),
-    legIndex: v.number(),
-    action: v.union(
-      v.literal("start_window"),
-      v.literal("extend_window"),
-      v.literal("close_window"),
-      v.literal("check_status")
-    ),
-    extensionMinutes: v.optional(v.number()),
-    passengerConfirmation: v.optional(v.boolean())
-  },
-  handler: async (ctx, args): Promise<{
-    success: boolean;
-    transferWindow?: {
-      isActive: boolean;
-      startTime: number;
-      endTime: number;
-      remainingTime: number;
-      status: 'active' | 'expired' | 'extended' | 'closed';
-    };
-    nextLegStatus?: string;
-    message?: string;
-    error?: string;
-  }> => {
+/**
+ * Handler function for managing transfer window timing and coordination
+ */
+export async function manageTransferWindowHandler(ctx: any, args: any): Promise<any> {
     try {
       // Get the journey leg
       const leg = await ctx.db
         .query("journeyLegs")
-        .withIndex("by_journey_and_leg", (q) =>
+        .withIndex("by_journey_and_leg", (q: any) =>
           q.eq("journeyId", args.journeyId).eq("legIndex", args.legIndex)
         )
         .unique();
@@ -889,7 +858,23 @@ export const manageTransferWindow = mutation({
         error: `Failed to manage transfer window: ${error}`
       };
     }
-  }
+}
+
+// Manage transfer window timing and coordination
+export const manageTransferWindow = mutation({
+  args: {
+    journeyId: v.string(),
+    legIndex: v.number(),
+    action: v.union(
+      v.literal("start_window"),
+      v.literal("extend_window"),
+      v.literal("close_window"),
+      v.literal("check_status")
+    ),
+    extensionMinutes: v.optional(v.number()),
+    passengerConfirmation: v.optional(v.boolean())
+  },
+  handler: manageTransferWindowHandler
 });
 
 // Handle passenger transfer coordination
@@ -924,7 +909,7 @@ export const handlePassengerTransferCoordination = mutation({
       // Get journey
       const journey = await ctx.db
         .query("multiLegJourneys")
-        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
         .unique();
 
       if (!journey) {
@@ -934,7 +919,7 @@ export const handlePassengerTransferCoordination = mutation({
       // Get current leg
       const currentLeg = await ctx.db
         .query("journeyLegs")
-        .withIndex("by_journey_and_leg", (q) =>
+        .withIndex("by_journey_and_leg", (q: any) =>
           q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex)
         )
         .unique();
@@ -998,7 +983,7 @@ export const handlePassengerTransferCoordination = mutation({
           // Get next leg status
           const nextLeg = await ctx.db
             .query("journeyLegs")
-            .withIndex("by_journey_and_leg", (q) =>
+            .withIndex("by_journey_and_leg", (q: any) =>
               q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
             )
             .unique();
@@ -1083,7 +1068,7 @@ export const handlePassengerTransferCoordination = mutation({
           // Cancel next leg and mark journey as completed at current point
           const nextLegToCancel = await ctx.db
             .query("journeyLegs")
-            .withIndex("by_journey_and_leg", (q) =>
+            .withIndex("by_journey_and_leg", (q: any) =>
               q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
             )
             .unique();
@@ -1144,7 +1129,7 @@ export const cleanupExpiredTransferWindows = mutation({
       // Find legs with expired transfer windows
       const expiredLegs = await ctx.db
         .query("journeyLegs")
-        .withIndex("by_status", (q) => q.eq("status", "completed"))
+        .withIndex("by_status", (q: any) => q.eq("status", "completed"))
         .filter((q) =>
           q.and(
             q.neq(q.field("transferWindowStart"), undefined),
@@ -1161,7 +1146,7 @@ export const cleanupExpiredTransferWindows = mutation({
         // Get associated journey
         const journey = await ctx.db
           .query("multiLegJourneys")
-          .withIndex("by_journey_id", (q) => q.eq("journeyId", leg.journeyId))
+          .withIndex("by_journey_id", (q: any) => q.eq("journeyId", leg.journeyId))
           .unique();
 
         if (!journey) continue;
@@ -1240,7 +1225,7 @@ export const monitorJourneyProgressionProximity = mutation({
       // Get journey and current leg
       const journey = await ctx.db
         .query("multiLegJourneys")
-        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
         .unique();
 
       if (!journey) {
@@ -1249,7 +1234,7 @@ export const monitorJourneyProgressionProximity = mutation({
 
       const currentLeg = await ctx.db
         .query("journeyLegs")
-        .withIndex("by_journey_and_leg", (q) =>
+        .withIndex("by_journey_and_leg", (q: any) =>
           q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex)
         )
         .unique();
@@ -1336,7 +1321,7 @@ export const monitorJourneyProgressionProximity = mutation({
         // Check if next leg taxi request is needed
         const nextLeg = await ctx.db
           .query("journeyLegs")
-          .withIndex("by_journey_and_leg", (q) =>
+          .withIndex("by_journey_and_leg", (q: any) =>
             q.eq("journeyId", args.journeyId).eq("legIndex", args.currentLegIndex + 1)
           )
           .unique();
@@ -1466,7 +1451,7 @@ export const syncProximityWithJourneyStatus = mutation({
     try {
       const journey = await ctx.db
         .query("multiLegJourneys")
-        .withIndex("by_journey_id", (q) => q.eq("journeyId", args.journeyId))
+        .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
         .unique();
 
       if (!journey) {
@@ -1588,7 +1573,7 @@ export const triggerJourneyProgression = mutation({
       // Get ride and associated journey
       const ride = await ctx.db
         .query("rides")
-        .withIndex("by_ride_id", (q) => q.eq("rideId", args.rideId))
+        .withIndex("by_ride_id", (q: any) => q.eq("rideId", args.rideId))
         .first();
 
       if (!ride || !ride.parentJourneyId) {
@@ -1603,7 +1588,7 @@ export const triggerJourneyProgression = mutation({
 
       const journey = await ctx.db
         .query("multiLegJourneys")
-        .withIndex("by_journey_id", (q) => q.eq("journeyId", ride.parentJourneyId as string))
+        .withIndex("by_journey_id", (q: any) => q.eq("journeyId", ride.parentJourneyId as string))
         .unique();
 
       if (!journey) {
@@ -1673,7 +1658,7 @@ export const cleanupOldProximityData = mutation({
       for (const notificationType of proximityTypes) {
         const oldNotifications = await ctx.db
           .query("notifications")
-          .withIndex("by_type", (q) => q.eq("type", notificationType))
+          .withIndex("by_type", (q: any) => q.eq("type", notificationType))
           .filter((q) => q.lt(q.field("createdAt"), cutoffTime))
           .take(50); // Limit per type to prevent overwhelming
 
