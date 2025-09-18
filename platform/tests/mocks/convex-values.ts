@@ -7,5 +7,7 @@ export const v = {
   array: (items: any) => ({ type: 'array', items }),
   id: (table: string) => ({ type: 'id', table }),
   union: (...types: any[]) => ({ type: 'union', types }),
+  optional: (validator: any) => ({ type: 'optional', validator }),
+  literal: (value: any) => ({ type: 'literal', value }),
   undefined: () => ({ type: 'undefined' }),
 }; 
