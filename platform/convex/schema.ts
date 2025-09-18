@@ -126,7 +126,15 @@ export default defineSchema({
     // Trip relationship
     tripId: v.optional(v.id("trips")),
     tripPaid: v.optional(v.boolean()),
-    
+    amountPaid: v.optional(v.number()),
+    changeDue: v.optional(v.number()),
+    paymentType: v.optional(v.union(
+      v.literal("exact"),
+      v.literal("overpaid"),
+      v.literal("not_paid")
+    )),
+    changeReceived: v.optional(v.boolean()),
+
     // Legacy PIN verification fields - kept for backward compatibility
     ridePin: v.optional(v.string()),
     pinRegeneratedAt: v.optional(v.number()),
@@ -463,4 +471,24 @@ routes: defineTable({
   .index("by_journey_and_leg", ["journeyId", "legIndex"])
   .index("by_status", ["status"])
   .index("by_ride_id", ["rideId"]),
+
+  badges: defineTable({
+    userId: v.id("taxiTap_users"),
+    badgeType: v.union(
+      v.literal("trusted_payer"),
+      v.literal("frequent_rider"),
+    ),
+    earnedAt: v.number(),
+    isActive: v.boolean(),
+    metadata: v.optional(v.object({
+      totalRides: v.optional(v.number()),
+      paymentRate: v.optional(v.number()),
+      streakCount: v.optional(v.number()),
+    })),
+  })
+  .index("by_user_id", ["userId"])
+  .index("by_badge_type", ["badgeType"])
+  .index("by_user_and_type", ["userId", "badgeType"])
+  .index("by_active", ["isActive"]),
+
 });
