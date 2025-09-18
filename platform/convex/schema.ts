@@ -128,10 +128,12 @@ export default defineSchema({
     tripPaid: v.optional(v.boolean()),
     amountPaid: v.optional(v.number()),
     changeDue: v.optional(v.number()),
+    amountOwed: v.optional(v.number()),
     paymentType: v.optional(v.union(
       v.literal("exact"),
       v.literal("overpaid"),
-      v.literal("not_paid")
+      v.literal("not_paid"),
+      v.literal("underpaid")
     )),
     changeReceived: v.optional(v.boolean()),
 
@@ -148,6 +150,7 @@ export default defineSchema({
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
+    updatedAt: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
