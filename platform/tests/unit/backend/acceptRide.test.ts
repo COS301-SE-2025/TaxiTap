@@ -42,11 +42,35 @@ function createMockCtx(rideData: any) {
   
   return {
     db: {
-      query: jest.fn(() => ({
-        withIndex: jest.fn(() => ({
-          first: jest.fn(async () => ride),
-        })),
-      })),
+      query: jest.fn((table: string) => {
+        if (table === "rides") {
+          return {
+            withIndex: jest.fn((indexName: string, queryFn: any) => {
+              if (indexName === "by_ride_id") {
+                // For ride lookup by rideId
+                return {
+                  first: jest.fn(async () => ride),
+                };
+              } else if (indexName === "by_driver") {
+                // For checking existing active rides by driver
+                return {
+                  filter: jest.fn(() => ({
+                    first: jest.fn(async () => null), // No existing active rides
+                  })),
+                };
+              }
+              return {
+                first: jest.fn(async () => ride),
+              };
+            }),
+          };
+        }
+        return {
+          withIndex: jest.fn(() => ({
+            first: jest.fn(async () => ride),
+          })),
+        };
+      }),
       patch: jest.fn(async (_id: any, update: any) => {
         if (ride && _id === ride._id) {
           Object.assign(ride, update);

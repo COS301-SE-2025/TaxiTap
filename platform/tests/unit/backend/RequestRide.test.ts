@@ -50,6 +50,11 @@ function createMockCtx() {
       }),
       query: jest.fn((table: any) => ({
         collect: jest.fn(async () => rides),
+        withIndex: jest.fn(() => ({
+          filter: jest.fn(() => ({
+            first: jest.fn(async () => null) // No existing active rides by default
+          }))
+        }))
       })),
       get: jest.fn(async (id: string) => {
         return rides.find(r => r._id === id) || null;
