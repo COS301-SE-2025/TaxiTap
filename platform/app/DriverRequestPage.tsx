@@ -265,7 +265,7 @@ export default () => {
             case 'completed':
                 return <Text style={dynamicStyles.statusText}>Ride Completed</Text>;
             case 'cancelled':
-                return <Text style={dynamicStyles.statusText}>Ride Cancelled</Text>;
+                return <Text style={dynamicStyles.statusText}>{t('home:rideCancelled')}</Text>;
             default:
                 return null;
         }

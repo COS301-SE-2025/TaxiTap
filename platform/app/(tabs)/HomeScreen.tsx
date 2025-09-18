@@ -642,7 +642,7 @@ export default function HomeScreen() {
           return {
             ...recent,
             _id: recent._id,
-            routeName: 'Location Unavailable',
+            routeName: t('home:locationUnavailable'),
             destinationLat: null,
             destinationLng: null,
             startName: recent.startName,
@@ -653,15 +653,52 @@ export default function HomeScreen() {
         }
       }
 
-      const fullRoute = routes.find(r => r.routeId === recent.routeId);
-      if (fullRoute && fullRoute.destinationCoords) {
+      // Try to find the route by routeId first
+      let fullRoute = routes.find(r => r.routeId === recent.routeId);
+      
+      // If not found by routeId, try to find by _id
+      if (!fullRoute) {
+        fullRoute = routes.find(r => r._id === recent.routeId);
+      }
+      
+      // If still not found, try to find by matching the stored name with route destination
+      if (!fullRoute && recent.name) {
+        fullRoute = routes.find(r => 
+          r.destination?.toLowerCase().includes(recent.name.toLowerCase()) ||
+          recent.name.toLowerCase().includes(r.destination?.toLowerCase() || '')
+        );
+      }
+      
+      // Additional fallback: try to find by matching start and destination names
+      if (!fullRoute && recent.startName && recent.name) {
+        fullRoute = routes.find(r => 
+          (r.start?.toLowerCase().includes(recent.startName?.toLowerCase() || '') ||
+           recent.startName?.toLowerCase().includes(r.start?.toLowerCase() || '')) &&
+          (r.destination?.toLowerCase().includes(recent.name.toLowerCase()) ||
+           recent.name.toLowerCase().includes(r.destination?.toLowerCase() || ''))
+        );
+      }
+      
+      if (fullRoute) {
+        console.log('🔍 Found route for recent route:', {
+          recentRouteId: recent.routeId,
+          recentName: recent.name,
+          foundRoute: {
+            _id: fullRoute._id,
+            routeId: fullRoute.routeId,
+            start: fullRoute.start,
+            destination: fullRoute.destination,
+            hasDestinationCoords: !!fullRoute.destinationCoords
+          }
+        });
+        
         return {
           ...recent,
           _id: fullRoute._id,
           routeName: fullRoute.destination,
           routeDisplayName: `${fullRoute.start} → ${fullRoute.destination}`,
-          destinationLat: fullRoute.destinationCoords.latitude,
-          destinationLng: fullRoute.destinationCoords.longitude,
+          destinationLat: fullRoute.destinationCoords?.latitude || null,
+          destinationLng: fullRoute.destinationCoords?.longitude || null,
           startName: recent.startName || fullRoute.start,
           startLat: recent.startLat || fullRoute.startCoords?.latitude,
           startLng: recent.startLng || fullRoute.startCoords?.longitude,
@@ -669,15 +706,27 @@ export default function HomeScreen() {
         };
       }
 
+      console.log('❌ No route found for recent route:', {
+        recentRouteId: recent.routeId,
+        recentName: recent.name,
+        recentStartName: recent.startName,
+        availableRoutes: routes.map(r => ({ _id: r._id, routeId: r.routeId, start: r.start, destination: r.destination }))
+      });
+
+      // Use the stored names if available, otherwise show unknown route
+      const displayName = recent.name || t('home:unknownRoute');
+      const startDisplayName = recent.startName || t('home:currentLocation');
+
       return {
         ...recent,
         _id: recent._id,
-        routeName: t('home:unknownRoute'),
-        destinationLat: null,
-        destinationLng: null,
-        startName: recent.startName,
-        startLat: recent.startLat,
-        startLng: recent.startLng,
+        routeName: displayName,
+        routeDisplayName: `${startDisplayName} → ${displayName}`,
+        destinationLat: recent.destinationLat || null,
+        destinationLng: recent.destinationLng || null,
+        startName: startDisplayName,
+        startLat: recent.startLat || null,
+        startLng: recent.startLng || null,
         isManualRoute: false,
       };
     }).filter((route: any) => route !== null);
@@ -1334,6 +1383,7 @@ export default function HomeScreen() {
     setDestination(dest);
     setDestinationAddress(displayName);
     
+    // Always try to use the stored start location first
     if (route.startLat && route.startLng && route.startName) {
       const startLocation = {
         latitude: route.startLat,
@@ -1343,17 +1393,27 @@ export default function HomeScreen() {
       
       setOrigin(startLocation);
       setOriginAddress(route.startName);
+      console.log('📍 Using stored start location:', startLocation);
     } else if (detectedLocation) {
+      // Only fall back to current location if no stored start location
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: 'Current Location'
+        name: t('home:currentLocation')
       });
-      setOriginAddress('Current Location');
+      setOriginAddress(t('home:currentLocation'));
+      console.log('📍 Using current location as fallback');
     }
     
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
     setSelectedRouteId(routeIdToUse);
+
+    console.log('🎯 Route selected:', {
+      routeId: routeIdToUse,
+      destination: displayName,
+      startName: route.startName || t('home:currentLocation'),
+      hasStartCoords: !!(route.startLat && route.startLng)
+    });
 
     // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
@@ -1869,9 +1929,9 @@ export default function HomeScreen() {
                       setOrigin({
                         latitude: detectedLocation.latitude,
                         longitude: detectedLocation.longitude,
-                        name: t('common:currentLocation')
+                        name: t('home:currentLocation')
                       });
-                      setOriginAddress(t('common:currentLocation'));
+                      setOriginAddress(t('home:currentLocation'));
                     }}
                   >
                     <Text style={{
@@ -1879,7 +1939,7 @@ export default function HomeScreen() {
                       fontSize: 12,
                       fontWeight: '600',
                     }}>
-                      Use Current
+{t('home:useCurrent')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1888,7 +1948,7 @@ export default function HomeScreen() {
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
               )}
               {isLoadingOriginSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('home:loadingSuggestions')}</Text>
               )}
               {isLoadingCurrentLocation && (
                 <Text style={dynamicStyles.geocodingText}>{t('home:gettingCurrentLocation')}</Text>
@@ -1961,7 +2021,7 @@ export default function HomeScreen() {
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
               )}
               {isLoadingDestinationSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('home:loadingSuggestions')}</Text>
               )}
               
               {isLoadingRoute && (
@@ -1988,7 +2048,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  🔍 Searching at {currentSearchRadius}km radius
+{t('home:searchingAtRadius', { radius: currentSearchRadius })}
                   {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 &&
                     ` • Expanding in ${nextExpansionCountdown}s`
                   }
@@ -2112,7 +2172,7 @@ export default function HomeScreen() {
         {!keyboardVisible && !routeLoaded && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
-              Recently Used Routes
+              {t('home:recentlyUsedRoutes')}
             </Text>
             <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (

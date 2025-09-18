@@ -125,7 +125,7 @@ export default function DriverProfile() {
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                    title: 'Switch Profile',
+                    title: t('profile:switchProfile'),
                     message: 'Are you sure you want to switch to the passenger profile?',
                     type: 'info',
                     duration: 0,

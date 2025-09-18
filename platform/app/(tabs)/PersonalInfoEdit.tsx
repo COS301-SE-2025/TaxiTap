@@ -316,7 +316,7 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
-                <Text style={dynamicStyles.sectionTitle}>Basic Information</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:basicInformation')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
@@ -356,7 +356,7 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact */}
-                <Text style={dynamicStyles.sectionTitle}>Emergency Contact</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:emergencyContactText')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>

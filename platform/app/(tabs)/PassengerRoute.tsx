@@ -979,7 +979,7 @@ export default function RouteSelectionScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Search Section */}
-        <Text style={dynamicStyles.sectionHeader}>Search Routes</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('routes:searchRoutes')}</Text>
         <View style={dynamicStyles.searchSection}>
           <View style={dynamicStyles.searchInputContainer}>
             <Icon name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
@@ -995,7 +995,7 @@ export default function RouteSelectionScreen() {
 
         {/* Available Routes Section */}
         <Text style={dynamicStyles.sectionHeader}>
-          Available Routes {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
+          {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
         </Text>
 
         {/* Routes List or Empty State */}
@@ -1045,7 +1045,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={theme.primary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: theme.primary }]}>
-                      Searching for available taxis...
+                      {t('routes:searchingForTaxis')}
                     </Text>
                   </View>
                 )}
@@ -1053,7 +1053,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
-                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? `${getRouteSearchStatus(route.routeId).availableTaxis.length} taxis available` : 'No taxis available'}
+                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', { count: getRouteSearchStatus(route.routeId).availableTaxis.length }) : t('routes:noTaxisAvailable')}
                     </Text>
                   </View>
                 )}
@@ -1071,7 +1071,7 @@ export default function RouteSelectionScreen() {
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
                         <Text style={dynamicStyles.reserveButtonText}>
-                          Finding Taxis...
+                          {t('routes:searchingForTaxis')}
                         </Text>
                       </View>
                     ) : (

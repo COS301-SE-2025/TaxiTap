@@ -567,7 +567,7 @@ export default function SeatReserved() {
 			
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert('Success', 'Ride cancelled.');
+			Alert.alert(t('home:success'), t('home:rideCancelled'));
 			router.push('/HomeScreen');
 		} catch (error: any) {
 			// Reset the flag if there's an error
@@ -1043,7 +1043,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										Waiting for driver...
+{t('home:waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.

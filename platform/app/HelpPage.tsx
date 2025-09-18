@@ -182,7 +182,7 @@ export default function HelpPage() {
         showsVerticalScrollIndicator={false}
       >
         {/* User Manual Section */}
-        <Text style={dynamicStyles.sectionHeader}>User Manual</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('help:userManual')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="document-text-outline"
@@ -194,7 +194,7 @@ export default function HelpPage() {
         </View>
 
         {/* FAQ Section */}
-        <Text style={dynamicStyles.sectionHeader}>Frequently Asked Questions</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('help:frequentlyAskedQuestions')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="swap-horizontal-outline"

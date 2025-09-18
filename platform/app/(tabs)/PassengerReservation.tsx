@@ -690,11 +690,11 @@ export default function SeatReserved() {
 		
 		// Show different messages based on ride status
 		if (rideStatus === 'requested') {
-			return 'Waiting for driver...';
+			return t('home:waitingForDriver');
 		} else if (rideStatus === 'accepted') {
 			return 'Driver assigned';
 		} else {
-			return 'Calculating...';
+			return t('home:calculating');
 		}
 	};
 
@@ -977,7 +977,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			showGlobalAlert({
 				title: 'Success',
-				message: 'Ride cancelled.',
+				message: t('home:rideCancelled'),
 				type: 'success',
 				duration: 3000,
 				position: 'top',
@@ -1504,7 +1504,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={dynamicStyles.driverDetails}>
 									<Text style={dynamicStyles.driverName}>
-										Waiting for driver...
+{t('home:waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.
