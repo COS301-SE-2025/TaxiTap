@@ -84,7 +84,7 @@ export default function ChangeDue() {
 
         {passengers.map((ride) => {
             let statusText = "Change Due";
-            let statusColor = "#ef4444";
+            let statusColor = "#f59e0b";
             let statusBackground = "rgba(239, 68, 68, 0.1)";
             let changeLabel = "Change Due";
             let buttonText = "Mark Change Given";
@@ -93,7 +93,7 @@ export default function ChangeDue() {
 
             if (ride.paymentType === "underpaid") {
                 statusText = "Owes Driver";
-                statusColor = "#f59e0b";
+                statusColor = "#ef4444";
                 statusBackground = "rgba(245, 158, 11, 0.1)";
                 changeLabel = `Owes: R${ride.changeDue.toFixed(2)}`;
                 buttonText = "Mark Money Received";
