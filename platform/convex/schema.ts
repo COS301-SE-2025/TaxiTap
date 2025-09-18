@@ -136,6 +136,8 @@ export default defineSchema({
     lastProximityStatus: v.optional(v.string()),
 
     paymentConfirmedAt: v.optional(v.float64()),
+    amountPaid: v.optional(v.float64()),
+    paymentType: v.optional(v.string()),
     
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),

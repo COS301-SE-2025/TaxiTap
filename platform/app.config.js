@@ -3,6 +3,7 @@ export default {
     name: "TaxiTap",
     slug: "TaxiTap",
     version: "1.0.0",
+    sdkVersion: "54.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "frontend",
