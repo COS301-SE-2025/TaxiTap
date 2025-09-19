@@ -58,6 +58,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  const forceCancelStuckRides = useMutation(api.functions.rides.forceCancelStuckRides.forceCancelStuckRides);
   const shouldRunQuery = !!userId;
 
   const recentRoutes = useQuery(
@@ -201,6 +202,11 @@ export default function HomeScreen() {
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
 
+  // Multi-leg journey states
+  const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+  const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+  const [userPreference, setUserPreference] = useState('shortest_time');
+
   // States for progressive radius expansion
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const [radiusExpansionTimer, setRadiusExpansionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -251,6 +257,40 @@ export default function HomeScreen() {
   const lastProcessedSearchTime = useRef<number | null>(null);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
+
+  // Query for enhanced taxi matching - only runs when we have search params
+  const taxiSearchResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
+    taxiSearchParams ? {
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      searchStartTime: taxiSearchParams.searchStartTime,
+      maxOriginDistance: 3.0,      // 3km radius from origin
+      maxDestinationDistance: 3.0, // 3km radius from destination
+      // Remove maxTaxiDistance to let function handle dynamic radius expansion
+      maxResults: 10
+    } : "skip"
+  );
+
+  // NEW: Query for multi-leg journey analysis - only runs when we have search params
+  const journeyAnalysisResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+    taxiSearchParams ? {
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      optimizationPreference: userPreference || 'shortest_time'
+    } : "skip"
+  );
+
+  // Check for active rides to prevent duplicate requests
+  const activeRide = useQuery(
+    api.functions.rides.getActiveRideByPassenger.getActiveRideByPassenger,
+    user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
 
   // NEW: Keyboard event listeners
   useEffect(() => {
@@ -439,21 +479,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Query for enhanced taxi matching - only runs when we have search params
-  const taxiSearchResult = useQuery(
-    api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
-    taxiSearchParams ? {
-      originLat: taxiSearchParams.originLat,
-      originLng: taxiSearchParams.originLng,
-      destinationLat: taxiSearchParams.destinationLat,
-      destinationLng: taxiSearchParams.destinationLng,
-      searchStartTime: taxiSearchParams.searchStartTime,
-      maxOriginDistance: 3.0,      // 3km radius from origin
-      maxDestinationDistance: 3.0, // 3km radius from destination
-      // Remove maxTaxiDistance to let function handle dynamic radius expansion
-      maxResults: 10
-    } : "skip"
-  );
   
   const {
     currentLocation,
@@ -917,9 +942,6 @@ export default function HomeScreen() {
     }
   };
 
-    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
-    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
-    const [userPreference, setUserPreference] = useState('shortest_time');
 
   // Removed old radius expansion monitoring - now handled by Convex function
 
@@ -961,6 +983,7 @@ export default function HomeScreen() {
       });
 
     } catch (error) {
+      console.error('Error in searchForAvailableTaxis:', error);
       setIsSearchingTaxis(false);
       setSearchStartTime(null);
       Alert.alert(
@@ -971,25 +994,31 @@ export default function HomeScreen() {
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
-
-    // TODO: Fix this - cannot await useQuery hook, this causes Hermes crash
-    // const journeyAnalysis = await useQuery(
-    //   api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-    //   {
-    //   originLat: origin.latitude,
-    //   originLng: origin.longitude,
-    //   destinationLat: dest.latitude,
-    //   destinationLng: dest.longitude,
-    //   optimizationPreference: userPreference || 'shortest_time'
-    //   }
-    // );
-    // if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
-    //   setShowMultiLegPreview(true);
-    //   setMultiLegOptions(journeyAnalysis.multiLegOptions);
-    // } else {
-    //   setTaxiSearchParams(taxiSearchParams);
-    // }
   };
+
+  // NEW: Handle journey analysis results for multi-leg journeys
+  useEffect(() => {
+    if (journeyAnalysisResult) {
+      console.log('🔍 Journey analysis result:', journeyAnalysisResult);
+      
+      if (journeyAnalysisResult.requiresMultiLeg && journeyAnalysisResult.multiLegOptions) {
+        console.log('🔄 Multi-leg journey required, showing preview');
+        setShowMultiLegPreview(true);
+        setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
+        setIsSearchingTaxis(false);
+        setSearchStartTime(null);
+        
+        // Clear any existing expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
+      } else if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success) {
+        console.log('✅ Direct route available, proceeding with single-leg search');
+        // Continue with normal taxi search flow
+      }
+    }
+  }, [journeyAnalysisResult]);
 
   // Handle taxi search results - simplified to avoid infinite loops
   useEffect(() => {
@@ -1732,6 +1761,32 @@ export default function HomeScreen() {
       fontWeight: '500',
       opacity: 0.9,
     },
+    activeRideWarning: {
+      padding: 12,
+      margin: 8,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    activeRideWarningText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '500',
+      flex: 1,
+      marginRight: 8,
+    },
+    cancelRideButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    cancelRideButtonText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '600',
+    },
   });
 
   const getInitialRegion = () => {
@@ -1767,9 +1822,64 @@ export default function HomeScreen() {
     };
   };
 
-  function handleMultiLegJourneyConfirm(selectedOption: MultiLegJourneyOption, preference: string): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleMultiLegJourneyConfirm = (selectedOption: MultiLegJourneyOption, preference: string) => {
+    console.log('🚀 Confirming multi-leg journey:', selectedOption, preference);
+    
+    // Hide the multi-leg preview
+    setShowMultiLegPreview(false);
+    setMultiLegOptions(null);
+    
+    // Update user preference
+    setUserPreference(preference);
+    
+    // TODO: Implement multi-leg journey creation
+    // This would typically involve:
+    // 1. Creating a multi-leg journey record in the database
+    // 2. Starting the first leg of the journey
+    // 3. Navigating to the appropriate screen for multi-leg journey management
+    
+    // For now, show an alert and proceed with the first leg
+    Alert.alert(
+      'Multi-Leg Journey Started',
+      `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate to the first leg or journey management screen
+            // This would be implemented based on your app's navigation structure
+            console.log('Proceeding with multi-leg journey...');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleForceCancelStuckRides = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const result = await forceCancelStuckRides({
+        passengerId: user.id as Id<"taxiTap_users">,
+        reason: "Cancelled by user due to stuck state"
+      });
+      
+      showGlobalAlert({
+        title: 'Rides Cancelled',
+        message: `Successfully cancelled ${result.cancelledRides} stuck ride(s). You can now request a new ride.`,
+        type: 'success',
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+    } catch (error: any) {
+      showGlobalError('Error', error?.message || 'Failed to cancel stuck rides', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -1777,8 +1887,21 @@ export default function HomeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
+      {/* Show active ride warning if user has a stuck ride */}
+      {activeRide && (
+        <View style={[dynamicStyles.activeRideWarning, { backgroundColor: '#ff9800' }]}>
+          <Text style={dynamicStyles.activeRideWarningText}>
+            You have an active ride ({activeRide.status}). Please complete or cancel it before requesting a new one.
+          </Text>
+          <TouchableOpacity 
+            style={dynamicStyles.cancelRideButton}
+            onPress={handleForceCancelStuckRides}
+          >
+            <Text style={dynamicStyles.cancelRideButtonText}>Cancel Stuck Ride</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      
       {isLoadingCurrentLocation ? (
         <View style={[dynamicStyles.map, { 
           justifyContent: 'center', 
@@ -2048,7 +2171,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-{t('home:searchingAtRadius', { radius: currentSearchRadius })}
+                  {`Searching at ${currentSearchRadius}km radius`}
                   {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 &&
                     ` • Expanding in ${nextExpansionCountdown}s`
                   }
