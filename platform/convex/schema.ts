@@ -146,6 +146,8 @@ export default defineSchema({
     lastProximityStatus: v.optional(v.string()),
 
     paymentConfirmedAt: v.optional(v.float64()),
+    amountPaid: v.optional(v.float64()),
+    paymentType: v.optional(v.string()),
     
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
@@ -278,7 +280,18 @@ routes: defineTable({
     v.literal("route_update"),
     v.literal("emergency_alert"),
     v.literal("system_maintenance"),
-    v.literal("promotional")
+    v.literal("promotional"),
+    // Multi-leg journey transfer notifications
+    v.literal("transfer_approaching"),
+    v.literal("transfer_arrived"),
+    v.literal("transfer_window_started"),
+    v.literal("transfer_window_extended"),
+    v.literal("transfer_window_expired"),
+    v.literal("next_leg_requested"),
+    v.literal("next_leg_ready"),
+    v.literal("transfer_assistance_requested"),
+    v.literal("journey_leg_completed"),
+    v.literal("journey_completed")
   ),
   title: v.string(),
   message: v.string(),

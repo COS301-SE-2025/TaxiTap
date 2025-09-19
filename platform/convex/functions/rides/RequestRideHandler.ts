@@ -20,6 +20,23 @@ export const requestRideHandler = async (
       endLocation: args.endLocation
     });
 
+    // Check if passenger already has an active ride
+    const existingActiveRide = await ctx.db
+      .query("rides")
+      .withIndex("by_passenger", (q: any) => q.eq("passengerId", args.passengerId))
+      .filter((q: any) => 
+        q.or(
+          q.eq(q.field("status"), "requested"),
+          q.eq(q.field("status"), "accepted"),
+          q.eq(q.field("status"), "in_progress")
+        )
+      )
+      .first();
+
+    if (existingActiveRide) {
+      throw new Error(`You already have an active ride (${existingActiveRide.status}). Please complete or cancel your current ride before requesting a new one.`);
+    }
+
     const rideId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Calculate route distance using the enhanced taxi matching system
