@@ -888,27 +888,34 @@ export const analyzeMultiLegJourneyOptions = query({
         preference: args.optimizationPreference
       });
 
-      // Check direct route first
+      // Check direct route first with more generous parameters
       const directRouteResult = await findAvailableTaxisForJourneyHandler(ctx, {
         originLat: args.originLat,
         originLng: args.originLng,
         destinationLat: args.destinationLat,
         destinationLng: args.destinationLng,
-        maxOriginDistance: 1.0,
-        maxDestinationDistance: 1.0,
-        maxTaxiDistance: 1.0, // Start with initial radius
+        maxOriginDistance: 2.0, // Increased from 1.0km to 2.0km
+        maxDestinationDistance: 2.0, // Increased from 1.0km to 2.0km
+        maxTaxiDistance: 3.0, // Increased from 1.0km to 3.0km for better coverage
         maxResults: 10
       });
 
       if (directRouteResult.success && directRouteResult.availableTaxis.length > 0) {
-        console.log('✅ Direct route found, no multi-leg needed');
+        console.log('✅ Direct route found, no multi-leg needed', {
+          availableTaxis: directRouteResult.availableTaxis.length,
+          routes: directRouteResult.availableTaxis.map(t => t.routeInfo?.routeId).filter(Boolean)
+        });
         return { 
           requiresMultiLeg: false, 
           directRoute: directRouteResult 
         };
       }
 
-      console.log('🔄 No direct route found, generating multi-leg options');
+      console.log('🔄 No direct route found, generating multi-leg options', {
+        directRouteSuccess: directRouteResult.success,
+        availableTaxisCount: directRouteResult.availableTaxis?.length || 0,
+        message: directRouteResult.message
+      });
       // Generate multi-leg options
       return await generateMultiLegOptions(ctx, args);
       
