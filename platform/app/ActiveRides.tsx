@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
-import React, { useLayoutEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable } from "react-native";
+import { useQuery, useMutation } from "convex/react";
+import React, { useLayoutEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable, Alert } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
@@ -12,10 +12,12 @@ import { useRouter, useNavigation } from 'expo-router';
 
 // Define the passenger type based on your data structure
 interface Passenger {
+    rideId: string;
     name: string;
     phoneNumber: string;
     fare: number;
     tripPaid: boolean | null;
+    isFrontPassenger?: boolean;
 }
 
 export default function ActiveRides() {
@@ -24,14 +26,57 @@ export default function ActiveRides() {
     const { t } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+    const [loadingFrontPassenger, setLoadingFrontPassenger] = useState<string | null>(null);
     
     const activeTrips = useQuery(
         api.functions.rides.getActiveTrips.getActiveTrips,
         user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
     );
 
+    const setFrontPassengerMutation = useMutation(api.functions.rides.setFrontPassenger.setFrontPassenger);
+    const removeFrontPassengerMutation = useMutation(api.functions.rides.setFrontPassenger.removeFrontPassenger);
+
     const handleBackPress = () => {
         router.back();
+    };
+
+    const handleSetFrontPassenger = async (rideId: string, passengerName: string, isFrontPassenger: boolean) => {
+        try {
+            console.log('Setting front passenger with rideId:', rideId); // Debug log
+            
+            if (!rideId) {
+                throw new Error('No ride ID provided');
+            }
+            
+            setLoadingFrontPassenger(rideId);
+            
+            if (isFrontPassenger) {
+                // Remove front passenger status
+                await removeFrontPassengerMutation({ rideId: rideId });
+                Alert.alert(
+                    "Success",
+                    `${passengerName} is no longer the front passenger.`,
+                    [{ text: "OK" }]
+                );
+            } else {
+                // Set as front passenger
+                await setFrontPassengerMutation({ rideId: rideId });
+                Alert.alert(
+                    "Success", 
+                    `${passengerName} is now set as the front passenger.`,
+                    [{ text: "OK" }]
+                );
+            }
+        } catch (error) {
+            console.error('Front passenger error:', error); // Debug log
+            Alert.alert(
+                "Error", 
+                error instanceof Error ? error.message : "Failed to update front passenger status",
+                [{ text: "OK" }]
+            );
+        } finally {
+            setLoadingFrontPassenger(null);
+        }
     };
 
     if (!user || activeTrips === undefined) {
@@ -76,17 +121,24 @@ export default function ActiveRides() {
                                         {p.phoneNumber}
                                     </Text>
                                 </View>
-                                <View style={[
-                                    dynamicStyles.statusBadge,
-                                    p.tripPaid === true ? dynamicStyles.statusPaid :
-                                    p.tripPaid === false ? dynamicStyles.statusUnpaid :
-                                    dynamicStyles.statusWaiting
-                                ]}>
-                                    <Text style={dynamicStyles.statusText}>
-                                        {p.tripPaid === true ? "Paid" :
-                                         p.tripPaid === false ? "Unpaid" :
-                                         "Pending"}
-                                    </Text>
+                                <View style={dynamicStyles.statusContainer}>
+                                    <View style={[
+                                        dynamicStyles.statusBadge,
+                                        p.tripPaid === true ? dynamicStyles.statusPaid :
+                                        p.tripPaid === false ? dynamicStyles.statusUnpaid :
+                                        dynamicStyles.statusWaiting
+                                    ]}>
+                                        <Text style={dynamicStyles.statusText}>
+                                            {p.tripPaid === true ? "Paid" :
+                                             p.tripPaid === false ? "Unpaid" :
+                                             "Pending"}
+                                        </Text>
+                                    </View>
+                                    {p.isFrontPassenger && (
+                                        <View style={dynamicStyles.frontPassengerBadge}>
+                                            <Text style={dynamicStyles.frontPassengerText}>Front</Text>
+                                        </View>
+                                    )}
                                 </View>
                             </View>
                             
@@ -97,6 +149,40 @@ export default function ActiveRides() {
                                         Fare: R{p.fare.toFixed(2)}
                                     </Text>
                                 </View>
+                            </View>
+
+                            <View style={dynamicStyles.cardActions}>
+                                <TouchableOpacity
+                                    style={[
+                                        dynamicStyles.frontPassengerButton,
+                                        p.isFrontPassenger ? dynamicStyles.frontPassengerButtonActive : dynamicStyles.frontPassengerButtonInactive
+                                    ]}
+                                    onPress={() => handleSetFrontPassenger(p.rideId, p.name, p.isFrontPassenger || false)}
+                                    disabled={loadingFrontPassenger === p.rideId}
+                                >
+                                    {loadingFrontPassenger === p.rideId ? (
+                                        <View style={dynamicStyles.loadingContainer}>
+                                            <Text style={[
+                                                dynamicStyles.frontPassengerButtonText,
+                                                { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
+                                            ]}>Loading...</Text>
+                                        </View>
+                                    ) : (
+                                        <View style={dynamicStyles.buttonContent}>
+                                            <Ionicons 
+                                                name={p.isFrontPassenger ? "person" : "person-outline"} 
+                                                size={16} 
+                                                color={p.isFrontPassenger ? '#fff' : '#007AFF'} 
+                                            />
+                                            <Text style={[
+                                                dynamicStyles.frontPassengerButtonText,
+                                                { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
+                                            ]}>
+                                                {p.isFrontPassenger ? 'Remove Front' : 'Set as Front'}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
                             </View>
                         </View>
                     ))}
@@ -179,6 +265,27 @@ const dynamicStyles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 4,
     },
+    statusContainer: {
+        alignItems: 'flex-end',
+    },
+    frontPassengerBadge: {
+        flexDirection: 'row',
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        minWidth: 83,
+        alignItems: 'center',
+        justifyContent: 'center', 
+        marginTop: 10,
+    },
+    frontPassengerText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
     phoneNumber: {
         fontSize: 15,
         fontWeight: '400',
@@ -209,6 +316,7 @@ const dynamicStyles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
         paddingTop: 16,
+        marginBottom: 16,
     },
     detailRow: {
         flexDirection: 'row',
@@ -219,6 +327,41 @@ const dynamicStyles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '500',
         marginLeft: 8,
+    },
+    cardActions: {
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+        paddingTop: 16,
+    },
+    frontPassengerButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
+    },
+    frontPassengerButtonActive: {
+        backgroundColor: '#007AFF',
+    },
+    frontPassengerButtonInactive: {
+        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+        borderWidth: 1,
+        borderColor: '#007AFF',
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    frontPassengerButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 6,
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     emptyState: {
         alignItems: 'center',
