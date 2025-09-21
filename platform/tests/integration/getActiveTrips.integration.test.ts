@@ -13,8 +13,12 @@ const createTestCtx = () => {
                 return dbData[table].filter((ride: any) => {
                   const field = (name: string) => ride[name];
                   const eq = (a: any, b: any) => a === b;
+                  const or = (...conds: boolean[]) => conds.some(Boolean);
+                  const and = (...conds: boolean[]) => conds.every(Boolean);
+                  const gt = (a: number, b: number) => a > b;
+                  const neq = (a: any, b: any) => a !== b;
 
-                  return filterFn({ eq, field });
+                  return filterFn({ eq, neq, or, and, gt, field });
                 });
               }
               return dbData[table] || [];
@@ -27,15 +31,14 @@ const createTestCtx = () => {
   };
 };
 
-
 describe("getActiveTripsHandler - integration style", () => {
   beforeEach(() => {
     dbData = {
       rides: [
-        { passengerId: "p1", status: "in_progress", tripPaid: true, finalFare: 100 },
-        { passengerId: "p2", status: "in_progress", tripPaid: null, estimatedFare: 50 },
-        { passengerId: "p3", status: "completed", tripPaid: false, finalFare: 60 },
-        { passengerId: "p4", status: "requested", tripPaid: false, finalFare: 70, requestedAt: "now" },
+        { rideId: "r1", passengerId: "p1", status: "in_progress", tripPaid: true, finalFare: 100 },
+        { rideId: "r2", passengerId: "p2", status: "in_progress", tripPaid: null, estimatedFare: 50 },
+        { rideId: "r3", passengerId: "p3", status: "completed", tripPaid: false, finalFare: 60 },
+        { rideId: "r4", passengerId: "p4", status: "requested", tripPaid: false, finalFare: 70, requestedAt: "now" },
       ],
       passengers: {
         p1: { name: "Alice", phoneNumber: "123" },
@@ -56,13 +59,59 @@ describe("getActiveTripsHandler - integration style", () => {
     expect(result.unpaidCount).toBe(2);
 
     expect(result.passengers).toEqual([
-      { name: "Alice", phoneNumber: "123", fare: 100, tripPaid: true },
-      { name: "Bob", phoneNumber: "456", fare: 50, tripPaid: null },
+      {
+        rideId: "r1",
+        name: "Alice",
+        phoneNumber: "123",
+        fare: 100,
+        tripPaid: true,
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
+      },
+      {
+        rideId: "r2",
+        name: "Bob",
+        phoneNumber: "456",
+        fare: 50,
+        tripPaid: null,
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
+      },
     ]);
 
     expect(result.passengersUnpaid).toEqual([
-      { name: "Charlie", phoneNumber: "789", fare: 60, tripPaid: false, requestedAt: undefined },
-      { name: "Diana", phoneNumber: "012", fare: 70, tripPaid: false, requestedAt: "now" },
+      {
+        rideId: "r3",
+        name: "Charlie",
+        phoneNumber: "789",
+        fare: 60,
+        tripPaid: false,
+        requestedAt: undefined,
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
+      },
+      {
+        rideId: "r4",
+        name: "Diana",
+        phoneNumber: "012",
+        fare: 70,
+        tripPaid: false,
+        requestedAt: "now",
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
+      },
     ]);
   });
 
