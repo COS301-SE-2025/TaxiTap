@@ -168,3 +168,4 @@ export function getBadgeInfo(badgeType: string): BadgeInfo | null {
   return BADGE_DEFINITIONS[badgeType] || null;
 }
 
+
