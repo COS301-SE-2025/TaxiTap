@@ -13,9 +13,21 @@ export default function ChangeDue() {
   const { t } = useLanguage();
   const { user } = useUser();
 
+  // Check if the current user is a front passenger
+  const frontPassengerStatus = useQuery(
+    api.functions.rides.setFrontPassenger.checkPassengerFrontStatus,
+    user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+  // Determine the driver ID to use
+  const driverIdToUse = user?.role === 'driver' 
+    ? user.id as Id<"taxiTap_users">
+    : frontPassengerStatus?.rideInfo?.driverId;
+
+  // Fetch change due data using the appropriate driver ID
   const changeDueData = useQuery(
     api.functions.rides.getActiveTrips.getPassengersNeedingChange,
-    user ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+    driverIdToUse ? { driverId: driverIdToUse } : "skip"
   );
 
   const markChangeReceived = useMutation(api.functions.rides.getActiveTrips.markChangeGiven);
@@ -28,11 +40,40 @@ export default function ChangeDue() {
     }
   };
 
+  // Check user authorization
+  const isAuthorized = user?.role === 'driver' || 
+    (user?.role === 'passenger' && frontPassengerStatus?.isFrontPassenger);
+
   if (!user) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
           <Text style={[styles.loadingText, { color: theme.text }]}>Please log in to continue</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
+          <View style={styles.headerSection}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Access Denied</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+              Only drivers and designated front passengers can access this page
+            </Text>
+          </View>
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={64}
+              color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"}
+            />
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
+              You need to be the front passenger to access payment management
+            </Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -55,7 +96,10 @@ export default function ChangeDue() {
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
           <View style={styles.headerSection}>
-            <Text style={[styles.headerSubtitle, { color: theme.text }]}>No passengers need change or owe money</Text>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Change Due or Money Owed</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+              No passengers need change or owe money
+            </Text>
           </View>
           <View style={styles.emptyState}>
             <Ionicons
@@ -80,6 +124,14 @@ export default function ChangeDue() {
           <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
             {count} passenger{count !== 1 ? "s" : ""} need{count === 1 ? "s" : ""} change or owe money
           </Text>
+          {frontPassengerStatus?.isFrontPassenger && (
+            <View style={styles.frontPassengerBadge}>
+              <Ionicons name="person" size={14} color="#007AFF" />
+              <Text style={[styles.frontPassengerText, { color: "#007AFF" }]}>
+                Front Passenger Access
+              </Text>
+            </View>
+          )}
         </View>
 
         {passengers.map((ride) => {
@@ -157,7 +209,22 @@ const styles = StyleSheet.create({
   container: { padding: 20 },
   headerSection: { marginBottom: 24 },
   headerTitle: { fontSize: 24, fontWeight: "700", marginBottom: 4 },
-  headerSubtitle: { fontSize: 16, fontWeight: "400" },
+  headerSubtitle: { fontSize: 16, fontWeight: "400", marginBottom: 8 },
+  frontPassengerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 122, 255, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: "flex-start",
+    marginTop: 8,
+  },
+  frontPassengerText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
   passengerCard: {
     borderRadius: 16,
     padding: 20,
