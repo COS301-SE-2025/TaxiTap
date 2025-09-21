@@ -1151,7 +1151,7 @@ export default function RouteSelectionScreen() {
 
               {/* Page Numbers */}
               {getPageNumbers().map((page, index) => (
-                <React.Fragment key={index}>
+                <View key={index}>
                   {page === '...' ? (
                     <View style={dynamicStyles.paginationEllipsis}>
                       <Text style={dynamicStyles.paginationEllipsisText}>...</Text>
@@ -1172,7 +1172,7 @@ export default function RouteSelectionScreen() {
                       </Text>
                     </TouchableOpacity>
                   )}
-                </React.Fragment>
+                </View>
               ))}
 
               {/* Next Button */}
