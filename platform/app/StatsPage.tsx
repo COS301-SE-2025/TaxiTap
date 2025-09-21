@@ -248,7 +248,7 @@ const dynamicStyles = StyleSheet.create({
   },
   changeDueCard: {
     borderTopWidth: 3,
-    borderTopColor: '#f59e0b',
+    borderTopColor: '#FFFF00',
   },
   summarySection: {
     backgroundColor: '#fff',
