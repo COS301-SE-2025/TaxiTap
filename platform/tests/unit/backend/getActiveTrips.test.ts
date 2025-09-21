@@ -18,21 +18,22 @@ describe("getActiveTripsHandler", () => {
   it("returns correct counts and passengers when there are active and unpaid rides", async () => {
     const activeRides = [
       {
+        rideId: "r1",
         passengerId: "p1",
         tripPaid: true,
         finalFare: 100,
-        estimatedFare: 90,
       },
       {
+        rideId: "r2",
         passengerId: "p2",
         tripPaid: null,
         estimatedFare: 50,
       },
     ];
 
-    // Mock unpaid rides data
     const unpaidRides = [
       {
+        rideId: "r3",
         passengerId: "p3",
         tripPaid: false,
         finalFare: 60,
@@ -41,18 +42,17 @@ describe("getActiveTripsHandler", () => {
     ];
 
     mockCtx.db.collect
-      .mockResolvedValueOnce(activeRides)
-      .mockResolvedValueOnce(unpaidRides);
+      .mockResolvedValueOnce(activeRides) // for active
+      .mockResolvedValueOnce(unpaidRides); // for unpaid
 
-    mockCtx.db.get
-      .mockImplementation(async (id: string) => {
-        const passengers: Record<string, any> = {
-          p1: { name: "Alice", phoneNumber: "123" },
-          p2: { name: "Bob", phoneNumber: "456" },
-          p3: { name: "Charlie", phoneNumber: "789" },
-        };
-        return passengers[id];
-      });
+    mockCtx.db.get.mockImplementation(async (id: string) => {
+      const passengers: Record<string, any> = {
+        p1: { name: "Alice", phoneNumber: "123" },
+        p2: { name: "Bob", phoneNumber: "456" },
+        p3: { name: "Charlie", phoneNumber: "789" },
+      };
+      return passengers[id];
+    });
 
     const result = await getActiveTripsHandler(mockCtx, "driver123");
 
@@ -63,26 +63,44 @@ describe("getActiveTripsHandler", () => {
 
     expect(result.passengers).toEqual([
       {
+        rideId: "r1",
         name: "Alice",
         phoneNumber: "123",
         fare: 100,
         tripPaid: true,
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
       },
       {
+        rideId: "r2",
         name: "Bob",
         phoneNumber: "456",
         fare: 50,
         tripPaid: null,
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
       },
     ]);
 
     expect(result.passengersUnpaid).toEqual([
       {
+        rideId: "r3",
         name: "Charlie",
         phoneNumber: "789",
         fare: 60,
         tripPaid: false,
         requestedAt: "2025-08-13T10:00:00Z",
+        amountPaid: 0,
+        changeDue: 0,
+        changeReceived: false,
+        paymentType: "not_paid",
+        isFrontPassenger: false,
       },
     ]);
   });
@@ -103,17 +121,17 @@ describe("getActiveTripsHandler", () => {
 
   it("ignores rides with missing passengers", async () => {
     const activeRides = [
-      { passengerId: "p1", tripPaid: true, finalFare: 100 },
+      { rideId: "r1", passengerId: "p1", tripPaid: true, finalFare: 100 },
     ];
     const unpaidRides = [
-      { passengerId: "p2", tripPaid: false, estimatedFare: 40, requestedAt: "now" },
+      { rideId: "r2", passengerId: "p2", tripPaid: false, estimatedFare: 40, requestedAt: "now" },
     ];
 
     mockCtx.db.collect
       .mockResolvedValueOnce(activeRides)
       .mockResolvedValueOnce(unpaidRides);
 
-    mockCtx.db.get.mockResolvedValue(null);
+    mockCtx.db.get.mockResolvedValue(null); // passenger not found
 
     const result = await getActiveTripsHandler(mockCtx, "driver123");
 

@@ -9,10 +9,10 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Platform } from 'react-native';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import regular from '../assets/fonts/Amazon_Ember_Display.otf';
-import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
-import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
-import light from '../assets/fonts/Amazon_Ember_Display_Light.ttf';
+// import regular from '../assets/fonts/Amazon_Ember_Display.otf';
+// import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
+// import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
+// import light from '../assets/fonts/Amazon_Ember_Display_Light.ttf';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { UserProvider, useUser } from '../contexts/UserContext';
@@ -38,10 +38,10 @@ const convex = new ConvexReactClient('https://affable-goose-538.convex.cloud');
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    'AmazonEmber-Regular': regular,
-    'AmazonEmber-Bold': bold,
-    'AmazonEmber-Medium': medium,
-    'AmazonEmber-Light': light,
+    'AmazonEmber-Regular': require('../assets/fonts/Amazon_Ember_Display.otf'),
+    'AmazonEmber-Bold': require('../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf'),
+    'AmazonEmber-Medium': require('../assets/fonts/Amazon_Ember_Display_Medium.ttf'),
+    'AmazonEmber-Light': require('../assets/fonts/Amazon_Ember_Display_Light.ttf'),
     ...FontAwesome.font,
   });
 
