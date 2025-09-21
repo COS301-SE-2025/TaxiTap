@@ -29,6 +29,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
     const passenger = await ctx.db.get(ride.passengerId);
     if (passenger) {
       passengers.push({
+        rideId: ride.rideId, // Add rideId for front passenger functionality
         name: passenger.name,
         phoneNumber: passenger.phoneNumber,
         fare: ride.finalFare ?? ride.estimatedFare ?? 0,
@@ -37,6 +38,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
         changeDue: ride.changeDue ?? 0,
         changeReceived: ride.changeReceived ?? false,
         paymentType: ride.paymentType ?? "not_paid",
+        isFrontPassenger: ride.isFrontPassenger ?? false, // Add front passenger status
       });
     }
   }
@@ -45,6 +47,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
     const passengerUnpaid = await ctx.db.get(ride.passengerId);
     if (passengerUnpaid) {
       passengersUnpaid.push({
+        rideId: ride.rideId, // Add rideId for front passenger functionality
         name: passengerUnpaid.name,
         phoneNumber: passengerUnpaid.phoneNumber,
         fare: ride.finalFare ?? ride.estimatedFare ?? 0,
@@ -54,6 +57,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
         changeDue: ride.changeDue ?? 0,
         changeReceived: ride.changeReceived ?? false,
         paymentType: ride.paymentType ?? "not_paid",
+        isFrontPassenger: ride.isFrontPassenger ?? false, // Add front passenger status
       });
     }
   }
