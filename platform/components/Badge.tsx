@@ -2,14 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { ShieldCheck, Star, Heart, Trophy, Diamond } from 'lucide-react-native';
 
 interface BadgeProps {
-  badgeType: "trusted_payer" | "frequent_rider" | "loyal_member"; // Add loyal_member
+  badgeType: "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner";
   name: string;
   description: string;
   icon: string;
   color: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   showDescription?: boolean;
 }
 
@@ -52,6 +53,23 @@ export function Badge({
 
   const sizeStyles = getSizeStyles();
 
+  const getIconComponent = (iconName: string, size: number, color: string) => {
+    switch (iconName) {
+      case "shield-check":
+        return <ShieldCheck size={size} color={color} />;
+      case "star":
+        return <Star size={size} color={color} />;
+      case "heart":
+        return <Heart size={size} color={color} />;
+      case "trophy":
+        return <Trophy size={size} color={color} />;
+      case "diamond":
+        return <Diamond size={size} color={color} />;
+      default:
+        return <Star size={size} color={color} />;
+    }
+  };
+
   return (
     <View style={[
       styles.badgeContainer,
@@ -59,12 +77,7 @@ export function Badge({
       { backgroundColor: `${color}15` }, // 15% opacity
       { borderColor: `${color}30` }, // 30% opacity border
     ]}>
-      <Ionicons 
-        name={icon as any} 
-        size={sizeStyles.icon} 
-        color={color} 
-        style={styles.icon}
-      />
+      {getIconComponent(icon, sizeStyles.icon, color)}
       <View style={styles.textContainer}>
         <Text style={[
           sizeStyles.text,

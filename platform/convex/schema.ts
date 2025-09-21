@@ -128,10 +128,12 @@ export default defineSchema({
     tripPaid: v.optional(v.boolean()),
     amountPaid: v.optional(v.number()),
     changeDue: v.optional(v.number()),
+    amountOwed: v.optional(v.number()),
     paymentType: v.optional(v.union(
       v.literal("exact"),
       v.literal("overpaid"),
-      v.literal("not_paid")
+      v.literal("not_paid"),
+      v.literal("underpaid")
     )),
     changeReceived: v.optional(v.boolean()),
 
@@ -143,11 +145,18 @@ export default defineSchema({
     lastProximityAlertAt: v.optional(v.number()),
     lastProximityStatus: v.optional(v.string()),
 
-    paymentConfirmedAt: v.optional(v.float64()),
+    paymentConfirmedAt: v.optional(v.number()),
+    //amountPaid: v.optional(v.float64()), - duplicate field, use amountPaid above
+    //paymentType: v.optional(v.string()),
     
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
+    updatedAt: v.optional(v.number()),
+    
+    // Front passenger fields - add these to match existing data
+    isFrontPassenger: v.optional(v.boolean()),
+    frontPassengerSetAt: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
@@ -275,7 +284,18 @@ routes: defineTable({
     v.literal("route_update"),
     v.literal("emergency_alert"),
     v.literal("system_maintenance"),
-    v.literal("promotional")
+    v.literal("promotional"),
+    // Multi-leg journey transfer notifications
+    v.literal("transfer_approaching"),
+    v.literal("transfer_arrived"),
+    v.literal("transfer_window_started"),
+    v.literal("transfer_window_extended"),
+    v.literal("transfer_window_expired"),
+    v.literal("next_leg_requested"),
+    v.literal("next_leg_ready"),
+    v.literal("transfer_assistance_requested"),
+    v.literal("journey_leg_completed"),
+    v.literal("journey_completed")
   ),
   title: v.string(),
   message: v.string(),
@@ -477,7 +497,9 @@ routes: defineTable({
     badgeType: v.union(
       v.literal("trusted_payer"),
       v.literal("frequent_rider"),
-      v.literal("loyal_member"), // Add this new badge type
+      v.literal("loyal_member"),
+      v.literal("marathon_driver"),
+      v.literal("top_earner"), // Add top_earner badge type
     ),
     earnedAt: v.number(),
     isActive: v.boolean(),
@@ -485,11 +507,11 @@ routes: defineTable({
       totalRides: v.optional(v.number()),
       paymentRate: v.optional(v.number()),
       streakCount: v.optional(v.number()),
+      totalEarnings: v.optional(v.number()), // Add totalEarnings for top_earner badge
     })),
   })
   .index("by_user_id", ["userId"])
   .index("by_badge_type", ["badgeType"])
   .index("by_user_and_type", ["userId", "badgeType"])
-  .index("by_active", ["isActive"]),
-
+  .index("by_active_badges", ["userId", "isActive"]),
 });

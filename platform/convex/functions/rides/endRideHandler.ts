@@ -1,3 +1,5 @@
+import { checkAndAwardMarathonDriverBadge } from "../badges/badgeService";
+
 export const endRideHandler = async (ctx: any, args: any) => {
   try {
     // Validate input parameters
@@ -30,6 +32,15 @@ export const endRideHandler = async (ctx: any, args: any) => {
       completedAt: Date.now(),
     });
 
+    // Check and award Marathon Driver badge if eligible
+    if (ride.driverId) {
+      try {
+        await checkAndAwardMarathonDriverBadge(ctx, ride.driverId);
+      } catch (error) {
+        console.warn("Failed to check Marathon Driver badge eligibility:", error);
+      }
+    }
+
     // Safely send notification with error handling and metadata field
     try {
       await ctx.runMutation(
@@ -44,16 +55,15 @@ export const endRideHandler = async (ctx: any, args: any) => {
       );
     } catch (notificationError: any) {
       // Log the error but don't fail the ride ending
-      console.warn("Failed to send ride completion notification:", notificationError);
-      // Continue with ride completion even if notification fails
+      console.warn("Failed to send ride completion notification:",
+        notificationError.message);
     }
 
     return {
       _id: ride._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     };
   } catch (error: any) {
-    console.error("endRideHandler error:", error);
-    throw error; // Re-throw to maintain error handling in the frontend
+    throw new Error(`Failed to end ride: ${error.message}`);
   }
 };
