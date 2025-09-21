@@ -246,6 +246,14 @@ export default function SeatReserved() {
 		true
 	);
 
+	// Check if the current user is a front passenger in any active ride
+	const frontPassengerStatus = useQuery(
+		api.functions.rides.setFrontPassenger.checkPassengerFrontStatus,
+		user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
+
+	const isFrontPassenger = frontPassengerStatus?.isFrontPassenger || false;
+
 	// State for tracking current map mode
 	const [mapMode, setMapMode] = useState<'initial' | 'to_driver' | 'to_destination'>('initial');
 	const [driverLocation, setDriverLocation] = useState<{latitude: number, longitude: number} | null>(null);
@@ -261,7 +269,6 @@ export default function SeatReserved() {
 		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
 		user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
 	);
-
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
@@ -994,6 +1001,11 @@ export default function SeatReserved() {
 		}
 	};
 
+	// Handle front passenger access
+	const handleFrontPassengerAccess = () => {
+		router.push('/ChangePage');
+	};
+
 	// Get current location text based on map mode and live location
 	const getCurrentLocationText = () => {
 		if (mapMode === 'to_driver') {
@@ -1338,6 +1350,22 @@ export default function SeatReserved() {
 			fontSize: 18,
 			fontWeight: "600",
 		},
+		frontPassengerButton: {
+			alignItems: "center",
+			backgroundColor: "#007AFF",
+			borderRadius: 25,
+			paddingVertical: 15,
+			width: '100%',
+			marginBottom: 15,
+			flexDirection: 'row',
+			justifyContent: 'center',
+		},
+		frontPassengerButtonText: {
+			color: "#FFFFFF",
+			fontSize: 16,
+			fontWeight: "600",
+			marginLeft: 8,
+		},
 		// REMOVED: Duplicate floatingLocationButton - keeping only the one on the map
 		floatingLocationButton: {
 			position: 'absolute',
@@ -1563,6 +1591,18 @@ export default function SeatReserved() {
 						{/* Action Buttons - Only show if ride hasn't ended */}
 						{rideStatus !== 'completed' && rideStatus !== 'cancelled' && (
 							<View style={dynamicStyles.actionButtonsContainer}>
+								{/* Front Passenger Access Button - Only show for front passengers during active ride */}
+								{isFrontPassenger && (rideStatus === 'started' || rideStatus === 'in_progress') && (
+									<TouchableOpacity 
+										style={dynamicStyles.frontPassengerButton} 
+										onPress={handleFrontPassengerAccess}>
+										<Icon name="person" size={20} color="#FFFFFF" />
+										<Text style={dynamicStyles.frontPassengerButtonText}>
+											Front Passenger Access
+										</Text>
+									</TouchableOpacity>
+								)}
+
 								{/* Before ride is accepted: show only Cancel Request */}
 								{rideStatus === 'requested' && (
 									<TouchableOpacity 
