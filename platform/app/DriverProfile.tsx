@@ -346,19 +346,13 @@ export default function DriverProfile() {
             // No special styling needed, handled by text and icon
         },
         badgesContainer: {
-            marginTop: 20,
-            paddingHorizontal: 10,
-        },
-        badgesTitle: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: 10,
+            padding: 16,
         },
         badgesRow: {
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'space-around',
+            justifyContent: 'flex-start',
+            gap: 8,
         },
     });
     
@@ -432,23 +426,27 @@ export default function DriverProfile() {
 
                 {/* Driver Badges */}
                 {driverBadges && driverBadges.length > 0 && (
-                    <View style={dynamicStyles.badgesContainer}>
-                        <Text style={dynamicStyles.badgesTitle}>Achievements</Text>
-                        <View style={dynamicStyles.badgesRow}>
-                            {driverBadges.map((badge, index) => (
-                                <Badge
-                                    key={index}
-                                    badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
-                                    name={badge.name}
-                                    description={badge.description}
-                                    icon={badge.icon}
-                                    color={badge.color}
-                                    size="medium"
-                                    showDescription={true}
-                                />
-                            ))}
+                    <>
+                        <Text style={dynamicStyles.sectionHeader}>Achievements</Text>
+                        <View style={dynamicStyles.section}>
+                            <View style={dynamicStyles.badgesContainer}>
+                                <View style={dynamicStyles.badgesRow}>
+                                    {driverBadges.map((badge, index) => (
+                                        <Badge
+                                            key={index}
+                                            badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
+                                            name={badge.name}
+                                            description={badge.description}
+                                            icon={badge.icon}
+                                            color={badge.color}
+                                            size="medium"
+                                            showDescription={true}
+                                        />
+                                    ))}
+                                </View>
+                            </View>
                         </View>
-                    </View>
+                    </>
                 )}
 
                 {/* Settings Section */}

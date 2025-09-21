@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { ShieldCheck, Star, Heart, Trophy, Diamond } from 'lucide-react-native';
+import { ShieldCheck, Star, Heart, Trophy, Diamond, Award, Zap } from 'lucide-react-native';
 
 interface BadgeProps {
   badgeType: "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner";
@@ -65,6 +65,10 @@ export function Badge({
         return <Trophy size={size} color={color} />;
       case "diamond":
         return <Diamond size={size} color={color} />;
+      case "award":
+        return <Award size={size} color={color} />;
+      case "zap":
+        return <Zap size={size} color={color} />;
       default:
         return <Star size={size} color={color} />;
     }
