@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,8 +30,8 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
-import type { MultiLegJourneyResult, MultiLegJourneyOption } from "../../convex/functions/routes/enhancedTaxiMatching/analyzeMultiLegJourneyOptions "; //unsure about these added imports - unathi
-import { MultiLegJourneyPreview } from './MultiLegJourneyPreview';
+import type { MultiLegJourneyResult } from "../../convex/functions/routes/enhancedTaxiMatching";
+import { MultiLegJourneyPreview, type MultiLegJourneyOption } from './MultiLegJourneyPreview';
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -58,6 +58,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  const forceCancelStuckRides = useMutation(api.functions.rides.forceCancelStuckRides.forceCancelStuckRides);
   const shouldRunQuery = !!userId;
 
   const recentRoutes = useQuery(
@@ -201,6 +202,11 @@ export default function HomeScreen() {
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
 
+  // Multi-leg journey states
+  const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+  const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
+  const [userPreference, setUserPreference] = useState('shortest_time');
+
   // States for progressive radius expansion
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
   const [radiusExpansionTimer, setRadiusExpansionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -220,6 +226,13 @@ export default function HomeScreen() {
 
   // Use ref to prevent infinite loops
   const expansionInProgress = useRef(false);
+  const hasResetOnFocus = useRef(false);
+  
+  // State to track if we're in a reset state to prevent automatic actions
+  const [isResetting, setIsResetting] = useState(false);
+  
+  // Ref to track if we've manually reset to prevent auto-origin setting
+  const hasManuallyReset = useRef(false);
 
   // Update countdown from Convex function's radiusInfo
   useEffect(() => {
@@ -241,10 +254,43 @@ export default function HomeScreen() {
     }
   }, [radiusExpansionInfo, isSearchingTaxis]);
 
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const lastProcessedSearchTime = useRef<number | null>(null);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
+
+  // Query for enhanced taxi matching - only runs when we have search params
+  const taxiSearchResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
+    taxiSearchParams ? {
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      searchStartTime: taxiSearchParams.searchStartTime,
+      maxOriginDistance: 3.0,      // 3km radius from origin
+      maxDestinationDistance: 3.0, // 3km radius from destination
+      // Remove maxTaxiDistance to let function handle dynamic radius expansion
+      maxResults: 10
+    } : "skip"
+  );
+
+  // NEW: Query for multi-leg journey analysis - only runs when we have search params
+  const journeyAnalysisResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+    taxiSearchParams ? {
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      optimizationPreference: userPreference || 'shortest_time'
+    } : "skip"
+  );
+
+  // Check for active rides to prevent duplicate requests
+  const activeRide = useQuery(
+    api.functions.rides.getActiveRideByPassenger.getActiveRideByPassenger,
+    user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
 
   // NEW: Keyboard event listeners
   useEffect(() => {
@@ -389,6 +435,8 @@ export default function HomeScreen() {
     setIsGeocodingOrigin(false);
 
     if (placeDetails) {
+      // Clear manual reset flag when user selects origin
+      hasManuallyReset.current = false;
       setOrigin(placeDetails);
       mapRef.current?.animateToRegion(
         {
@@ -415,6 +463,8 @@ export default function HomeScreen() {
     setIsGeocodingDestination(false);
 
     if (placeDetails) {
+      // Clear manual reset flag when user selects destination
+      hasManuallyReset.current = false;
       const uniqueRouteId = `manual-${placeDetails.latitude.toFixed(5)}-${placeDetails.longitude.toFixed(5)}`;
       
       const destinationWithUserName = {
@@ -429,21 +479,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Query for enhanced taxi matching - only runs when we have search params
-  const taxiSearchResult = useQuery(
-    api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
-    taxiSearchParams ? {
-      originLat: taxiSearchParams.originLat,
-      originLng: taxiSearchParams.originLng,
-      destinationLat: taxiSearchParams.destinationLat,
-      destinationLng: taxiSearchParams.destinationLng,
-      searchStartTime: taxiSearchParams.searchStartTime,
-      maxOriginDistance: 3.0,      // 3km radius from origin
-      maxDestinationDistance: 3.0, // 3km radius from destination
-      // Remove maxTaxiDistance to let function handle dynamic radius expansion
-      maxResults: 10
-    } : "skip"
-  );
   
   const {
     currentLocation,
@@ -460,6 +495,7 @@ export default function HomeScreen() {
     setRouteLoaded,
     getCachedRoute,
     setCachedRoute,
+    clearMapContext,
   } = useMapContext();
 
   // Integrate live location streaming
@@ -558,16 +594,18 @@ export default function HomeScreen() {
     }
   }, [detectedLocation, currentLocation]);
 
-  // Auto-set origin to current location when detected
-  useEffect(() => {
-    if (detectedLocation && !origin) {
-      setOrigin({
-        latitude: detectedLocation.latitude,
-        longitude: detectedLocation.longitude,
-        name: t('common:currentLocation')
-      });
-    }
-  }, [detectedLocation, origin]);
+  // Auto-set origin to current location when detected (only on initial load, not after resets)
+  // DISABLED: Let user manually set origin to prevent automatic taxi searches
+  // useEffect(() => {
+  //   if (detectedLocation && !origin && !isResetting && !hasManuallyReset.current) {
+  //     setOrigin({
+  //       latitude: detectedLocation.latitude,
+  //       longitude: detectedLocation.longitude,
+  //       name: t('common:currentLocation')
+  //     });
+  //     setOriginAddress(t('common:currentLocation'));
+  //   }
+  // }, [detectedLocation, origin, isResetting]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -629,7 +667,7 @@ export default function HomeScreen() {
           return {
             ...recent,
             _id: recent._id,
-            routeName: 'Location Unavailable',
+            routeName: t('home:locationUnavailable'),
             destinationLat: null,
             destinationLng: null,
             startName: recent.startName,
@@ -640,15 +678,52 @@ export default function HomeScreen() {
         }
       }
 
-      const fullRoute = routes.find(r => r.routeId === recent.routeId);
-      if (fullRoute && fullRoute.destinationCoords) {
+      // Try to find the route by routeId first
+      let fullRoute = routes.find(r => r.routeId === recent.routeId);
+      
+      // If not found by routeId, try to find by _id
+      if (!fullRoute) {
+        fullRoute = routes.find(r => r._id === recent.routeId);
+      }
+      
+      // If still not found, try to find by matching the stored name with route destination
+      if (!fullRoute && recent.name) {
+        fullRoute = routes.find(r => 
+          r.destination?.toLowerCase().includes(recent.name.toLowerCase()) ||
+          recent.name.toLowerCase().includes(r.destination?.toLowerCase() || '')
+        );
+      }
+      
+      // Additional fallback: try to find by matching start and destination names
+      if (!fullRoute && recent.startName && recent.name) {
+        fullRoute = routes.find(r => 
+          (r.start?.toLowerCase().includes(recent.startName?.toLowerCase() || '') ||
+           recent.startName?.toLowerCase().includes(r.start?.toLowerCase() || '')) &&
+          (r.destination?.toLowerCase().includes(recent.name.toLowerCase()) ||
+           recent.name.toLowerCase().includes(r.destination?.toLowerCase() || ''))
+        );
+      }
+      
+      if (fullRoute) {
+        console.log('🔍 Found route for recent route:', {
+          recentRouteId: recent.routeId,
+          recentName: recent.name,
+          foundRoute: {
+            _id: fullRoute._id,
+            routeId: fullRoute.routeId,
+            start: fullRoute.start,
+            destination: fullRoute.destination,
+            hasDestinationCoords: !!fullRoute.destinationCoords
+          }
+        });
+        
         return {
           ...recent,
           _id: fullRoute._id,
           routeName: fullRoute.destination,
           routeDisplayName: `${fullRoute.start} → ${fullRoute.destination}`,
-          destinationLat: fullRoute.destinationCoords.latitude,
-          destinationLng: fullRoute.destinationCoords.longitude,
+          destinationLat: fullRoute.destinationCoords?.latitude || null,
+          destinationLng: fullRoute.destinationCoords?.longitude || null,
           startName: recent.startName || fullRoute.start,
           startLat: recent.startLat || fullRoute.startCoords?.latitude,
           startLng: recent.startLng || fullRoute.startCoords?.longitude,
@@ -656,15 +731,27 @@ export default function HomeScreen() {
         };
       }
 
+      console.log('❌ No route found for recent route:', {
+        recentRouteId: recent.routeId,
+        recentName: recent.name,
+        recentStartName: recent.startName,
+        availableRoutes: routes.map(r => ({ _id: r._id, routeId: r.routeId, start: r.start, destination: r.destination }))
+      });
+
+      // Use the stored names if available, otherwise show unknown route
+      const displayName = recent.name || t('home:unknownRoute');
+      const startDisplayName = recent.startName || t('home:currentLocation');
+
       return {
         ...recent,
         _id: recent._id,
-        routeName: t('home:unknownRoute'),
-        destinationLat: null,
-        destinationLng: null,
-        startName: recent.startName,
-        startLat: recent.startLat,
-        startLng: recent.startLng,
+        routeName: displayName,
+        routeDisplayName: `${startDisplayName} → ${displayName}`,
+        destinationLat: recent.destinationLat || null,
+        destinationLng: recent.destinationLng || null,
+        startName: startDisplayName,
+        startLat: recent.startLat || null,
+        startLng: recent.startLng || null,
         isManualRoute: false,
       };
     }).filter((route: any) => route !== null);
@@ -677,23 +764,142 @@ export default function HomeScreen() {
       r.routeName
   );
 
-  // Only clear state on first load, not every focus
+  // Reset state on component mount
+  useEffect(() => {
+    setIsResetting(true);
+    hasManuallyReset.current = true;
+    
+    // Clear MapContext state first
+    clearMapContext();
+    
+    // Reset local state
+    setSelectedRouteId(null);
+    setOriginAddress('');
+    setDestinationAddress('');
+    setAvailableTaxis([]);
+    setRouteMatchResults(null);
+    setIsSearchingTaxis(false);
+    setSearchStartTime(null);
+    setCurrentSearchRadius(1.0);
+    setRadiusExpansionInfo(null);
+    setNextExpansionCountdown(0);
+    
+    // Clear any existing expansion timer
+    if (radiusExpansionTimer) {
+      clearTimeout(radiusExpansionTimer);
+      setRadiusExpansionTimer(null);
+    }
+    
+    // Reset expansion flag
+    expansionInProgress.current = false;
+    lastProcessedSearchTime.current = null;
+    
+    // Reset taxi search params
+    setTaxiSearchParams(null);
+    
+    // Reset autocomplete states
+    setShowOriginSuggestions(false);
+    setShowDestinationSuggestions(false);
+    setOriginSuggestions([]);
+    setDestinationSuggestions([]);
+    setJustSelectedOrigin(false);
+    setJustSelectedDestination(false);
+    setRouteProgrammaticallySelected(false);
+    
+    // Reset geocoding states
+    setIsGeocodingOrigin(false);
+    setIsGeocodingDestination(false);
+    
+    // Reset location loading state
+    setIsLoadingCurrentLocation(false);
+    
+    // Reset the resetting flag after a short delay
+    setTimeout(() => {
+      setIsResetting(false);
+      hasManuallyReset.current = false;
+    }, 100);
+  }, []); // Empty dependency array - only run on mount
+
+  // Reset state when screen comes into focus (e.g., after ending a ride)
+  // Using a ref to track if we've already reset on this focus to prevent infinite loops
   useFocusEffect(
-    React.useCallback(() => {
-      if (isFirstLoad) {
-        setRouteLoaded(false);
-        setOrigin(null);
-        setDestination(null);
-        setRouteCoordinates([]);
+    useCallback(() => {
+      // Only reset if we haven't already reset on this focus
+      if (!hasResetOnFocus.current) {
+        hasResetOnFocus.current = true;
+        console.log('🎯 HomeScreen focused - resetting state');
+        
+        setIsResetting(true);
+        hasManuallyReset.current = true;
+        
+        // Clear MapContext state first
+        clearMapContext();
+        
+        // Reset local state
         setSelectedRouteId(null);
         setOriginAddress('');
         setDestinationAddress('');
         setAvailableTaxis([]);
         setRouteMatchResults(null);
         setIsSearchingTaxis(false);
-        setIsFirstLoad(false);
+        setSearchStartTime(null);
+        setCurrentSearchRadius(1.0);
+        setRadiusExpansionInfo(null);
+        setNextExpansionCountdown(0);
+        
+        // Clear any existing expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
+        
+        // Reset expansion flag
+        expansionInProgress.current = false;
+        lastProcessedSearchTime.current = null;
+        
+        // Reset taxi search params
+        setTaxiSearchParams(null);
+        
+        // Reset autocomplete states
+        setShowOriginSuggestions(false);
+        setShowDestinationSuggestions(false);
+        setOriginSuggestions([]);
+        setDestinationSuggestions([]);
+        setJustSelectedOrigin(false);
+        setJustSelectedDestination(false);
+        setRouteProgrammaticallySelected(false);
+        
+        // Reset geocoding states
+        setIsGeocodingOrigin(false);
+        setIsGeocodingDestination(false);
+        
+        // Reset location loading state
+        setIsLoadingCurrentLocation(false);
+        
+        // Reset the resetting flag after a short delay
+        setTimeout(() => {
+          setIsResetting(false);
+          hasManuallyReset.current = false;
+        }, 100);
       }
-    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
+      
+      // Reset the flag when component unmounts or loses focus
+      return () => {
+        hasResetOnFocus.current = false;
+        // Clear taxi search when screen loses focus (e.g., when navigating to ride details)
+        console.log('🚫 HomeScreen lost focus - clearing taxi search');
+        setTaxiSearchParams(null);
+        setIsSearchingTaxis(false);
+        setAvailableTaxis([]);
+        setRouteMatchResults(null);
+        
+        // Clear any existing expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
+      };
+    }, []) // Empty dependency array to prevent infinite loops
   );
 
   useLayoutEffect(() => {
@@ -736,9 +942,6 @@ export default function HomeScreen() {
     }
   };
 
-    const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
-    const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
-    const [userPreference, setUserPreference] = useState('shortest_time');
 
   // Removed old radius expansion monitoring - now handled by Convex function
 
@@ -780,6 +983,7 @@ export default function HomeScreen() {
       });
 
     } catch (error) {
+      console.error('Error in searchForAvailableTaxis:', error);
       setIsSearchingTaxis(false);
       setSearchStartTime(null);
       Alert.alert(
@@ -790,25 +994,31 @@ export default function HomeScreen() {
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
-
-    // TODO: Fix this - cannot await useQuery hook, this causes Hermes crash
-    // const journeyAnalysis = await useQuery(
-    //   api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-    //   {
-    //   originLat: origin.latitude,
-    //   originLng: origin.longitude,
-    //   destinationLat: dest.latitude,
-    //   destinationLng: dest.longitude,
-    //   optimizationPreference: userPreference || 'shortest_time'
-    //   }
-    // );
-    // if (journeyAnalysis?.requiresMultiLeg && journeyAnalysis.multiLegOptions) {
-    //   setShowMultiLegPreview(true);
-    //   setMultiLegOptions(journeyAnalysis.multiLegOptions);
-    // } else {
-    //   setTaxiSearchParams(taxiSearchParams);
-    // }
   };
+
+  // NEW: Handle journey analysis results for multi-leg journeys
+  useEffect(() => {
+    if (journeyAnalysisResult) {
+      console.log('🔍 Journey analysis result:', journeyAnalysisResult);
+      
+      if (journeyAnalysisResult.requiresMultiLeg && journeyAnalysisResult.multiLegOptions) {
+        console.log('🔄 Multi-leg journey required, showing preview');
+        setShowMultiLegPreview(true);
+        setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
+        setIsSearchingTaxis(false);
+        setSearchStartTime(null);
+        
+        // Clear any existing expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
+      } else if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success) {
+        console.log('✅ Direct route available, proceeding with single-leg search');
+        // Continue with normal taxi search flow
+      }
+    }
+  }, [journeyAnalysisResult]);
 
   // Handle taxi search results - simplified to avoid infinite loops
   useEffect(() => {
@@ -881,6 +1091,11 @@ export default function HomeScreen() {
     if (routeProgrammaticallySelected) {
       setRouteProgrammaticallySelected(false);
     }
+    
+    // Clear manual reset flag when user starts typing
+    if (text.length > 0) {
+      hasManuallyReset.current = false;
+    }
   };
 
   const handleDestinationAddressChange = (text: string) => {
@@ -890,6 +1105,11 @@ export default function HomeScreen() {
     // If user is manually typing, allow autocomplete again
     if (routeProgrammaticallySelected) {
       setRouteProgrammaticallySelected(false);
+    }
+    
+    // Clear manual reset flag when user starts typing
+    if (text.length > 0) {
+      hasManuallyReset.current = false;
     }
   };
 
@@ -905,6 +1125,8 @@ export default function HomeScreen() {
     setIsGeocodingOrigin(false);
 
     if (result) {
+      // Clear manual reset flag when user submits origin
+      hasManuallyReset.current = false;
       setOrigin(result);
       mapRef.current?.animateToRegion(
         {
@@ -930,6 +1152,8 @@ export default function HomeScreen() {
     setIsGeocodingDestination(false);
 
     if (result) {
+      // Clear manual reset flag when user submits destination
+      hasManuallyReset.current = false;
       const uniqueRouteId = `manual-${result.latitude.toFixed(5)}-${result.longitude.toFixed(5)}`;
       
       const destinationWithUserName = {
@@ -1046,10 +1270,20 @@ export default function HomeScreen() {
   }, [routeLoaded]);
 
   useEffect(() => {
-    if (origin && destination) {
+    // Only get route if both origin and destination are set AND we're not in a reset state
+    // AND we haven't manually reset (to prevent automatic searches after ride completion)
+    if (origin && destination && !isResetting && !hasManuallyReset.current) {
+      console.log('🛣️ Auto-triggering route calculation:', { origin: origin.name, destination: destination.name });
       getRoute(origin, destination);
+    } else if (origin && destination && (isResetting || hasManuallyReset.current)) {
+      console.log('🚫 Skipping route calculation due to reset state:', { 
+        isResetting, 
+        hasManuallyReset: hasManuallyReset.current,
+        origin: origin?.name, 
+        destination: destination?.name 
+      });
     }
-  }, [origin, destination]);
+  }, [origin, destination, isResetting]);
 
   const getRoute = async (
     originParam: { latitude: number; longitude: number; name: string },
@@ -1178,6 +1412,7 @@ export default function HomeScreen() {
     setDestination(dest);
     setDestinationAddress(displayName);
     
+    // Always try to use the stored start location first
     if (route.startLat && route.startLng && route.startName) {
       const startLocation = {
         latitude: route.startLat,
@@ -1187,17 +1422,27 @@ export default function HomeScreen() {
       
       setOrigin(startLocation);
       setOriginAddress(route.startName);
+      console.log('📍 Using stored start location:', startLocation);
     } else if (detectedLocation) {
+      // Only fall back to current location if no stored start location
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: 'Current Location'
+        name: t('home:currentLocation')
       });
-      setOriginAddress('Current Location');
+      setOriginAddress(t('home:currentLocation'));
+      console.log('📍 Using current location as fallback');
     }
     
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
     setSelectedRouteId(routeIdToUse);
+
+    console.log('🎯 Route selected:', {
+      routeId: routeIdToUse,
+      destination: displayName,
+      startName: route.startName || t('home:currentLocation'),
+      hasStartCoords: !!(route.startLat && route.startLng)
+    });
 
     // Clear autocomplete suggestions and flags
     setShowOriginSuggestions(false);
@@ -1516,6 +1761,32 @@ export default function HomeScreen() {
       fontWeight: '500',
       opacity: 0.9,
     },
+    activeRideWarning: {
+      padding: 12,
+      margin: 8,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    activeRideWarningText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '500',
+      flex: 1,
+      marginRight: 8,
+    },
+    cancelRideButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    cancelRideButtonText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '600',
+    },
   });
 
   const getInitialRegion = () => {
@@ -1551,9 +1822,64 @@ export default function HomeScreen() {
     };
   };
 
-  function handleMultiLegJourneyConfirm(selectedOption: MultiLegJourneyOption, preference: string): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleMultiLegJourneyConfirm = (selectedOption: MultiLegJourneyOption, preference: string) => {
+    console.log('🚀 Confirming multi-leg journey:', selectedOption, preference);
+    
+    // Hide the multi-leg preview
+    setShowMultiLegPreview(false);
+    setMultiLegOptions(null);
+    
+    // Update user preference
+    setUserPreference(preference);
+    
+    // TODO: Implement multi-leg journey creation
+    // This would typically involve:
+    // 1. Creating a multi-leg journey record in the database
+    // 2. Starting the first leg of the journey
+    // 3. Navigating to the appropriate screen for multi-leg journey management
+    
+    // For now, show an alert and proceed with the first leg
+    Alert.alert(
+      'Multi-Leg Journey Started',
+      `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate to the first leg or journey management screen
+            // This would be implemented based on your app's navigation structure
+            console.log('Proceeding with multi-leg journey...');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleForceCancelStuckRides = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const result = await forceCancelStuckRides({
+        passengerId: user.id as Id<"taxiTap_users">,
+        reason: "Cancelled by user due to stuck state"
+      });
+      
+      showGlobalAlert({
+        title: 'Rides Cancelled',
+        message: `Successfully cancelled ${result.cancelledRides} stuck ride(s). You can now request a new ride.`,
+        type: 'success',
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+    } catch (error: any) {
+      showGlobalError('Error', error?.message || 'Failed to cancel stuck rides', {
+        duration: 4000,
+        position: 'top',
+        animation: 'slide-down',
+      });
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -1561,8 +1887,21 @@ export default function HomeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
+      {/* Show active ride warning if user has a stuck ride */}
+      {activeRide && (
+        <View style={[dynamicStyles.activeRideWarning, { backgroundColor: '#ff9800' }]}>
+          <Text style={dynamicStyles.activeRideWarningText}>
+            You have an active ride ({activeRide.status}). Please complete or cancel it before requesting a new one.
+          </Text>
+          <TouchableOpacity 
+            style={dynamicStyles.cancelRideButton}
+            onPress={handleForceCancelStuckRides}
+          >
+            <Text style={dynamicStyles.cancelRideButtonText}>Cancel Stuck Ride</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      
       {isLoadingCurrentLocation ? (
         <View style={[dynamicStyles.map, { 
           justifyContent: 'center', 
@@ -1674,8 +2013,9 @@ export default function HomeScreen() {
           <View style={dynamicStyles.locationTextContainer}>
             {/* Origin Input with Autocomplete */}
             <View style={dynamicStyles.inputContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TextInput
-                style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
+                  style={[dynamicStyles.addressInput, dynamicStyles.originInput, { flex: 1 }]}
                 placeholder={origin ? origin.name : t('home:enterOriginAddress')}
                 value={originAddress}
                 onChangeText={handleOriginAddressChange}
@@ -1697,11 +2037,41 @@ export default function HomeScreen() {
                 autoCorrect={false}
                 autoCapitalize="words"
               />
+                {detectedLocation && !origin && (
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: theme.primary,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 16,
+                      marginLeft: 8,
+                    }}
+                    onPress={() => {
+                      // Clear the manual reset flag when user manually sets origin
+                      hasManuallyReset.current = false;
+                      setOrigin({
+                        latitude: detectedLocation.latitude,
+                        longitude: detectedLocation.longitude,
+                        name: t('home:currentLocation')
+                      });
+                      setOriginAddress(t('home:currentLocation'));
+                    }}
+                  >
+                    <Text style={{
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: '600',
+                    }}>
+{t('home:useCurrent')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               {isGeocodingOrigin && (
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
               )}
               {isLoadingOriginSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('home:loadingSuggestions')}</Text>
               )}
               {isLoadingCurrentLocation && (
                 <Text style={dynamicStyles.geocodingText}>{t('home:gettingCurrentLocation')}</Text>
@@ -1774,7 +2144,7 @@ export default function HomeScreen() {
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
               )}
               {isLoadingDestinationSuggestions && (
-                <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('home:loadingSuggestions')}</Text>
               )}
               
               {isLoadingRoute && (
@@ -1801,7 +2171,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  🔍 Searching at {currentSearchRadius}km radius
+                  {`Searching at ${currentSearchRadius}km radius`}
                   {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 &&
                     ` • Expanding in ${nextExpansionCountdown}s`
                   }
@@ -1920,146 +2290,12 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Journey Status */}
-        {routeMatchResults && !keyboardVisible && !routeLoaded && (
-          <View style={dynamicStyles.searchResultsContainer}>
-            <Text style={dynamicStyles.searchResultsTitle}>
-              🚗 {t('home:journeyStatus')}
-            </Text>
-            <View style={dynamicStyles.searchResultsCard}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 12,
-                paddingBottom: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: isDark 
-                  ? 'rgba(71, 85, 105, 0.2)' 
-                  : 'rgba(226, 232, 240, 0.5)',
-              }}>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: '#F59E0B',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 16,
-                }}>
-                  <Icon name="car" size={20} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[dynamicStyles.searchResultsText, { 
-                    fontSize: 16, 
-                    fontWeight: '600',
-                    marginBottom: 4
-                  }]}>
-                    {routeMatchResults.availableTaxis?.length || 0} {t('home:availableTaxis')}
-                  </Text>
-                  <Text style={[dynamicStyles.searchResultsText, { 
-                    fontSize: 13,
-                    opacity: 0.8
-                  }]}>
-                    {routeMatchResults.matchingRoutes?.length || 0} {t('home:matchingRoutes')}
-                  </Text>
-                </View>
-              </View>
-              
-              {routeMatchResults.availableTaxis?.length > 0 && routeMatchResults.availableTaxis[0]?.routeInfo?.calculatedFare && (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 12,
-                  paddingBottom: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: isDark 
-                    ? 'rgba(71, 85, 105, 0.2)' 
-                    : 'rgba(226, 232, 240, 0.5)',
-                }}>
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#10B981',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginRight: 16,
-                  }}>
-                    <Icon name="cash" size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[dynamicStyles.searchResultsText, { 
-                      fontSize: 16, 
-                      fontWeight: '600',
-                      marginBottom: 4
-                    }]}>
-                      Estimated Fare
-                    </Text>
-                    <Text style={[dynamicStyles.searchResultsText, { 
-                      fontSize: 18,
-                      fontWeight: '700',
-                      color: '#10B981'
-                    }]}>
-                      R{routeMatchResults.availableTaxis[0].routeInfo.calculatedFare.toFixed(2)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-              
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingTop: 8,
-              }}>
-                {(routeMatchResults.availableTaxis?.length || 0) > 0 ? (
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#10B981',
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                  }}>
-                    <Icon name="checkmark-circle" size={16} color="#FFFFFF" />
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      marginLeft: 8,
-                    }}>
-                      {t('home:readyToBook')}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#F59E0B',
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                  }}>
-                    <Icon name="warning" size={16} color="#FFFFFF" />
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      marginLeft: 8,
-                    }}>
-                      {t('home:noTaxisAvailable')}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
+        {/* Journey Status - REMOVED for better usability */}
 
         {!keyboardVisible && !routeLoaded && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
-              Recently Used Routes
+              {t('home:recentlyUsedRoutes')}
             </Text>
             <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (

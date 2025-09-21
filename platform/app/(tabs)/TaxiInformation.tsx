@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
+import { MultiLegJourney, JourneyLeg } from '../../types/multiLegJourney';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
@@ -41,6 +42,12 @@ export default function TaxiInformation() {
     availableTaxisCount,
     routeMatchData: routeMatchDataString,
     estimatedFare,
+    // Multi-leg journey parameters
+    journeyId,
+    currentLegIndex,
+    totalLegs,
+    isMultiLegRide,
+    nextLegInfo,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -52,6 +59,12 @@ export default function TaxiInformation() {
     availableTaxisCount?: string;
     routeMatchData?: string;
     estimatedFare?: string;
+    // Multi-leg journey parameters
+    journeyId?: string;
+    currentLegIndex?: string;
+    totalLegs?: string;
+    isMultiLegRide?: string;
+    nextLegInfo?: string;
   }>();
 
   // State management
@@ -61,11 +74,33 @@ export default function TaxiInformation() {
   const [routeMatchData, setRouteMatchData] = useState<any>(null);
   const [isLoadingTaxis, setIsLoadingTaxis] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
+  
+  // Multi-leg journey state
+  const [currentJourney, setCurrentJourney] = useState<MultiLegJourney | null>(null);
+  const [isMultiLegMode, setIsMultiLegMode] = useState(false);
+  const [currentLeg, setCurrentLeg] = useState<JourneyLeg | null>(null);
+  const [nextLeg, setNextLeg] = useState<JourneyLeg | null>(null);
 
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   // Convex mutations
   const requestRide = useMutation(api.functions.rides.RequestRide.requestRide);
+
+  // Initialize multi-leg journey state
+  useEffect(() => {
+    if (isMultiLegRide === 'true' && journeyId && currentLegIndex && totalLegs) {
+      setIsMultiLegMode(true);
+      // Parse next leg info if provided
+      if (nextLegInfo) {
+        try {
+          const parsedNextLeg = JSON.parse(nextLegInfo);
+          setNextLeg(parsedNextLeg);
+        } catch (error) {
+          console.error('Error parsing next leg info:', error);
+        }
+      }
+    }
+  }, [isMultiLegRide, journeyId, currentLegIndex, totalLegs, nextLegInfo]);
 
   // Process enhanced data from HomeScreen
   useEffect(() => {
@@ -210,6 +245,12 @@ export default function TaxiInformation() {
           address: destinationName,
         },
         estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
+        // Multi-leg journey context
+        ...(isMultiLegMode && {
+          parentJourneyId: journeyId,
+          legIndex: parseInt(currentLegIndex || '0'),
+          isMultiLegRide: true,
+        }),
       };
 
       console.log('📝 Creating ride request:', rideData);
@@ -239,6 +280,14 @@ export default function TaxiInformation() {
                       driverName: selectedTaxi.name,
                       fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
                       rideId: result.rideId,
+                      // Multi-leg journey context
+                      ...(isMultiLegMode && {
+                        journeyId,
+                        currentLegIndex,
+                        totalLegs,
+                        isMultiLegRide: 'true',
+                        nextLegInfo: nextLegInfo,
+                      }),
                     },
                   });
                 },
@@ -271,6 +320,49 @@ export default function TaxiInformation() {
     } finally {
       setIsBooking(false);
     }
+  };
+
+  // Render multi-leg journey progress indicator
+  const renderJourneyProgress = () => {
+    if (!isMultiLegMode || !currentLegIndex || !totalLegs) return null;
+
+    const currentLegNum = parseInt(currentLegIndex) + 1;
+    const totalLegsNum = parseInt(totalLegs);
+
+    return (
+      <View style={dynamicStyles.journeyProgressCard}>
+        <View style={dynamicStyles.journeyProgressHeader}>
+          <Icon name="swap-horizontal" size={20} color={theme.primary} />
+          <Text style={dynamicStyles.journeyProgressTitle}>
+            Multi-Leg Journey
+          </Text>
+        </View>
+        <View style={dynamicStyles.journeyProgressContent}>
+          <Text style={dynamicStyles.journeyProgressText}>
+            Leg {currentLegNum} of {totalLegsNum}
+          </Text>
+          <View style={dynamicStyles.progressBar}>
+            <View 
+              style={[
+                dynamicStyles.progressFill, 
+                { width: `${(currentLegNum / totalLegsNum) * 100}%` }
+              ]} 
+            />
+          </View>
+        </View>
+        {nextLeg && (
+          <View style={dynamicStyles.nextLegPreview}>
+            <Text style={dynamicStyles.nextLegTitle}>Next Leg Preview:</Text>
+            <Text style={dynamicStyles.nextLegText}>
+              {nextLeg.fromAddress} → {nextLeg.toAddress}
+            </Text>
+            <Text style={dynamicStyles.nextLegFare}>
+              Estimated Fare: R{nextLeg.estimatedFare.toFixed(2)}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
   };
 
   // Enhanced taxi card rendering with improved styling
@@ -416,7 +508,7 @@ export default function TaxiInformation() {
       flex: 1,
     },
     loadingContainer: {
-      paddingVertical: 60,
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -441,6 +533,66 @@ export default function TaxiInformation() {
       fontSize: 14,
       color: theme.textSecondary,
       lineHeight: 20,
+    },
+    // Multi-leg journey progress styles
+    journeyProgressCard: {
+      backgroundColor: isDark ? theme.surface : `${theme.primary}10`,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      borderLeftWidth: 4,
+      borderLeftColor: theme.primary,
+    },
+    journeyProgressHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    journeyProgressTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+      marginLeft: 8,
+    },
+    journeyProgressContent: {
+      marginBottom: 12,
+    },
+    journeyProgressText: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: 8,
+    },
+    progressBar: {
+      height: 6,
+      backgroundColor: isDark ? theme.border : `${theme.primary}20`,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: theme.primary,
+      borderRadius: 3,
+    },
+    nextLegPreview: {
+      backgroundColor: isDark ? theme.background : `${theme.primary}05`,
+      borderRadius: 8,
+      padding: 12,
+    },
+    nextLegTitle: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 4,
+    },
+    nextLegText: {
+      fontSize: 13,
+      color: theme.text,
+      marginBottom: 4,
+    },
+    nextLegFare: {
+      fontSize: 12,
+      color: theme.primary,
+      fontWeight: '500',
     },
     taxiCard: {
       backgroundColor: theme.card,
@@ -666,7 +818,9 @@ export default function TaxiInformation() {
           <Pressable style={dynamicStyles.backButton2} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
-          <Text style={dynamicStyles.headerTitle2}>{t('taxiInfo:availableTaxis')}</Text>
+          <Text style={dynamicStyles.headerTitle2}>
+            {isMultiLegMode ? `Leg ${parseInt(currentLegIndex || '0') + 1} - ${t('taxiInfo:availableTaxis')}` : t('taxiInfo:availableTaxis')}
+          </Text>
         </View>
         <Text style={dynamicStyles.headerSubtitle}>
           {currentName && currentName !== 'Current Location' ? currentName : t('common:currentLocation')}
@@ -689,6 +843,9 @@ export default function TaxiInformation() {
             </View>
           ) : nearbyTaxis.length > 0 ? (
             <>
+              {/* Multi-leg journey progress indicator */}
+              {renderJourneyProgress()}
+              
               {/* Route match summary */}
               {routeMatchData && (
                 <View style={dynamicStyles.matchSummaryCard}>
@@ -740,7 +897,12 @@ export default function TaxiInformation() {
             disabled={isBooking}
           >
             <Text style={dynamicStyles.bookButtonText}>
-              {isBooking ? t('taxiInfo:bookingRide') : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)}
+              {isBooking 
+                ? t('taxiInfo:bookingRide') 
+                : isMultiLegMode 
+                  ? `Book Leg ${parseInt(currentLegIndex || '0') + 1} with ${selectedTaxi.name}`
+                  : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)
+              }
             </Text>
           </TouchableOpacity>
         </Animated.View>

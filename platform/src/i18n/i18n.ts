@@ -132,6 +132,7 @@ common: {
     readyToBook: "✅ Ready to book your ride!",
     noTaxisAvailable: "⚠ No taxis available on this route",
     recentlyUsedRanks: "Recently Used Taxi Ranks",
+    recentlyUsedRoutes: "Recently Used Routes",
     noRecentRoutes: "No recently used routes yet.",
     reserveSeat: "Reserve a Seat",
     reserveSeatWithCount: "Reserve a Seat ({count} taxis available)",
@@ -153,6 +154,15 @@ common: {
     locationStreamingError: "Location Streaming Error:",
     liveLocationStreaming: "Live Location Streaming:",
     streamingLocation: "Streaming location...",
+    useCurrent: "Use Current",
+    currentLocation: "Current Location",
+    locationUnavailable: "Location Unavailable",
+    loadingSuggestions: "Loading suggestions...",
+    searchingAtRadius: "Searching at {radius}km radius",
+    waitingForDriver: "Waiting for driver...",
+    calculating: "Calculating...",
+    success: "Success",
+    rideCancelled: "Ride Cancelled",
   },
 
   // Booking flow
@@ -186,6 +196,9 @@ common: {
     routeStops: "Route Stops",
     noStopsAvailable: "No stops available for this route",
     notifyDriverMessage: "Please notify the driver of your specific destination",
+    searchingForTaxis: "Searching for available taxis...",
+    taxisAvailable: "{count} taxis available",
+    noTaxisAvailable: "No taxis available",
   },
 
   // Navigation & Tabs
@@ -483,6 +496,8 @@ earningsPage: {
     continue: "Continue",
     switchProfile: "Switch Profile",
     switchProfileMessage: "Are you sure you want to switch to driver profile?",
+    successfullySwitchedToDriver: "Successfully switched to driver mode!",
+    switchedToDriverMode: "Switched to driver mode!",
     success: "Success",
     successfullySwitched: "Successfully switched to driver mode!",
     switchedToDriver: "Switched to driver mode!",
@@ -492,6 +507,14 @@ earningsPage: {
     failedToSwitch: "Failed to switch to driver mode",
     unexpectedError: "An unexpected error occurred",
     invalidAccountType: "Account type not allowed to switch to driver mode",
+    recentFeedback: "Recent Feedback",
+    reviews: "reviews",
+    settings: "Settings",
+    latestReview: "Latest Review",
+    viewAllFeedback: "View All Feedback",
+    noFeedbackYet: "No feedback yet",
+    account: "Account",
+    savedPlaces: "Saved Places",
   },
 
   // Help page
@@ -549,6 +572,8 @@ earningsPage: {
     permissionDenied: "Permission Denied",
     locationPermissionRequired: "Location permission is required to get your current location",
     failedToGetLocation: "Failed to get current location",
+    location: "Location",
+    actions: "Actions",
   },
   // Personal information
   personalInfo: {
@@ -592,6 +617,7 @@ earningsPage: {
     enterEmergencyContactNumber: "Enter emergency contact number",
     relationshipPlaceholder: "e.g., Spouse, Parent, Friend",
     cancel: "Cancel",
+    emergencyContactText: "Emergency Contact",
   },
 // Passenger Reservation
 passengerReservation: {
@@ -1056,6 +1082,9 @@ const zuluTranslations: TranslationStructure = {
     routeStops: "Izindawo Zendlela",
     noStopsAvailable: "Akukho izindawo ezitholakali kule ndlela",
     notifyDriverMessage: "Sicela uyazise umshayeli ngendawo yakho ethile",
+    searchingForTaxis: "Kuseshwa amatekisi atholakalayo...",
+    taxisAvailable: "{count} amatekisi atholakalayo",
+    noTaxisAvailable: "Akukho amatekisi atholakalayo",
   },
 
   // Navigation & Tabs
@@ -1111,6 +1140,7 @@ const zuluTranslations: TranslationStructure = {
     readyToBook: "✅ Ulungele ukubhukha uhambo lwakho!",
     noTaxisAvailable: "⚠ Akukho matekisi atholakalayo kule ndlela",
     recentlyUsedRanks: "Izindawo ZamaTekisi Ezisetshenziswe Muva",
+    recentlyUsedRoutes: "Izindlela Ezisetshenziswe Muva",
     noRecentRoutes: "Akukho izindlela ezisetshenziswe muva.",
     reserveSeat: "Bheka Isihlalo",
     reserveSeatWithCount: "Bheka Isihlalo ({count} amatekisi atholakalayo)",
@@ -1133,6 +1163,15 @@ const zuluTranslations: TranslationStructure = {
     liveLocationStreaming: "Ukusakaza Indawo Ngokukhululekile:",
     streamingLocation: "Kusakazwa indawo...",
     unknownRoute: "Indlela Engaziwa",
+    useCurrent: "Sebenzisa Okwamanje",
+    currentLocation: "Indawo Yamanje",
+    locationUnavailable: "Indawo Ayitholakali",
+    loadingSuggestions: "Kulayishwa iziphakamiso...",
+    searchingAtRadius: "Kuseshwa ngomgodi we-{radius}km",
+    waitingForDriver: "Kulinde umshayeli...",
+    calculating: "Kubalwa...",
+    success: "Impumelelo",
+    rideCancelled: "Uhambo Luhoxisiwe",
   },
 
   // TaxiInformation translations
@@ -1270,6 +1309,8 @@ const zuluTranslations: TranslationStructure = {
     permissionDenied: "Permission Denied",
     locationPermissionRequired: "Location permission is required to get your current location",
     failedToGetLocation: "Failed to get current location",
+    location: "Indawo",
+    actions: "Izenzo",
   },
 
   // Personal info translations
@@ -1314,6 +1355,7 @@ const zuluTranslations: TranslationStructure = {
     enterEmergencyContactNumber: "Faka inombolo yefoni yomuntu oxhumana naye esimweni esiphuthumayo",
     relationshipPlaceholder: "isb., Umngane Wokuganana, Umzali, Umngane",
     cancel: "Khansela",
+    emergencyContactText: "Uxhumano Lwesimo Esiphuthumayo",
   },
 
   // Profile page translations
@@ -1331,6 +1373,8 @@ const zuluTranslations: TranslationStructure = {
     continue: "Qhubeka",
     switchProfile: "Shintsha Iphrofayili",
     switchProfileMessage: "Uqinisekile ukuthi ufuna ukushintsha kuya kuphrofayili yomgibeli?",
+    successfullySwitchedToDriver: "Ushintshile ngempumelelo kuya kwimodi yomshayeli!",
+    switchedToDriverMode: "Ushintshile kuya kwimodi yomshayeli!",
     success: "Impumelelo",
     successfullySwitched: "Kushintshwe ngempumelelo kumodi yomshayeli!",
     switchedToDriver: "Kushintshwe kumodi yomshayeli!",
@@ -1340,6 +1384,14 @@ const zuluTranslations: TranslationStructure = {
     failedToSwitch: "Failed to switch to driver mode",
     unexpectedError: "Kuvele iphutha elingalindelekile",
     invalidAccountType: "Account type not allowed to switch to driver mode",
+    recentFeedback: "Impendulo Yakamuva",
+    reviews: "izibuyekezo",
+    settings: "Izilungiselelo",
+    latestReview: "Isibuyekezo Sakamuva",
+    viewAllFeedback: "Buka Yonke Impendulo",
+    noFeedbackYet: "Akukho impendulo okwamanje",
+    account: "I-Akhawunti",
+    savedPlaces: "Izindawo Ezigciniwe",
   },
 };
 
@@ -1451,6 +1503,7 @@ const tswanaTranslations: TranslationStructure = {
     readyToBook: "✅ O siametse go beela loeto!",
     noTaxisAvailable: "⚠ Ga go na diteksi mo tseleng eno",
     recentlyUsedRanks: "Mafelo a Diteksi a o Dirisitseng",
+    recentlyUsedRoutes: "Ditsela tse o di Dirisitseng",
     noRecentRoutes: "Ga go na ditsela tse o di dirisitseng.",
     reserveSeat: "Bea Setulo",
     reserveSeatWithCount: "Bea Setulo ({count} diteksi di a teng)",
@@ -1472,6 +1525,15 @@ const tswanaTranslations: TranslationStructure = {
     locationStreamingError: "Phoso ya go Latela Lefelo:",
     liveLocationStreaming: "Go Latela Lefelo ka Nako:",
     streamingLocation: "Go latela lefelo...",
+    useCurrent: "Dirisa ya Jaanong",
+    currentLocation: "Lefelo la Jaanong",
+    locationUnavailable: "Lefelo ga le a teng",
+    loadingSuggestions: "Go tsaya dikgopolo...",
+    searchingAtRadius: "Go batlwa ka radius ya {radius}km",
+    waitingForDriver: "Go letile mokgweetsi...",
+    calculating: "Go balwa...",
+    success: "Katlego",
+    rideCancelled: "Loeto lo tlogetswe",
   },
 
   // Booking flow
@@ -1506,6 +1568,9 @@ const tswanaTranslations: TranslationStructure = {
     routeStops: "Mafelo a Tsela",
     noStopsAvailable: "Ga go na mafelo a a leng teng mo tseleng eno",
     notifyDriverMessage: "Tshwanetse o tsebise mokgweetsi ka lefelo la gago le le rileng",
+    searchingForTaxis: "Re batla diteksi tse di leng teng...",
+    taxisAvailable: "{count} diteksi di a teng",
+    noTaxisAvailable: "Ga go na diteksi tse di leng teng",
   },
 
   // Navigation & Tabs
@@ -1595,6 +1660,8 @@ const tswanaTranslations: TranslationStructure = {
     continue: "Tswela Pele",
     switchProfile: "Fetola Tshwantsho",
     switchProfileMessage: "O na le bonnete gore o batla go fetola go ya go tshwantsho ya mokgweetsi?",
+    successfullySwitchedToDriver: "O fetotse ka katlego go ya go mokgwa wa mokgweetsi!",
+    switchedToDriverMode: "O fetotse go ya go mokgwa wa mokgweetsi!",
     success: "Katlego",
     successfullySwitched: "Go fetotswe ka katlego go ya go mokgwa wa mokgweetsi!",
     switchedToDriver: "Go fetotswe go mokgwa wa mokgweetsi!",
@@ -1604,6 +1671,14 @@ const tswanaTranslations: TranslationStructure = {
     failedToSwitch: "Go paletse go fetola go mokgwa wa mokgweetsi",
     unexpectedError: "Go ile ga nna le phoso e e sa solofelweng",
     invalidAccountType: "Mofuta wa akhaonte ga o dumelwe go fetola go mokgwa wa mokgweetsi",
+    recentFeedback: "Dikutlhalo tsa Bosheng",
+    reviews: "dikutlhalo",
+    settings: "Dithulaganyo",
+    latestReview: "Kutlhalo ya Bosheng",
+    viewAllFeedback: "Bona Dikutlhalo Tsotlhe",
+    noFeedbackYet: "Ga go na dikutlhalo go fitlha jaanong",
+    account: "Akhaonte",
+    savedPlaces: "Mafelo a a Bolokilweng",
   },
   // Address management translations
   address: {
@@ -1640,6 +1715,8 @@ const tswanaTranslations: TranslationStructure = {
     permissionDenied: "Tetla e Gannwe",
     locationPermissionRequired: "Tetla ya lefelo e a tlhokega gore o bone lefelo la gago la gona jaanong",
     failedToGetLocation: "Go paletse go bona lefelo la gona jaanong",
+    location: "Lefelo",
+    actions: "Ditiro",
   },
 
   // Personal info translations
@@ -1685,6 +1762,7 @@ const tswanaTranslations: TranslationStructure = {
     enterEmergencyContactNumber: "Tsenya nomoro ya mogala ya motho yo o ikwang naye",
     relationshipPlaceholder: "mok., Motswadi, Tsala, Motswadi",
     cancel: "Khansela",
+    emergencyContactText: "Mogokgo wa Tshoganyetso",
   },
   // Earnings page translations
   earningsPage: {
@@ -2045,6 +2123,7 @@ const afrikaansTranslations: TranslationStructure = {
     readyToBook: "✅ Gereed om jou rit te bespreek!",
     noTaxisAvailable: "⚠ Geen taxi's beskikbaar op hierdie roete",
     recentlyUsedRanks: "Onlangs Gebruikte Taxi Staanplekke",
+    recentlyUsedRoutes: "Onlangs Gebruikte Roetes",
     noRecentRoutes: "Nog geen onlangs gebruikte roetes nie.",
     reserveSeat: "Bespreek 'n Sitplek",
     reserveSeatWithCount: "Bespreek 'n Sitplek ({count} taxi's beskikbaar)",
@@ -2066,6 +2145,15 @@ const afrikaansTranslations: TranslationStructure = {
     locationStreamingError: "Ligging Stroom Fout:",
     liveLocationStreaming: "Lewendige Ligging Stroom:",
     streamingLocation: "Stroom ligging...",
+    useCurrent: "Gebruik Huidige",
+    currentLocation: "Huidige Ligging",
+    locationUnavailable: "Ligging Nie Beskikbaar",
+    loadingSuggestions: "Laai voorstelle...",
+    searchingAtRadius: "Soek by {radius}km radius",
+    waitingForDriver: "Wag vir bestuurder...",
+    calculating: "Bereken...",
+    success: "Sukses",
+    rideCancelled: "Rit Gekanselleer",
   },
 
   // Booking flow
@@ -2100,6 +2188,9 @@ const afrikaansTranslations: TranslationStructure = {
     routeStops: "Roete Stoppe",
     noStopsAvailable: "Geen stoppe beskikbaar vir hierdie roete",
     notifyDriverMessage: "Stel asseblief die bestuurder in kennis van jou spesifieke bestemming",
+    searchingForTaxis: "Soek beskikbare taxi's...",
+    taxisAvailable: "{count} taxi's beskikbaar",
+    noTaxisAvailable: "Geen taxi's beskikbaar",
   },
 
   // Navigation & Tabs
@@ -2396,6 +2487,8 @@ const afrikaansTranslations: TranslationStructure = {
     continue: "Gaan Voort",
     switchProfile: "Skakel Profiel",
     switchProfileMessage: "Is jy seker jy wil na bestuurder profiel skakel?",
+    successfullySwitchedToDriver: "Suksesvol geskakel na bestuurder modus!",
+    switchedToDriverMode: "Geskakel na bestuurder modus!",
     success: "Sukses",
     successfullySwitched: "Suksesvol na bestuurder modus geskakel!",
     switchedToDriver: "Geskakel na bestuurder modus!",
@@ -2405,6 +2498,14 @@ const afrikaansTranslations: TranslationStructure = {
     failedToSwitch: "Kon nie na bestuurder modus skakel nie",
     unexpectedError: "'n Onverwagte fout het voorgekom",
     invalidAccountType: "Rekening tipe nie toegelaat om na bestuurder modus te skakel nie",
+    recentFeedback: "Onlangse Terugvoer",
+    reviews: "resensies",
+    settings: "Instellings",
+    latestReview: "Laaste Resensie",
+    viewAllFeedback: "Bekyk Alle Terugvoer",
+    noFeedbackYet: "Nog geen terugvoer nie",
+    account: "Rekening",
+    savedPlaces: "Gestoorde Plekke",
   },
 
   // Help page
@@ -2461,6 +2562,8 @@ const afrikaansTranslations: TranslationStructure = {
     permissionDenied: "Toestemming Geweier",
     locationPermissionRequired: "Ligging toestemming is nodig om jou huidige ligging te kry",
     failedToGetLocation: "Kon nie huidige ligging kry nie",
+    location: "Ligging",
+    actions: "Aksies",
   },
 
   // Personal information
@@ -2505,6 +2608,7 @@ const afrikaansTranslations: TranslationStructure = {
     enterEmergencyContactNumber: "Voer noodkontak nommer in",
     relationshipPlaceholder: "bv., Eggenoot, Ouer, Vriend",
     cancel: "Kanselleer",
+    emergencyContactText: "Noodkontak",
   },
 
   // Passenger Reservation

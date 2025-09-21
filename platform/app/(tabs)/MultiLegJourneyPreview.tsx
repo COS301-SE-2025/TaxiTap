@@ -24,7 +24,7 @@ interface JourneyLeg {
   transferWindowEnd?: number;
 }
 
-interface MultiLegJourneyOption {
+export interface MultiLegJourneyOption {
   journeyId: string;
   totalLegs: number;
   legs: JourneyLeg[];
@@ -502,7 +502,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             <View style={dynamicStyles.dragHandle} />
             <Text style={dynamicStyles.headerTitle}>Multi-Leg Journey</Text>
             <Text style={dynamicStyles.headerSubtitle}>
-              No direct route found. Choose your journey option below.
+              No direct route available. Choose your journey option below.
             </Text>
           </View>
 
@@ -510,7 +510,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             <View style={dynamicStyles.warningContainer}>
               <Icon name="information-circle" size={20} color={theme.primary} />
               <Text style={dynamicStyles.warningText}>
-                You'll need to transfer between taxis. We'll help guide you through each leg.
+                No single taxi route connects your origin and destination. You'll need to transfer between taxis. We'll help guide you through each leg.
               </Text>
             </View>
 

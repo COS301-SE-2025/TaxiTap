@@ -96,7 +96,7 @@ export default function PassengerProfile() {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Successfully switched to driver mode!');
+                          showGlobalSuccess(t('home:success'), t('profile:successfullySwitchedToDriver'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -106,8 +106,8 @@ export default function PassengerProfile() {
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                  title: 'Switch Profile',
-                  message: 'Are you sure you want to switch to the driver profile?',
+                  title: t('profile:switchProfile'),
+                  message: t('profile:switchProfileMessage'),
                   type: 'info',
                   duration: 0,
                   position: 'top',
@@ -118,7 +118,7 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Switched to driver mode!');
+                          showGlobalSuccess(t('home:success'), t('profile:switchedToDriverMode'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -431,7 +431,7 @@ export default function PassengerProfile() {
             </View>
 
             {/* Account Section */}
-            <Text style={dynamicStyles.sectionHeader}>Account</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:account')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
@@ -452,7 +452,7 @@ export default function PassengerProfile() {
             </View>
 
             {/* Saved Places Section */}
-            <Text style={dynamicStyles.sectionHeader}>Saved Places</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:savedPlaces')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
@@ -474,16 +474,16 @@ export default function PassengerProfile() {
 
             {/* Feedback History Section */}
             <Text style={dynamicStyles.sectionHeader}>
-                Recent Feedback
+                {t('profile:recentFeedback')}
                 {recentFeedback && recentFeedback.length > 0 && (
-                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} review{recentFeedback.length !== 1 ? 's' : ''}</Text>
+                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} {t('profile:reviews')}</Text>
                 )}
             </Text>
             <View style={dynamicStyles.section}>
                 {recentFeedback && recentFeedback.length > 0 ? (
                     <View style={dynamicStyles.feedbackPreview}>
                         <View style={dynamicStyles.feedbackPreviewHeader}>
-                            <Text style={dynamicStyles.feedbackPreviewTitle}>Latest Review</Text>
+                            <Text style={dynamicStyles.feedbackPreviewTitle}>{t('profile:latestReview')}</Text>
                             <Text style={dynamicStyles.feedbackPreviewRating}>
                                 ⭐ {recentFeedback[0].rating}/5
                             </Text>
@@ -495,7 +495,7 @@ export default function PassengerProfile() {
                         )}
                         <MenuItemComponent
                             icon="chatbubble-ellipses-outline"
-                            title="View All Feedback"
+                            title={t('profile:viewAllFeedback')}
                             onPress={handleViewFeedback}
                             showArrow={true}
                         />
@@ -503,7 +503,7 @@ export default function PassengerProfile() {
                 ) : (
                     <MenuItemComponent
                         icon="chatbubble-ellipses-outline"
-                        title="No feedback yet"
+                        title={t('profile:noFeedbackYet')}
                         onPress={handleViewFeedback}
                         showArrow={true}
                     />
@@ -511,7 +511,7 @@ export default function PassengerProfile() {
             </View>
 
             {/* Settings Section */}
-            <Text style={dynamicStyles.sectionHeader}>Settings</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:settings')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="log-out-outline"

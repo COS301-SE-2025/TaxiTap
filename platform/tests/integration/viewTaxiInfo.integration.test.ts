@@ -51,38 +51,47 @@ describe('viewTaxiInfo (integration)', () => {
     const ctx = createMockQueryCtx();
     const args = { passengerId };
     const result = await viewTaxiInfoHandler(ctx, args);
-    expect(result.taxi).toEqual(taxi);
-    expect(result.driver).toEqual({
+    expect(result).not.toBeNull();
+    expect(result!.taxi).toEqual(taxi);
+    expect(result!.driver).toEqual({
       name: 'Alice',
       phoneNumber: '123456789',
       rating: 4.5,
       userId: 'driverUser1',
     });
-    expect(result.rideId).toBe('RIDE123');
-    expect(result.status).toBe('accepted');
+    expect(result!.rideId).toBe('RIDE123');
+    expect(result!.status).toBe('accepted');
   });
 
-  it('throws if no active ride', async () => {
+  it('returns null if no active ride', async () => {
     const ctx = createMockQueryCtx({ rideDoc: null });
     const args = { passengerId };
-    await expect(viewTaxiInfoHandler(ctx, args)).rejects.toThrow('No active reservation found for this passenger.');
+    const result = await viewTaxiInfoHandler(ctx, args);
+    expect(result).toBeNull();
   });
 
-  it('throws if no driver assigned', async () => {
+  it('returns ride info without driver details if no driver assigned', async () => {
     const ctx = createMockQueryCtx({ rideDoc: { ...ride, driverId: null } });
     const args = { passengerId };
-    await expect(viewTaxiInfoHandler(ctx, args)).rejects.toThrow('No driver assigned to this ride yet.');
+    const result = await viewTaxiInfoHandler(ctx, args);
+    expect(result).not.toBeNull();
+    expect(result!.driver).toBeNull();
+    expect(result!.taxi).toBeNull();
+    expect(result!.rideId).toBe('RIDE123');
+    expect(result!.status).toBe('accepted');
   });
 
-  it('throws if no driver profile', async () => {
+  it('returns null if no driver profile', async () => {
     const ctx = createMockQueryCtx({ driverProf: null });
     const args = { passengerId };
-    await expect(viewTaxiInfoHandler(ctx, args)).rejects.toThrow('No driver profile found for this ride.');
+    const result = await viewTaxiInfoHandler(ctx, args);
+    expect(result).toBeNull();
   });
 
-  it('throws if no taxi', async () => {
+  it('returns null if no taxi', async () => {
     const ctx = createMockQueryCtx({ taxiDoc: null });
     const args = { passengerId };
-    await expect(viewTaxiInfoHandler(ctx, args)).rejects.toThrow('No taxi found for this driver.');
+    const result = await viewTaxiInfoHandler(ctx, args);
+    expect(result).toBeNull();
   });
 }); 

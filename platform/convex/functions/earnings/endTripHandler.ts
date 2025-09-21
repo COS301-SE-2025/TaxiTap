@@ -1,4 +1,4 @@
-export async function endTripHandler(ctx: any, { passengerId }: { passengerId: string }) {
+export async function endTripHandler(ctx: any, { passengerId }: { passengerId: any }) {
   const trips = await ctx.db
     .query("trips")
     .withIndex("by_passenger_and_startTime", (q: any) => q.eq("passengerId", passengerId))
