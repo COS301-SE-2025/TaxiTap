@@ -30,6 +30,8 @@ import type * as functions_feedback_showFeedbackHandler from "../functions/feedb
 import type * as functions_journeys_journeyManagement from "../functions/journeys/journeyManagement.js";
 import type * as functions_journeys_multiLegPayment from "../functions/journeys/multiLegPayment.js";
 import type * as functions_journeys_multiLegPaymentHandler from "../functions/journeys/multiLegPaymentHandler.js";
+import type * as functions_journeys_paymentRecovery from "../functions/journeys/paymentRecovery.js";
+import type * as functions_journeys_paymentRecoveryHandler from "../functions/journeys/paymentRecoveryHandler.js";
 import type * as functions_journeys_routeAnalysis from "../functions/journeys/routeAnalysis.js";
 import type * as functions_journeys_transferPoints from "../functions/journeys/transferPoints.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
@@ -139,6 +141,8 @@ declare const fullApi: ApiFromModules<{
   "functions/journeys/journeyManagement": typeof functions_journeys_journeyManagement;
   "functions/journeys/multiLegPayment": typeof functions_journeys_multiLegPayment;
   "functions/journeys/multiLegPaymentHandler": typeof functions_journeys_multiLegPaymentHandler;
+  "functions/journeys/paymentRecovery": typeof functions_journeys_paymentRecovery;
+  "functions/journeys/paymentRecoveryHandler": typeof functions_journeys_paymentRecoveryHandler;
   "functions/journeys/routeAnalysis": typeof functions_journeys_routeAnalysis;
   "functions/journeys/transferPoints": typeof functions_journeys_transferPoints;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
