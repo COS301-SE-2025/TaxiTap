@@ -29,6 +29,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import DestinationBox from '../../components/DestinationBox';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -998,6 +999,30 @@ export default function RouteSelectionScreen() {
           {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
         </Text>
 
+        {/* Destination Box for selected route */}
+        {currentRoutes.length > 0 && currentRoutes[0] && (
+          <DestinationBox
+            startLocation={{
+              name: currentRoutes[0].start || 'Unknown Start',
+              latitude: currentRoutes[0].startCoords?.latitude || 0,
+              longitude: currentRoutes[0].startCoords?.longitude || 0,
+            }}
+            endLocation={{
+              name: currentRoutes[0].destination || 'Unknown Destination',
+              latitude: currentRoutes[0].destinationCoords?.latitude || 0,
+              longitude: currentRoutes[0].destinationCoords?.longitude || 0,
+            }}
+            estimatedFare={currentRoutes[0].fare}
+            estimatedDuration={currentRoutes[0].estimatedDuration}
+            availableTaxisCount={getRouteSearchStatus(currentRoutes[0].routeId).availableTaxis.length}
+            isSearching={getRouteSearchStatus(currentRoutes[0].routeId).isSearching}
+            // Route information from routes table
+            routeName={`${currentRoutes[0].start} - ${currentRoutes[0].destination}`}
+            routeFare={currentRoutes[0].fare}
+            routeDuration={currentRoutes[0].estimatedDuration}
+          />
+        )}
+
         {/* Routes List or Empty State */}
         {currentRoutes.length === 0 ? (
           <View style={dynamicStyles.routesSection}>
@@ -1053,7 +1078,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
-                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', { count: getRouteSearchStatus(route.routeId).availableTaxis.length }) : t('routes:noTaxisAvailable')}
+                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? `${getRouteSearchStatus(route.routeId).availableTaxis.length} taxis available` : t('routes:noTaxisAvailable')}
                     </Text>
                   </View>
                 )}

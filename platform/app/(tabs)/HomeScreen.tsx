@@ -32,6 +32,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import type { MultiLegJourneyResult } from "../../convex/functions/routes/enhancedTaxiMatching";
 import { MultiLegJourneyPreview, type MultiLegJourneyOption } from './MultiLegJourneyPreview';
+import DestinationBox from '../../components/DestinationBox';
+
 
 const GOOGLE_MAPS_API_KEY =
   Platform.OS === 'ios'
@@ -1020,7 +1022,7 @@ export default function HomeScreen() {
     }
   }, [journeyAnalysisResult]);
 
-  // Handle taxi search results - simplified to avoid infinite loops
+  // Handle taxi search results
   useEffect(() => {
     if (taxiSearchResult) {
       const { radiusInfo } = taxiSearchResult;
@@ -1994,7 +1996,8 @@ export default function HomeScreen() {
           flexGrow: 1 
         }}
       >
-        <View style={dynamicStyles.locationBox}>
+        {!routeLoaded && (
+          <View style={dynamicStyles.locationBox}>
           <View style={dynamicStyles.locationIndicator}>
             <View style={dynamicStyles.currentLocationCircle}>
               <View style={dynamicStyles.currentLocationDot} />
@@ -2216,9 +2219,10 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+        )}
 
-        {/* Radius Expansion Status */}
-        {isSearchingTaxis && !keyboardVisible && searchStartTime && (
+        {/* Radius Expansion Status - Only show if not showing destination box */}
+        {isSearchingTaxis && !keyboardVisible && searchStartTime && !origin && !destination && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
               🎯 Search Radius Status
@@ -2290,7 +2294,39 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Journey Status - REMOVED for better usability */}
+        {/* Destination Box - Show when route is loaded */}
+        {!keyboardVisible && routeLoaded && origin && destination && (() => {
+          // Find the selected route data
+          const selectedRoute = selectedRouteId && routes ? 
+            routes.find(r => r.routeId === selectedRouteId || r._id === selectedRouteId) : 
+            null;
+          
+          return (
+            <DestinationBox
+              startLocation={{
+                name: origin.name,
+                latitude: origin.latitude,
+                longitude: origin.longitude,
+              }}
+              endLocation={{
+                name: destination.name,
+                latitude: destination.latitude,
+                longitude: destination.longitude,
+              }}
+              estimatedDuration={routeMatchResults?.estimatedDuration}
+              availableTaxisCount={availableTaxis.length}
+              isSearching={isSearchingTaxis}
+              searchRadius={currentSearchRadius}
+              nextExpansionCountdown={nextExpansionCountdown}
+              // Route information from routes table
+              routeName={selectedRoute?.start && selectedRoute?.destination ? 
+                `${selectedRoute.start} - ${selectedRoute.destination}` : 
+                undefined}
+              routeFare={selectedRoute?.fare}
+              routeDuration={selectedRoute?.estimatedDuration}
+            />
+          );
+        })()}
 
         {!keyboardVisible && !routeLoaded && (
           <>
