@@ -86,6 +86,21 @@ export const handlePassengerPayment = async (
 
   if (!ride) throw new Error("Ride not found");
 
+  // Check if this is a multi-leg ride
+  if (ride.isMultiLegRide && ride.parentJourneyId && ride.legIndex !== undefined) {
+    // Use multi-leg payment handler
+    const { processLegPaymentHandler } = require("../journeys/multiLegPaymentHandler");
+    return await processLegPaymentHandler(ctx, {
+      rideId,
+      journeyId: ride.parentJourneyId,
+      legIndex: ride.legIndex,
+      amountPaid,
+      isPaid,
+      paymentNotes: null,
+    });
+  }
+
+  // Single-leg payment logic
   const fare = ride.finalFare ?? ride.estimatedFare ?? 0;
   let paymentType: "exact" | "overpaid" | "underpaid" | "not_paid" = "not_paid";
   let changeDue = 0;
