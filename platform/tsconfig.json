@@ -5,6 +5,7 @@
     "jsx": "react-native",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": [
         "./*"
