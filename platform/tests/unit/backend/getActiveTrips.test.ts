@@ -1,4 +1,5 @@
 import { getActiveTripsHandler } from "../../../convex/functions/rides/getActiveTripsHandler";
+import { Id } from "../../../convex/_generated/dataModel";
 
 describe("getActiveTripsHandler", () => {
   let mockCtx: any;
@@ -9,7 +10,7 @@ describe("getActiveTripsHandler", () => {
         query: jest.fn().mockReturnThis(),
         withIndex: jest.fn().mockReturnThis(),
         filter: jest.fn().mockReturnThis(),
-        collect: jest.fn(),
+        collect: jest.fn().mockResolvedValue([]), // Return empty array for badges
         get: jest.fn(),
       },
     };
@@ -54,7 +55,7 @@ describe("getActiveTripsHandler", () => {
       return passengers[id];
     });
 
-    const result = await getActiveTripsHandler(mockCtx, "driver123");
+    const result = await getActiveTripsHandler(mockCtx, "driver123" as Id<"taxiTap_users">);
 
     expect(result.activeCount).toBe(2);
     expect(result.paidCount).toBe(1);
@@ -73,6 +74,7 @@ describe("getActiveTripsHandler", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
       {
         rideId: "r2",
@@ -85,6 +87,7 @@ describe("getActiveTripsHandler", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
     ]);
 
@@ -101,6 +104,7 @@ describe("getActiveTripsHandler", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
     ]);
   });
@@ -109,7 +113,7 @@ describe("getActiveTripsHandler", () => {
     mockCtx.db.collect.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
     mockCtx.db.get.mockResolvedValue(null);
 
-    const result = await getActiveTripsHandler(mockCtx, "driver123");
+    const result = await getActiveTripsHandler(mockCtx, "driver123" as Id<"taxiTap_users">);
 
     expect(result.activeCount).toBe(0);
     expect(result.paidCount).toBe(0);
@@ -133,7 +137,7 @@ describe("getActiveTripsHandler", () => {
 
     mockCtx.db.get.mockResolvedValue(null); // passenger not found
 
-    const result = await getActiveTripsHandler(mockCtx, "driver123");
+    const result = await getActiveTripsHandler(mockCtx, "driver123" as Id<"taxiTap_users">);
 
     expect(result.passengers).toEqual([]);
     expect(result.passengersUnpaid).toEqual([]);
