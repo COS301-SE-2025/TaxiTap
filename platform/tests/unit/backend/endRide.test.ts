@@ -78,7 +78,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -98,7 +98,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -119,7 +119,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -140,7 +140,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 });

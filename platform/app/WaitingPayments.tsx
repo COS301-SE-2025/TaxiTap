@@ -9,6 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Badge } from '../components/Badge';
 
 // Define the passenger type based on your data structure
 interface Passenger {
@@ -16,6 +17,16 @@ interface Passenger {
     phoneNumber: string;
     fare: number;
     tripPaid: boolean | null;
+    badges?: Array<{
+        badgeType: string;
+        name: string;
+        description: string;
+        icon: string;
+        color: string;
+        earnedAt: number;
+        isActive: boolean;
+        metadata?: any;
+    }>;
 }
 
 export default function WaitingPayments() {
@@ -88,6 +99,22 @@ export default function WaitingPayments() {
                                     <Text style={[dynamicStyles.phoneNumber, { color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)' }]}>
                                         {p.phoneNumber}
                                     </Text>
+                                    {/* Badges */}
+                                    {p.badges && p.badges.length > 0 && (
+                                        <View style={dynamicStyles.badgesContainer}>
+                                            {p.badges.map((badge, badgeIndex) => (
+                                                <Badge
+                                                    key={badgeIndex}
+                                                    badgeType={badge.badgeType as any}
+                                                    name={badge.name}
+                                                    description={badge.description}
+                                                    icon={badge.icon}
+                                                    color={badge.color}
+                                                    size="small"
+                                                />
+                                            ))}
+                                        </View>
+                                    )}
                                 </View>
                                 <View style={[dynamicStyles.statusBadge, dynamicStyles.statusWaiting]}>
                                     <Text style={dynamicStyles.statusText}>Pending</Text>
@@ -185,6 +212,12 @@ const dynamicStyles = StyleSheet.create({
     phoneNumber: {
         fontSize: 15,
         fontWeight: '400',
+    },
+    badgesContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 8,
+        gap: 4,
     },
     statusBadge: {
         paddingHorizontal: 12,

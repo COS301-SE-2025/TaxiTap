@@ -14,6 +14,12 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as crons from "../crons.js";
+import type * as functions_badges_awardTrustedPayerBadge from "../functions/badges/awardTrustedPayerBadge.js";
+import type * as functions_badges_badgeService from "../functions/badges/badgeService.js";
+import type * as functions_badges_checkTrustedPayerEligibility from "../functions/badges/checkTrustedPayerEligibility.js";
+import type * as functions_badges_getDriverBadges from "../functions/badges/getDriverBadges.js";
+import type * as functions_badges_getUserBadges from "../functions/badges/getUserBadges.js";
+import type * as functions_badges_updateTopEarners from "../functions/badges/updateTopEarners.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
@@ -94,6 +100,7 @@ import type * as functions_taxis_updateTaxiInfo from "../functions/taxis/updateT
 import type * as functions_taxis_updateTaxiInfoHandler from "../functions/taxis/updateTaxiInfoHandler.js";
 import type * as functions_taxis_viewTaxiInfo from "../functions/taxis/viewTaxiInfo.js";
 import type * as functions_taxis_viewTaxiInfoHandler from "../functions/taxis/viewTaxiInfoHandler.js";
+import type * as functions_users_UserManagement_getLoyalMemberStatus from "../functions/users/UserManagement/getLoyalMemberStatus.js";
 import type * as functions_users_UserManagement_getUserById from "../functions/users/UserManagement/getUserById.js";
 import type * as functions_users_UserManagement_logInWithSMS from "../functions/users/UserManagement/logInWithSMS.js";
 import type * as functions_users_UserManagement_signUpWithSMS from "../functions/users/UserManagement/signUpWithSMS.js";
@@ -121,6 +128,12 @@ import type * as functions_work_sessions_startWorkSessionHandler from "../functi
  */
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  "functions/badges/awardTrustedPayerBadge": typeof functions_badges_awardTrustedPayerBadge;
+  "functions/badges/badgeService": typeof functions_badges_badgeService;
+  "functions/badges/checkTrustedPayerEligibility": typeof functions_badges_checkTrustedPayerEligibility;
+  "functions/badges/getDriverBadges": typeof functions_badges_getDriverBadges;
+  "functions/badges/getUserBadges": typeof functions_badges_getUserBadges;
+  "functions/badges/updateTopEarners": typeof functions_badges_updateTopEarners;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;
@@ -201,6 +214,7 @@ declare const fullApi: ApiFromModules<{
   "functions/taxis/updateTaxiInfoHandler": typeof functions_taxis_updateTaxiInfoHandler;
   "functions/taxis/viewTaxiInfo": typeof functions_taxis_viewTaxiInfo;
   "functions/taxis/viewTaxiInfoHandler": typeof functions_taxis_viewTaxiInfoHandler;
+  "functions/users/UserManagement/getLoyalMemberStatus": typeof functions_users_UserManagement_getLoyalMemberStatus;
   "functions/users/UserManagement/getUserById": typeof functions_users_UserManagement_getUserById;
   "functions/users/UserManagement/logInWithSMS": typeof functions_users_UserManagement_logInWithSMS;
   "functions/users/UserManagement/signUpWithSMS": typeof functions_users_UserManagement_signUpWithSMS;

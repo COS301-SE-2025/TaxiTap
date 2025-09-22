@@ -98,7 +98,7 @@ describe("Integration-like: endRideHandler", () => {
 
     expect(result).toEqual({
       _id: dbData.rides[0]._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 });
