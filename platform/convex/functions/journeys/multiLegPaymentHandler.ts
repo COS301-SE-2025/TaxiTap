@@ -186,14 +186,14 @@ export const validateLegStartRequirementsHandler = async (
     .filter((q: any) => q.lt(q.field("legIndex"), legIndexToStart))
     .collect();
 
-  const unpaidLegs = previousLegs.filter(leg => leg.paymentStatus !== "completed");
+  const unpaidLegs = previousLegs.filter((leg: any) => leg.paymentStatus !== "completed");
 
   if (unpaidLegs.length > 0) {
-    const unpaidLegNumbers = unpaidLegs.map(leg => leg.legIndex + 1).join(", ");
+    const unpaidLegNumbers = unpaidLegs.map((leg: any) => leg.legIndex + 1).join(", ");
     return {
       canStart: false,
       reason: `Payment required for previous leg(s): ${unpaidLegNumbers}`,
-      unpaidLegs: unpaidLegs.map(leg => ({
+      unpaidLegs: unpaidLegs.map((leg: any) => ({
         legIndex: leg.legIndex,
         fromAddress: leg.fromAddress,
         toAddress: leg.toAddress,
@@ -301,7 +301,7 @@ export const checkJourneyPaymentCompleteHandler = async (
     .withIndex("by_journey_id", (q: any) => q.eq("journeyId", journeyId))
     .collect();
 
-  const completedPayments = journeyLegs.filter(leg => leg.paymentStatus === "completed");
+  const completedPayments = journeyLegs.filter((leg: any) => leg.paymentStatus === "completed");
   const isComplete = completedPayments.length === journeyLegs.length;
 
   // If all payments are complete, update the journey status
