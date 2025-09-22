@@ -31,19 +31,19 @@ export default function PaymentConfirmation() {
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
-  // TODO: Enable when multiLegPayment is exported to API
-  // const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
+  const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
 
   const handlePaid = async () => {
     try {
       // Check if this is a multi-leg journey
       if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
-        // TODO: Use multi-leg payment handler when API is available
-        // For now, use existing payment system
-        const result = await markTripPaid({
-          rideId: rideId as Id<"rides">,
-          userId: userId as Id<"taxiTap_users">,
-          paid: true,
+        // Use multi-leg payment handler
+        const result = await processLegPayment({
+          rideId: rideId as string,
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          amountPaid: parseFloat(fare as string),
+          isPaid: true,
         });
 
         const currentLeg = parseInt(legIndex as string) + 1;
@@ -51,14 +51,29 @@ export default function PaymentConfirmation() {
 
         showGlobalSuccess(
           'Leg Payment Confirmed',
-          `Payment for leg ${currentLeg} of ${total} confirmed! Continue with your journey.`,
+          `Payment for leg ${currentLeg} of ${total} confirmed!${result.canProgressToNextLeg ? ' Ready for next leg.' : ' Journey completed!'}`,
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
 
         setTimeout(() => {
-          // For now, navigate back to HomeScreen for multi-leg journeys
-          // TODO: Navigate to proper journey progress screen when available
-          router.push('/HomeScreen');
+          if (result.canProgressToNextLeg) {
+            // Navigate back to journey progress or next leg preparation
+            router.push('/HomeScreen'); // Could be journey progress screen instead
+          } else {
+            // Journey completed - go to feedback for the final leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                isMultiLeg: 'true',
+                journeyId: journeyId as string,
+              },
+            });
+          }
         }, 3000);
       } else {
         // Original single-leg payment logic
@@ -99,15 +114,53 @@ export default function PaymentConfirmation() {
 
   const handleNotPaid = async () => {
     try {
-      const result = await markTripPaid({
-        rideId: rideId as Id<"rides">,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
+      // Check if this is a multi-leg journey
+      if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+        // Use multi-leg payment handler for "not paid"
+        const result = await processLegPayment({
+          rideId: rideId as string,
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          amountPaid: 0,
+          isPaid: false,
+        });
 
-      showGlobalAlert({
-        title: 'Payment Not Confirmed',
-        message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
+        const currentLeg = parseInt(legIndex as string) + 1;
+        const total = parseInt(totalLegs as string);
+
+        showGlobalAlert({
+          title: 'Payment Required',
+          message: `Payment for leg ${currentLeg} of ${total} is required before continuing your journey. Please pay the driver to proceed.`,
+          type: 'warning',
+          duration: 0,
+          actions: [
+            {
+              label: 'I Will Pay Now',
+              onPress: () => {
+                // Stay on payment screen to try again
+              },
+              style: 'default',
+            },
+            {
+              label: 'Cancel Journey',
+              onPress: () => router.push('/HomeScreen'),
+              style: 'cancel',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
+      } else {
+        // Original single-leg "not paid" logic
+        const result = await markTripPaid({
+          rideId: rideId as Id<"rides">,
+          userId: userId as Id<"taxiTap_users">,
+          paid: false,
+        });
+
+        showGlobalAlert({
+          title: 'Payment Not Confirmed',
+          message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
         type: 'warning',
         duration: 0,
         actions: [
@@ -133,9 +186,10 @@ export default function PaymentConfirmation() {
             style: 'cancel',
           }
         ],
-        position: 'top',
-        animation: 'slide-down',
-      });
+          position: 'top',
+          animation: 'slide-down',
+        });
+      }
 
     } catch (error: any) {
       showGlobalError(
