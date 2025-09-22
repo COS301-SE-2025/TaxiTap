@@ -241,19 +241,6 @@ export default function DestinationBox({
 
   return (
     <View style={dynamicStyles.container}>
-      {/* Header */}
-      <View style={dynamicStyles.header}>
-        <Icon 
-          name="location" 
-          size={24} 
-          color={theme.primary} 
-          style={dynamicStyles.headerIcon}
-        />
-        <Text style={dynamicStyles.headerTitle}>
-          Your Journey
-        </Text>
-      </View>
-
       {/* Route Information */}
       <View style={dynamicStyles.routeContainer}>
         {/* Start Location */}
@@ -264,16 +251,6 @@ export default function DestinationBox({
           <Text style={[dynamicStyles.locationText, dynamicStyles.startText]}>
             {startName}
           </Text>
-        </View>
-
-        {/* Arrow */}
-        <View style={dynamicStyles.arrowContainer}>
-          <Icon 
-            name="arrow-down" 
-            size={20} 
-            color={theme.textSecondary} 
-            style={dynamicStyles.arrow}
-          />
         </View>
 
         {/* End Location */}

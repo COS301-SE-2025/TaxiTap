@@ -660,7 +660,7 @@ export default function HomeScreen() {
             routeName: manualDestination.name,
             destinationLat: manualDestination.latitude,
             destinationLng: manualDestination.longitude,
-            startName: recent.startName || 'Current Location',
+            startName: recent.startName || t('common:currentLocation'),
             startLat: recent.startLat,
             startLng: recent.startLng,
             isManualRoute: true,
@@ -2343,7 +2343,7 @@ export default function HomeScreen() {
                       handleDestinationSelect({
                         _id: route._id as any,
                         routeId: route.routeId,
-                        destination: route.routeName || 'Saved Destination',
+                        destination: route.routeName || t('home:savedDestination'),
                         destinationCoords: {
                           latitude: route.destinationLat!,
                           longitude: route.destinationLng!,
@@ -2381,7 +2381,7 @@ export default function HomeScreen() {
                       <Text style={dynamicStyles.routeTitle}>
                         {route.startName && route.routeName 
                           ? `${route.startName} → ${route.routeName}`
-                          : 'Unknown Route'
+                          : t('home:unknownRoute')
                         }
                       </Text>
 

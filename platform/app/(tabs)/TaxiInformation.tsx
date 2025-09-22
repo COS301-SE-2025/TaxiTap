@@ -20,214 +20,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
+import DestinationBox from '../../components/DestinationBox';
 
-// DestinationBox with essential route information only
-const DestinationBox = ({ 
-  startLocation, 
-  endLocation, 
-  availableTaxisCount, 
-  routeInfo,
-  estimatedDuration 
-}: {
-  startLocation: { name: string; latitude: number; longitude: number };
-  endLocation: { name: string; latitude: number; longitude: number };
-  availableTaxisCount: number;
-  routeInfo?: any;
-  estimatedDuration?: number;
-}) => {
-  const { theme, isDark } = useTheme();
-
-  const dynamicStyles = StyleSheet.create({
-    container: {
-      backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
-      borderRadius: 20,
-      padding: 20,
-      marginBottom: 24,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.4 : 0.15,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 12,
-      elevation: 6,
-      borderWidth: 1,
-      borderColor: isDark 
-        ? 'rgba(71, 85, 105, 0.3)' 
-        : 'rgba(226, 232, 240, 0.8)',
-    },
-    routeContainer: {
-      marginBottom: 20,
-    },
-    locationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    locationIndicator: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      marginRight: 16,
-    },
-    startIndicator: {
-      backgroundColor: theme.primary,
-    },
-    endIndicator: {
-      backgroundColor: '#FF6B6B',
-    },
-    locationText: {
-      flex: 1,
-      fontSize: 16,
-      fontWeight: '500',
-      color: theme.text,
-    },
-    arrowContainer: {
-      alignItems: 'center',
-      marginVertical: 4,
-    },
-    arrow: {
-      marginLeft: 6,
-    },
-    // Route details section
-    routeInfoContainer: {
-      backgroundColor: isDark ? `${theme.primary}08` : `${theme.primary}05`,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
-      borderLeftWidth: 3,
-      borderLeftColor: theme.primary,
-    },
-    routeDetailRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    routeDetailIcon: {
-      marginRight: 12,
-      width: 16,
-    },
-    routeDetailText: {
-      fontSize: 14,
-      color: theme.text,
-      flex: 1,
-      fontWeight: '500',
-    },
-    // Bottom summary
-    summaryContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 16,
-      borderTopWidth: 1,
-      borderTopColor: isDark 
-        ? 'rgba(71, 85, 105, 0.2)' 
-        : 'rgba(226, 232, 240, 0.5)',
-    },
-    summaryItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    summaryIcon: {
-      marginRight: 8,
-    },
-    summaryText: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    taxiCountText: {
-      color: availableTaxisCount > 0 ? '#10B981' : theme.textSecondary,
-    },
-    routeText: {
-      color: theme.primary,
-    },
-  });
-
-  // Parse route name from routeInfo if available
-  const getRouteNames = () => {
-    if (routeInfo?.routeName) {
-      // Parse route name in format "Start - End"
-      const parts = routeInfo.routeName.split('-').map((part: any) => part.trim());
-      if (parts.length >= 2) {
-        return { start: parts[0], end: parts[1] };
-      }
-    }
-    // Fallback to location names
-    return { start: startLocation.name, end: endLocation.name };
-  };
-
-  const { start: startName, end: endName } = getRouteNames();
-
-  return (
-    <View style={dynamicStyles.container}>
-      {/* Route Display */}
-      <View style={dynamicStyles.routeContainer}>
-        <View style={dynamicStyles.locationRow}>
-          <View style={[dynamicStyles.locationIndicator, dynamicStyles.startIndicator]} />
-          <Text style={dynamicStyles.locationText}>{startName}</Text>
-        </View>
-
-        <View style={dynamicStyles.arrowContainer}>
-          <Icon 
-            name="arrow-down" 
-            size={16} 
-            color={theme.textSecondary} 
-            style={dynamicStyles.arrow}
-          />
-        </View>
-
-        <View style={dynamicStyles.locationRow}>
-          <View style={[dynamicStyles.locationIndicator, dynamicStyles.endIndicator]} />
-          <Text style={dynamicStyles.locationText}>{endName}</Text>
-        </View>
-      </View>
-
-      {/* Route Information */}
-      {routeInfo && (
-        <View style={dynamicStyles.routeInfoContainer}>
-          <View style={dynamicStyles.routeDetailRow}>
-            <Icon name="location-outline" size={16} color={theme.textSecondary} style={dynamicStyles.routeDetailIcon} />
-            <Text style={dynamicStyles.routeDetailText}>
-              {(routeInfo.passengerDisplacement || routeInfo.totalDistance || 0).toFixed(1)} km
-            </Text>
-          </View>
-
-          {estimatedDuration && (
-            <View style={dynamicStyles.routeDetailRow}>
-              <Icon name="time" size={16} color={theme.textSecondary} style={dynamicStyles.routeDetailIcon} />
-              <Text style={dynamicStyles.routeDetailText}>
-                ~{Math.round(estimatedDuration / 60)} minutes
-              </Text>
-            </View>
-          )}
-
-          {(routeInfo.calculatedFare || routeInfo.fare) && (
-            <View style={dynamicStyles.routeDetailRow}>
-              <Icon name="cash-outline" size={16} color={theme.primary} style={dynamicStyles.routeDetailIcon} />
-              <Text style={dynamicStyles.routeDetailText}>
-                R{(routeInfo.calculatedFare || routeInfo.fare).toFixed(2)}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Summary */}
-      <View style={dynamicStyles.summaryContainer}>
-        <View style={dynamicStyles.summaryItem}>
-          <Icon 
-            name="car-outline" 
-            size={18} 
-            color={availableTaxisCount > 0 ? '#10B981' : theme.textSecondary} 
-            style={dynamicStyles.summaryIcon}
-          />
-          <Text style={[dynamicStyles.summaryText, dynamicStyles.taxiCountText]}>
-            {availableTaxisCount} available
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-};
 
 export default function TaxiInformation() {
   const { theme, isDark } = useTheme();
@@ -367,19 +161,19 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          showGlobalError('Error', 'Phone calls are not supported on this device');
+          showGlobalError(t('common:error'), t('taxiInfo:phoneNotSupported'));
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        showGlobalError('Error', 'Could not open phone app');
+        showGlobalError(t('common:error'), t('taxiInfo:couldNotOpenPhone'));
       });
   };
 
   // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      showGlobalError('Error', 'Please select a taxi and ensure you are logged in');
+      showGlobalError(t('common:error'), t('taxiInfo:selectTaxiError'));
       return;
     }
 
@@ -444,7 +238,7 @@ export default function TaxiInformation() {
       }
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
-      showGlobalError('Booking Error', 'Failed to send ride request. Please try again.');
+      showGlobalError(t('taxiInfo:bookingError'), t('taxiInfo:bookingErrorMessage'));
     } finally {
       setIsBooking(false);
     }
@@ -491,7 +285,7 @@ export default function TaxiInformation() {
             <View style={dynamicStyles.distanceInfo}>
               <Ionicons name="location" size={16} color={theme.primary} />
               <Text style={dynamicStyles.distanceText}>
-                {taxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')} away
+                {taxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')} {t('taxiInfo:away')}
               </Text>
             </View>
           )}
@@ -737,7 +531,8 @@ export default function TaxiInformation() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* Destination Box - Route info only shown here */}
+
+          {/* Destination Box */}
           <DestinationBox
             startLocation={{
               name: currentName || 'Current Location',
@@ -751,13 +546,16 @@ export default function TaxiInformation() {
             }}
             availableTaxisCount={nearbyTaxis.length}
             estimatedDuration={nearbyTaxis[0]?.routeInfo?.estimatedDuration}
-            routeInfo={routeMatchData?.matchingRoutes?.[0] || nearbyTaxis[0]?.routeInfo}
+            estimatedFare={nearbyTaxis[0]?.routeInfo?.calculatedFare || nearbyTaxis[0]?.routeInfo?.fare}
+            routeName={routeMatchData?.matchingRoutes?.[0]?.routeName || nearbyTaxis[0]?.routeInfo?.routeName}
+            routeFare={routeMatchData?.matchingRoutes?.[0]?.fare || nearbyTaxis[0]?.routeInfo?.calculatedFare || nearbyTaxis[0]?.routeInfo?.fare}
+            routeDuration={routeMatchData?.matchingRoutes?.[0]?.estimatedDuration || nearbyTaxis[0]?.routeInfo?.estimatedDuration}
           />
 
           {/* Taxi List Section */}
           <View style={dynamicStyles.sectionHeader}>
             <Text style={dynamicStyles.sectionTitle}>
-              {isLoadingTaxis ? 'Finding Taxis...' : 'Select Your Driver'}
+              {isLoadingTaxis ? t('taxiInfo:findingAvailableTaxis') : t('taxiInfo:selectYourDriver')}
             </Text>
           </View>
 
