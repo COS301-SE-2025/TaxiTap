@@ -2,15 +2,13 @@ import { v } from "convex/values";
 import { query, mutation } from "../../_generated/server";
 import { Id } from "../../../convex/_generated/dataModel";
 
-// Query to get passenger's wallet summary for the last 30 days
 export const getWalletSummary = query({
   args: { 
     passengerId: v.id("taxiTap_users"),
   },
   handler: async (ctx, args) => {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    
-    // Get completed rides in the last 30 days
+
     const recentRides = await ctx.db
       .query("rides")
       .withIndex("by_passenger", (q) => q.eq("passengerId", args.passengerId))
@@ -23,12 +21,10 @@ export const getWalletSummary = query({
       )
       .collect();
 
-    // Calculate summary statistics
     const totalSpent = recentRides.reduce((sum, ride) => sum + (ride.finalFare || 0), 0);
     const totalTrips = recentRides.length;
     const averageTrip = totalTrips > 0 ? totalSpent / totalTrips : 0;
-    
-    // Get payment type distribution
+
     const paymentTypes = recentRides.reduce((acc, ride) => {
       const type = ride.paymentType || 'not_paid';
       acc[type] = (acc[type] || 0) + 1;
@@ -45,32 +41,30 @@ export const getWalletSummary = query({
   },
 });
 
-// Query to get detailed transaction history for the last 30 days
 export const getTransactionHistory = query({
   args: { 
     passengerId: v.id("taxiTap_users"),
     limit: v.optional(v.number())
   },
   handler: async (ctx, args) => {
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const limit = args.limit || 50;
-    
-    // Get completed rides with payment details
+
     const rides = await ctx.db
       .query("rides")
-      .withIndex("by_passenger", (q) => q.eq("passengerId", args.passengerId))
-      .filter((q) => 
-        q.and(
-          q.eq(q.field("status"), "completed"),
-          q.gte(q.field("completedAt"), thirtyDaysAgo)
-        )
+      .withIndex("by_passenger_completedAt", (q) =>
+        q
+          .eq("passengerId", args.passengerId)
+          .gte("completedAt", thirtyDaysAgo)
       )
-      .order("desc")
-      .take(limit);
+      .collect();
 
-    // Enrich with driver information
+    rides.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+    const limitedRides = rides.slice(0, limit);
+
     const transactions = await Promise.all(
-      rides.map(async (ride) => {
+      limitedRides.map(async (ride) => {
         let driverInfo = null;
         if (ride.driverId) {
           driverInfo = await ctx.db.get(ride.driverId);
@@ -83,19 +77,23 @@ export const getTransactionHistory = query({
           startLocation: ride.startLocation.address,
           endLocation: ride.endLocation.address,
           fare: ride.finalFare || ride.estimatedFare || 0,
-          paymentType: ride.paymentType || 'not_paid',
-          paymentStatus: ride.tripPaid ? 'paid' : 'unpaid',
+          paymentType: ride.paymentType || "not_paid",
+          paymentStatus: ride.tripPaid ? "paid" : "unpaid",
           amountPaid: ride.amountPaid || 0,
           changeDue: ride.changeDue || 0,
           amountOwed: ride.amountOwed || 0,
           changeReceived: ride.changeReceived,
-          driver: driverInfo ? {
-            name: driverInfo.name,
-            profilePicture: driverInfo.profilePicture
-          } : null,
+          driver: driverInfo
+            ? {
+                name: driverInfo.name,
+                profilePicture: driverInfo.profilePicture,
+              }
+            : null,
           distance: ride.actualDistance || ride.estimatedDistance || ride.distance,
-          duration: ride.completedAt && ride.startedAt ? 
-            ride.completedAt - ride.startedAt : null
+          duration:
+            ride.completedAt && ride.startedAt
+              ? ride.completedAt - ride.startedAt
+              : null,
         };
       })
     );
@@ -104,7 +102,6 @@ export const getTransactionHistory = query({
   },
 });
 
-// Query to get spending analytics by time periods
 export const getSpendingAnalytics = query({
   args: { 
     passengerId: v.id("taxiTap_users"),
@@ -131,7 +128,6 @@ export const getSpendingAnalytics = query({
           q.and(
             q.eq(q.field("status"), "completed"),
             q.gte(q.field("completedAt"), timestamp),
-            q.neq(q.field("finalFare"), undefined)
           )
         )
         .collect();
@@ -140,7 +136,6 @@ export const getSpendingAnalytics = query({
       const totalTrips = rides.length;
       const averageTrip = totalTrips > 0 ? totalSpent / totalTrips : 0;
 
-      // Group by days for trend analysis
       const dailySpending = rides.reduce((acc, ride) => {
         const date = new Date(ride.completedAt || ride.requestedAt).toDateString();
         acc[date] = (acc[date] || 0) + (ride.finalFare || 0);
@@ -162,7 +157,6 @@ export const getSpendingAnalytics = query({
   },
 });
 
-// Query to get outstanding payments (rides where passenger owes money)
 export const getOutstandingPayments = query({
   args: { 
     passengerId: v.id("taxiTap_users"),
@@ -204,7 +198,6 @@ export const getOutstandingPayments = query({
   },
 });
 
-// Mutation to mark a payment as completed
 export const markPaymentCompleted = mutation({
   args: {
     rideId: v.id("rides"),
@@ -251,20 +244,17 @@ export const markPaymentCompleted = mutation({
   },
 });
 
-// Query to get wallet balance and payment summary
 export const getWalletBalance = query({
   args: { 
     passengerId: v.id("taxiTap_users"),
   },
   handler: async (ctx, args) => {
-    // Get all completed rides
     const completedRides = await ctx.db
       .query("rides")
       .withIndex("by_passenger", (q) => q.eq("passengerId", args.passengerId))
       .filter((q) => q.eq(q.field("status"), "completed"))
       .collect();
 
-    // Calculate totals
     const totalSpent = completedRides.reduce((sum, ride) => 
       sum + (ride.finalFare || 0), 0
     );
