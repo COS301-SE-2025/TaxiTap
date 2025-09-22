@@ -5,7 +5,7 @@ export default {
     version: "1.0.0",
     sdkVersion: "54.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon-dark.png",
+    icon: "./assets/images/icon.png",
     scheme: "frontend",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -31,7 +31,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/icon-dark.png",
+        foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
       },
       edgeToEdgeEnabled: true,
@@ -45,7 +45,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/icon-dark.png",
+      favicon: "./assets/images/icon.png",
       config: {
         googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY
       }
@@ -55,7 +55,7 @@ export default {
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon-dark.png",
+          "icon": "./assets/images/icon.png",
           "color": "#ffffff",
           "sounds": ["../assets/audios/hoot.wav"],
           "projectId": "TaxiTap"
