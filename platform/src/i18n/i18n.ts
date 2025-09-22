@@ -134,6 +134,7 @@ common: {
     recentlyUsedRanks: "Recently Used Taxi Ranks",
     recentlyUsedRoutes: "Recently Used Routes",
     noRecentRoutes: "No recently used routes yet.",
+    savedDestination: "Saved Destination",
     reserveSeat: "Reserve a Seat",
     reserveSeatWithCount: "Reserve a Seat ({count} taxis available)",
     usedTimes: "Used {count} times",
@@ -274,6 +275,7 @@ common: {
     selectTaxiError: "Please select a taxi and ensure you are logged in",
     phoneNotSupported: "Phone calls are not supported on this device",
     couldNotOpenPhone: "Could not open phone app",
+    selectYourDriver: "Select Your Driver",
     km: "km",
   },
    // Passenger specific
@@ -1142,6 +1144,7 @@ const zuluTranslations: TranslationStructure = {
     recentlyUsedRanks: "Izindawo ZamaTekisi Ezisetshenziswe Muva",
     recentlyUsedRoutes: "Izindlela Ezisetshenziswe Muva",
     noRecentRoutes: "Akukho izindlela ezisetshenziswe muva.",
+    savedDestination: "Indawo Egciniwe",
     reserveSeat: "Bheka Isihlalo",
     reserveSeatWithCount: "Bheka Isihlalo ({count} amatekisi atholakalayo)",
     usedTimes: "Kusetshenziswe izikhathi ezi-{count}",
@@ -1210,6 +1213,7 @@ const zuluTranslations: TranslationStructure = {
     selectTaxiError: "Sicela ukhethe itekisi futhi uqinisekise ukuthi ungene",
     phoneNotSupported: "Ucingo alusekelwa kule divayisi",
     couldNotOpenPhone: "Akukwazi ukuvula uhlelo lwefoni",
+    selectYourDriver: "Khetha UmShayeli Wakho",
     km: "km",
   },
 
@@ -1505,6 +1509,7 @@ const tswanaTranslations: TranslationStructure = {
     recentlyUsedRanks: "Mafelo a Diteksi a o Dirisitseng",
     recentlyUsedRoutes: "Ditsela tse o di Dirisitseng",
     noRecentRoutes: "Ga go na ditsela tse o di dirisitseng.",
+    savedDestination: "Lefelo le le Bolokilweng",
     reserveSeat: "Bea Setulo",
     reserveSeatWithCount: "Bea Setulo ({count} diteksi di a teng)",
     usedTimes: "E dirisiwe makgetlo a {count}",
@@ -1642,6 +1647,7 @@ const tswanaTranslations: TranslationStructure = {
     selectTaxiError: "Tshwanetse o tlhophe tekisi mme o netefatse gore o tsenye",
     phoneNotSupported: "Megala ga e a tshegediwa mo sesebedisweng seno",
     couldNotOpenPhone: "Akukwazi ukuvula uhlelo lwefoni",
+    selectYourDriver: "Tlhopha Mokgweetsi wa Gago",
     km: "km",
   },
 
@@ -2125,6 +2131,7 @@ const afrikaansTranslations: TranslationStructure = {
     recentlyUsedRanks: "Onlangs Gebruikte Taxi Staanplekke",
     recentlyUsedRoutes: "Onlangs Gebruikte Roetes",
     noRecentRoutes: "Nog geen onlangs gebruikte roetes nie.",
+    savedDestination: "Gestoor Bestemming",
     reserveSeat: "Bespreek 'n Sitplek",
     reserveSeatWithCount: "Bespreek 'n Sitplek ({count} taxi's beskikbaar)",
     usedTimes: "{count} keer gebruik",
@@ -2265,6 +2272,7 @@ const afrikaansTranslations: TranslationStructure = {
     selectTaxiError: "Kies asseblief 'n taxi en verseker dat jy ingeteken is",
     phoneNotSupported: "Telefoonoproepe word nie op hierdie toestel ondersteun nie",
     couldNotOpenPhone: "Kon nie telefoon toepassing oopmaak nie",
+    selectYourDriver: "Kies Jou Bestuurder",
     km: "km",
   },
 
