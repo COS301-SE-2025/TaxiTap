@@ -143,6 +143,18 @@ export default function PassengerProfile() {
         router.push('/FeedbackHistoryScreen');
     };
 
+    const handleWallet = () => {
+    if (!user?.id) {
+        showGlobalError('Error', 'User not found');
+        return;
+    }
+
+    router.push({
+        pathname: '/Wallet',
+        params: { passengerId: user.id },
+    });
+    };
+
     type MenuItemProps = {
         icon: keyof typeof Ionicons.glyphMap;
         title: string;
@@ -413,6 +425,15 @@ export default function PassengerProfile() {
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
                     </Pressable>
                 </View>
+            </View>
+
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:wallet')}</Text>
+            <View style={dynamicStyles.section}>
+                <MenuItemComponent
+                    icon="wallet-outline"
+                    title={t('profile:My Wallet')}
+                    onPress={handleWallet}
+                />
             </View>
 
             {/* Saved Places Section */}
