@@ -528,4 +528,27 @@ routes: defineTable({
   .index("by_status", ["status"])
   .index("by_ride_id", ["rideId"])
   .index("by_payment_status", ["paymentStatus"]),
+
+  badges: defineTable({
+    userId: v.id("taxiTap_users"),
+    badgeType: v.union(
+      v.literal("trusted_payer"),
+      v.literal("frequent_rider"),
+      v.literal("loyal_member"),
+      v.literal("marathon_driver"),
+      v.literal("top_earner"), // Add top_earner badge type
+    ),
+    earnedAt: v.number(),
+    isActive: v.boolean(),
+    metadata: v.optional(v.object({
+      totalRides: v.optional(v.number()),
+      paymentRate: v.optional(v.number()),
+      streakCount: v.optional(v.number()),
+      totalEarnings: v.optional(v.number()), // Add totalEarnings for top_earner badge
+    })),
+  })
+  .index("by_user_id", ["userId"])
+  .index("by_badge_type", ["badgeType"])
+  .index("by_user_and_type", ["userId", "badgeType"])
+  .index("by_active_badges", ["userId", "isActive"]),
 });
