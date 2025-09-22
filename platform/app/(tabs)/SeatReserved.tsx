@@ -15,6 +15,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { MultiLegJourney, JourneyLeg } from '../../types/multiLegJourney';
+import { Badge } from '../../components/Badge';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -85,6 +86,12 @@ export default function SeatReserved() {
 	const taxiInfo = useQuery(
 		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
 		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Fetch driver badges
+	const driverBadges = useQuery(
+		api.functions.badges.getUserBadges.getUserBadgesQuery,
+		taxiInfo?.driver?.userId ? { userId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
 	);
 
 	// Helper to determine ride status
@@ -1313,6 +1320,25 @@ export default function SeatReserved() {
 										})}
 									</View>
 								</View>
+								
+								{/* Driver Badges */}
+								{driverBadges && driverBadges.length > 0 && (
+									<View style={{ marginTop: 10, marginBottom: 10 }}>
+										<View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+											{driverBadges.map((badge: any, index: number) => (
+												<Badge
+													key={index}
+													badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
+													name={badge.name}
+													description={badge.description}
+													icon={badge.icon}
+													color={badge.color}
+													size="small"
+												/>
+											))}
+										</View>
+									</View>
+								)}
 							</View>
 						) : taxiInfo && !taxiInfo.driver ? (
 							<View style={dynamicStyles.driverInfoSection}>
