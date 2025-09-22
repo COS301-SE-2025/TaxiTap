@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import React, { useLayoutEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
@@ -10,7 +10,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 
-// Define the passenger type based on your data structure
 interface Passenger {
     rideId: string;
     name: string;
@@ -51,29 +50,12 @@ export default function ActiveRides() {
             setLoadingFrontPassenger(rideId);
             
             if (isFrontPassenger) {
-                // Remove front passenger status
                 await removeFrontPassengerMutation({ rideId: rideId });
-                Alert.alert(
-                    "Success",
-                    `${passengerName} is no longer the front passenger.`,
-                    [{ text: "OK" }]
-                );
             } else {
-                // Set as front passenger
                 await setFrontPassengerMutation({ rideId: rideId });
-                Alert.alert(
-                    "Success", 
-                    `${passengerName} is now set as the front passenger.`,
-                    [{ text: "OK" }]
-                );
             }
         } catch (error) {
-            console.error('Front passenger error:', error); // Debug log
-            Alert.alert(
-                "Error", 
-                error instanceof Error ? error.message : "Failed to update front passenger status",
-                [{ text: "OK" }]
-            );
+            console.error('Front passenger error:', error);
         } finally {
             setLoadingFrontPassenger(null);
         }
