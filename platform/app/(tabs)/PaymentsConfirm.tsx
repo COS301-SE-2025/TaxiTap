@@ -13,37 +13,95 @@ export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
   const userId = user?.id;
-  const { driverName, licensePlate, fare, rideId, startName, endName, driverId, passengerId } = useLocalSearchParams();
+  const {
+    driverName,
+    licensePlate,
+    fare,
+    rideId,
+    startName,
+    endName,
+    driverId,
+    passengerId,
+    // Multi-leg journey parameters
+    journeyId,
+    legIndex,
+    totalLegs,
+    isMultiLeg
+  } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
+  const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
 
   const handlePaid = async () => {
     try {
-      const result = await markTripPaid({
-        rideId: rideId as Id<"rides">,
-        userId: userId as Id<"taxiTap_users">,
-        paid: true,
-      });
-
-      showGlobalSuccess(
-        'Payment Confirmed',
-        'Thank you for confirming your payment!',
-        { duration: 2000, position: 'top', animation: 'slide-down' }
-      );
-
-      setTimeout(() => {
-        router.push({
-          pathname: '/SubmitFeedback',
-          params: {
-            rideId: rideId as string,
-            startName: startName as string,
-            endName: endName as string,
-            passengerId: passengerId as string || userId as string,
-            driverId: driverId as string,
-          },
+      // Check if this is a multi-leg journey
+      if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+        // Use multi-leg payment handler
+        const result = await processLegPayment({
+          rideId: rideId as string,
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          amountPaid: parseFloat(fare as string),
+          isPaid: true,
         });
-      }, 2000);
+
+        const currentLeg = parseInt(legIndex as string) + 1;
+        const total = parseInt(totalLegs as string);
+
+        showGlobalSuccess(
+          'Leg Payment Confirmed',
+          `Payment for leg ${currentLeg} of ${total} confirmed!${result.canProgressToNextLeg ? ' Ready for next leg.' : ' Journey completed!'}`,
+          { duration: 3000, position: 'top', animation: 'slide-down' }
+        );
+
+        setTimeout(() => {
+          if (result.canProgressToNextLeg) {
+            // Navigate back to journey progress or next leg preparation
+            router.push('/HomeScreen'); // Could be journey progress screen instead
+          } else {
+            // Journey completed - go to feedback for the final leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                isMultiLeg: 'true',
+                journeyId: journeyId as string,
+              },
+            });
+          }
+        }, 3000);
+      } else {
+        // Original single-leg payment logic
+        const result = await markTripPaid({
+          rideId: rideId as Id<"rides">,
+          userId: userId as Id<"taxiTap_users">,
+          paid: true,
+        });
+
+        showGlobalSuccess(
+          'Payment Confirmed',
+          'Thank you for confirming your payment!',
+          { duration: 2000, position: 'top', animation: 'slide-down' }
+        );
+
+        setTimeout(() => {
+          router.push({
+            pathname: '/SubmitFeedback',
+            params: {
+              rideId: rideId as string,
+              startName: startName as string,
+              endName: endName as string,
+              passengerId: passengerId as string || userId as string,
+              driverId: driverId as string,
+            },
+          });
+        }, 2000);
+      }
 
     } catch (error: any) {
       showGlobalError(
@@ -56,15 +114,53 @@ export default function PaymentConfirmation() {
 
   const handleNotPaid = async () => {
     try {
-      const result = await markTripPaid({
-        rideId: rideId as Id<"rides">,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
+      // Check if this is a multi-leg journey
+      if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+        // Use multi-leg payment handler for "not paid"
+        const result = await processLegPayment({
+          rideId: rideId as string,
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          amountPaid: 0,
+          isPaid: false,
+        });
 
-      showGlobalAlert({
-        title: 'Payment Not Confirmed',
-        message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
+        const currentLeg = parseInt(legIndex as string) + 1;
+        const total = parseInt(totalLegs as string);
+
+        showGlobalAlert({
+          title: 'Payment Required',
+          message: `Payment for leg ${currentLeg} of ${total} is required before continuing your journey. Please pay the driver to proceed.`,
+          type: 'warning',
+          duration: 0,
+          actions: [
+            {
+              label: 'I Will Pay Now',
+              onPress: () => {
+                // Stay on payment screen to try again
+              },
+              style: 'default',
+            },
+            {
+              label: 'Cancel Journey',
+              onPress: () => router.push('/HomeScreen'),
+              style: 'cancel',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
+      } else {
+        // Original single-leg "not paid" logic
+        const result = await markTripPaid({
+          rideId: rideId as Id<"rides">,
+          userId: userId as Id<"taxiTap_users">,
+          paid: false,
+        });
+
+        showGlobalAlert({
+          title: 'Payment Not Confirmed',
+          message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
         type: 'warning',
         duration: 0,
         actions: [
@@ -90,9 +186,10 @@ export default function PaymentConfirmation() {
             style: 'cancel',
           }
         ],
-        position: 'top',
-        animation: 'slide-down',
-      });
+          position: 'top',
+          animation: 'slide-down',
+        });
+      }
 
     } catch (error: any) {
       showGlobalError(
@@ -106,7 +203,22 @@ export default function PaymentConfirmation() {
   return (
     <View style={[styles.safeArea]}>
       <View style={styles.container}>
-        <Text style={styles.headerTitle}>Trip Payment</Text>
+        <Text style={styles.headerTitle}>
+          {isMultiLeg === 'true' ? 'Leg Payment' : 'Trip Payment'}
+        </Text>
+
+        {/* Multi-leg progress indicator */}
+        {isMultiLeg === 'true' && legIndex !== undefined && totalLegs && (
+          <View style={styles.legProgressCard}>
+            <View style={styles.legProgressHeader}>
+              <Ionicons name="map-outline" size={20} color="#FF9900" />
+              <Text style={styles.legProgressText}>
+                Leg {parseInt(legIndex as string) + 1} of {totalLegs}
+              </Text>
+            </View>
+            <Text style={styles.legProgressSubtext}>Multi-leg journey in progress</Text>
+          </View>
+        )}
 
         <View style={[styles.card, styles.tripDetails]}>
           <View style={styles.detailRow}>
@@ -117,10 +229,18 @@ export default function PaymentConfirmation() {
             <Ionicons name="car-outline" size={18} color="#2B2B2B" />
             <Text style={styles.detailText}>License: {licensePlate}</Text>
           </View>
+          {isMultiLeg === 'true' && (
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={18} color="#2B2B2B" />
+              <Text style={styles.detailText}>This leg: {startName} → {endName}</Text>
+            </View>
+          )}
           <View style={styles.detailRow}>
             <Ionicons name="cash-outline" size={18} color="#FF9900" />
             <View style={styles.fareInfo}>
-              <Text style={styles.fareLabel}>Total Fare:</Text>
+              <Text style={styles.fareLabel}>
+                {isMultiLeg === 'true' ? 'Leg Fare:' : 'Total Fare:'}
+              </Text>
               <Text style={styles.fareAmount}>R{fare}</Text>
             </View>
           </View>
@@ -148,6 +268,30 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
   container: { padding: 24, flex: 1, justifyContent: "center" },
   headerTitle: { fontSize: 28, fontWeight: "700", color: "#2B2B2B", marginBottom: 24, textAlign: "center" },
+  legProgressCard: {
+    backgroundColor: "#fff3e0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF9900",
+  },
+  legProgressHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  legProgressText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FF9900",
+  },
+  legProgressSubtext: {
+    fontSize: 14,
+    color: "#666",
+    fontStyle: "italic",
+  },
   card: {
     backgroundColor: "#f8f9fa",
     borderRadius: 16,
