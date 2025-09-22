@@ -18,43 +18,46 @@ describe("tripPaidHandler", () => {
 
   it("updates tripPaid when ride exists and user is passenger", async () => {
     const ride = { _id: "ride123", passengerId: "user1" as Id<"taxiTap_users">, tripPaid: false };
-    mockCtx.db.first.mockResolvedValueOnce(ride);
+    mockCtx.db.get.mockResolvedValueOnce(ride);
 
-    await tripPaidHandler(mockCtx, "ride123", "user1" as Id<"taxiTap_users">, true);
+    await tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact");
 
     expect(mockCtx.db.patch).toHaveBeenCalledWith("ride123", { 
       tripPaid: true,
-      paymentConfirmedAt: expect.any(Number)
+      paymentConfirmedAt: expect.any(Number),
+      amountPaid: undefined,
+      paymentType: "exact"
     });
   });
 
   it("throws an error if ride is not found", async () => {
     mockCtx.db.get.mockResolvedValueOnce(null);
-    mockCtx.db.first.mockResolvedValueOnce(null);
 
     await expect(
-      tripPaidHandler(mockCtx, "ride123", "user1" as Id<"taxiTap_users">, true)
+      tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact")
     ).rejects.toThrow("Ride not found");
   });
 
   it("throws an error if user is not the passenger", async () => {
     const ride = { _id: "ride123", passengerId: "user2" as Id<"taxiTap_users">, tripPaid: false };
-    mockCtx.db.first.mockResolvedValueOnce(ride);
+    mockCtx.db.get.mockResolvedValueOnce(ride);
 
     await expect(
-      tripPaidHandler(mockCtx, "ride123", "user1" as Id<"taxiTap_users">, true)
+      tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact")
     ).rejects.toThrow("Only the passenger can confirm payment for this ride");
   });
 
   it("handles paying false correctly", async () => {
     const ride = { _id: "ride123", passengerId: "user1" as Id<"taxiTap_users">, tripPaid: true };
-    mockCtx.db.first.mockResolvedValueOnce(ride);
+    mockCtx.db.get.mockResolvedValueOnce(ride);
 
-    await tripPaidHandler(mockCtx, "ride123", "user1" as Id<"taxiTap_users">, false);
+    await tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, false, null, "exact");
 
     expect(mockCtx.db.patch).toHaveBeenCalledWith("ride123", { 
       tripPaid: false,
-      paymentConfirmedAt: expect.any(Number)
+      paymentConfirmedAt: expect.any(Number),
+      amountPaid: undefined,
+      paymentType: "exact"
     });
   });
 });

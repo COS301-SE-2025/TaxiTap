@@ -145,16 +145,13 @@ export default defineSchema({
     lastProximityAlertAt: v.optional(v.number()),
     lastProximityStatus: v.optional(v.string()),
 
-    paymentConfirmedAt: v.optional(v.number()),
-    //amountPaid: v.optional(v.float64()), - duplicate field, use amountPaid above
-    //paymentType: v.optional(v.string()),
+    paymentConfirmedAt: v.optional(v.float64()),
     
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
     updatedAt: v.optional(v.number()),
-    
-    // Front passenger fields - add these to match existing data
+
     isFrontPassenger: v.optional(v.boolean()),
     frontPassengerSetAt: v.optional(v.number()),
   })
@@ -164,7 +161,9 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_requested_at", ["requestedAt"])
     .index("by_trip_id", ["tripId"])
-    .index("by_passenger_and_driver", ["passengerId", "driverId"]),
+    .index("by_passenger_and_driver", ["passengerId", "driverId"])
+    .index("by_front_passenger", ["isFrontPassenger"])
+    .index("by_driver_and_front", ["driverId", "isFrontPassenger"]),
 
   //passenger table
   passengers: defineTable({

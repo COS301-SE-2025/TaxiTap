@@ -20,31 +20,18 @@ export default function PaymentConfirmation() {
 
   const handlePaid = async () => {
     try {
-      console.log('Marking trip as paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: true,
-      });
-
       const result = await markTripPaid({
-        rideId: rideId as string,
+        rideId: rideId as Id<"rides">,
         userId: userId as Id<"taxiTap_users">,
         paid: true,
       });
-
-      console.log('Payment marking result:', result);
 
       showGlobalSuccess(
         'Payment Confirmed',
         'Thank you for confirming your payment!',
-        {
-          duration: 2000,
-          position: 'top',
-          animation: 'slide-down',
-        }
+        { duration: 2000, position: 'top', animation: 'slide-down' }
       );
 
-      // Navigate to feedback after confirming payment
       setTimeout(() => {
         router.push({
           pathname: '/SubmitFeedback',
@@ -59,35 +46,21 @@ export default function PaymentConfirmation() {
       }, 2000);
 
     } catch (error: any) {
-      console.error('Error marking trip as paid:', error);
-      
       showGlobalError(
         'Payment Confirmation Failed',
-        error?.message || 'Unable to confirm payment. Please try again or contact support.',
-        {
-          duration: 4000,
-          position: 'top',
-          animation: 'slide-down',
-        }
+        error?.message || 'Unable to confirm payment. Please try again.',
+        { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
   };
 
   const handleNotPaid = async () => {
     try {
-      console.log('Marking trip as not paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
-
       const result = await markTripPaid({
-        rideId: rideId as string,
+        rideId: rideId as Id<"rides">,
         userId: userId as Id<"taxiTap_users">,
         paid: false,
       });
-
-      console.log('Payment marking result:', result);
 
       showGlobalAlert({
         title: 'Payment Not Confirmed',
@@ -113,9 +86,7 @@ export default function PaymentConfirmation() {
           },
           {
             label: 'Skip Feedback',
-            onPress: () => {
-              router.push('/HomeScreen');
-            },
+            onPress: () => router.push('/HomeScreen'),
             style: 'cancel',
           }
         ],
@@ -124,44 +95,47 @@ export default function PaymentConfirmation() {
       });
 
     } catch (error: any) {
-      console.error('Error marking trip as not paid:', error);
-      
       showGlobalError(
         'Update Failed',
-        error?.message || 'Unable to update payment status. Please try again or contact support.',
-        {
-          duration: 4000,
-          position: 'top',
-          animation: 'slide-down',
-        }
+        error?.message || 'Unable to update payment status. Please try again.',
+        { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Payments</Text>
+    <View style={[styles.safeArea]}>
+      <View style={styles.container}>
+        <Text style={styles.headerTitle}>Trip Payment</Text>
 
-        <View style={styles.infoRow}>
-          <Ionicons name="person" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>Driver: {driverName}</Text>
+        <View style={[styles.card, styles.tripDetails]}>
+          <View style={styles.detailRow}>
+            <Ionicons name="person" size={18} color="#2B2B2B" />
+            <Text style={styles.detailText}>Driver: {driverName}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="car-outline" size={18} color="#2B2B2B" />
+            <Text style={styles.detailText}>License: {licensePlate}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="cash-outline" size={18} color="#FF9900" />
+            <View style={styles.fareInfo}>
+              <Text style={styles.fareLabel}>Total Fare:</Text>
+              <Text style={styles.fareAmount}>R{fare}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="card-outline" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>License Plate: {licensePlate}</Text>
-        </View>
-        <Text style={styles.amount}>R{fare ?? 0}</Text>
 
         <Text style={styles.questionText}>Have you paid the driver?</Text>
 
-        <View style={styles.buttonRowHorizontal}>
+        <View style={styles.buttonRow}>
           <TouchableOpacity style={[styles.button, styles.paidButton]} onPress={handlePaid}>
-            <Ionicons name="checkmark" size={20} color="#fff" />
+            <Ionicons name="checkmark-circle" size={22} color="#fff" />
             <Text style={styles.buttonText}>Yes, I paid</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={[styles.button, styles.notPaidButton]} onPress={handleNotPaid}>
-            <Ionicons name="close" size={20} color="#fff" />
+            <Ionicons name="close-circle" size={22} color="#fff" />
             <Text style={styles.buttonText}>No, not yet</Text>
           </TouchableOpacity>
         </View>
@@ -171,91 +145,54 @@ export default function PaymentConfirmation() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2B2B2B",
-    marginBottom: 30,
-    marginTop: -10,
-    textAlign: "center",
-    width: "100%",
-  },
-  paymentText: {
-    fontSize: 16,
-    color: "#2B2B2B",
-    marginBottom: 15,
-    textAlign: "center",
-    width: "100%",
-    fontWeight: "bold",
-  },
-  amount: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#FF7B00",
-    marginBottom: 40,
-    textAlign: "center",
-    width: "100%",
-  },
-  debugText: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 10,
-  },
-  questionText: {
-    fontSize: 18,
-    color: "#2B2B2B",
-    marginBottom: 30,
-    textAlign: "center",
-    width: "100%",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 10,
-    width: "100%",
-  },
-  infoText: {
-    marginBottom: 0,
-    textAlign: "left",
-    width: "auto",
-  },
-  buttonRowHorizontal: {
-    flexDirection: "row",
-    gap: 16,
-    justifyContent: "center",
-    width: "100%",
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
+  safeArea: { flex: 1, backgroundColor: "#fff" },
+  container: { padding: 24, flex: 1, justifyContent: "center" },
+  headerTitle: { fontSize: 28, fontWeight: "700", color: "#2B2B2B", marginBottom: 24, textAlign: "center" },
+  card: {
+    backgroundColor: "#f8f9fa",
     borderRadius: 16,
-    flex: 1,
-    justifyContent: "center",
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 2,
   },
-  paidButton: {
-    backgroundColor: "#2ECC71",
+  tripDetails: {},
+  detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 8 },
+  detailText: { fontSize: 16, fontWeight: "500", color: "#2B2B2B" },
+  fareInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "90%",
+    borderTopWidth: 1,
+    borderTopColor: "#e9ecef"
   },
-  notPaidButton: {
-    backgroundColor: "#E74C3C",
-  },
-  buttonText: {
-    color: "#fff",
+  fareLabel: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#2B2B2B",
   },
+  fareAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FF9900",
+  },
+  questionText: { fontSize: 18, fontWeight: "500", color: "#2B2B2B", marginBottom: 24, textAlign: "center" },
+  buttonRow: { flexDirection: "row", gap: 16, justifyContent: "center" },
+  button: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  paidButton: { backgroundColor: "#2ECC71" },
+  notPaidButton: { backgroundColor: "#E74C3C" },
+  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
 });

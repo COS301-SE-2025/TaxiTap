@@ -69,9 +69,11 @@ import type * as functions_rides_getActiveRideByDriver from "../functions/rides/
 import type * as functions_rides_getActiveRideByPassenger from "../functions/rides/getActiveRideByPassenger.js";
 import type * as functions_rides_getActiveTrips from "../functions/rides/getActiveTrips.js";
 import type * as functions_rides_getActiveTripsHandler from "../functions/rides/getActiveTripsHandler.js";
+import type * as functions_rides_getChange from "../functions/rides/getChange.js";
 import type * as functions_rides_getDriverPin from "../functions/rides/getDriverPin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
 import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
+import type * as functions_rides_setFrontPassenger from "../functions/rides/setFrontPassenger.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
 import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
 import type * as functions_rides_tripPaid from "../functions/rides/tripPaid.js";
@@ -181,9 +183,11 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/getActiveRideByPassenger": typeof functions_rides_getActiveRideByPassenger;
   "functions/rides/getActiveTrips": typeof functions_rides_getActiveTrips;
   "functions/rides/getActiveTripsHandler": typeof functions_rides_getActiveTripsHandler;
+  "functions/rides/getChange": typeof functions_rides_getChange;
   "functions/rides/getDriverPin": typeof functions_rides_getDriverPin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
+  "functions/rides/setFrontPassenger": typeof functions_rides_setFrontPassenger;
   "functions/rides/startRide": typeof functions_rides_startRide;
   "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
   "functions/rides/tripPaid": typeof functions_rides_tripPaid;
