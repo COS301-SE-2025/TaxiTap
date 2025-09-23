@@ -101,10 +101,10 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
 
-  # === BUILD & RELEASE JOB (only on main) ===
+  # === BUILD & RELEASE JOB (manual trigger or release tags only) ===
   build-and-release:
-    name: Build APK and Create Release (main only)
-    if: github.ref == 'refs/heads/dev'
+    name: Build APK and Create Release
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs: [frontend-test, backend-typecheck, deploy]
     runs-on: ubuntu-latest
     defaults:
@@ -126,17 +126,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build APK with EAS
-        run: eas build --platform android --profile github-release --non-interactive --wait
+      # Temporarily skip build step - using existing build
+      - name: Download APK (Testing Fix)
+        run: |
+          # Use existing build ID instead of building
+          # Replace 'YOUR_EXISTING_BUILD_ID' with actual build ID from dashboard
+          BUILD_ID="834255d2-fd4e-42bd-9d29-c38387ea3d55"
+          echo "Using existing build ID: $BUILD_ID"
+          eas build:download --id="$BUILD_ID"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Download APK
-        run: |
-          # Get the build URL from EAS
-          BUILD_URL=$(eas build:list --platform android --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
-          # Download the APK
-          curl -L -o taxitap-release.apk "$BUILD_URL"
 
       - name: Get version from package.json
         id: package-version
