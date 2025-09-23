@@ -85,7 +85,7 @@ export async function checkAndAwardJourneyBadgesHandler(ctx: any, args: any): Pr
       success: true,
       badgesAwarded: badges,
       message: badges.length > 0
-        ? `Congratulations! You earned: ${badges.map(b => JOURNEY_BADGE_DEFINITIONS[b].name).join(', ')}`
+        ? `Congratulations! You earned: ${badges.map(b => JOURNEY_BADGE_DEFINITIONS[b as keyof typeof JOURNEY_BADGE_DEFINITIONS].name).join(', ')}`
         : "No new badges awarded"
     };
 
@@ -336,24 +336,24 @@ export async function getJourneyBadgeProgressHandler(ctx: any, args: any): Promi
     const progress = {
       journey_pioneer: {
         ...JOURNEY_BADGE_DEFINITIONS.journey_pioneer,
-        earned: userBadges.some(b => b.badgeType === "journey_pioneer"),
-        earnedAt: userBadges.find(b => b.badgeType === "journey_pioneer")?.earnedAt,
+        earned: userBadges.some((b: any) => b.badgeType === "journey_pioneer"),
+        earnedAt: userBadges.find((b: any) => b.badgeType === "journey_pioneer")?.earnedAt,
         progress: Math.min(completedJourneys.length, 1),
         target: 1,
         progressText: `${completedJourneys.length}/1 journeys completed`
       },
       journey_master: {
         ...JOURNEY_BADGE_DEFINITIONS.journey_master,
-        earned: userBadges.some(b => b.badgeType === "journey_master"),
-        earnedAt: userBadges.find(b => b.badgeType === "journey_master")?.earnedAt,
+        earned: userBadges.some((b: any) => b.badgeType === "journey_master"),
+        earnedAt: userBadges.find((b: any) => b.badgeType === "journey_master")?.earnedAt,
         progress: Math.min(completedJourneys.length, 10),
         target: 10,
         progressText: `${completedJourneys.length}/10 journeys completed`
       },
       transfer_expert: {
         ...JOURNEY_BADGE_DEFINITIONS.transfer_expert,
-        earned: userBadges.some(b => b.badgeType === "transfer_expert"),
-        earnedAt: userBadges.find(b => b.badgeType === "transfer_expert")?.earnedAt,
+        earned: userBadges.some((b: any) => b.badgeType === "transfer_expert"),
+        earnedAt: userBadges.find((b: any) => b.badgeType === "transfer_expert")?.earnedAt,
         progress: Math.min(averageTransferRating, 4.0),
         target: 4.0,
         progressText: `${averageTransferRating.toFixed(1)}/4.0 average transfer rating`,
