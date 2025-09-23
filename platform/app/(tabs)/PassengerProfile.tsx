@@ -11,6 +11,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { Badge } from '../../components/Badge';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -55,6 +56,12 @@ export default function PassengerProfile() {
     const recentFeedback = useQuery(
         api.functions.feedback.showFeedback.showFeedbackPassenger,
         user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
+    // Query loyal member status
+    const loyalMemberStatus = useQuery(
+        api.functions.users.UserManagement.getLoyalMemberStatus.getLoyalMemberStatus,
+        user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
     );
 
     // Mutations for switching roles
@@ -366,6 +373,13 @@ export default function PassengerProfile() {
             color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
             fontWeight: '500',
         },
+        badgesContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginTop: 12,
+            gap: 8,
+        },
     });
     
     if (!user) {
@@ -404,6 +418,28 @@ export default function PassengerProfile() {
                 </Pressable>
                 <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
                 <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
+            </View>
+
+            {/* Badges Section */}
+            <View style={dynamicStyles.badgesContainer}>
+                {/* Custom Loyal Member Badge */}
+                {loyalMemberStatus?.isLoyalMember && (
+                    <View style={{
+                        backgroundColor: '#34C759',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        alignSelf: 'center',
+                        marginTop: 8,
+                    }}>
+                        <Ionicons name="trophy" size={16} color="white" style={{marginRight: 6}} />
+                        <Text style={{color: 'white', fontWeight: '600', fontSize: 14}}>
+                            Loyal Member
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {/* Account Section */}

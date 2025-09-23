@@ -1,8 +1,9 @@
 import { getActiveTripsHandler } from "../../convex/functions/rides/getActiveTripsHandler";
+import { Id } from "../../convex/_generated/dataModel";
 
 let dbData: any;
 
-const createTestCtx = () => {
+const createTestCtx = (): any => {
   return {
     db: {
       query: (table: string) => ({
@@ -28,6 +29,9 @@ const createTestCtx = () => {
       }),
       get: async (id: string) => dbData.passengers[id] || null,
     },
+    auth: {},
+    storage: {},
+    runQuery: jest.fn(),
   };
 };
 
@@ -51,7 +55,7 @@ describe("getActiveTripsHandler - integration style", () => {
 
   it("returns correct active and unpaid trips counts", async () => {
     const ctx = createTestCtx();
-    const result = await getActiveTripsHandler(ctx, "driver123");
+    const result = await getActiveTripsHandler(ctx, "driver123" as Id<"taxiTap_users">);
 
     expect(result.activeCount).toBe(2);
     expect(result.paidCount).toBe(1);
@@ -70,6 +74,7 @@ describe("getActiveTripsHandler - integration style", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
       {
         rideId: "r2",
@@ -82,6 +87,7 @@ describe("getActiveTripsHandler - integration style", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
     ]);
 
@@ -98,6 +104,7 @@ describe("getActiveTripsHandler - integration style", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
       {
         rideId: "r4",
@@ -111,6 +118,7 @@ describe("getActiveTripsHandler - integration style", () => {
         changeReceived: false,
         paymentType: "not_paid",
         isFrontPassenger: false,
+        badges: [],
       },
     ]);
   });
@@ -120,7 +128,7 @@ describe("getActiveTripsHandler - integration style", () => {
     dbData.passengers = {};
 
     const ctx = createTestCtx();
-    const result = await getActiveTripsHandler(ctx, "driver123");
+    const result = await getActiveTripsHandler(ctx, "driver123" as Id<"taxiTap_users">);
 
     expect(result.activeCount).toBe(0);
     expect(result.paidCount).toBe(0);

@@ -1,6 +1,7 @@
 import { Id } from "../../_generated/dataModel";
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
+import { checkAndAwardTrustedPayerBadge } from "../badges/badgeService";
 
 export const tripPaidHandler = async (
   ctx: any, 
@@ -26,6 +27,19 @@ export const tripPaidHandler = async (
     amountPaid: amountPaid ?? undefined,   
     paymentType,                           
   });
+  
+  // Check and award Trusted Payer badge if payment was confirmed
+  if (paid) {
+    try {
+      const badgeAwarded = await checkAndAwardTrustedPayerBadge(ctx, userId);
+      if (badgeAwarded) {
+        console.log('Trusted Payer badge awarded to user:', userId);
+      }
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+      // Don't fail the payment confirmation if badge awarding fails
+    }
+  }
 
   return { 
     success: true, 

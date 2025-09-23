@@ -146,10 +146,28 @@ export default defineSchema({
     lastProximityStatus: v.optional(v.string()),
 
     paymentConfirmedAt: v.optional(v.float64()),
-    
+
+    // Multi-leg journey tracking
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
+
+    // Per-leg payment processing fields
+    legPaymentStatus: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("skipped")
+    )),
+    legPaymentMethod: v.optional(v.union(
+      v.literal("cash"),
+      v.literal("card"),
+      v.literal("digital"),
+      v.literal("other")
+    )),
+    isPartialJourneyPayment: v.optional(v.boolean()),
+    journeyLegNumber: v.optional(v.string()), // "2 of 3"
+
     updatedAt: v.optional(v.number()),
 
     isFrontPassenger: v.optional(v.boolean()),
@@ -486,9 +504,52 @@ routes: defineTable({
     completedAt: v.optional(v.number()),
     transferWindowStart: v.optional(v.number()),
     transferWindowEnd: v.optional(v.number()),
+
+    // Per-leg payment tracking
+    paymentStatus: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+      v.literal("not_required")
+    )),
+    paymentConfirmedAt: v.optional(v.number()),
+    paymentAmount: v.optional(v.number()),
+    paymentMethod: v.optional(v.union(
+      v.literal("cash"),
+      v.literal("card"),
+      v.literal("digital"),
+      v.literal("other")
+    )),
+    paymentNotes: v.optional(v.string()),
   })
   .index("by_journey_id", ["journeyId"])
   .index("by_journey_and_leg", ["journeyId", "legIndex"])
   .index("by_status", ["status"])
-  .index("by_ride_id", ["rideId"]),
+  .index("by_ride_id", ["rideId"])
+  .index("by_payment_status", ["paymentStatus"]),
+
+  badges: defineTable({
+    userId: v.id("taxiTap_users"),
+    badgeType: v.union(
+      v.literal("trusted_payer"),
+      v.literal("frequent_rider"),
+      v.literal("loyal_member"),
+      v.literal("marathon_driver"),
+      v.literal("top_earner"), // Add top_earner badge type
+    ),
+    earnedAt: v.number(),
+    isActive: v.boolean(),
+    metadata: v.optional(v.object({
+      totalRides: v.optional(v.number()),
+      paymentRate: v.optional(v.number()),
+      streakCount: v.optional(v.number()),
+      totalEarnings: v.optional(v.number()), // Add totalEarnings for top_earner badge
+    })),
+  })
+  .index("by_user_id", ["userId"])
+  .index("by_badge_type", ["badgeType"])
+  .index("by_user_and_type", ["userId", "badgeType"])
+  .index("by_active_badges", ["userId", "isActive"]),
 });

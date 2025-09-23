@@ -1,4 +1,8 @@
-export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
+import { QueryCtx } from "../../_generated/server";
+import { Id } from "../../_generated/dataModel";
+import { getUserBadges } from "../badges/badgeService";
+
+export const getActiveTripsHandler = async (ctx: QueryCtx, driverId: Id<"taxiTap_users">) => {
   const activeRides = await ctx.db
     .query("rides")
     .withIndex("by_driver", (q: any) => q.eq("driverId", driverId))
@@ -28,6 +32,9 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
 
     const passenger = await ctx.db.get(ride.passengerId);
     if (passenger) {
+      // Get passenger badges
+      const badges = await getUserBadges(ctx, ride.passengerId);
+      
       passengers.push({
         rideId: ride.rideId, // Add rideId for front passenger functionality
         name: passenger.name,
@@ -39,6 +46,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
         changeReceived: ride.changeReceived ?? false,
         paymentType: ride.paymentType ?? "not_paid",
         isFrontPassenger: ride.isFrontPassenger ?? false, // Add front passenger status
+        badges: badges,
       });
     }
   }
@@ -46,6 +54,9 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
   for (const ride of unpaidRides) {
     const passengerUnpaid = await ctx.db.get(ride.passengerId);
     if (passengerUnpaid) {
+      // Get passenger badges
+      const badges = await getUserBadges(ctx, ride.passengerId);
+      
       passengersUnpaid.push({
         rideId: ride.rideId, // Add rideId for front passenger functionality
         name: passengerUnpaid.name,
@@ -58,6 +69,7 @@ export const getActiveTripsHandler = async (ctx: any, driverId: string) => {
         changeReceived: ride.changeReceived ?? false,
         paymentType: ride.paymentType ?? "not_paid",
         isFrontPassenger: ride.isFrontPassenger ?? false, // Add front passenger status
+        badges: badges,
       });
     }
   }
@@ -86,6 +98,21 @@ export const handlePassengerPayment = async (
 
   if (!ride) throw new Error("Ride not found");
 
+  // Check if this is a multi-leg ride
+  if (ride.isMultiLegRide && ride.parentJourneyId && ride.legIndex !== undefined) {
+    // Use multi-leg payment handler
+    const { processLegPaymentHandler } = require("../journeys/multiLegPaymentHandler");
+    return await processLegPaymentHandler(ctx, {
+      rideId,
+      journeyId: ride.parentJourneyId,
+      legIndex: ride.legIndex,
+      amountPaid,
+      isPaid,
+      paymentNotes: null,
+    });
+  }
+
+  // Single-leg payment logic
   const fare = ride.finalFare ?? ride.estimatedFare ?? 0;
   let paymentType: "exact" | "overpaid" | "underpaid" | "not_paid" = "not_paid";
   let changeDue = 0;

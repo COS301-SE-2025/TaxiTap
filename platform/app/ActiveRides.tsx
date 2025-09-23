@@ -9,6 +9,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
+import { Badge } from '../components/Badge';
 
 interface Passenger {
     rideId: string;
@@ -17,6 +18,16 @@ interface Passenger {
     fare: number;
     tripPaid: boolean | null;
     isFrontPassenger?: boolean;
+    badges?: Array<{
+        badgeType: string;
+        name: string;
+        description: string;
+        icon: string;
+        color: string;
+        earnedAt: number;
+        isActive: boolean;
+        metadata?: any;
+    }>;
 }
 
 export default function ActiveRides() {
@@ -102,6 +113,22 @@ export default function ActiveRides() {
                                     <Text style={[dynamicStyles.phoneNumber, { color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)' }]}>
                                         {p.phoneNumber}
                                     </Text>
+                                    {/* Badges */}
+                                    {p.badges && p.badges.length > 0 && (
+                                        <View style={dynamicStyles.badgesContainer}>
+                                            {p.badges.map((badge, badgeIndex) => (
+                                                <Badge
+                                                    key={badgeIndex}
+                                                    badgeType={badge.badgeType as any}
+                                                    name={badge.name}
+                                                    description={badge.description}
+                                                    icon={badge.icon}
+                                                    color={badge.color}
+                                                    size="small"
+                                                />
+                                            ))}
+                                        </View>
+                                    )}
                                 </View>
                                 <View style={dynamicStyles.statusContainer}>
                                     <View style={[
@@ -271,6 +298,12 @@ const dynamicStyles = StyleSheet.create({
     phoneNumber: {
         fontSize: 15,
         fontWeight: '400',
+    },
+    badgesContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 8,
+        gap: 4,
     },
     statusBadge: {
         paddingHorizontal: 12,
