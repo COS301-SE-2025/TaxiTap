@@ -41,6 +41,14 @@ export const endRideHandler = async (ctx: any, args: any) => {
       console.log(`🚗 Completing leg ${ride.legIndex} of multi-leg journey ${ride.parentJourneyId}`);
 
       try {
+        // Validate journey completion prerequisites
+        if (!ride.parentJourneyId) {
+          throw new Error("Missing parentJourneyId for multi-leg ride");
+        }
+        if (ride.legIndex === undefined || ride.legIndex === null) {
+          throw new Error("Missing legIndex for multi-leg ride");
+        }
+
         // Handle multi-leg journey completion logic
         journeyCompletionResult = await handleMultiLegJourneyCompletion(ctx, {
           journeyId: ride.parentJourneyId,
@@ -50,9 +58,45 @@ export const endRideHandler = async (ctx: any, args: any) => {
           passengerId: args.userId,
           driverId: ride.driverId
         });
+
+        // If journey completion succeeded, log success
+        if (journeyCompletionResult) {
+          console.log(`✅ Journey completion handled successfully for ${ride.parentJourneyId}`);
+        }
+
       } catch (journeyError: any) {
         console.error("❌ Error handling multi-leg journey completion:", journeyError);
-        // Don't fail the ride completion, but log the error
+
+        // Record the error for later analysis/recovery
+        try {
+          await ctx.runMutation(
+            internal.functions.notifications.rideNotifications.sendRideNotification,
+            {
+              rideId: args.rideId,
+              type: "system_maintenance",
+              driverId: undefined,
+              passengerId: args.userId,
+              metadata: {
+                errorType: "journey_completion_failed",
+                journeyId: ride.parentJourneyId,
+                legIndex: ride.legIndex,
+                error: journeyError.message,
+                rideId: args.rideId,
+                needsManualReview: true
+              }
+            }
+          );
+        } catch (notificationError) {
+          console.error("Failed to send error notification:", notificationError);
+        }
+
+        // Set a partial result to indicate the issue
+        journeyCompletionResult = {
+          journeyCompleted: false,
+          error: journeyError.message,
+          partialCompletion: true,
+          legCompleted: true // The individual ride leg was still completed
+        };
       }
     }
 
@@ -124,6 +168,17 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
   try {
     console.log(`🔄 Processing journey completion for ${args.journeyId}, leg ${args.completedLegIndex}`);
 
+    // Validate input parameters
+    if (!args.journeyId || args.journeyId.trim() === "") {
+      throw new Error("Invalid journeyId provided");
+    }
+    if (args.completedLegIndex < 0) {
+      throw new Error("Invalid legIndex: must be non-negative");
+    }
+    if (!args.passengerId) {
+      throw new Error("Missing passengerId for journey completion");
+    }
+
     // Get the journey record
     const journey = await ctx.db
       .query("multiLegJourneys")
@@ -131,7 +186,26 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
       .unique();
 
     if (!journey) {
-      throw new Error("Journey not found");
+      throw new Error(`Journey not found: ${args.journeyId}`);
+    }
+
+    // Validate journey state
+    if (journey.status === "completed") {
+      console.warn(`⚠️ Journey ${args.journeyId} already marked as completed`);
+      return {
+        journeyCompleted: true,
+        alreadyCompleted: true,
+        message: "Journey was already completed"
+      };
+    }
+
+    if (journey.status === "cancelled") {
+      throw new Error(`Cannot complete leg for cancelled journey: ${args.journeyId}`);
+    }
+
+    // Verify the passenger matches
+    if (journey.passengerId !== args.passengerId) {
+      throw new Error(`Passenger mismatch for journey ${args.journeyId}`);
     }
 
     // Get the completed leg record
@@ -143,16 +217,32 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
       .unique();
 
     if (!completedLeg) {
-      throw new Error("Completed leg not found");
+      throw new Error(`Completed leg not found: journey ${args.journeyId}, leg ${args.completedLegIndex}`);
+    }
+
+    // Validate leg state
+    if (completedLeg.status === "completed") {
+      console.warn(`⚠️ Leg ${args.completedLegIndex} of journey ${args.journeyId} already completed`);
+      // Continue processing to check overall journey status
+    }
+
+    // Validate leg index consistency
+    if (args.completedLegIndex >= journey.totalLegs) {
+      throw new Error(`Invalid leg index ${args.completedLegIndex} for journey with ${journey.totalLegs} legs`);
     }
 
     // Update the completed leg with actual fare and completion status
-    await ctx.db.patch(completedLeg._id, {
-      status: "completed",
-      actualFare: args.actualFare,
-      completedAt: Date.now(),
-      rideId: args.rideId
-    });
+    try {
+      await ctx.db.patch(completedLeg._id, {
+        status: "completed",
+        actualFare: args.actualFare || completedLeg.estimatedFare, // Fallback to estimated fare
+        completedAt: Date.now(),
+        rideId: args.rideId
+      });
+      console.log(`✅ Updated leg ${args.completedLegIndex} status to completed`);
+    } catch (updateError) {
+      throw new Error(`Failed to update leg status: ${updateError.message}`);
+    }
 
     // Get all legs to check if journey is complete
     const allLegs = await ctx.db
@@ -160,23 +250,58 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
       .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
       .collect();
 
+    if (allLegs.length === 0) {
+      throw new Error(`No legs found for journey ${args.journeyId}`);
+    }
+
+    if (allLegs.length !== journey.totalLegs) {
+      console.warn(`⚠️ Leg count mismatch: expected ${journey.totalLegs}, found ${allLegs.length}`);
+    }
+
     const completedLegs = allLegs.filter(leg => leg.status === "completed");
+    const failedLegs = allLegs.filter(leg => leg.status === "failed");
     const isJourneyComplete = completedLegs.length === allLegs.length;
+
+    console.log(`📊 Journey progress: ${completedLegs.length}/${allLegs.length} legs completed, ${failedLegs.length} failed`);
 
     if (isJourneyComplete) {
       console.log(`🎯 Journey ${args.journeyId} completed successfully!`);
 
-      // Update journey status to completed
-      await ctx.db.patch(journey._id, {
-        status: "completed",
-        completedAt: Date.now(),
-        updatedAt: Date.now()
-      });
+      try {
+        // Update journey status to completed
+        await ctx.db.patch(journey._id, {
+          status: "completed",
+          completedAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        console.log(`✅ Journey ${args.journeyId} marked as completed`);
+      } catch (statusUpdateError) {
+        console.error(`❌ Failed to update journey status:`, statusUpdateError);
+        throw new Error(`Failed to mark journey as completed: ${statusUpdateError.message}`);
+      }
 
-      // Generate journey completion summary
-      const journeySummary = await generateJourneySummary(ctx, args.journeyId, allLegs);
+      // Generate journey completion summary with error handling
+      let journeySummary;
+      try {
+        journeySummary = await generateJourneySummary(ctx, args.journeyId, allLegs);
+        console.log(`📊 Journey summary generated successfully`);
+      } catch (summaryError) {
+        console.error(`❌ Failed to generate journey summary:`, summaryError);
+        // Create a basic summary with available data
+        journeySummary = {
+          journeyId: args.journeyId,
+          totalLegs: allLegs.length,
+          totalEstimatedFare: allLegs.reduce((sum, leg) => sum + (leg.estimatedFare || 0), 0),
+          totalActualFare: completedLegs.reduce((sum, leg) => sum + (leg.actualFare || leg.estimatedFare || 0), 0),
+          fareVariance: 0,
+          totalDuration: 0,
+          completedAt: Date.now(),
+          error: "Failed to generate complete summary",
+          partialData: true
+        };
+      }
 
-      // Send journey completion notification
+      // Send journey completion notification with enhanced error handling
       try {
         await ctx.runMutation(
           internal.functions.notifications.rideNotifications.sendRideNotification,
@@ -193,8 +318,10 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
             }
           }
         );
+        console.log(`📢 Journey completion notification sent successfully`);
       } catch (notificationError) {
-        console.warn("Failed to send journey completion notification:", notificationError);
+        console.error("❌ Failed to send journey completion notification:", notificationError);
+        // Don't throw - this is non-critical
       }
 
       // Request feedback for completed journey
