@@ -8,7 +8,7 @@
  * @author Git It Done
  */
 
-import { mutation, query } from "../../_generated/server";
+import { mutation, query, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../../_generated/api";
 
@@ -560,7 +560,7 @@ export async function requestJourneyFeedbackHandler(ctx: any, args: any): Promis
  * Request feedback from passenger after journey completion
  * Called automatically by the journey completion system
  */
-export const requestJourneyFeedback = mutation({
+export const requestJourneyFeedback = internalMutation({
   args: {
     journeyId: v.string(),
     passengerId: v.id("taxiTap_users"),

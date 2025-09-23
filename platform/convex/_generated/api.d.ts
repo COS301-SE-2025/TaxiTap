@@ -19,6 +19,7 @@ import type * as functions_badges_badgeService from "../functions/badges/badgeSe
 import type * as functions_badges_checkTrustedPayerEligibility from "../functions/badges/checkTrustedPayerEligibility.js";
 import type * as functions_badges_getDriverBadges from "../functions/badges/getDriverBadges.js";
 import type * as functions_badges_getUserBadges from "../functions/badges/getUserBadges.js";
+import type * as functions_badges_journeyBadges from "../functions/badges/journeyBadges.js";
 import type * as functions_badges_updateTopEarners from "../functions/badges/updateTopEarners.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
@@ -33,6 +34,9 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
+import type * as functions_journeys_journeyAnalytics from "../functions/journeys/journeyAnalytics.js";
+import type * as functions_journeys_journeyFailureHandler from "../functions/journeys/journeyFailureHandler.js";
+import type * as functions_journeys_journeyFeedback from "../functions/journeys/journeyFeedback.js";
 import type * as functions_journeys_journeyManagement from "../functions/journeys/journeyManagement.js";
 import type * as functions_journeys_multiLegPayment from "../functions/journeys/multiLegPayment.js";
 import type * as functions_journeys_multiLegPaymentHandler from "../functions/journeys/multiLegPaymentHandler.js";
@@ -138,6 +142,7 @@ declare const fullApi: ApiFromModules<{
   "functions/badges/checkTrustedPayerEligibility": typeof functions_badges_checkTrustedPayerEligibility;
   "functions/badges/getDriverBadges": typeof functions_badges_getDriverBadges;
   "functions/badges/getUserBadges": typeof functions_badges_getUserBadges;
+  "functions/badges/journeyBadges": typeof functions_badges_journeyBadges;
   "functions/badges/updateTopEarners": typeof functions_badges_updateTopEarners;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
@@ -152,6 +157,9 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
+  "functions/journeys/journeyAnalytics": typeof functions_journeys_journeyAnalytics;
+  "functions/journeys/journeyFailureHandler": typeof functions_journeys_journeyFailureHandler;
+  "functions/journeys/journeyFeedback": typeof functions_journeys_journeyFeedback;
   "functions/journeys/journeyManagement": typeof functions_journeys_journeyManagement;
   "functions/journeys/multiLegPayment": typeof functions_journeys_multiLegPayment;
   "functions/journeys/multiLegPaymentHandler": typeof functions_journeys_multiLegPaymentHandler;

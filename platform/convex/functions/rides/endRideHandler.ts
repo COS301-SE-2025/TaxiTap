@@ -34,7 +34,7 @@ export const endRideHandler = async (ctx: any, args: any) => {
     });
 
     // Check if this ride is part of a multi-leg journey
-    const isMultiLegRide = ride.isMultiLegRide && ride.parentJourneyId;
+    const isMultiLegRide = !!(ride.isMultiLegRide && ride.parentJourneyId);
     let journeyCompletionResult = null;
 
     if (isMultiLegRide) {
@@ -136,17 +136,25 @@ export const endRideHandler = async (ctx: any, args: any) => {
         notificationError.message);
     }
 
-    // Return enhanced response with journey information
-    const response = {
+    // Return response with journey information only for multi-leg rides
+    const response: any = {
       _id: ride._id,
       message: isMultiLegRide ?
         (journeyCompletionResult?.journeyCompleted ?
           "Multi-leg journey completed successfully!" :
           "Journey leg completed successfully.") :
-        "Ride ended successfully.",
-      isMultiLegRide,
-      journeyInfo: journeyCompletionResult
+        "Ride ended successfully."
     };
+
+    // Only add multi-leg fields for multi-leg rides
+    if (isMultiLegRide) {
+      response.isMultiLegRide = isMultiLegRide;
+      response.journeyInfo = journeyCompletionResult;
+    } else if (ride.isMultiLegRide === false) {
+      // Explicitly show isMultiLegRide: false when the ride property exists and is false
+      response.isMultiLegRide = false;
+      response.journeyInfo = null;
+    }
 
     return response;
   } catch (error: any) {
@@ -240,7 +248,7 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
         rideId: args.rideId
       });
       console.log(`✅ Updated leg ${args.completedLegIndex} status to completed`);
-    } catch (updateError) {
+    } catch (updateError: any) {
       throw new Error(`Failed to update leg status: ${updateError.message}`);
     }
 
@@ -258,8 +266,8 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
       console.warn(`⚠️ Leg count mismatch: expected ${journey.totalLegs}, found ${allLegs.length}`);
     }
 
-    const completedLegs = allLegs.filter(leg => leg.status === "completed");
-    const failedLegs = allLegs.filter(leg => leg.status === "failed");
+    const completedLegs = allLegs.filter((leg: any) => leg.status === "completed");
+    const failedLegs = allLegs.filter((leg: any) => leg.status === "failed");
     const isJourneyComplete = completedLegs.length === allLegs.length;
 
     console.log(`📊 Journey progress: ${completedLegs.length}/${allLegs.length} legs completed, ${failedLegs.length} failed`);
@@ -275,7 +283,7 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
           updatedAt: Date.now()
         });
         console.log(`✅ Journey ${args.journeyId} marked as completed`);
-      } catch (statusUpdateError) {
+      } catch (statusUpdateError: any) {
         console.error(`❌ Failed to update journey status:`, statusUpdateError);
         throw new Error(`Failed to mark journey as completed: ${statusUpdateError.message}`);
       }
@@ -291,8 +299,8 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
         journeySummary = {
           journeyId: args.journeyId,
           totalLegs: allLegs.length,
-          totalEstimatedFare: allLegs.reduce((sum, leg) => sum + (leg.estimatedFare || 0), 0),
-          totalActualFare: completedLegs.reduce((sum, leg) => sum + (leg.actualFare || leg.estimatedFare || 0), 0),
+          totalEstimatedFare: allLegs.reduce((sum: any, leg: any) => sum + (leg.estimatedFare || 0), 0),
+          totalActualFare: completedLegs.reduce((sum: any, leg: any) => sum + (leg.actualFare || leg.estimatedFare || 0), 0),
           fareVariance: 0,
           totalDuration: 0,
           completedAt: Date.now(),

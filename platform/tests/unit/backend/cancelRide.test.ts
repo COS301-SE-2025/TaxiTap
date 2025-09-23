@@ -172,7 +172,7 @@ describe("cancelRideHandler", () => {
     await cancelRideHandler(ctx, { rideId: baseRide.rideId, userId: baseRide.passengerId });
 
     expect(ctx.runMutation).toHaveBeenCalledWith(
-      "notifications/sendRideNotification",
+      require("../../../convex/_generated/api").internal.functions.notifications.rideNotifications.sendRideNotification,
       expect.objectContaining({
         rideId: baseRide.rideId,
         type: "ride_cancelled",
@@ -187,7 +187,7 @@ describe("cancelRideHandler", () => {
     await cancelRideHandler(ctx, { rideId: baseRide.rideId, userId: baseRide.driverId });
 
     expect(ctx.runMutation).toHaveBeenCalledWith(
-      "notifications/sendRideNotification",
+      require("../../../convex/_generated/api").internal.functions.notifications.rideNotifications.sendRideNotification,
       expect.objectContaining({
         rideId: baseRide.rideId,
         type: "ride_declined",

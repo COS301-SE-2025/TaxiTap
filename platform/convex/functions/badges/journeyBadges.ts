@@ -7,7 +7,7 @@
  * @author Git It Done
  */
 
-import { mutation, query } from "../../_generated/server";
+import { mutation, query, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../../_generated/dataModel";
 
@@ -261,7 +261,7 @@ async function awardJourneyBadge(
 /**
  * Check and award journey badges after journey completion
  */
-export const checkAndAwardJourneyBadges = mutation({
+export const checkAndAwardJourneyBadges = internalMutation({
   args: {
     userId: v.id("taxiTap_users"),
     journeyId: v.string(),

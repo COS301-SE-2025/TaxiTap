@@ -8,7 +8,7 @@
  * @author Git It Done
  */
 
-import { mutation, query } from "../../_generated/server";
+import { mutation, query, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -191,7 +191,7 @@ function calculateJourneyMetrics(journey: any, legs: any[]): any {
 /**
  * Collect journey metrics when a journey is completed
  */
-export const collectJourneyMetrics = mutation({
+export const collectJourneyMetrics = internalMutation({
   args: {
     journeyId: v.string(),
     triggeredBy: v.optional(v.string()) // "journey_completion", "manual", etc.
