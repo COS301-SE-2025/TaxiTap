@@ -9,6 +9,9 @@ on:
       - 'platform/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   # === FRONTEND JOB ===
   frontend-test:
@@ -101,10 +104,10 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
 
-  # === BUILD & RELEASE JOB (manual trigger or release tags only) ===
+  # === BUILD & RELEASE JOB (only on dev) ===
   build-and-release:
     name: Build APK and Create Release
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/dev'
     needs: [frontend-test, backend-typecheck, deploy]
     runs-on: ubuntu-latest
     defaults:
@@ -126,14 +129,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Temporarily skip build step - using existing build
-      - name: Download APK (Testing Fix)
+      - name: Build APK with EAS
+        run: eas build --platform android --profile github-release --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download APK
         run: |
-          # Use existing build ID instead of building
-          # Replace 'YOUR_EXISTING_BUILD_ID' with actual build ID from dashboard
-          BUILD_ID="834255d2-fd4e-42bd-9d29-c38387ea3d55"
-          echo "Using existing build ID: $BUILD_ID"
-          eas build:download --id="$BUILD_ID"
+          # Get the latest build ID and download URL
+          BUILD_INFO=$(eas build:list --platform android --limit 1 --json --non-interactive)
+          echo "Build list retrieved successfully"
+
+          # Extract download URL for the latest build
+          DOWNLOAD_URL=$(echo "$BUILD_INFO" | jq -r ".[0].artifacts.applicationArchiveUrl // empty")
+
+          if [ -n "$DOWNLOAD_URL" ] && [ "$DOWNLOAD_URL" != "null" ]; then
+            echo "Downloading APK from: $DOWNLOAD_URL"
+            curl -L -o taxitap-release.apk "$DOWNLOAD_URL"
+            echo "APK downloaded successfully:"
+            ls -la taxitap-release.apk
+          else
+            echo "No download URL found"
+            echo "Available builds:"
+            echo "$BUILD_INFO" | jq -r '.[] | "\(.id) - \(.artifacts.applicationArchiveUrl // "no URL")"'
+          fi
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
@@ -142,13 +161,12 @@ jobs:
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: actions/create-release@v1
-        id: create_release
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
-          release_name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
           body: |
             Automated release of TaxiTap APK
 
@@ -159,15 +177,6 @@ jobs:
 
             **Download:**
             - Android APK: See attached files
+          files: platform/taxitap-release.apk
           draft: false
           prerelease: false
-
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: platform/taxitap-release.apk
-          asset_name: TaxiTap-latest.apk
-          asset_content_type: application/vnd.android.package-archive
