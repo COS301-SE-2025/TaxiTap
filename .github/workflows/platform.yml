@@ -101,11 +101,11 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
 
-  # === BUILD & RELEASE JOB (manual trigger or release tags only) ===
+  # === BUILD & RELEASE JOB (temporary - always run for testing) ===
   build-and-release:
     name: Build APK and Create Release
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-    needs: [frontend-test, backend-typecheck, deploy]
+    # Temporarily removed condition for testing
+    needs: [frontend-test, backend-typecheck]
     runs-on: ubuntu-latest
     defaults:
       run:
