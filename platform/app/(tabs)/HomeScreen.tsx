@@ -1494,7 +1494,7 @@ export default function HomeScreen() {
         : 'rgba(226, 232, 240, 0.8)',
       paddingVertical: 20,
       paddingHorizontal: 20,
-      marginBottom: keyboardVisible ? 20 : 32,
+      marginBottom: keyboardVisible ? 10 : 10,
       width: '100%',
       alignSelf: 'center',
       shadowColor: theme.shadow,
@@ -2149,7 +2149,6 @@ export default function HomeScreen() {
                 </Text>
               )}
 
-              {/* Destination Suggestions
               {showDestinationSuggestions && destinationSuggestions.length > 0 && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
@@ -2183,7 +2182,7 @@ export default function HomeScreen() {
                     ))}
                   </ScrollView>
                 </View>
-              )} */}
+              )}
             </View>
           </View>
         </View>
@@ -2195,8 +2194,8 @@ export default function HomeScreen() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               borderRadius: 24,
-              marginLeft: 8,
               marginBottom: 15,
+              marginTop: 10,
               alignItems: 'center',
               justifyContent: 'center',
               shadowColor: theme.shadow,
@@ -2204,6 +2203,7 @@ export default function HomeScreen() {
               shadowOffset: { width: 0, height: 2 },
               shadowRadius: 4,
               elevation: 4,
+              width: "100%",
             }}
             onPress={() => {
               // Clear the manual reset flag when user manually sets origin
@@ -2229,8 +2229,6 @@ export default function HomeScreen() {
                 },
                 1000
               );
-              
-              console.log('📍 Manual current location set:', currentLocationOrigin);
             }}
             activeOpacity={0.8}
           >
