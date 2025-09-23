@@ -121,7 +121,7 @@ jobs:
           node-version: 20
 
       - name: Setup Expo CLI
-        run: npm install -g @expo/eas-cli
+        run: npm install -g eas-cli
 
       - name: Install dependencies
         run: npm ci
