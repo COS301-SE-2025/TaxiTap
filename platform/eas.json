@@ -18,6 +18,12 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "github-release": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
