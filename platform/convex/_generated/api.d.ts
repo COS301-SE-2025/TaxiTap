@@ -117,6 +117,7 @@ import type * as functions_users_UserManagement_updateHomeAddress from "../funct
 import type * as functions_users_UserManagement_updateUserProfile from "../functions/users/UserManagement/updateUserProfile.js";
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_users_updateLocationSchema from "../functions/users/updateLocationSchema.js";
+import type * as functions_users_wallet from "../functions/users/wallet.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_endWorkSessionHandler from "../functions/work_sessions/endWorkSessionHandler.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
@@ -235,6 +236,7 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/updateUserProfile": typeof functions_users_UserManagement_updateUserProfile;
   "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
   "functions/users/updateLocationSchema": typeof functions_users_updateLocationSchema;
+  "functions/users/wallet": typeof functions_users_wallet;
   "functions/work_sessions/endWorkSession": typeof functions_work_sessions_endWorkSession;
   "functions/work_sessions/endWorkSessionHandler": typeof functions_work_sessions_endWorkSessionHandler;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;

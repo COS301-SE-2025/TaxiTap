@@ -181,7 +181,8 @@ export default defineSchema({
     .index("by_trip_id", ["tripId"])
     .index("by_passenger_and_driver", ["passengerId", "driverId"])
     .index("by_front_passenger", ["isFrontPassenger"])
-    .index("by_driver_and_front", ["driverId", "isFrontPassenger"]),
+    .index("by_driver_and_front", ["driverId", "isFrontPassenger"])
+    .index("by_passenger_completedAt", ["passengerId", "completedAt"]),
 
   //passenger table
   passengers: defineTable({
