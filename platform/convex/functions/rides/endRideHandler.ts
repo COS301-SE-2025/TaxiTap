@@ -339,6 +339,21 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
         console.warn("Failed to request journey feedback:", feedbackError);
       }
 
+      // Collect journey analytics and metrics
+      try {
+        await ctx.runMutation(
+          internal.functions.journeys.journeyAnalytics.collectJourneyMetrics,
+          {
+            journeyId: args.journeyId,
+            triggeredBy: "journey_completion"
+          }
+        );
+        console.log(`📊 Journey analytics collected for ${args.journeyId}`);
+      } catch (analyticsError) {
+        console.warn("Failed to collect journey analytics:", analyticsError);
+        // Don't throw - this is non-critical
+      }
+
       return {
         journeyCompleted: true,
         totalLegs: allLegs.length,
