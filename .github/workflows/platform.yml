@@ -77,7 +77,7 @@ jobs:
   # === DEPLOY JOB (only on main) ===
   deploy:
     name: Deploy to Convex (main only)
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev'
     needs: [frontend-test, backend-typecheck]
     runs-on: ubuntu-latest
     defaults:
