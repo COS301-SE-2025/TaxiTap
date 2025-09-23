@@ -19,6 +19,26 @@ export const cancelRideHandler = async (ctx: any, args: { rideId: string; userId
     status: "cancelled",
   });
 
+  // Handle multi-leg journey failure if this is part of a journey
+  if (ride.isMultiLegRide && ride.parentJourneyId && ride.legIndex !== undefined) {
+    try {
+      await ctx.runMutation(
+        require("../../_generated/api").internal.functions.journeys.journeyFailureHandler.handleFailedLeg,
+        {
+          journeyId: ride.parentJourneyId,
+          legIndex: ride.legIndex,
+          passengerId: ride.passengerId,
+          failureReason: "Ride cancelled",
+          rideId: args.rideId
+        }
+      );
+      console.log(`🔄 Journey failure handling triggered for cancelled leg ${ride.legIndex}`);
+    } catch (failureError) {
+      console.warn("Failed to handle journey leg failure:", failureError);
+      // Don't throw - ride cancellation should still succeed
+    }
+  }
+
   // Notify the other party
   if (ride.passengerId === args.userId && ride.driverId) {
     // Passenger cancelled, notify driver
