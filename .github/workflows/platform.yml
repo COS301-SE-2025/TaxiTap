@@ -103,8 +103,8 @@ jobs:
 
   # === BUILD & RELEASE JOB (only on main) ===
   build-and-release:
-    name: Build APK and Create Release
-    if: github.ref == 'refs/heads/main'
+    name: Build APK and Create Release (main only)
+    if: github.ref == 'refs/heads/dev'
     needs: [frontend-test, backend-typecheck, deploy]
     runs-on: ubuntu-latest
     defaults:
