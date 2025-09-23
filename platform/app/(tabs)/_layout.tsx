@@ -242,6 +242,13 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="MultiLegJourneyPreview"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };
