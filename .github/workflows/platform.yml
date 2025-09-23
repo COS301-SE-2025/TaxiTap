@@ -100,3 +100,80 @@ jobs:
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
+
+  # === BUILD & RELEASE JOB (only on main) ===
+  build-and-release:
+    name: Build APK and Create Release
+    if: github.ref == 'refs/heads/main'
+    needs: [frontend-test, backend-typecheck, deploy]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Expo CLI
+        run: npm install -g @expo/eas-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Authenticate with Expo
+        run: eas login --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        run: eas build --platform android --profile github-release --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download APK
+        run: |
+          # Get the build URL from EAS
+          BUILD_URL=$(eas build:list --platform android --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
+          # Download the APK
+          curl -L -o taxitap-release.apk "$BUILD_URL"
+
+      - name: Get version from package.json
+        id: package-version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          release_name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          body: |
+            Automated release of TaxiTap APK
+
+            **Changes:**
+            - Latest changes from main branch
+            - Version: ${{ steps.package-version.outputs.VERSION }}
+            - Build: ${{ github.run_number }}
+
+            **Download:**
+            - Android APK: See attached files
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: platform/taxitap-release.apk
+          asset_name: TaxiTap-latest.apk
+          asset_content_type: application/vnd.android.package-archive
