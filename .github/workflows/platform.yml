@@ -130,10 +130,9 @@ jobs:
       - name: Download APK (Testing Fix)
         run: |
           # Use existing build ID instead of building
-          # Replace 'YOUR_EXISTING_BUILD_ID' with actual build ID from dashboard
           BUILD_ID="834255d2-fd4e-42bd-9d29-c38387ea3d55"
           echo "Using existing build ID: $BUILD_ID"
-          eas build:download --id="$BUILD_ID"
+          eas build:download $BUILD_ID
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
