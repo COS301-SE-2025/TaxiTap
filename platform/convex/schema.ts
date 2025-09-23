@@ -538,6 +538,9 @@ routes: defineTable({
       v.literal("loyal_member"),
       v.literal("marathon_driver"),
       v.literal("top_earner"), // Add top_earner badge type
+      v.literal("journey_pioneer"), // First multi-leg journey
+      v.literal("journey_master"), // 10+ multi-leg journeys
+      v.literal("transfer_expert"), // Efficient transfers
     ),
     earnedAt: v.number(),
     isActive: v.boolean(),
