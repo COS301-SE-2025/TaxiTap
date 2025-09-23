@@ -197,6 +197,21 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
         console.warn("Failed to send journey completion notification:", notificationError);
       }
 
+      // Request feedback for completed journey
+      try {
+        await ctx.runMutation(
+          internal.functions.journeys.journeyFeedback.requestJourneyFeedback,
+          {
+            journeyId: args.journeyId,
+            passengerId: args.passengerId,
+            delayMinutes: 5 // Request feedback after 5 minutes
+          }
+        );
+        console.log(`📬 Feedback request scheduled for completed journey ${args.journeyId}`);
+      } catch (feedbackError) {
+        console.warn("Failed to request journey feedback:", feedbackError);
+      }
+
       return {
         journeyCompleted: true,
         totalLegs: allLegs.length,
