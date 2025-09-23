@@ -58,9 +58,9 @@ export async function handleFailedLegHandler(ctx: any, args: any): Promise<any> 
       .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
       .collect();
 
-    const completedLegs = allLegs.filter(leg => leg.status === "completed");
-    const failedLegs = allLegs.filter(leg => leg.status === "failed");
-    const pendingLegs = allLegs.filter(leg => leg.status === "pending" || leg.status === "requesting");
+    const completedLegs = allLegs.filter((leg: any) => leg.status === "completed");
+    const failedLegs = allLegs.filter((leg: any) => leg.status === "failed");
+    const pendingLegs = allLegs.filter((leg: any) => leg.status === "pending" || leg.status === "requesting");
 
     // Determine fallback strategy based on failure position and remaining legs
     const fallbackStrategy = determineFallbackStrategy(args.legIndex, allLegs, completedLegs, failedLegs);
@@ -118,7 +118,7 @@ export async function handleFailedLegHandler(ctx: any, args: any): Promise<any> 
     console.error("❌ Error handling failed leg:", error);
     return {
       success: false,
-      error: String(error)
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }
@@ -384,9 +384,9 @@ export async function getJourneyRecoveryOptionsHandler(ctx: any, args: any): Pro
       .withIndex("by_journey_id", (q: any) => q.eq("journeyId", args.journeyId))
       .collect();
 
-    const completedLegs = allLegs.filter(leg => leg.status === "completed");
-    const failedLegs = allLegs.filter(leg => leg.status === "failed");
-    const pendingLegs = allLegs.filter(leg => leg.status === "pending" || leg.status === "requesting");
+    const completedLegs = allLegs.filter((leg: any) => leg.status === "completed");
+    const failedLegs = allLegs.filter((leg: any) => leg.status === "failed");
+    const pendingLegs = allLegs.filter((leg: any) => leg.status === "pending" || leg.status === "requesting");
 
     const options = [];
 
@@ -438,7 +438,7 @@ export async function getJourneyRecoveryOptionsHandler(ctx: any, args: any): Pro
     console.error("❌ Error getting recovery options:", error);
     return {
       success: false,
-      error: String(error)
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }
