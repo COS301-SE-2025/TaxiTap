@@ -534,3 +534,5 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     </Modal>
   );
 };
+
+export default MultiLegJourneyPreview;
