@@ -126,11 +126,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Authenticate with Expo
-        run: eas login --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
       - name: Build APK with EAS
         run: eas build --platform android --profile github-release --non-interactive --wait
         env:
