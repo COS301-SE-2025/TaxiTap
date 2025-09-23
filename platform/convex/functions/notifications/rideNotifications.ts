@@ -144,6 +144,102 @@ export const sendRideNotificationHandler = async (
         });
       }
       break;
+
+    case "journey_leg_completed":
+      notifications.push({
+        userId: args.passengerId || ride.passengerId,
+        type: "journey_leg_completed",
+        title: "Journey Leg Completed",
+        message: args.metadata?.journeyCompleted
+          ? `Leg ${args.metadata.legIndex + 1} completed! Your journey continues.`
+          : `Leg ${args.metadata.legIndex + 1} of ${args.metadata.totalLegs} completed. Preparing next leg...`,
+        priority: "medium",
+        metadata: {
+          rideId: args.rideId,
+          journeyId: args.metadata?.journeyId,
+          legIndex: args.metadata?.legIndex,
+          totalLegs: args.metadata?.totalLegs,
+          journeyCompleted: args.metadata?.journeyCompleted
+        }
+      });
+      break;
+
+    case "journey_completed":
+      const journeyMessage = args.metadata?.totalLegs > 1
+        ? `Your ${args.metadata.totalLegs}-leg journey is complete! Thank you for using TaxiTap.`
+        : "Your journey is complete! Thank you for using TaxiTap.";
+
+      notifications.push({
+        userId: args.passengerId || ride.passengerId,
+        type: "journey_completed",
+        title: "Journey Completed",
+        message: journeyMessage,
+        priority: "medium",
+        metadata: {
+          rideId: args.rideId,
+          journeyId: args.metadata?.journeyId,
+          totalLegs: args.metadata?.totalLegs,
+          totalFare: args.metadata?.totalFare,
+          totalDuration: args.metadata?.totalDuration
+        }
+      });
+
+      // Also notify driver of the final leg
+      if (args.driverId) {
+        notifications.push({
+          userId: args.driverId,
+          type: "journey_completed",
+          title: "Multi-Leg Journey Completed",
+          message: `Multi-leg journey completed successfully. Final leg fare: R${ride.finalFare}`,
+          priority: "medium",
+          metadata: {
+            rideId: args.rideId,
+            journeyId: args.metadata?.journeyId,
+            totalLegs: args.metadata?.totalLegs,
+            legFare: ride.finalFare
+          }
+        });
+      }
+      break;
+
+    case "feedback_received":
+      notifications.push({
+        userId: args.passengerId || ride.passengerId,
+        type: "feedback_received",
+        title: "Feedback Received",
+        message: args.metadata?.feedbackType === "journey_feedback"
+          ? "Thank you for your journey feedback! Your input helps us improve the multi-leg journey experience."
+          : "Thank you for your feedback! Your input helps us improve our service.",
+        priority: "low",
+        metadata: {
+          rideId: args.rideId,
+          journeyId: args.metadata?.journeyId,
+          overallRating: args.metadata?.overallRating,
+          totalLegs: args.metadata?.totalLegs,
+          feedbackType: args.metadata?.feedbackType
+        }
+      });
+      break;
+
+    case "rating_request":
+      const isJourneyFeedback = args.metadata?.requestType === "journey_feedback";
+      notifications.push({
+        userId: args.passengerId || ride.passengerId,
+        type: "rating_request",
+        title: isJourneyFeedback ? "Rate Your Journey" : "Rate Your Ride",
+        message: isJourneyFeedback
+          ? `How was your ${args.metadata?.totalLegs}-leg journey? Your feedback helps us improve the transfer experience.`
+          : "How was your ride? Please take a moment to rate your experience.",
+        priority: "medium",
+        metadata: {
+          rideId: args.rideId,
+          journeyId: args.metadata?.journeyId,
+          requestType: args.metadata?.requestType,
+          totalLegs: args.metadata?.totalLegs,
+          delayMinutes: args.metadata?.delayMinutes
+        }
+      });
+      break;
   }
 
   // Send all notifications using the internal mutation
