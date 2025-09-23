@@ -354,6 +354,22 @@ async function handleMultiLegJourneyCompletion(ctx: any, args: {
         // Don't throw - this is non-critical
       }
 
+      // Check and award journey badges
+      try {
+        await ctx.runMutation(
+          internal.functions.badges.journeyBadges.checkAndAwardJourneyBadges,
+          {
+            userId: args.passengerId,
+            journeyId: args.journeyId,
+            triggeredBy: "journey_completion"
+          }
+        );
+        console.log(`🏆 Journey badges checked for user ${args.passengerId}`);
+      } catch (badgeError) {
+        console.warn("Failed to check journey badges:", badgeError);
+        // Don't throw - this is non-critical
+      }
+
       return {
         journeyCompleted: true,
         totalLegs: allLegs.length,
