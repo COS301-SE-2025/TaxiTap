@@ -9,6 +9,10 @@ on:
       - 'platform/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  releases: write
+
 jobs:
   # === FRONTEND JOB ===
   frontend-test:
@@ -158,6 +162,8 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
           name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
