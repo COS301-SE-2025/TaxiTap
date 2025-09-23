@@ -128,22 +128,16 @@ jobs:
       # Temporarily skip build step - using existing build
       - name: Download APK (Testing Fix)
         run: |
-          # Get the build URL from the build list and download with curl
-          BUILD_ID="834255d2-fd4e-42bd-9d29-c38387ea3d55"
-          echo "Getting download URL for build: $BUILD_ID"
+          # Debug what eas build:list actually returns
+          echo "Raw output from eas build:list:"
+          eas build:list --platform android --limit 5 --json || echo "Command failed"
 
-          # Get build info and extract download URL
-          BUILD_INFO=$(eas build:list --platform android --limit 50 --json | jq -r ".[] | select(.id == \"$BUILD_ID\")")
-          DOWNLOAD_URL=$(echo "$BUILD_INFO" | jq -r '.artifacts.buildUrl // empty')
+          echo "Let's try without --json flag:"
+          eas build:list --platform android --limit 5
 
-          if [ -n "$DOWNLOAD_URL" ] && [ "$DOWNLOAD_URL" != "null" ]; then
-            echo "Downloading from: $DOWNLOAD_URL"
-            curl -L -H "Authorization: Bearer $EXPO_TOKEN" -o taxitap-release.apk "$DOWNLOAD_URL"
-            ls -la taxitap-release.apk
-          else
-            echo "No download URL found for build $BUILD_ID"
-            echo "Build info: $BUILD_INFO"
-          fi
+          echo "Checking if jq is available:"
+          which jq
+          jq --version
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
