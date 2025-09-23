@@ -104,10 +104,11 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
 
-  # === BUILD & RELEASE JOB (temporary - always run for testing) ===
+  # === BUILD & RELEASE JOB (only on dev) ===
   build-and-release:
     name: Build APK and Create Release
-    # Temporarily removed dependencies for testing
+    if: github.ref == 'refs/heads/dev'
+    needs: [frontend-test, backend-typecheck, deploy]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -128,19 +129,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Temporarily skip build step - using existing build
-      - name: Download APK (Testing Fix)
-        run: |
-          # Get the build URL using correct flags
-          BUILD_ID="834255d2-fd4e-42bd-9d29-c38387ea3d55"
-          echo "Getting download URL for build: $BUILD_ID"
+      - name: Build APK with EAS
+        run: eas build --platform android --profile github-release --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-          # Get build info with proper flags
-          BUILD_INFO=$(eas build:list --platform android --limit 50 --json --non-interactive)
+      - name: Download APK
+        run: |
+          # Get the latest build ID and download URL
+          BUILD_INFO=$(eas build:list --platform android --limit 1 --json --non-interactive)
           echo "Build list retrieved successfully"
 
-          # Extract download URL for our specific build ID
-          DOWNLOAD_URL=$(echo "$BUILD_INFO" | jq -r ".[] | select(.id == \"$BUILD_ID\") | .artifacts.applicationArchiveUrl // empty")
+          # Extract download URL for the latest build
+          DOWNLOAD_URL=$(echo "$BUILD_INFO" | jq -r ".[0].artifacts.applicationArchiveUrl // empty")
 
           if [ -n "$DOWNLOAD_URL" ] && [ "$DOWNLOAD_URL" != "null" ]; then
             echo "Downloading APK from: $DOWNLOAD_URL"
@@ -148,7 +149,7 @@ jobs:
             echo "APK downloaded successfully:"
             ls -la taxitap-release.apk
           else
-            echo "No download URL found for build $BUILD_ID"
+            echo "No download URL found"
             echo "Available builds:"
             echo "$BUILD_INFO" | jq -r '.[] | "\(.id) - \(.artifacts.applicationArchiveUrl // "no URL")"'
           fi
