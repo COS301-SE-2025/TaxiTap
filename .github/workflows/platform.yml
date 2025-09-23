@@ -157,13 +157,10 @@ jobs:
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
-          release_name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
           body: |
             Automated release of TaxiTap APK
 
@@ -174,15 +171,6 @@ jobs:
 
             **Download:**
             - Android APK: See attached files
+          files: platform/taxitap-release.apk
           draft: false
           prerelease: false
-
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: platform/taxitap-release.apk
-          asset_name: TaxiTap-latest.apk
-          asset_content_type: application/vnd.android.package-archive
