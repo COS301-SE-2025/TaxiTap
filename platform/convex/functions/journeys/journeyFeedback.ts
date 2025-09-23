@@ -152,7 +152,7 @@ export async function submitJourneyFeedbackHandler(ctx: any, args: any): Promise
       console.error("❌ Error submitting journey feedback:", error);
       return {
         success: false,
-        error: String(error)
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 }
