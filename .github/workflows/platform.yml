@@ -80,7 +80,7 @@ jobs:
   # === DEPLOY JOB (only on main) ===
   deploy:
     name: Deploy to Convex (main only)
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main'
     needs: [frontend-test, backend-typecheck]
     runs-on: ubuntu-latest
     defaults:
@@ -104,10 +104,10 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
 
-  # === BUILD & RELEASE JOB (only on dev) ===
+  # === BUILD & RELEASE JOB (only on main) ===
   build-and-release:
-    name: Build APK and Create Release
-    if: github.ref == 'refs/heads/dev'
+    name: Build APK and Create Release (main only)
+    if: github.ref == 'refs/heads/main'
     needs: [frontend-test, backend-typecheck, deploy]
     runs-on: ubuntu-latest
     defaults:
