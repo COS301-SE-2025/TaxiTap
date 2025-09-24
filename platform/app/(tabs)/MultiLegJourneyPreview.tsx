@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Modal,
   Alert,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -39,6 +41,9 @@ interface MultiLegJourneyPreviewProps {
   onConfirm: (selectedOption: MultiLegJourneyOption, preference: string) => void;
   onCancel: () => void;
   visible?: boolean;
+  hasDirectRoute?: boolean;
+  availableTaxis?: number;
+  multilegReason?: 'no_direct_route' | 'no_taxis_available' | 'no_intersections';
 }
 
 export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
@@ -46,10 +51,76 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   onConfirm,
   onCancel,
   visible = true,
+  hasDirectRoute = false,
+  availableTaxis = 0,
+  multilegReason = 'no_direct_route',
 }) => {
   const { theme, isDark } = useTheme();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
   const [userPreference, setUserPreference] = useState<'shortest_time' | 'fewest_transfers' | 'most_reliable'>('shortest_time');
+  
+  // Gesture handling for drag interactions
+  const translateY = useRef(new Animated.Value(0)).current;
+  const lastGestureY = useRef(0);
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: (evt, gestureState) => {
+      // Only respond to gestures that start near the drag handle area
+      return gestureState.y0 < 100; // Only respond if gesture starts in top 100px
+    },
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // Only respond to vertical gestures with sufficient movement
+      return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 50;
+    },
+    onPanResponderGrant: () => {
+      // Reset the animated value when gesture starts
+      translateY.setOffset(translateY._value);
+      translateY.setValue(0);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      // Only allow downward movement or small upward movement
+      const newValue = Math.max(0, gestureState.dy); // Prevent upward dragging beyond original position
+      translateY.setValue(newValue);
+      lastGestureY.current = gestureState.dy;
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      // Clear the offset
+      translateY.flattenOffset();
+      
+      // If dragged down significantly, close the modal
+      if (gestureState.dy > 150) {
+        // Animate modal sliding down and close
+        Animated.timing(translateY, {
+          toValue: 1000,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          onCancel();
+        });
+        return;
+      }
+      
+      // If dragged up, snap back to original position
+      if (gestureState.dy < -50) {
+        // Animate modal expanding upward (could be extended for more functionality)
+        Animated.spring(translateY, {
+          toValue: -50,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+        return;
+      }
+      
+      // Reset position for small movements
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }).start();
+    },
+  });
 
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -89,6 +160,28 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
         return 'help-outline';
     }
   };
+
+  // Determine if multileg journey should be shown
+  const shouldShowMultileg = !hasDirectRoute || availableTaxis === 0;
+  
+  // Get appropriate warning message based on reason
+  const getWarningMessage = (): string => {
+    switch (multilegReason) {
+      case 'no_direct_route':
+        return 'No single taxi route connects your origin and destination. You\'ll need to transfer between taxis. We\'ll help guide you through each leg.';
+      case 'no_taxis_available':
+        return 'No taxis are currently available for a direct route. A multi-leg journey with transfers is your best option.';
+      case 'no_intersections':
+        return 'No suitable transfer points found between routes. Please try a different destination or wait for more taxi availability.';
+      default:
+        return 'No direct route available. You\'ll need to transfer between taxis. We\'ll help guide you through each leg.';
+    }
+  };
+
+  // Don't show the modal if there's a direct route with available taxis
+  if (!shouldShowMultileg) {
+    return null;
+  }
 
   const handleConfirm = () => {
     if (options.length === 0) {
@@ -245,6 +338,19 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       borderTopRightRadius: 25,
       maxHeight: '90%',
       paddingTop: 20,
+      position: 'relative',
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 15,
+      right: 15,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
     },
     header: {
       alignItems: 'center',
@@ -457,26 +563,11 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       fontStyle: 'italic',
     },
     buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
       paddingHorizontal: 20,
       paddingBottom: 30,
       paddingTop: 10,
     },
-    cancelButton: {
-      flex: 1,
-      backgroundColor: isDark ? '#FF4444' : '#FF6B6B',
-      borderRadius: 25,
-      paddingVertical: 16,
-      alignItems: 'center',
-    },
-    cancelButtonText: {
-      color: '#FFFFFF',
-      fontSize: 16,
-      fontWeight: '600',
-    },
     confirmButton: {
-      flex: 2,
       backgroundColor: theme.primary,
       borderRadius: 25,
       paddingVertical: 16,
@@ -497,12 +588,28 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       onRequestClose={onCancel}
     >
       <View style={dynamicStyles.modalOverlay}>
-        <View style={dynamicStyles.container}>
+        <Animated.View 
+          style={[
+            dynamicStyles.container,
+            {
+              transform: [{ translateY }]
+            }
+          ]}
+          {...panResponder.panHandlers}
+        >
+          {/* X button in top right corner */}
+          <TouchableOpacity style={dynamicStyles.closeButton} onPress={onCancel}>
+            <Icon name="close" size={24} color="#000000" />
+          </TouchableOpacity>
+          
           <View style={dynamicStyles.header}>
             <View style={dynamicStyles.dragHandle} />
             <Text style={dynamicStyles.headerTitle}>Multi-Leg Journey</Text>
             <Text style={dynamicStyles.headerSubtitle}>
-              No direct route available. Choose your journey option below.
+              {hasDirectRoute && availableTaxis === 0 
+                ? 'No taxis available for direct route. Choose your journey option below.'
+                : 'No direct route available. Choose your journey option below.'
+              }
             </Text>
           </View>
 
@@ -510,7 +617,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             <View style={dynamicStyles.warningContainer}>
               <Icon name="information-circle" size={20} color={theme.primary} />
               <Text style={dynamicStyles.warningText}>
-                No single taxi route connects your origin and destination. You'll need to transfer between taxis. We'll help guide you through each leg.
+                {getWarningMessage()}
               </Text>
             </View>
 
@@ -522,14 +629,11 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
           </ScrollView>
 
           <View style={dynamicStyles.buttonContainer}>
-            <TouchableOpacity style={dynamicStyles.cancelButton} onPress={onCancel}>
-              <Text style={dynamicStyles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={dynamicStyles.confirmButton} onPress={handleConfirm}>
               <Text style={dynamicStyles.confirmButtonText}>Start Journey</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );

@@ -59,6 +59,7 @@ export default function HomeScreen() {
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
   const forceCancelStuckRides = useMutation(api.functions.rides.forceCancelStuckRides.forceCancelStuckRides);
+  const createMultiLegJourney = useMutation(api.functions.journeys.journeyManagement.createMultiLegJourney);
   const shouldRunQuery = !!userId;
 
   const recentRoutes = useQuery(
@@ -496,6 +497,14 @@ export default function HomeScreen() {
     getCachedRoute,
     setCachedRoute,
     clearMapContext,
+    currentJourney,
+    isMultiLegMode,
+    currentLegIndex,
+    setCurrentJourney,
+    setIsMultiLegMode,
+    setCurrentLegIndex,
+    startMultiLegJourney,
+    progressToNextLeg,
   } = useMapContext();
 
   // Integrate live location streaming
@@ -593,6 +602,18 @@ export default function HomeScreen() {
       setIsLoadingCurrentLocation(false);
     }
   }, [detectedLocation, currentLocation]);
+
+  // Animate map to user's current location when detected
+  useEffect(() => {
+    if (detectedLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }, 1000);
+    }
+  }, [detectedLocation]);
 
   // Auto-set origin to current location when detected (only on initial load, not after resets)
   // DISABLED: Let user manually set origin to prevent automatic taxi searches
@@ -1822,37 +1843,119 @@ export default function HomeScreen() {
     };
   };
 
-  const handleMultiLegJourneyConfirm = (selectedOption: MultiLegJourneyOption, preference: string) => {
+  // Get current region for dynamic updates
+  const getCurrentRegion = () => {
+    if (detectedLocation) {
+      return {
+        latitude: detectedLocation.latitude,
+        longitude: detectedLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    if (origin) {
+      return {
+        latitude: origin.latitude,
+        longitude: origin.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    if (currentLocation) {
+      return {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+    }
+    return null;
+  };
+
+  const handleMultiLegJourneyConfirm = async (selectedOption: MultiLegJourneyOption, preference: string) => {
     console.log('🚀 Confirming multi-leg journey:', selectedOption, preference);
     
-    // Hide the multi-leg preview
-    setShowMultiLegPreview(false);
-    setMultiLegOptions(null);
-    
-    // Update user preference
-    setUserPreference(preference);
-    
-    // TODO: Implement multi-leg journey creation
-    // This would typically involve:
-    // 1. Creating a multi-leg journey record in the database
-    // 2. Starting the first leg of the journey
-    // 3. Navigating to the appropriate screen for multi-leg journey management
-    
-    // For now, show an alert and proceed with the first leg
-    Alert.alert(
-      'Multi-Leg Journey Started',
-      `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate to the first leg or journey management screen
-            // This would be implemented based on your app's navigation structure
-            console.log('Proceeding with multi-leg journey...');
-          }
+    try {
+      // Hide the multi-leg preview
+      setShowMultiLegPreview(false);
+      setMultiLegOptions(null);
+      
+      // Update user preference
+      setUserPreference(preference);
+      
+      // Create multi-leg journey in the database
+      const journeyResult = await createMultiLegJourney({
+        passengerId: userId as Id<"taxiTap_users">,
+        journeyPlan: {
+          originAddress: origin?.name || '',
+          destinationAddress: destination?.name || '',
+          originCoordinates: {
+            latitude: origin?.latitude || 0,
+            longitude: origin?.longitude || 0
+          },
+          destinationCoordinates: {
+            latitude: destination?.latitude || 0,
+            longitude: destination?.longitude || 0
+          },
+          legs: selectedOption.legs.map(leg => ({
+            fromAddress: leg.fromAddress,
+            toAddress: leg.toAddress,
+            fromCoordinates: leg.fromCoordinates,
+            toCoordinates: leg.toCoordinates,
+            routeId: leg.routeId,
+            estimatedFare: leg.estimatedFare,
+            estimatedDuration: leg.estimatedDuration
+          })),
+          optimizationPreference: preference
         }
-      ]
-    );
+      });
+
+      if (journeyResult.success) {
+        // Update MapContext with multi-leg journey state
+        const journey = {
+          journeyId: journeyResult.journeyId,
+          totalLegs: selectedOption.totalLegs,
+          currentLegIndex: 0,
+          status: 'active' as const,
+          legs: selectedOption.legs.map(leg => ({
+            ...leg,
+            status: 'pending' as const
+          }))
+        };
+        startMultiLegJourney(journey);
+
+        // Show success message and navigate to journey management
+        Alert.alert(
+          'Multi-Leg Journey Started',
+          `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to the journey management screen
+                router.push({
+                  pathname: './ActiveRides',
+                  params: {
+                    journeyId: journeyResult.journeyId,
+                    isMultiLeg: 'true',
+                    currentLeg: '0'
+                  }
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        throw new Error(journeyResult.error || 'Failed to create multi-leg journey');
+      }
+    } catch (error) {
+      console.error('❌ Error creating multi-leg journey:', error);
+      Alert.alert(
+        'Error',
+        `Failed to create multi-leg journey: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleForceCancelStuckRides = async () => {
@@ -1945,6 +2048,7 @@ export default function HomeScreen() {
           style={dynamicStyles.map}
           provider={PROVIDER_GOOGLE}
           initialRegion={getInitialRegion()}
+          region={getCurrentRegion() || undefined}
           customMapStyle={isDark ? darkMapStyle : []}
         >
           {origin && 
