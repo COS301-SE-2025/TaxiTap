@@ -1,0 +1,327 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "TaxiTap Performance Dashboard",
+    "tags": ["taxi-tap", "performance", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ],
+        "xAxes": [
+          {
+            "type": "time"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 Response Time"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50 Response Time"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx Errors"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx Errors"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Errors/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Active Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "websocket_connections_active",
+            "legendFormat": "WebSocket Connections"
+          },
+          {
+            "expr": "convex_database_connections_active",
+            "legendFormat": "Database Connections"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Connections",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Ride Requests",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ride_requests_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Location Updates",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(location_updates_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Updates/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          },
+          {
+            "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Percentage",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(convex_database_queries_total[5m])",
+            "legendFormat": "Queries/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(convex_database_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 Query Time"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Queries/sec / Seconds",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 9,
+        "title": "Driver Matching Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(driver_matching_requests_total[5m])",
+            "legendFormat": "Matching Requests/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(driver_matching_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 Matching Time"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec / Seconds",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "Business Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(rides_total{status=\"completed\"}[1h])",
+            "legendFormat": "Completed Rides/hour"
+          },
+          {
+            "expr": "rate(rides_total{status=\"cancelled\"}[1h])",
+            "legendFormat": "Cancelled Rides/hour"
+          },
+          {
+            "expr": "drivers_available_total",
+            "legendFormat": "Available Drivers"
+          },
+          {
+            "expr": "passengers_waiting_total",
+            "legendFormat": "Waiting Passengers"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 40
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(up, instance)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "endpoint",
+          "type": "query",
+          "query": "label_values(http_requests_total, endpoint)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Test Execution",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "test_execution_start",
+          "iconColor": "green",
+          "titleFormat": "Test Started",
+          "textFormat": "Performance test execution started"
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "Prometheus",
+        "url": "http://localhost:9090",
+        "type": "link"
+      },
+      {
+        "title": "AlertManager",
+        "url": "http://localhost:9093",
+        "type": "link"
+      }
+    ]
+  }
+}
