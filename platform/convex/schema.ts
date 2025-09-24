@@ -172,6 +172,22 @@ export default defineSchema({
 
     isFrontPassenger: v.optional(v.boolean()),
     frontPassengerSetAt: v.optional(v.number()),
+
+    // Journey and notification properties
+    journeyPreferences: v.optional(v.object({
+      transferNotifications: v.boolean(),
+      arrivalAlerts: v.boolean(),
+      delayUpdates: v.boolean(),
+      paymentReminders: v.boolean()
+    })),
+    eventType: v.optional(v.string()),
+    metadata: v.optional(v.object({
+      channel: v.optional(v.string()),
+      errorType: v.optional(v.string()),
+      deliveryMethod: v.optional(v.string()),
+      additionalData: v.optional(v.any())
+    })),
+    timestamp: v.optional(v.number()),
   })
     .index("by_ride_id", ["rideId"])
     .index("by_passenger", ["passengerId"])
@@ -325,7 +341,10 @@ routes: defineTable({
     driverId: v.optional(v.id("taxiTap_users")),
     passengerId: v.optional(v.id("taxiTap_users")),
     amount: v.optional(v.number()),
-    additionalData: v.optional(v.any())
+    additionalData: v.optional(v.any()),
+    journeyId: v.optional(v.string()),
+    errorType: v.optional(v.string()),
+    channel: v.optional(v.string())
   })),
   priority: v.union(
     v.literal("low"),
@@ -336,7 +355,23 @@ routes: defineTable({
   scheduledFor: v.optional(v.number()),
   expiresAt: v.optional(v.number()),
   createdAt: v.number(),
-  readAt: v.optional(v.number())
+  readAt: v.optional(v.number()),
+
+  // Notification tracking and escalation properties
+  escalationLevel: v.optional(v.number()),
+  retryCount: v.optional(v.number()),
+  deliveredAt: v.optional(v.number()),
+  openedAt: v.optional(v.number()),
+  clickedAt: v.optional(v.number()),
+  failedAt: v.optional(v.number()),
+  escalationHistory: v.optional(v.array(v.object({
+    level: v.number(),
+    timestamp: v.number(),
+    reason: v.string(),
+    action: v.string()
+  }))),
+  lastRetryAt: v.optional(v.number()),
+  lastEscalationAt: v.optional(v.number())
 })
   .index("by_user_id", ["userId"])
   .index("by_notification_id", ["notificationId"])
@@ -345,6 +380,71 @@ routes: defineTable({
   .index("by_priority", ["priority"])
   .index("by_created_at", ["createdAt"])
   .index("by_scheduled_for", ["scheduledFor"]),
+
+  notificationPreferences: defineTable({
+    userId: v.id("taxiTap_users"),
+    journeyPreferences: v.optional(v.object({
+      transferNotifications: v.boolean(),
+      arrivalAlerts: v.boolean(),
+      delayUpdates: v.boolean(),
+      paymentReminders: v.boolean()
+    })),
+    generalPreferences: v.optional(v.object({
+      pushEnabled: v.boolean(),
+      emailEnabled: v.boolean(),
+      smsEnabled: v.boolean()
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number()
+  })
+  .index("by_user_id", ["userId"]),
+
+  notificationTracking: defineTable({
+    notificationId: v.id("notifications"),
+    eventType: v.union(
+      v.literal("sent"),
+      v.literal("delivered"),
+      v.literal("opened"),
+      v.literal("clicked"),
+      v.literal("failed")
+    ),
+    timestamp: v.number(),
+    metadata: v.optional(v.object({
+      channel: v.optional(v.string()),
+      errorType: v.optional(v.string()),
+      deliveryMethod: v.optional(v.string())
+    }))
+  })
+  .index("by_notification_id", ["notificationId"])
+  .index("by_event_type", ["eventType"])
+  .index("by_timestamp", ["timestamp"]),
+
+  notificationReports: defineTable({
+    reportId: v.string(),
+    reportType: v.union(
+      v.literal("daily"),
+      v.literal("weekly"),
+      v.literal("monthly"),
+      v.literal("custom")
+    ),
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    metrics: v.object({
+      totalSent: v.number(),
+      totalDelivered: v.number(),
+      totalOpened: v.number(),
+      totalClicked: v.number(),
+      totalFailed: v.number(),
+      deliveryRate: v.number(),
+      openRate: v.number(),
+      clickRate: v.number(),
+      escalationCount: v.number()
+    }),
+    createdAt: v.number()
+  })
+  .index("by_report_id", ["reportId"])
+  .index("by_period", ["periodStart", "periodEnd"])
+  .index("by_created_at", ["createdAt"]),
 
   pushTokens: defineTable({
   userId: v.id("taxiTap_users"),
@@ -469,6 +569,15 @@ routes: defineTable({
     createdAt: v.number(),
     updatedAt: v.number(),
     completedAt: v.optional(v.number()),
+    pauseReason: v.optional(v.string()),
+    manualInterventionRequired: v.optional(v.boolean()),
+    degradationReason: v.optional(v.string()),
+    
+    // Journey modification tracking
+    modificationReason: v.optional(v.string()),
+    parentJourneyId: v.optional(v.string()),
+    splitAt: v.optional(v.number()),
+    splitReason: v.optional(v.string()),
   })
   .index("by_journey_id", ["journeyId"])
   .index("by_passenger", ["passengerId"])
@@ -523,6 +632,26 @@ routes: defineTable({
       v.literal("other")
     )),
     paymentNotes: v.optional(v.string()),
+
+    // Fallback handling properties
+    failureReason: v.optional(v.string()),
+    skipReason: v.optional(v.string()),
+    escalationLevel: v.optional(v.number()),
+    lastEscalationAttempt: v.optional(v.number()),
+    escalationHistory: v.optional(v.array(v.object({
+      level: v.number(),
+      timestamp: v.number(),
+      result: v.string(),
+      attempts: v.array(v.string())
+    }))),
+    
+    // Journey modification tracking
+    skippedAt: v.optional(v.number()),
+    addedReason: v.optional(v.string()),
+    reorderReason: v.optional(v.string()),
+    
+    // Passenger tracking
+    passengerId: v.optional(v.id("taxiTap_users")),
   })
   .index("by_journey_id", ["journeyId"])
   .index("by_journey_and_leg", ["journeyId", "legIndex"])

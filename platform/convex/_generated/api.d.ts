@@ -21,6 +21,7 @@ import type * as functions_badges_getDriverBadges from "../functions/badges/getD
 import type * as functions_badges_getUserBadges from "../functions/badges/getUserBadges.js";
 import type * as functions_badges_journeyBadges from "../functions/badges/journeyBadges.js";
 import type * as functions_badges_updateTopEarners from "../functions/badges/updateTopEarners.js";
+import type * as functions_debug_taxiAvailabilityDebug from "../functions/debug/taxiAvailabilityDebug.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
@@ -34,6 +35,7 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
+import type * as functions_journeys_fallbackHandling from "../functions/journeys/fallbackHandling.js";
 import type * as functions_journeys_journeyAnalytics from "../functions/journeys/journeyAnalytics.js";
 import type * as functions_journeys_journeyFailureHandler from "../functions/journeys/journeyFailureHandler.js";
 import type * as functions_journeys_journeyFeedback from "../functions/journeys/journeyFeedback.js";
@@ -52,8 +54,12 @@ import type * as functions_locations_updateUserLocationHandler from "../function
 import type * as functions_notifications_deactivatePushToken from "../functions/notifications/deactivatePushToken.js";
 import type * as functions_notifications_getNotificationSettings from "../functions/notifications/getNotificationSettings.js";
 import type * as functions_notifications_getNotifications from "../functions/notifications/getNotifications.js";
+import type * as functions_notifications_journeyNotifications from "../functions/notifications/journeyNotifications.js";
 import type * as functions_notifications_markAllAsRead from "../functions/notifications/markAllAsRead.js";
 import type * as functions_notifications_markAsRead from "../functions/notifications/markAsRead.js";
+import type * as functions_notifications_notificationAnalytics from "../functions/notifications/notificationAnalytics.js";
+import type * as functions_notifications_notificationEscalation from "../functions/notifications/notificationEscalation.js";
+import type * as functions_notifications_notificationIntegration from "../functions/notifications/notificationIntegration.js";
 import type * as functions_notifications_proximityMonitor from "../functions/notifications/proximityMonitor.js";
 import type * as functions_notifications_registerPushToken from "../functions/notifications/registerPushToken.js";
 import type * as functions_notifications_rideNotifications from "../functions/notifications/rideNotifications.js";
@@ -144,6 +150,7 @@ declare const fullApi: ApiFromModules<{
   "functions/badges/getUserBadges": typeof functions_badges_getUserBadges;
   "functions/badges/journeyBadges": typeof functions_badges_journeyBadges;
   "functions/badges/updateTopEarners": typeof functions_badges_updateTopEarners;
+  "functions/debug/taxiAvailabilityDebug": typeof functions_debug_taxiAvailabilityDebug;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;
@@ -157,6 +164,7 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
+  "functions/journeys/fallbackHandling": typeof functions_journeys_fallbackHandling;
   "functions/journeys/journeyAnalytics": typeof functions_journeys_journeyAnalytics;
   "functions/journeys/journeyFailureHandler": typeof functions_journeys_journeyFailureHandler;
   "functions/journeys/journeyFeedback": typeof functions_journeys_journeyFeedback;
@@ -175,8 +183,12 @@ declare const fullApi: ApiFromModules<{
   "functions/notifications/deactivatePushToken": typeof functions_notifications_deactivatePushToken;
   "functions/notifications/getNotificationSettings": typeof functions_notifications_getNotificationSettings;
   "functions/notifications/getNotifications": typeof functions_notifications_getNotifications;
+  "functions/notifications/journeyNotifications": typeof functions_notifications_journeyNotifications;
   "functions/notifications/markAllAsRead": typeof functions_notifications_markAllAsRead;
   "functions/notifications/markAsRead": typeof functions_notifications_markAsRead;
+  "functions/notifications/notificationAnalytics": typeof functions_notifications_notificationAnalytics;
+  "functions/notifications/notificationEscalation": typeof functions_notifications_notificationEscalation;
+  "functions/notifications/notificationIntegration": typeof functions_notifications_notificationIntegration;
   "functions/notifications/proximityMonitor": typeof functions_notifications_proximityMonitor;
   "functions/notifications/registerPushToken": typeof functions_notifications_registerPushToken;
   "functions/notifications/rideNotifications": typeof functions_notifications_rideNotifications;
