@@ -26,6 +26,16 @@ interface MapContextType {
   setCachedRoute: (key: string, coords: { latitude: number; longitude: number }[]) => void;
   getCachedRoute: (key: string) => { latitude: number; longitude: number }[] | null;
   
+  // Multi-leg journey state
+  currentJourney: Journey | null;
+  isMultiLegMode: boolean;
+  currentLegIndex: number;
+  setCurrentJourney: (journey: Journey | null) => void;
+  setIsMultiLegMode: (mode: boolean) => void;
+  setCurrentLegIndex: (index: number) => void;
+  startMultiLegJourney: (journey: Journey) => void;
+  progressToNextLeg: () => void;
+  
   // Clear all map context state
   clearMapContext: () => void;
 }
@@ -52,6 +62,18 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const getCachedRoute = (key: string) => {
     return cachedRoutes.get(key) || null;
+  };
+
+  const startMultiLegJourney = (journey: Journey) => {
+    setCurrentJourney(journey);
+    setIsMultiLegMode(true);
+    setCurrentLegIndex(0);
+  };
+
+  const progressToNextLeg = () => {
+    if (currentJourney && currentLegIndex < currentJourney.totalLegs - 1) {
+      setCurrentLegIndex(prev => prev + 1);
+    }
   };
 
   const clearMapContext = () => {
@@ -84,6 +106,15 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     cachedRoutes,
     setCachedRoute,
     getCachedRoute,
+    // Multi-leg journey state
+    currentJourney,
+    isMultiLegMode,
+    currentLegIndex,
+    setCurrentJourney,
+    setIsMultiLegMode,
+    setCurrentLegIndex,
+    startMultiLegJourney,
+    progressToNextLeg,
     clearMapContext,
   };
 
@@ -107,8 +138,21 @@ export const createRouteKey = (origin: Location, destination: Location) => {
 
 // Define a type for Journey
 interface Journey {
+  journeyId: string;
   totalLegs: number;
-  // add other properties as needed
+  currentLegIndex: number;
+  status: 'planning' | 'active' | 'paused' | 'completed' | 'cancelled';
+  legs: Array<{
+    legIndex: number;
+    fromAddress: string;
+    toAddress: string;
+    fromCoordinates: { latitude: number; longitude: number };
+    toCoordinates: { latitude: number; longitude: number };
+    routeId?: string;
+    estimatedFare: number;
+    estimatedDuration: number;
+    status: 'pending' | 'requesting' | 'active' | 'completed' | 'failed';
+  }>;
 }
 
 //end of Unathi's additions
