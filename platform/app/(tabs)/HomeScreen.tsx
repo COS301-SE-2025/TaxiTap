@@ -207,6 +207,8 @@ export default function HomeScreen() {
   const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
   const [multiLegOptions, setMultiLegOptions] = useState<MultiLegJourneyResult["multiLegOptions"] | null>(null);
   const [userPreference, setUserPreference] = useState('shortest_time');
+  const [hasDirectRoute, setHasDirectRoute] = useState(false);
+  const [directRouteAvailableTaxis, setDirectRouteAvailableTaxis] = useState(0);
 
   // States for progressive radius expansion
   const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
@@ -275,10 +277,10 @@ export default function HomeScreen() {
     } : "skip"
   );
 
-  // NEW: Query for multi-leg journey analysis - only runs when we have search params
+  // NEW: Query for multi-leg journey analysis - only runs when we have search params and no direct route drivers
   const journeyAnalysisResult = useQuery(
     api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-    taxiSearchParams ? {
+    (taxiSearchParams && !(hasDirectRoute && directRouteAvailableTaxis > 0)) ? {
       originLat: taxiSearchParams.originLat,
       originLng: taxiSearchParams.originLng,
       destinationLat: taxiSearchParams.destinationLat,
@@ -1022,7 +1024,15 @@ export default function HomeScreen() {
     if (journeyAnalysisResult) {
       console.log('🔍 Journey analysis result:', journeyAnalysisResult);
 
+      // Reset multi-leg preview state
+      setShowMultiLegPreview(false);
+      setMultiLegOptions(null);
+
       if (journeyAnalysisResult.requiresMultiLeg) {
+        // No direct route available, need multi-leg journey
+        setHasDirectRoute(false);
+        setDirectRouteAvailableTaxis(0);
+
         if (journeyAnalysisResult.firstLegDrivers && journeyAnalysisResult.firstLegDrivers.length > 0) {
           console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
 
@@ -1031,9 +1041,9 @@ export default function HomeScreen() {
           setIsSearchingTaxis(false);
           setSearchStartTime(null);
 
-          // Also show multi-leg preview if options available
+          // Show multi-leg preview only when actually required and options available
           if (journeyAnalysisResult.multiLegOptions) {
-            console.log('📋 Also showing multi-leg journey preview');
+            console.log('📋 Showing multi-leg journey preview (no direct route)');
             setShowMultiLegPreview(true);
             setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
           }
@@ -1058,7 +1068,10 @@ export default function HomeScreen() {
         }
       } else if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success) {
         console.log('✅ Direct route available, proceeding with single-leg search');
-        // Continue with normal taxi search flow
+        // Direct route available - set state accordingly
+        setHasDirectRoute(true);
+        setDirectRouteAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis?.length || 0);
+        // Continue with normal taxi search flow - do not show multi-leg preview
       }
     }
   }, [journeyAnalysisResult]);
@@ -1077,6 +1090,16 @@ export default function HomeScreen() {
       if (taxiSearchResult.success) {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
+
+        // If we found taxis, this means we have a direct route with available drivers
+        if (taxiSearchResult.availableTaxis.length > 0) {
+          console.log(`✅ Direct route taxis found: ${taxiSearchResult.availableTaxis.length}, hiding multi-leg preview`);
+          // Update direct route state to hide multi-leg preview
+          setHasDirectRoute(true);
+          setDirectRouteAvailableTaxis(taxiSearchResult.availableTaxis.length);
+          setShowMultiLegPreview(false);
+          setMultiLegOptions(null);
+        }
 
         // If we found taxis or reached max radius, stop searching
         if (taxiSearchResult.availableTaxis.length > 0 ||
@@ -2343,79 +2366,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Radius Expansion Status */}
-        {isSearchingTaxis && !keyboardVisible && searchStartTime && (
-          <View style={dynamicStyles.searchResultsContainer}>
-            <Text style={dynamicStyles.searchResultsTitle}>
-              🎯 Search Radius Status
-            </Text>
-            <View style={dynamicStyles.searchResultsCard}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 12,
-                paddingBottom: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: isDark
-                  ? 'rgba(71, 85, 105, 0.2)'
-                  : 'rgba(226, 232, 240, 0.5)',
-              }}>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: currentSearchRadius >= 3.0 ? '#EF4444' : '#3B82F6',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 16,
-                }}>
-                  <Icon name="radio" size={20} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[dynamicStyles.searchResultsText, {
-                    fontSize: 16,
-                    fontWeight: '600',
-                    marginBottom: 4
-                  }]}>
-                    Current Radius: {currentSearchRadius}km
-                  </Text>
-                  <Text style={[dynamicStyles.searchResultsText, {
-                    fontSize: 13,
-                    opacity: 0.8
-                  }]}>
-                    {currentSearchRadius >= 3.0
-                      ? 'Maximum radius reached'
-                      : `Expanding to ${currentSearchRadius + 0.5}km`
-                    }
-                  </Text>
-                </View>
-              </View>
-
-              {currentSearchRadius < 3.0 && nextExpansionCountdown > 0 && (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 8,
-                  backgroundColor: isDark
-                    ? 'rgba(59, 130, 246, 0.1)'
-                    : 'rgba(59, 130, 246, 0.05)',
-                  borderRadius: 12,
-                }}>
-                  <Icon name="time" size={16} color="#3B82F6" style={{ marginRight: 8 }} />
-                  <Text style={{
-                    color: '#3B82F6',
-                    fontSize: 14,
-                    fontWeight: '600',
-                  }}>
-                    Next expansion in {nextExpansionCountdown}s
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
         {/* Journey Status - REMOVED for better usability */}
 
         {!keyboardVisible && !routeLoaded && (
@@ -2583,6 +2533,9 @@ export default function HomeScreen() {
           }))}
           onConfirm={handleMultiLegJourneyConfirm}
           onCancel={() => setShowMultiLegPreview(false)}
+          hasDirectRoute={hasDirectRoute}
+          availableTaxis={directRouteAvailableTaxis}
+          multilegReason={hasDirectRoute && directRouteAvailableTaxis === 0 ? 'no_taxis_available' : 'no_direct_route'}
         />
       )}
     </KeyboardAvoidingView>
