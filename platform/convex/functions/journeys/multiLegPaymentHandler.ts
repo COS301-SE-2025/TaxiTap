@@ -91,9 +91,33 @@ export const processLegPaymentHandler = async (
 
   // If payment is completed, check if we can progress to next leg
   let canProgressToNextLeg = false;
+  let nextLegInfo = null;
+
   if (isPaid) {
     const result = await checkCanProgressToNextLegHandler(ctx, journeyId, legIndex);
     canProgressToNextLeg = result.canProgress;
+
+    // If we can progress, get the next leg details
+    if (result.canProgress && result.nextLegIndex !== undefined) {
+      const nextLeg = await ctx.db
+        .query("journeyLegs")
+        .withIndex("by_journey_and_leg", (q: any) =>
+          q.eq("journeyId", journeyId).eq("legIndex", result.nextLegIndex)
+        )
+        .first();
+
+      if (nextLeg) {
+        nextLegInfo = {
+          legIndex: nextLeg.legIndex,
+          fromAddress: nextLeg.fromAddress,
+          toAddress: nextLeg.toAddress,
+          fromCoordinates: nextLeg.fromCoordinates,
+          toCoordinates: nextLeg.toCoordinates,
+          routeId: nextLeg.routeId,
+          estimatedFare: nextLeg.estimatedFare,
+        };
+      }
+    }
   }
 
   return {
@@ -103,6 +127,7 @@ export const processLegPaymentHandler = async (
     changeDue,
     amountOwed,
     canProgressToNextLeg,
+    nextLeg: nextLegInfo,
     message: isPaid ?
       `Leg ${legIndex + 1} payment confirmed - ${paymentType}` :
       `Leg ${legIndex + 1} payment required before continuing`,

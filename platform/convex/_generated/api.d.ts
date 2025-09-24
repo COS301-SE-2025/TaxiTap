@@ -21,7 +21,6 @@ import type * as functions_badges_getDriverBadges from "../functions/badges/getD
 import type * as functions_badges_getUserBadges from "../functions/badges/getUserBadges.js";
 import type * as functions_badges_journeyBadges from "../functions/badges/journeyBadges.js";
 import type * as functions_badges_updateTopEarners from "../functions/badges/updateTopEarners.js";
-import type * as functions_debug_taxiAvailabilityDebug from "../functions/debug/taxiAvailabilityDebug.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
@@ -150,7 +149,6 @@ declare const fullApi: ApiFromModules<{
   "functions/badges/getUserBadges": typeof functions_badges_getUserBadges;
   "functions/badges/journeyBadges": typeof functions_badges_journeyBadges;
   "functions/badges/updateTopEarners": typeof functions_badges_updateTopEarners;
-  "functions/debug/taxiAvailabilityDebug": typeof functions_debug_taxiAvailabilityDebug;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;

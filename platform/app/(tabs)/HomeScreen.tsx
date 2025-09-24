@@ -1042,10 +1042,21 @@ export default function HomeScreen() {
           setSearchStartTime(null);
 
           // Show multi-leg preview only when actually required and options available
-          if (journeyAnalysisResult.multiLegOptions) {
-            console.log('📋 Showing multi-leg journey preview (no direct route)');
+          if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
+            console.log('📋 Showing multi-leg journey preview (no direct route)', {
+              optionsCount: journeyAnalysisResult.multiLegOptions.length,
+              options: journeyAnalysisResult.multiLegOptions
+            });
             setShowMultiLegPreview(true);
             setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
+          } else {
+            console.log('❌ No multi-leg options available:', {
+              multiLegOptionsExists: !!journeyAnalysisResult.multiLegOptions,
+              multiLegOptionsLength: journeyAnalysisResult.multiLegOptions?.length || 0,
+              requiresMultiLeg: journeyAnalysisResult.requiresMultiLeg,
+              message: journeyAnalysisResult.message,
+              fullResult: journeyAnalysisResult
+            });
           }
 
           // Clear any existing expansion timer
@@ -1053,8 +1064,11 @@ export default function HomeScreen() {
             clearTimeout(radiusExpansionTimer);
             setRadiusExpansionTimer(null);
           }
-        } else if (journeyAnalysisResult.multiLegOptions) {
-          console.log('🔄 Multi-leg journey required but no first-leg drivers, showing preview only');
+        } else if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
+          console.log('🔄 Multi-leg journey required but no first-leg drivers, showing preview only', {
+            optionsCount: journeyAnalysisResult.multiLegOptions.length,
+            options: journeyAnalysisResult.multiLegOptions
+          });
           setShowMultiLegPreview(true);
           setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
           setIsSearchingTaxis(false);
@@ -1969,7 +1983,7 @@ export default function HomeScreen() {
         };
         startMultiLegJourney(journey);
 
-        // Show success message and navigate to journey management
+        // Show success message and navigate to first leg taxi selection
         Alert.alert(
           'Multi-Leg Journey Started',
           `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
@@ -1977,13 +1991,23 @@ export default function HomeScreen() {
             {
               text: 'OK',
               onPress: () => {
-                // Navigate to the journey management screen
+                // Navigate to TaxiInformation for first leg
+                const firstLeg = selectedOption.legs[0];
                 router.push({
-                  pathname: './ActiveRides',
+                  pathname: './TaxiInformation',
                   params: {
+                    destinationName: firstLeg.toAddress,
+                    destinationLat: firstLeg.toCoordinates.latitude.toString(),
+                    destinationLng: firstLeg.toCoordinates.longitude.toString(),
+                    currentName: firstLeg.fromAddress,
+                    currentLat: firstLeg.fromCoordinates.latitude.toString(),
+                    currentLng: firstLeg.fromCoordinates.longitude.toString(),
+                    routeId: firstLeg.routeId || '',
+                    estimatedFare: firstLeg.estimatedFare.toString(),
                     journeyId: journeyResult.journeyId,
                     isMultiLeg: 'true',
-                    currentLeg: '0'
+                    currentLegIndex: '0',
+                    totalLegs: selectedOption.totalLegs.toString()
                   }
                 });
               }

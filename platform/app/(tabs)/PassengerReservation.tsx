@@ -372,6 +372,14 @@ export default function SeatReserved() {
 		userId: getParamAsString(params.userId, ""),
 	};
 
+	// Multi-leg journey parameters
+	const multiLegInfo = {
+		journeyId: getParamAsString(params.journeyId, ""),
+		isMultiLeg: getParamAsString(params.isMultiLeg, "false") === "true",
+		currentLegIndex: parseInt(getParamAsString(params.currentLegIndex, "0")),
+		totalLegs: parseInt(getParamAsString(params.totalLegs, "1")),
+	};
+
 	// Function to decode Google's polyline format
 	const decodePolyline = (encoded: string) => {
 		const points = [];
@@ -946,6 +954,11 @@ export default function SeatReserved() {
 										fare: result.fare.toString(),
 										driverName: taxiInfo?.driver?.name || 'Unknown Driver',
 										licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+										// Multi-leg journey parameters
+										journeyId: multiLegInfo.isMultiLeg ? multiLegInfo.journeyId : undefined,
+										isMultiLeg: multiLegInfo.isMultiLeg.toString(),
+										legIndex: multiLegInfo.isMultiLeg ? multiLegInfo.currentLegIndex.toString() : undefined,
+										totalLegs: multiLegInfo.isMultiLeg ? multiLegInfo.totalLegs.toString() : undefined,
 									},
 								});
 							},
@@ -1197,6 +1210,39 @@ export default function SeatReserved() {
 			paddingTop: 30,
 			paddingBottom: 40,
 			paddingHorizontal: 20,
+		},
+		multiLegHeader: {
+			width: '100%',
+			backgroundColor: isDark ? 'rgba(255,184,77,0.1)' : '#FFF8E1',
+			borderRadius: 12,
+			padding: 15,
+			marginBottom: 20,
+		},
+		multiLegTitleContainer: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginBottom: 12,
+		},
+		multiLegTitle: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: theme.text,
+			marginLeft: 8,
+		},
+		journeyProgressBar: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+		},
+		progressDot: {
+			width: 8,
+			height: 8,
+			borderRadius: 4,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+			marginHorizontal: 4,
+		},
+		progressDotActive: {
+			backgroundColor: theme.primary,
 		},
 		driverDetailsHeader: {
 			flexDirection: "row",
@@ -1459,6 +1505,29 @@ export default function SeatReserved() {
 					</View>
 
 					<View style={dynamicStyles.bottomSection}>
+						{/* Multi-leg Journey Header */}
+						{multiLegInfo.isMultiLeg && (
+							<View style={dynamicStyles.multiLegHeader}>
+								<View style={dynamicStyles.multiLegTitleContainer}>
+									<Icon name="layers-outline" size={20} color={theme.primary} />
+									<Text style={dynamicStyles.multiLegTitle}>
+										Multi-Leg Journey: Leg {multiLegInfo.currentLegIndex + 1} of {multiLegInfo.totalLegs}
+									</Text>
+								</View>
+								<View style={dynamicStyles.journeyProgressBar}>
+									{Array.from({length: multiLegInfo.totalLegs}, (_, i) => (
+										<View
+											key={i}
+											style={[
+												dynamicStyles.progressDot,
+												i <= multiLegInfo.currentLegIndex && dynamicStyles.progressDotActive
+											]}
+										/>
+									))}
+								</View>
+							</View>
+						)}
+
 						{/* Driver Details Header */}
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<Text style={dynamicStyles.driverDetailsTitle}>

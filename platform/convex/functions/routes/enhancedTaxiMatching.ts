@@ -1092,9 +1092,12 @@ async function findFirstLegAvailableDrivers(ctx: QueryCtx, {
       if (driversOnRouteLocations.length === 0) continue;
 
       // Calculate route score for origin proximity only
-      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, originLat, originLng); // Use same lat/lng to ignore destination
+      // For first leg, we only care about start proximity, so we use a dummy destination
+      const dummyDestinationLat = originLat + 0.01; // Small offset to avoid same-point issues
+      const dummyDestinationLng = originLng + 0.01;
+      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, dummyDestinationLat, dummyDestinationLng);
 
-      // Only check origin proximity for first leg
+      // Only check origin proximity for first leg (ignore destination proximity)
       if (routeScore.startProximity > maxOriginDistance) {
         continue;
       }
@@ -1317,9 +1320,18 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
 
     // Step 4: Generate final multi-leg options
     const multiLegOptions = [];
-    
+
+    console.log('🔄 Step 4: Generating final multi-leg options', {
+      optimizedSequenceLength: optimizationResult.optimizedSequence?.length || 0,
+      hasJourneyLegs: !!optimizationResult.journeyLegs,
+      journeyLegsLength: optimizationResult.journeyLegs?.length || 0,
+      hasSummary: !!optimizationResult.summary,
+      optimizationResult: optimizationResult
+    });
+
     // Primary option (best transfer point)
     if (optimizationResult.optimizedSequence.length > 0 && optimizationResult.journeyLegs && optimizationResult.summary) {
+      console.log('✅ Creating primary multi-leg option');
       multiLegOptions.push({
         optionId: "primary",
         totalLegs: optimizationResult.journeyLegs.length,
@@ -1330,6 +1342,12 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
         estimatedTotalCost: optimizationResult.summary.estimatedTotalCost,
         optimizationCriteria: args.optimizationPreference,
         confidence: "high"
+      });
+    } else {
+      console.log('❌ Cannot create primary option:', {
+        hasOptimizedSequence: optimizationResult.optimizedSequence?.length > 0,
+        hasJourneyLegs: !!optimizationResult.journeyLegs,
+        hasSummary: !!optimizationResult.summary
       });
     }
 

@@ -56,9 +56,28 @@ export default function PaymentConfirmation() {
         );
 
         setTimeout(() => {
-          if (result.canProgressToNextLeg) {
-            // Navigate back to journey progress or next leg preparation
-            router.push('/HomeScreen'); // Could be journey progress screen instead
+          if (result.canProgressToNextLeg && result.nextLeg) {
+            // Navigate to next leg taxi selection
+            router.push({
+              pathname: '/TaxiInformation',
+              params: {
+                destinationName: result.nextLeg.toAddress,
+                destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
+                destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
+                currentName: result.nextLeg.fromAddress,
+                currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
+                currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
+                routeId: result.nextLeg.routeId || '',
+                estimatedFare: result.nextLeg.estimatedFare.toString(),
+                journeyId: journeyId as string,
+                isMultiLeg: 'true',
+                currentLegIndex: result.nextLeg.legIndex.toString(),
+                totalLegs: totalLegs as string,
+              }
+            });
+          } else if (result.canProgressToNextLeg) {
+            // Fallback if next leg details not available
+            router.push('/HomeScreen');
           } else {
             // Journey completed - go to feedback for the final leg
             router.push({

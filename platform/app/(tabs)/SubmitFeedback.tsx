@@ -25,9 +25,18 @@ export default function SubmitFeedbackScreen() {
 
   const saveFeedback = useMutation(api.functions.feedback.saveFeedback.saveFeedback);
 
-  const { rideId, startName, endName, passengerId, driverId } = useLocalSearchParams<{
+  const {
+    rideId, startName, endName, passengerId, driverId,
+    journeyId, isMultiLeg, legIndex, totalLegs
+  } = useLocalSearchParams<{
     rideId?: string; startName?: string; endName?: string; passengerId?: string; driverId?: string;
+    journeyId?: string; isMultiLeg?: string; legIndex?: string; totalLegs?: string;
   }>();
+
+  // Multi-leg journey info
+  const isMultiLegJourney = isMultiLeg === 'true';
+  const currentLegIndex = parseInt(legIndex || '0');
+  const totalLegsCount = parseInt(totalLegs || '1');
 
   useEffect(() => { if (user) setName(user.name || ''); }, [user]);
 
@@ -55,12 +64,34 @@ export default function SubmitFeedbackScreen() {
 
       setRating(0);
       setComment('');
-      showGlobalSuccess('Success', 'Feedback submitted successfully!', {
+
+      // Different success messages for multi-leg vs single journeys
+      const successTitle = isMultiLegJourney
+        ? 'Leg Feedback Submitted'
+        : 'Feedback Submitted';
+
+      const successMessage = isMultiLegJourney
+        ? `Thank you for rating leg ${currentLegIndex + 1} of ${totalLegsCount} of your multi-leg journey!`
+        : 'Thank you for your feedback!';
+
+      showGlobalSuccess(successTitle, successMessage, {
         duration: 0,
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+          {
+            label: isMultiLegJourney ? 'Continue Journey' : 'OK',
+            onPress: () => {
+              if (isMultiLegJourney) {
+                // For multi-leg journeys, show a completion message but still go home
+                // The next leg will be triggered by the payment system
+                router.replace('/HomeScreen');
+              } else {
+                router.replace('/HomeScreen');
+              }
+            },
+            style: 'default'
+          },
         ],
       });
     } catch (err: any) {
@@ -138,6 +169,45 @@ export default function SubmitFeedbackScreen() {
       fontWeight: '500',
       textTransform: 'capitalize',
       marginBottom: 16,
+    },
+    multiLegInfo: {
+      backgroundColor: isDark ? 'rgba(255,184,77,0.1)' : '#FFF8E1',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      width: '100%',
+    },
+    multiLegTitleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    multiLegTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+      marginLeft: 8,
+    },
+    multiLegSubtitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    journeyProgressBar: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    progressDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+      marginHorizontal: 4,
+    },
+    progressDotActive: {
+      backgroundColor: theme.primary,
     },
     rideInfoContainer: {
       backgroundColor: theme.card,
@@ -311,7 +381,33 @@ export default function SubmitFeedbackScreen() {
           
           <Text style={dynamicStyles.userName}>{name}</Text>
           <Text style={dynamicStyles.userRole}>Passenger</Text>
-          
+
+          {/* Multi-leg Journey Info */}
+          {isMultiLegJourney && (
+            <View style={dynamicStyles.multiLegInfo}>
+              <View style={dynamicStyles.multiLegTitleContainer}>
+                <Ionicons name="layers-outline" size={18} color={theme.primary} />
+                <Text style={dynamicStyles.multiLegTitle}>
+                  Multi-Leg Journey: Leg {currentLegIndex + 1} of {totalLegsCount}
+                </Text>
+              </View>
+              <Text style={dynamicStyles.multiLegSubtitle}>
+                Please rate your experience for this leg of your journey
+              </Text>
+              <View style={dynamicStyles.journeyProgressBar}>
+                {Array.from({length: totalLegsCount}, (_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      dynamicStyles.progressDot,
+                      i <= currentLegIndex && dynamicStyles.progressDotActive
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
           {/* Ride Info Section - styled exactly like PassengerProfile */}
           <View style={dynamicStyles.rideInfoContainer}>
             <View style={dynamicStyles.rideInfoRow}>
@@ -336,7 +432,12 @@ export default function SubmitFeedbackScreen() {
         </View>
 
         {/* Driver Feedback Section */}
-        <Text style={dynamicStyles.sectionHeader}>Rate Your Driver</Text>
+        <Text style={dynamicStyles.sectionHeader}>
+          {isMultiLegJourney
+            ? `Rate Your Driver (Leg ${currentLegIndex + 1})`
+            : 'Rate Your Driver'
+          }
+        </Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.ratingSection}>
             <Text style={dynamicStyles.ratingTitle}>How was your driver?</Text>

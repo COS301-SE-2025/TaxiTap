@@ -362,87 +362,165 @@ export const optimizeTransferSequence = internalQuery({
  * Calculates proximity between a route and a point
  */
 function calculateRouteProximity(route: any, point: { lat: number; lng: number }) {
-  // Handle different route coordinate formats
-  let startLat, startLng, endLat, endLng;
-  
-  if (route.startLatitude && route.startLongitude) {
-    // Legacy format with direct start/end coordinates
-    startLat = route.startLatitude;
-    startLng = route.startLongitude;
-    endLat = route.endLatitude;
-    endLng = route.endLongitude;
-  } else if (route.geometry?.coordinates && route.geometry.coordinates.length > 0) {
-    // New format with geometry coordinates array
-    const coordinates = route.geometry.coordinates;
-    const firstCoord = coordinates[0];
-    const lastCoord = coordinates[coordinates.length - 1];
-    
-    if (Array.isArray(firstCoord) && firstCoord.length >= 2 && 
-        Array.isArray(lastCoord) && lastCoord.length >= 2) {
-      startLat = firstCoord[0];
-      startLng = firstCoord[1];
-      endLat = lastCoord[0];
-      endLng = lastCoord[1];
-    } else {
-      return { distance: Infinity, nearestPoint: null };
-    }
-  } else {
+  // Get all stops for this route
+  const allStops = getAllRouteStops(route);
+
+  if (allStops.length === 0) {
     return { distance: Infinity, nearestPoint: null };
   }
-  
-  // Calculate distances to start and end points
-  const startDistance = calculateDistance(point.lat, point.lng, startLat, startLng);
-  const endDistance = calculateDistance(point.lat, point.lng, endLat, endLng);
-  
-  // Use the closer endpoint
-  const distance = Math.min(startDistance, endDistance);
-  const nearestPoint = startDistance < endDistance ? 
-    { lat: startLat, lng: startLng } :
-    { lat: endLat, lng: endLng };
-  
-  return { distance, nearestPoint };
+
+  // Find the closest stop to the given point
+  let minDistance = Infinity;
+  let nearestPoint = null;
+  let nearestStop = null;
+
+  for (const stop of allStops) {
+    const distance = calculateDistance(
+      point.lat, point.lng,
+      stop.coordinates.lat, stop.coordinates.lng
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestPoint = {
+        lat: stop.coordinates.lat,
+        lng: stop.coordinates.lng
+      };
+      nearestStop = stop;
+    }
+  }
+
+  return {
+    distance: minDistance,
+    nearestPoint,
+    nearestStop: {
+      name: nearestStop?.name,
+      order: nearestStop?.order,
+      isTerminal: nearestStop?.isTerminal
+    }
+  };
 }
 
 /**
- * Finds intersection points between two routes
+ * Finds intersection points between two routes using ALL stops
  */
 async function findRouteToRouteIntersections(route1: any, route2: any) {
-  //  intersection finding
-  
   const intersections = [];
-  
-  // Check if route endpoints are close to each other (potential transfer points)
-  const endpoints = [
-    { route: route1, point: { lat: route1.startLatitude, lng: route1.startLongitude } },
-    { route: route1, point: { lat: route1.endLatitude, lng: route1.endLongitude } },
-    { route: route2, point: { lat: route2.startLatitude, lng: route2.startLongitude } },
-    { route: route2, point: { lat: route2.endLatitude, lng: route2.endLongitude } },
-  ];
-  
-  for (let i = 0; i < 2; i++) {
-    for (let j = 2; j < 4; j++) {
+
+  // Get all stops for both routes
+  const route1Stops = getAllRouteStops(route1);
+  const route2Stops = getAllRouteStops(route2);
+
+  // Compare every stop from route1 with every stop from route2
+  for (const stop1 of route1Stops) {
+    for (const stop2 of route2Stops) {
       const distance = calculateDistance(
-        endpoints[i].point.lat, endpoints[i].point.lng,
-        endpoints[j].point.lat, endpoints[j].point.lng
+        stop1.coordinates.lat, stop1.coordinates.lng,
+        stop2.coordinates.lat, stop2.coordinates.lng
       );
-      
-      if (distance <= 1000) { // Within 1km
+
+      // If stops are within walking distance (1km), create transfer point
+      if (distance <= 1000) {
         const midpoint = {
-          latitude: (endpoints[i].point.lat + endpoints[j].point.lat) / 2,
-          longitude: (endpoints[i].point.lng + endpoints[j].point.lng) / 2,
+          latitude: (stop1.coordinates.lat + stop2.coordinates.lat) / 2,
+          longitude: (stop1.coordinates.lng + stop2.coordinates.lng) / 2,
         };
-        
+
+        // Determine transfer point type based on stop types
+        let transferType = "mid_route_transfer";
+        let stopDescription = `${stop1.name} ↔ ${stop2.name}`;
+
+        if (stop1.isTerminal && stop2.isTerminal) {
+          transferType = "terminal_to_terminal";
+        } else if (stop1.isTerminal || stop2.isTerminal) {
+          transferType = "terminal_to_stop";
+        }
+
         intersections.push({
           coordinates: midpoint,
-          address: `Transfer Point (${route1.name} ↔ ${route2.name})`,
-          type: "route_endpoint_proximity",
-          confidence: Math.max(0, 100 - (distance / 10)), // Higher confidence for closer points
+          address: `Transfer Point: ${stopDescription}`,
+          type: transferType,
+          confidence: Math.max(0, 100 - (distance / 10)), // Higher confidence for closer stops
+          route1Stop: {
+            name: stop1.name,
+            coordinates: stop1.coordinates,
+            routeName: route1.name,
+            stopOrder: stop1.order,
+            isTerminal: stop1.isTerminal
+          },
+          route2Stop: {
+            name: stop2.name,
+            coordinates: stop2.coordinates,
+            routeName: route2.name,
+            stopOrder: stop2.order,
+            isTerminal: stop2.isTerminal
+          },
+          walkingDistance: distance,
+          estimatedWalkTime: Math.ceil(distance / 1.4 / 60) // Walking speed 1.4 m/s, convert to minutes
         });
       }
     }
   }
-  
+
   return intersections;
+}
+
+/**
+ * Extracts all stops from a route in a standardized format
+ */
+function getAllRouteStops(route: any) {
+  const stops = [];
+
+  // Handle different route data formats
+  if (route.stops && Array.isArray(route.stops)) {
+    // Standard format with stops array
+    for (const stop of route.stops) {
+      stops.push({
+        name: stop.name || `Stop ${stop.order}`,
+        coordinates: {
+          lat: Array.isArray(stop.coordinates) ? stop.coordinates[0] : stop.coordinates.latitude,
+          lng: Array.isArray(stop.coordinates) ? stop.coordinates[1] : stop.coordinates.longitude
+        },
+        order: stop.order || 0,
+        isTerminal: stop.order === 0 || stop.order === route.stops.length - 1
+      });
+    }
+  } else {
+    // Fallback: Use start/end points if stops not available
+    if (route.startLatitude && route.startLongitude) {
+      stops.push({
+        name: `${route.name} Start`,
+        coordinates: { lat: route.startLatitude, lng: route.startLongitude },
+        order: 0,
+        isTerminal: true
+      });
+    }
+
+    if (route.endLatitude && route.endLongitude) {
+      stops.push({
+        name: `${route.name} End`,
+        coordinates: { lat: route.endLatitude, lng: route.endLongitude },
+        order: 999,
+        isTerminal: true
+      });
+    }
+
+    // If route has geometry coordinates, extract intermediate points
+    if (route.geometry?.coordinates && Array.isArray(route.geometry.coordinates)) {
+      route.geometry.coordinates.forEach((coord: any, index: number) => {
+        if (Array.isArray(coord) && coord.length >= 2 && index > 0 && index < route.geometry.coordinates.length - 1) {
+          stops.push({
+            name: `${route.name} Stop ${index}`,
+            coordinates: { lat: coord[0], lng: coord[1] },
+            order: index,
+            isTerminal: false
+          });
+        }
+      });
+    }
+  }
+
+  return stops;
 }
 
 /**

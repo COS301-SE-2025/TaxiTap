@@ -42,6 +42,10 @@ export default function TaxiInformation() {
     availableTaxisCount,
     routeMatchData: routeMatchDataString,
     estimatedFare,
+    journeyId,
+    isMultiLeg,
+    currentLegIndex,
+    totalLegs,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -53,6 +57,10 @@ export default function TaxiInformation() {
     availableTaxisCount?: string;
     routeMatchData?: string;
     estimatedFare?: string;
+    journeyId?: string;
+    isMultiLeg?: string;
+    currentLegIndex?: string;
+    totalLegs?: string;
   }>();
 
   // State management
@@ -199,6 +207,10 @@ export default function TaxiInformation() {
           address: destinationName,
         },
         estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
+        // Multi-leg journey fields
+        parentJourneyId: isMultiLeg === 'true' ? journeyId : undefined,
+        legIndex: isMultiLeg === 'true' ? parseInt(currentLegIndex || '0') : undefined,
+        isMultiLegRide: isMultiLeg === 'true',
       };
 
       console.log('📝 Creating ride request:', rideData);
@@ -228,6 +240,11 @@ export default function TaxiInformation() {
                       driverName: selectedTaxi.name,
                       fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
                       rideId: result.rideId,
+                      // Multi-leg journey parameters
+                      journeyId: isMultiLeg === 'true' ? journeyId : undefined,
+                      isMultiLeg: isMultiLeg,
+                      currentLegIndex: currentLegIndex,
+                      totalLegs: totalLegs,
                     },
                   });
                 },
@@ -335,6 +352,23 @@ export default function TaxiInformation() {
       fontWeight: '600',
       color: theme.text,
       flex: 1,
+    },
+    journeyProgressBar: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 12,
+      paddingHorizontal: 20,
+    },
+    progressDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+      marginHorizontal: 4,
+    },
+    progressDotActive: {
+      backgroundColor: theme.primary,
     },
     content: {
       flex: 1,
@@ -508,8 +542,26 @@ export default function TaxiInformation() {
           <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </Pressable>
-          <Text style={dynamicStyles.headerTitle}>Available Taxis</Text>
+          <Text style={dynamicStyles.headerTitle}>
+            {isMultiLeg === 'true'
+              ? `Multi-Leg Journey: Leg ${parseInt(currentLegIndex || '0') + 1} of ${totalLegs}`
+              : 'Available Taxis'
+            }
+          </Text>
         </View>
+        {isMultiLeg === 'true' && (
+          <View style={dynamicStyles.journeyProgressBar}>
+            {Array.from({length: parseInt(totalLegs || '1')}, (_, i) => (
+              <View
+                key={i}
+                style={[
+                  dynamicStyles.progressDot,
+                  i <= parseInt(currentLegIndex || '0') && dynamicStyles.progressDotActive
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Content */}
