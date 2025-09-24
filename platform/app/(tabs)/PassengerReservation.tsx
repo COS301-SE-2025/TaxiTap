@@ -1596,7 +1596,6 @@ export default function SeatReserved() {
 									<TouchableOpacity 
 										style={dynamicStyles.frontPassengerButton} 
 										onPress={handleFrontPassengerAccess}>
-										<Icon name="person" size={20} color="#FFFFFF" />
 										<Text style={dynamicStyles.frontPassengerButtonText}>
 											Front Passenger Access
 										</Text>

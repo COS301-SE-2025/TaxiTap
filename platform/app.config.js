@@ -10,7 +10,7 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     splash: {
-      image: "./assets/images/splash-icon.png",
+      image: "./assets/images/icon.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
@@ -18,21 +18,24 @@ export default {
     extra: {
       googleMapsIosApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY,
       googleMapsAndroidApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY,
+      eas: {
+        projectId: "880ada88-b612-4c2f-b902-1790c99551c0"
+      }
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.anonymous.frontend",
+      bundleIdentifier: "com.gititdone.taxitap",
       config: {
         googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
       }
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
       },
       edgeToEdgeEnabled: true,
-      package: "com.anonymous.frontend",
+      package: "com.gititdone.taxitap",
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY
@@ -42,7 +45,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png",
+      favicon: "./assets/images/icon.png",
       config: {
         googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY
       }
@@ -52,7 +55,7 @@ export default {
       [
         "expo-notifications",
         {
-          "icon": "../assets/images/transparent-whitetext.png",
+          "icon": "./assets/images/icon.png",
           "color": "#ffffff",
           "sounds": ["../assets/audios/hoot.wav"],
           "projectId": "TaxiTap"

@@ -9,6 +9,9 @@ on:
       - 'platform/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   # === FRONTEND JOB ===
   frontend-test:
@@ -100,3 +103,80 @@ jobs:
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex deploy
+
+  # === BUILD & RELEASE JOB (only on main) ===
+  build-and-release:
+    name: Build APK and Create Release (main only)
+    if: github.ref == 'refs/heads/main'
+    needs: [frontend-test, backend-typecheck, deploy]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Expo CLI
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build APK with EAS
+        run: eas build --platform android --profile github-release --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download APK
+        run: |
+          # Get the latest build ID and download URL
+          BUILD_INFO=$(eas build:list --platform android --limit 1 --json --non-interactive)
+          echo "Build list retrieved successfully"
+
+          # Extract download URL for the latest build
+          DOWNLOAD_URL=$(echo "$BUILD_INFO" | jq -r ".[0].artifacts.applicationArchiveUrl // empty")
+
+          if [ -n "$DOWNLOAD_URL" ] && [ "$DOWNLOAD_URL" != "null" ]; then
+            echo "Downloading APK from: $DOWNLOAD_URL"
+            curl -L -o taxitap-release.apk "$DOWNLOAD_URL"
+            echo "APK downloaded successfully:"
+            ls -la taxitap-release.apk
+          else
+            echo "No download URL found"
+            echo "Available builds:"
+            echo "$BUILD_INFO" | jq -r '.[] | "\(.id) - \(.artifacts.applicationArchiveUrl // "no URL")"'
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Get version from package.json
+        id: package-version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          name: TaxiTap v${{ steps.package-version.outputs.VERSION }}-${{ github.run_number }}
+          body: |
+            Automated release of TaxiTap APK
+
+            **Changes:**
+            - Latest changes from main branch
+            - Version: ${{ steps.package-version.outputs.VERSION }}
+            - Build: ${{ github.run_number }}
+
+            **Download:**
+            - Android APK: See attached files
+          files: platform/taxitap-release.apk
+          draft: false
+          prerelease: false
