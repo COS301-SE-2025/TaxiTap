@@ -256,7 +256,23 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="JourneyCompletionScreen"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="JourneyFeedbackForm"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
+
+    
   );
 };
 

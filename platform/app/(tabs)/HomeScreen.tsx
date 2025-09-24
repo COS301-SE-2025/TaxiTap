@@ -1021,18 +1021,40 @@ export default function HomeScreen() {
   useEffect(() => {
     if (journeyAnalysisResult) {
       console.log('🔍 Journey analysis result:', journeyAnalysisResult);
-      
-      if (journeyAnalysisResult.requiresMultiLeg && journeyAnalysisResult.multiLegOptions) {
-        console.log('🔄 Multi-leg journey required, showing preview');
-        setShowMultiLegPreview(true);
-        setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
-        setIsSearchingTaxis(false);
-        setSearchStartTime(null);
-        
-        // Clear any existing expansion timer
-        if (radiusExpansionTimer) {
-          clearTimeout(radiusExpansionTimer);
-          setRadiusExpansionTimer(null);
+
+      if (journeyAnalysisResult.requiresMultiLeg) {
+        if (journeyAnalysisResult.firstLegDrivers && journeyAnalysisResult.firstLegDrivers.length > 0) {
+          console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
+
+          // Show first-leg drivers as available taxis for immediate booking
+          setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
+          setIsSearchingTaxis(false);
+          setSearchStartTime(null);
+
+          // Also show multi-leg preview if options available
+          if (journeyAnalysisResult.multiLegOptions) {
+            console.log('📋 Also showing multi-leg journey preview');
+            setShowMultiLegPreview(true);
+            setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
+          }
+
+          // Clear any existing expansion timer
+          if (radiusExpansionTimer) {
+            clearTimeout(radiusExpansionTimer);
+            setRadiusExpansionTimer(null);
+          }
+        } else if (journeyAnalysisResult.multiLegOptions) {
+          console.log('🔄 Multi-leg journey required but no first-leg drivers, showing preview only');
+          setShowMultiLegPreview(true);
+          setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
+          setIsSearchingTaxis(false);
+          setSearchStartTime(null);
+
+          // Clear any existing expansion timer
+          if (radiusExpansionTimer) {
+            clearTimeout(radiusExpansionTimer);
+            setRadiusExpansionTimer(null);
+          }
         }
       } else if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success) {
         console.log('✅ Direct route available, proceeding with single-leg search');
