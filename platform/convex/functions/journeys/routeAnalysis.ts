@@ -218,6 +218,9 @@ export const calculateOptimalPath = query({
             totalEstimatedDuration: await estimateLegDuration(bestDirectRoute.route, originLat, originLng, destinationLat, destinationLng),
             totalEstimatedFare: await calculateLegFare(originLat, originLng, destinationLat, destinationLng),
           },
+          hasDirectRoute: true,
+          availableTaxis: bestDirectRoute.availableTaxis,
+          directRouteAnalysis: directRoute.analysis,
         };
       }
       
@@ -309,6 +312,13 @@ export const calculateOptimalPath = query({
       return {
         optimalPath: sortedOptions[0] || null,
         alternativeOptions: sortedOptions.slice(1, 3), // Return top 3 alternatives
+        hasDirectRoute: false,
+        availableTaxis: 0,
+        directRouteAnalysis: {
+          totalRoutesChecked: 0,
+          routesWithinProximity: 0,
+        },
+        multilegReason: intersections.intersections.length === 0 ? "no_intersections" : "no_direct_route",
       };
     } catch (error) {
       console.error("Error calculating optimal path:", error);
