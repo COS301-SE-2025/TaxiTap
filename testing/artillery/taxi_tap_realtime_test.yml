@@ -1,0 +1,220 @@
+config:
+  target: 'wss://your-convex-deployment.convex.cloud'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    # Peak load phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Peak Load"
+    # Sustained load phase
+    - duration: 600
+      arrivalRate: 15
+      name: "Sustained Load"
+    # Ramp down phase
+    - duration: 120
+      arrivalRate: 5
+      name: "Ramp Down"
+  
+  # WebSocket configuration
+  ws:
+    timeout: 30
+    reconnectInterval: 5000
+    maxReconnects: 3
+  
+  # Plugin configuration
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  
+  # Environment variables
+  variables:
+    convexUrl: "wss://your-convex-deployment.convex.cloud"
+    apiKey: "your-api-key-here"
+
+scenarios:
+  # Real-time location updates scenario
+  - name: "Real-time Location Updates"
+    weight: 40
+    flow:
+      # Connect to WebSocket
+      - connect:
+          url: "{{ convexUrl }}"
+          headers:
+            Authorization: "Bearer {{ apiKey }}"
+      
+      # Send authentication message
+      - send:
+          payload: |
+            {
+              "type": "auth",
+              "userId": "{{ $randomString() }}",
+              "role": "driver"
+            }
+      
+      # Wait for authentication confirmation
+      - wait: 2
+      
+      # Send location updates every 30 seconds
+      - loop:
+          - send:
+              payload: |
+                {
+                  "type": "location_update",
+                  "userId": "{{ $randomString() }}",
+                  "latitude": {{ $randomFloat(-26.5, -25.5) }},
+                  "longitude": {{ $randomFloat(27.5, 28.5) }},
+                  "role": "driver",
+                  "timestamp": {{ $timestamp }}
+                }
+          - wait: 30
+          count: 20
+      
+      # Close connection
+      - close: true
+
+  # Ride request notifications scenario
+  - name: "Ride Request Notifications"
+    weight: 30
+    flow:
+      # Connect as driver
+      - connect:
+          url: "{{ convexUrl }}"
+          headers:
+            Authorization: "Bearer {{ apiKey }}"
+      
+      # Authenticate as driver
+      - send:
+          payload: |
+            {
+              "type": "auth",
+              "userId": "driver_{{ $randomString() }}",
+              "role": "driver"
+            }
+      
+      - wait: 2
+      
+      # Listen for ride requests
+      - loop:
+          - wait: 5
+          count: 60
+      
+      # Simulate accepting a ride
+      - send:
+          payload: |
+            {
+              "type": "ride_accepted",
+              "rideId": "ride_{{ $randomString() }}",
+              "driverId": "driver_{{ $randomString() }}",
+              "timestamp": {{ $timestamp }}
+            }
+      
+      - close: true
+
+  # Passenger tracking scenario
+  - name: "Passenger Tracking"
+    weight: 30
+    flow:
+      # Connect as passenger
+      - connect:
+          url: "{{ convexUrl }}"
+          headers:
+            Authorization: "Bearer {{ apiKey }}"
+      
+      # Authenticate as passenger
+      - send:
+          payload: |
+            {
+              "type": "auth",
+              "userId": "passenger_{{ $randomString() }}",
+              "role": "passenger"
+            }
+      
+      - wait: 2
+      
+      # Request a ride
+      - send:
+          payload: |
+            {
+              "type": "ride_request",
+              "passengerId": "passenger_{{ $randomString() }}",
+              "startLocation": {
+                "latitude": {{ $randomFloat(-26.5, -25.5) }},
+                "longitude": {{ $randomFloat(27.5, 28.5) }},
+                "address": "{{ $randomString() }}"
+              },
+              "endLocation": {
+                "latitude": {{ $randomFloat(-26.5, -25.5) }},
+                "longitude": {{ $randomFloat(27.5, 28.5) }},
+                "address": "{{ $randomString() }}"
+              },
+              "estimatedFare": {{ $randomFloat(15, 50) }},
+              "timestamp": {{ $timestamp }}
+            }
+      
+      # Wait for driver assignment
+      - wait: 10
+      
+      # Track ride progress
+      - loop:
+          - wait: 15
+          count: 20
+      
+      # Complete ride
+      - send:
+          payload: |
+            {
+              "type": "ride_completed",
+              "rideId": "ride_{{ $randomString() }}",
+              "passengerId": "passenger_{{ $randomString() }}",
+              "finalFare": {{ $randomFloat(15, 50) }},
+              "timestamp": {{ $timestamp }}
+            }
+      
+      - close: true
+
+# Custom metrics and expectations
+expect:
+  # Response time expectations
+  - http.response_time.p95: 5000
+  - http.response_time.p99: 10000
+  
+  # Error rate expectations
+  - http.codes.200: 95
+  - http.codes.4xx: 3
+  - http.codes.5xx: 2
+  
+  # WebSocket specific expectations
+  - ws.connection.success: 95
+  - ws.message.success: 90
+
+# Custom functions for South African locations
+functions:
+  # Generate realistic Johannesburg coordinates
+  jhb_coords: |
+    function() {
+      return {
+        lat: -26.2041 + (Math.random() - 0.5) * 0.1,
+        lng: 28.0473 + (Math.random() - 0.5) * 0.1
+      };
+    }
+  
+  # Generate realistic Cape Town coordinates
+  cpt_coords: |
+    function() {
+      return {
+        lat: -33.9249 + (Math.random() - 0.5) * 0.1,
+        lng: 18.4241 + (Math.random() - 0.5) * 0.1
+      };
+    }
+  
+  # Generate realistic Durban coordinates
+  dbn_coords: |
+    function() {
+      return {
+        lat: -29.8587 + (Math.random() - 0.5) * 0.1,
+        lng: 31.0218 + (Math.random() - 0.5) * 0.1
+      };
+    }
