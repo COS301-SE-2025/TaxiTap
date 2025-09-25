@@ -32,6 +32,7 @@ export default function PaymentConfirmation() {
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
   const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
+  const autoProgressToSecondLeg = useMutation(api.functions.journeys.automaticSecondLegHandler.autoProgressToSecondLeg);
 
   const handlePaid = async () => {
     try {
@@ -57,72 +58,60 @@ export default function PaymentConfirmation() {
 
         setTimeout(async () => {
           if (result.canProgressToNextLeg && result.nextLeg) {
-            // Find available drivers for the next leg's route
+            // Use automatic second leg progression
             try {
-              const nextLegDriverSearch = await api.functions.routes.enhancedTaxiMatching.findAvailableDriversForLeg({
-                legIndex: result.nextLeg.legIndex,
+              const autoProgressResult = await autoProgressToSecondLeg({
                 journeyId: journeyId as string,
-                originLat: result.nextLeg.fromCoordinates.latitude,
-                originLng: result.nextLeg.fromCoordinates.longitude,
-                destinationLat: result.nextLeg.toCoordinates.latitude,
-                destinationLng: result.nextLeg.toCoordinates.longitude,
-                routeId: result.nextLeg.routeId,
-                maxOriginDistance: 2.0,
-                maxTaxiDistance: 3.0,
-                maxResults: 10
+                completedLegIndex: parseInt(legIndex as string),
+                passengerLocation: {
+                  latitude: parseFloat(currentLat || '0'),
+                  longitude: parseFloat(currentLng || '0')
+                },
+                actualFare: parseFloat(fare || '0')
               });
 
-              // Create route match data for next leg with available drivers
-              const nextLegRouteMatchData = {
-                availableTaxis: nextLegDriverSearch.availableTaxis || [],
-                matchingRoutes: [],
-                success: nextLegDriverSearch.success,
-                message: nextLegDriverSearch.message || "Next leg drivers available"
-              };
-
-              // Navigate to next leg taxi selection with driver data
-              router.push({
-                pathname: '/TaxiInformation',
-                params: {
-                  destinationName: result.nextLeg.toAddress,
-                  destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
-                  destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
-                  currentName: result.nextLeg.fromAddress,
-                  currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
-                  currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
-                  routeId: result.nextLeg.routeId || '',
-                  estimatedFare: result.nextLeg.estimatedFare.toString(),
-                  journeyId: journeyId as string,
-                  isMultiLeg: 'true',
-                  currentLegIndex: result.nextLeg.legIndex.toString(),
-                  totalLegs: totalLegs as string,
-                  routeMatchData: JSON.stringify(nextLegRouteMatchData)
-                }
-              });
+              if (autoProgressResult.success && autoProgressResult.nextLegInfo) {
+                // Navigate to next leg taxi selection - TaxiInformation will handle driver search
+                router.push({
+                  pathname: '/TaxiInformation',
+                  params: {
+                    destinationName: autoProgressResult.nextLegInfo.toAddress,
+                    destinationLat: autoProgressResult.nextLegInfo.toCoordinates.latitude.toString(),
+                    destinationLng: autoProgressResult.nextLegInfo.toCoordinates.longitude.toString(),
+                    currentName: autoProgressResult.nextLegInfo.fromAddress,
+                    currentLat: autoProgressResult.nextLegInfo.fromCoordinates.latitude.toString(),
+                    currentLng: autoProgressResult.nextLegInfo.fromCoordinates.longitude.toString(),
+                    routeId: autoProgressResult.nextLegInfo.routeId || '',
+                    estimatedFare: autoProgressResult.nextLegInfo.estimatedFare.toString(),
+                    journeyId: journeyId as string,
+                    isMultiLeg: 'true',
+                    currentLegIndex: autoProgressResult.nextLegInfo.legIndex.toString(),
+                    totalLegs: totalLegs as string,
+                    routeMatchData: JSON.stringify({
+                      availableTaxis: [],
+                      matchingRoutes: [],
+                      success: true,
+                      message: "Next leg drivers will be searched automatically"
+                    })
+                  }
+                });
+              } else if (autoProgressResult.success && !autoProgressResult.nextLegInfo) {
+                // Journey completed
+                showGlobalSuccess('Journey Completed', 'All legs of your multi-leg journey have been completed successfully!');
+                router.push('/(tabs)/HomeScreen');
+              } else {
+                console.error('❌ Error auto-progressing to next leg:', autoProgressResult.error);
+                // Fallback to original logic
+                router.push('/(tabs)/HomeScreen');
+              }
             } catch (error) {
-              console.error('❌ Error finding drivers for next leg:', error);
-              // Fallback navigation without driver data
-              router.push({
-                pathname: '/TaxiInformation',
-                params: {
-                  destinationName: result.nextLeg.toAddress,
-                  destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
-                  destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
-                  currentName: result.nextLeg.fromAddress,
-                  currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
-                  currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
-                  routeId: result.nextLeg.routeId || '',
-                  estimatedFare: result.nextLeg.estimatedFare.toString(),
-                  journeyId: journeyId as string,
-                  isMultiLeg: 'true',
-                  currentLegIndex: result.nextLeg.legIndex.toString(),
-                  totalLegs: totalLegs as string,
-                }
-              });
+              console.error('❌ Error in automatic second leg progression:', error);
+              // Fallback navigation
+              router.push('/(tabs)/HomeScreen');
             }
           } else if (result.canProgressToNextLeg) {
             // Fallback if next leg details not available
-            router.push('/HomeScreen');
+            router.push('/(tabs)/HomeScreen');
           } else {
             // Journey completed - go to feedback for the final leg
             router.push({

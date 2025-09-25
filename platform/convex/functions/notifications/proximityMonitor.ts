@@ -554,20 +554,25 @@ export async function checkMultiLegTransferProximityHandler(ctx: any, args: any)
               )
               .unique();
 
-            if (nextLeg && nextLeg.status === "pending") {
-              // Trigger automatic next leg request
+            if (nextLeg && (nextLeg.status === "pending" || nextLeg.status === "created")) {
+              // Trigger automatic next leg taxi search
               try {
-                await ctx.runMutation(
-                  api.functions.journeys.journeyManagement.requestNextLegTaxi,
+                const secondLegResult = await ctx.runMutation(
+                  api.functions.journeys.automaticSecondLegHandler.triggerSecondLegTaxiSearch,
                   {
                     journeyId: journey.journeyId,
-                    legIndex: nextLeg.legIndex,
-                    transferLocation: transferPoint,
-                    destinationLocation: nextLeg.toCoordinates,
-                    expandedRadius: 2.0 // Larger radius for transfer points
+                    currentLegIndex: currentLeg.legIndex,
+                    passengerLocation: transferPoint,
+                    transferPoint: transferPoint
                   }
                 );
-                nextLegRequestsTriggered++;
+
+                if (secondLegResult.success && secondLegResult.nextLegRequested) {
+                  nextLegRequestsTriggered++;
+                  console.log(`✅ Second leg taxi search triggered for journey ${journey.journeyId}`);
+                } else {
+                  console.error(`Failed to trigger second leg search: ${secondLegResult.error}`);
+                }
               } catch (error) {
                 console.error(`Failed to request next leg for journey ${journey.journeyId}:`, error);
               }
@@ -577,17 +582,46 @@ export async function checkMultiLegTransferProximityHandler(ctx: any, args: any)
 
         // Check if arrived at transfer point
         if (status === 'arrived') {
-          const arrivalMessage = `You've arrived at the transfer point. ${
-            currentLeg.legIndex >= journey.totalLegs - 1
-              ? 'Journey completed!'
-              : 'Please wait for your next taxi.'
-          }`;
+          const isLastLeg = currentLeg.legIndex >= journey.totalLegs - 1;
+          let arrivalMessage = '';
+          let nextLegInfo = null;
+
+          if (isLastLeg) {
+            arrivalMessage = 'Journey completed! Thank you for using TaxiTap.';
+          } else {
+            // Get next leg information
+            try {
+              const nextLegStatus = await ctx.runQuery(
+                api.functions.journeys.automaticSecondLegHandler.getNextLegStatus,
+                {
+                  journeyId: journey.journeyId,
+                  currentLegIndex: currentLeg.legIndex
+                }
+              );
+
+              if (nextLegStatus.success && nextLegStatus.nextLegInfo) {
+                nextLegInfo = nextLegStatus.nextLegInfo;
+                if (nextLegInfo.status === "drivers_available") {
+                  arrivalMessage = `You've arrived at the transfer point. Your next taxi is ready! Please walk to the pickup location and look for your assigned driver.`;
+                } else if (nextLegInfo.status === "no_drivers_found") {
+                  arrivalMessage = `You've arrived at the transfer point. We're searching for your next taxi. Please wait while we find an available driver.`;
+                } else {
+                  arrivalMessage = `You've arrived at the transfer point. Please wait for your next taxi.`;
+                }
+              } else {
+                arrivalMessage = `You've arrived at the transfer point. Please wait for your next taxi.`;
+              }
+            } catch (error) {
+              console.error('Error getting next leg status:', error);
+              arrivalMessage = `You've arrived at the transfer point. Please wait for your next taxi.`;
+            }
+          }
 
           await ctx.db.insert("notifications", {
             notificationId: `transfer_arrival_${journey.journeyId}_${currentLeg.legIndex}_${Date.now()}`,
             userId: journey.passengerId,
             type: "transfer_arrived" as const,
-            title: "Transfer Point Reached",
+            title: isLastLeg ? "Journey Completed" : "Transfer Point Reached",
             message: arrivalMessage,
             isRead: false,
             isPush: true,
@@ -597,7 +631,9 @@ export async function checkMultiLegTransferProximityHandler(ctx: any, args: any)
                 journeyId: journey.journeyId,
                 currentLegIndex: currentLeg.legIndex,
                 transferPoint,
-                isTransferArrival: true
+                isTransferArrival: true,
+                isLastLeg,
+                nextLegInfo
               }
             },
             priority: "urgent" as const,

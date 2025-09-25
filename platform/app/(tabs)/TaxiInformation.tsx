@@ -79,6 +79,15 @@ export default function TaxiInformation() {
 
   // Convex mutations
   const requestRide = useMutation(api.functions.rides.RequestRide.requestRide);
+  const getNextLegStatus = useQuery(
+    api.functions.journeys.automaticSecondLegHandler.getNextLegStatus,
+    isMultiLeg === 'true' && journeyId && currentLegIndex 
+      ? {
+          journeyId: journeyId as string,
+          currentLegIndex: parseInt(currentLegIndex || '0')
+        }
+      : "skip"
+  );
 
   // Process enhanced data from HomeScreen
   useEffect(() => {
@@ -381,6 +390,63 @@ export default function TaxiInformation() {
     progressDotActive: {
       backgroundColor: theme.primary,
     },
+    secondLegInfo: {
+      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
+      borderRadius: 16,
+      padding: 16,
+      margin: 16,
+      marginBottom: 8,
+    },
+    secondLegHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+      gap: 8,
+    },
+    secondLegTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.text,
+    },
+    secondLegRoute: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: 12,
+      lineHeight: 20,
+    },
+    secondLegDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    secondLegFare: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.primary,
+    },
+    secondLegStatus: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      fontWeight: '500',
+    },
+    viewNextLegButton: {
+      backgroundColor: theme.primary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      gap: 8,
+    },
+    viewNextLegButtonText: {
+      color: isDark ? '#121212' : '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
+    },
     content: {
       flex: 1,
       paddingHorizontal: 16,
@@ -574,6 +640,66 @@ export default function TaxiInformation() {
           </View>
         )}
       </View>
+
+      {/* Second Leg Information - Show when next leg is available */}
+      {isMultiLeg === 'true' && getNextLegStatus?.nextLegInfo && (
+        <View style={dynamicStyles.secondLegInfo}>
+          <View style={dynamicStyles.secondLegHeader}>
+            <Ionicons name="arrow-forward-circle" size={24} color={theme.primary} />
+            <Text style={dynamicStyles.secondLegTitle}>Next Leg Ready</Text>
+          </View>
+          <Text style={dynamicStyles.secondLegRoute}>
+            {getNextLegStatus.nextLegInfo.fromAddress} → {getNextLegStatus.nextLegInfo.toAddress}
+          </Text>
+          <View style={dynamicStyles.secondLegDetails}>
+            <Text style={dynamicStyles.secondLegFare}>
+              R{getNextLegStatus.nextLegInfo.estimatedFare?.toFixed(0) || '0'}
+            </Text>
+            <Text style={dynamicStyles.secondLegStatus}>
+              {getNextLegStatus.nextLegInfo.status === "drivers_available" 
+                ? `${getNextLegStatus.nextLegInfo.availableDrivers} drivers available`
+                : getNextLegStatus.nextLegInfo.status === "no_drivers_found"
+                ? "Searching for drivers..."
+                : "Preparing next leg..."
+              }
+            </Text>
+          </View>
+          {getNextLegStatus.nextLegInfo.status === "drivers_available" && (
+            <TouchableOpacity 
+              style={dynamicStyles.viewNextLegButton}
+              onPress={() => {
+                // Navigate to next leg taxi information
+                router.push({
+                  pathname: './TaxiInformation',
+                  params: {
+                    destinationName: getNextLegStatus.nextLegInfo.toAddress,
+                    destinationLat: getNextLegStatus.nextLegInfo.toCoordinates.latitude.toString(),
+                    destinationLng: getNextLegStatus.nextLegInfo.toCoordinates.longitude.toString(),
+                    currentName: getNextLegStatus.nextLegInfo.fromAddress,
+                    currentLat: getNextLegStatus.nextLegInfo.fromCoordinates.latitude.toString(),
+                    currentLng: getNextLegStatus.nextLegInfo.fromCoordinates.longitude.toString(),
+                    routeId: getNextLegStatus.nextLegInfo.routeId || '',
+                    estimatedFare: getNextLegStatus.nextLegInfo.estimatedFare.toString(),
+                    journeyId: journeyId as string,
+                    isMultiLeg: 'true',
+                    currentLegIndex: getNextLegStatus.nextLegInfo.legIndex.toString(),
+                    totalLegs: totalLegs as string,
+                    routeMatchData: JSON.stringify({
+                      availableTaxis: [],
+                      matchingRoutes: [],
+                      success: true,
+                      message: "Next leg drivers available"
+                    })
+                  }
+                });
+              }}
+            >
+              <Text style={dynamicStyles.viewNextLegButtonText}>View Next Leg</Text>
+              <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {/* Content */}
       <View style={dynamicStyles.content}>

@@ -7,6 +7,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import TransferPointInstructions from '../../components/TransferPointInstructions';
 import { useUser } from '../../contexts/UserContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useQuery, useMutation } from 'convex/react';
@@ -81,6 +82,13 @@ export default function SeatReserved() {
 	const [currentLegIndex, setCurrentLegIndex] = useState(0);
 	const [isInTransferWindow, setIsInTransferWindow] = useState(false);
 	const [nextLeg, setNextLeg] = useState<JourneyLeg | null>(null);
+	
+	// Transfer point instructions state
+	const [showTransferInstructions, setShowTransferInstructions] = useState(false);
+	const [transferPointLocation, setTransferPointLocation] = useState<{
+		latitude: number;
+		longitude: number;
+	} | null>(null);
 
 	// Fetch taxi and driver info for the current reservation using Convex
 	const taxiInfo = useQuery(
@@ -1491,6 +1499,40 @@ export default function SeatReserved() {
 				>
 					<Icon name="locate" size={24} color={isDark ? '#121212' : '#fff'} />
 				</TouchableOpacity>
+			)}
+
+			{/* Transfer Point Instructions */}
+			{isMultiLegMode && showTransferInstructions && transferPointLocation && (
+				<TransferPointInstructions
+					journeyId={params.journeyId || ''}
+					currentLegIndex={currentLegIndex}
+					passengerLocation={transferPointLocation}
+					visible={showTransferInstructions}
+					onClose={() => setShowTransferInstructions(false)}
+					onNavigateToNextLeg={() => {
+						setShowTransferInstructions(false);
+						// Navigate to next leg taxi information
+						if (nextLeg) {
+							router.push({
+								pathname: '/TaxiInformation',
+								params: {
+									destinationName: nextLeg.toAddress,
+									destinationLat: nextLeg.toCoordinates.latitude.toString(),
+									destinationLng: nextLeg.toCoordinates.longitude.toString(),
+									currentName: nextLeg.fromAddress,
+									currentLat: nextLeg.fromCoordinates.latitude.toString(),
+									currentLng: nextLeg.fromCoordinates.longitude.toString(),
+									routeId: nextLeg.routeId || '',
+									estimatedFare: nextLeg.estimatedFare.toString(),
+									journeyId: params.journeyId,
+									isMultiLeg: 'true',
+									currentLegIndex: nextLeg.legIndex.toString(),
+									totalLegs: params.totalLegs,
+								}
+							});
+						}
+					}}
+				/>
 			)}
 		</SafeAreaView>
 	)

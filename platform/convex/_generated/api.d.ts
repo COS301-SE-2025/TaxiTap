@@ -34,6 +34,7 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
+import type * as functions_journeys_automaticSecondLegHandler from "../functions/journeys/automaticSecondLegHandler.js";
 import type * as functions_journeys_fallbackHandling from "../functions/journeys/fallbackHandling.js";
 import type * as functions_journeys_journeyAnalytics from "../functions/journeys/journeyAnalytics.js";
 import type * as functions_journeys_journeyFailureHandler from "../functions/journeys/journeyFailureHandler.js";
@@ -162,6 +163,7 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
+  "functions/journeys/automaticSecondLegHandler": typeof functions_journeys_automaticSecondLegHandler;
   "functions/journeys/fallbackHandling": typeof functions_journeys_fallbackHandling;
   "functions/journeys/journeyAnalytics": typeof functions_journeys_journeyAnalytics;
   "functions/journeys/journeyFailureHandler": typeof functions_journeys_journeyFailureHandler;
