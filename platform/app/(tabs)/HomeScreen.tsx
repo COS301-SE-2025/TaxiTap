@@ -1100,6 +1100,24 @@ export default function HomeScreen() {
         error: journeyAnalysisResult.error
       });
 
+      // Debug: Log multi-leg options in detail
+      if (journeyAnalysisResult.multiLegOptions) {
+        console.log('🔍 Multi-leg options detailed:', journeyAnalysisResult.multiLegOptions.map((option: any, index: number) => ({
+          optionIndex: index,
+          optionId: option.optionId || option.journeyId,
+          totalLegs: option.totalLegs,
+          legs: option.legs?.map((leg: any) => ({
+            legIndex: leg.legIndex,
+            from: leg.fromAddress,
+            to: leg.toAddress,
+            routeId: leg.routeId
+          })),
+          transferPoints: option.transferPoints,
+          estimatedTime: option.estimatedTotalTime || option.estimatedTotalDuration,
+          estimatedCost: option.estimatedTotalCost || option.estimatedTotalFare
+        })));
+      }
+
       // Reset multi-leg preview state
       setShowMultiLegPreview(false);
       setMultiLegOptions(null);
@@ -1558,9 +1576,9 @@ export default function HomeScreen() {
         currentName: origin.name,
         currentLat: origin.latitude.toString(),
         currentLng: origin.longitude.toString(),
-        // Add original passenger addresses if they differ from route stops
-        originalDestinationName: destinationAddress || destination.name,
-        originalCurrentName: originAddress || origin.name,
+        // Use the current text field values (what user sees in HomeScreen)
+        originalDestinationName: destinationAddress,
+        originalCurrentName: originAddress,
         routeId: selectedRouteId,
         availableTaxisCount: availableTaxis.length.toString(),
         routeMatchData: JSON.stringify(routeMatchResults),

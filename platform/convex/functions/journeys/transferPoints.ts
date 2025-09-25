@@ -38,80 +38,80 @@ export const findNearbyRouteIntersections = internalQuery({
     try {
       // Get all routes from the database
       const allRoutes = await ctx.db.query("routes").collect();
-      
-      // Find routes that can serve the origin
-      const originAccessibleRoutes = [];
+
+      // OPTIMIZATION 1: Filter routes by proximity to origin/destination first
+      const originNearbyRoutes = [];
+      const destinationNearbyRoutes = [];
+      const ROUTE_PROXIMITY_LIMIT = 5000; // 5km - reasonable limit for route consideration
+
       for (const route of allRoutes) {
-        const proximityToOrigin = calculateRouteProximity(
-          route,
-          { lat: originLat, lng: originLng }
-        );
-        
-        if (proximityToOrigin.distance <= maxTransferDistance) {
-          originAccessibleRoutes.push({
-            route,
-            distanceFromOrigin: proximityToOrigin.distance,
-            nearestPoint: proximityToOrigin.nearestPoint,
-          });
+        const originProximity = calculateRouteProximity(route, { lat: originLat, lng: originLng });
+        const destinationProximity = calculateRouteProximity(route, { lat: destinationLat, lng: destinationLng });
+
+        if (originProximity.distance <= ROUTE_PROXIMITY_LIMIT) {
+          originNearbyRoutes.push({ route, distance: originProximity.distance });
+        }
+        if (destinationProximity.distance <= ROUTE_PROXIMITY_LIMIT) {
+          destinationNearbyRoutes.push({ route, distance: destinationProximity.distance });
         }
       }
-      
-      // Find routes that can serve the destination
-      const destinationAccessibleRoutes = [];
-      for (const route of allRoutes) {
-        const proximityToDestination = calculateRouteProximity(
-          route,
-          { lat: destinationLat, lng: destinationLng }
-        );
-        
-        if (proximityToDestination.distance <= maxTransferDistance) {
-          destinationAccessibleRoutes.push({
-            route,
-            distanceFromDestination: proximityToDestination.distance,
-            nearestPoint: proximityToDestination.nearestPoint,
-          });
-        }
-      }
-      
-      // Find intersection points between origin and destination routes
-      const intersectionPoints = [];
-      
-      for (const originRoute of originAccessibleRoutes) {
-        for (const destRoute of destinationAccessibleRoutes) {
-          // Skip if same route (direct route case handled elsewhere)
-          if (originRoute.route._id === destRoute.route._id) {
+
+      // OPTIMIZATION 2: Sort by distance and limit to top candidates
+      originNearbyRoutes.sort((a, b) => a.distance - b.distance);
+      destinationNearbyRoutes.sort((a, b) => a.distance - b.distance);
+
+      const TOP_ROUTES_PER_ENDPOINT = 25; // Limit to top 25 routes per endpoint
+      const topOriginRoutes = originNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
+      const topDestinationRoutes = destinationNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
+
+      // Find intersections only between promising route combinations
+      const allIntersectionPoints = [];
+
+      for (const originRouteData of topOriginRoutes) {
+        for (const destRouteData of topDestinationRoutes) {
+          const route1 = originRouteData.route;
+          const route2 = destRouteData.route;
+
+          // Skip if same route
+          if (route1._id === route2._id) {
             continue;
           }
-          
+
           // Find potential intersection points between these two routes
-          const intersections = await findRouteToRouteIntersections(
-            originRoute.route,
-            destRoute.route
-          );
-          
+          const intersections = await findRouteToRouteIntersections(route1, route2);
+
           for (const intersection of intersections) {
+            // OPTIMIZATION 3: Early scoring - skip poor intersections immediately
+            const totalJourneyDistance = originRouteData.distance + destRouteData.distance + intersection.walkingDistance;
+            const directDistance = calculateDistance(originLat, originLng, destinationLat, destinationLng);
+
+            // Skip if total journey is more than 3x direct distance (clearly inefficient)
+            if (totalJourneyDistance > directDistance * 3) {
+              continue;
+            }
+
             // Verify the intersection is accessible from both routes
             const accessibilityCheck = await verifyIntersectionAccessibility(
               ctx,
               intersection,
-              originRoute.route,
-              destRoute.route,
+              route1,
+              route2,
               maxTransferDistance
             );
-            
+
             if (accessibilityCheck.accessible) {
-              intersectionPoints.push({
+              allIntersectionPoints.push({
                 coordinates: intersection.coordinates,
                 address: intersection.address,
-                fromRoute: {
-                  id: originRoute.route._id,
-                  name: originRoute.route.name,
-                  distanceFromOrigin: originRoute.distanceFromOrigin,
+                route1: {
+                  id: route1._id,
+                  name: route1.name,
+                  route: route1,
                 },
-                toRoute: {
-                  id: destRoute.route._id,
-                  name: destRoute.route.name,
-                  distanceFromDestination: destRoute.distanceFromDestination,
+                route2: {
+                  id: route2._id,
+                  name: route2.name,
+                  route: route2,
                 },
                 transferDetails: {
                   walkingDistance: accessibilityCheck.walkingDistance,
@@ -120,20 +120,88 @@ export const findNearbyRouteIntersections = internalQuery({
                 },
                 intersectionType: intersection.type,
                 confidence: intersection.confidence,
+                // Add scoring data for further optimization
+                totalJourneyDistance,
+                originRouteDistance: originRouteData.distance,
+                destinationRouteDistance: destRouteData.distance,
               });
             }
           }
         }
       }
-      
+
+      // OPTIMIZATION 4: Sort intersections by quality and limit processing
+      allIntersectionPoints.sort((a, b) => {
+        // Prioritize by confidence score, then by total journey distance
+        const confidenceDiff = b.confidence - a.confidence;
+        if (Math.abs(confidenceDiff) > 5) return confidenceDiff;
+        return a.totalJourneyDistance - b.totalJourneyDistance;
+      });
+
+      // Limit to top 100 intersections to avoid timeout
+      const TOP_INTERSECTIONS_TO_PROCESS = 100;
+      const topIntersections = allIntersectionPoints.slice(0, TOP_INTERSECTIONS_TO_PROCESS);
+
+      // Filter intersections by journey feasibility (using pre-calculated distances)
+      const feasibleIntersections = [];
+
+      for (const intersection of topIntersections) {
+        // Use pre-calculated distances from earlier filtering
+        const route1OriginDistance = intersection.originRouteDistance;
+        const route2DestinationDistance = intersection.destinationRouteDistance;
+        const route2OriginDistance = calculateRouteProximity(intersection.route2.route, { lat: originLat, lng: originLng }).distance;
+        const route1DestinationDistance = calculateRouteProximity(intersection.route1.route, { lat: destinationLat, lng: destinationLng }).distance;
+
+        // Check if route1 → route2 journey is feasible
+        if (route1OriginDistance <= maxTransferDistance && route2DestinationDistance <= maxTransferDistance) {
+          feasibleIntersections.push({
+            ...intersection,
+            fromRoute: {
+              ...intersection.route1,
+              distanceFromOrigin: route1OriginDistance,
+            },
+            toRoute: {
+              ...intersection.route2,
+              distanceFromDestination: route2DestinationDistance,
+            },
+            journeyScore: intersection.confidence - (intersection.totalJourneyDistance / 1000), // Higher is better
+          });
+        }
+
+        // Check if route2 → route1 journey is feasible (different direction)
+        if (route2OriginDistance <= maxTransferDistance && route1DestinationDistance <= maxTransferDistance) {
+          feasibleIntersections.push({
+            ...intersection,
+            fromRoute: {
+              ...intersection.route2,
+              distanceFromOrigin: route2OriginDistance,
+            },
+            toRoute: {
+              ...intersection.route1,
+              distanceFromDestination: route1DestinationDistance,
+            },
+            journeyScore: intersection.confidence - (intersection.totalJourneyDistance / 1000), // Higher is better
+          });
+        }
+      }
+
+      // OPTIMIZATION 5: Final sorting and limiting of results
+      feasibleIntersections.sort((a, b) => b.journeyScore - a.journeyScore);
+      const MAX_FINAL_RESULTS = 50; // Limit final results to top 50
+      const finalResults = feasibleIntersections.slice(0, MAX_FINAL_RESULTS);
+
       return {
         success: true,
-        intersectionPoints,
+        intersectionPoints: finalResults,
         analysis: {
           totalRoutes: allRoutes.length,
-          originAccessibleRoutes: originAccessibleRoutes.length,
-          destinationAccessibleRoutes: destinationAccessibleRoutes.length,
-          foundIntersections: intersectionPoints.length,
+          originNearbyRoutes: topOriginRoutes.length,
+          destinationNearbyRoutes: topDestinationRoutes.length,
+          routeCombinationsChecked: topOriginRoutes.length * topDestinationRoutes.length,
+          totalIntersections: allIntersectionPoints.length,
+          topIntersectionsProcessed: topIntersections.length,
+          feasibleIntersections: finalResults.length,
+          foundIntersections: finalResults.length,
           searchRadius: maxTransferDistance,
         },
       };
@@ -650,9 +718,9 @@ async function createTwoLegSequence(
     legs: [
       {
         legIndex: 0,
-        fromAddress: leg1FromStop.name || `${fromRoute.name} Stop`,
-        toAddress: leg1ToStop.name,
-        fromCoordinates: { latitude: leg1FromStop.coordinates.lat, longitude: leg1FromStop.coordinates.lng },
+        fromAddress: originAddr, // Use passenger's actual origin address
+        toAddress: leg1ToStop.name, // Transfer stop name
+        fromCoordinates: { latitude: origin.lat, longitude: origin.lng },
         toCoordinates: { latitude: leg1ToStop.coordinates.lat, longitude: leg1ToStop.coordinates.lng },
         routeId: transferPoint.fromRoute.id,
         estimatedDuration: leg1Duration,
@@ -660,10 +728,10 @@ async function createTwoLegSequence(
       },
       {
         legIndex: 1,
-        fromAddress: leg2FromStop.name,
-        toAddress: leg2ToStop.name || `${toRoute.name} Stop`,
+        fromAddress: leg2FromStop.name, // Transfer stop name
+        toAddress: destinationAddr, // Use passenger's actual destination address
         fromCoordinates: { latitude: leg2FromStop.coordinates.lat, longitude: leg2FromStop.coordinates.lng },
-        toCoordinates: { latitude: leg2ToStop.coordinates.lat, longitude: leg2ToStop.coordinates.lng },
+        toCoordinates: { latitude: destination.lat, longitude: destination.lng },
         routeId: transferPoint.toRoute.id,
         estimatedDuration: leg2Duration,
         estimatedFare: leg2Cost,

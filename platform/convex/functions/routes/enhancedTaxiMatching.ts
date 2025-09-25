@@ -889,7 +889,9 @@ export const analyzeMultiLegJourneyOptions = query({
       console.log('🔍 Analyzing multi-leg journey options:', {
         origin: { lat: args.originLat, lng: args.originLng },
         destination: { lat: args.destinationLat, lng: args.destinationLng },
-        preference: args.optimizationPreference
+        preference: args.optimizationPreference,
+        originAddress: args.originAddress,
+        destinationAddress: args.destinationAddress
       });
 
       // Check direct route first with more generous parameters
@@ -1261,8 +1263,26 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       originLng: args.originLng,
       destinationLat: args.destinationLat,
       destinationLng: args.destinationLng,
-      maxTransferDistance: 1000 // 1km
+      maxTransferDistance: 3000 // 3km for reasonable walking distances
     });
+
+    console.log('🔍 Transfer points search result:', {
+      success: intersectionResult.success,
+      transferPointsCount: intersectionResult.intersectionPoints?.length || 0,
+      analysis: intersectionResult.analysis,
+      error: intersectionResult.error
+    });
+
+    if (intersectionResult.intersectionPoints && intersectionResult.intersectionPoints.length > 0) {
+      console.log('🔍 Transfer points found:', intersectionResult.intersectionPoints.map((point: any, index: number) => ({
+        pointIndex: index,
+        coordinates: point.coordinates,
+        fromRoute: point.fromRoute,
+        toRoute: point.toRoute,
+        transferDetails: point.transferDetails,
+        intersectionType: point.intersectionType
+      })));
+    }
 
     if (!intersectionResult.success || intersectionResult.intersectionPoints.length === 0) {
       console.log('⚠️ No transfer points found, cannot create proper multi-leg journey');
@@ -1293,7 +1313,26 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       }
     });
 
+    console.log('🔍 Transfer points scoring result:', {
+      success: scoredPointsResult.success,
+      scoredPointsCount: scoredPointsResult.scoredPoints?.length || 0,
+      scoringWeights: scoredPointsResult.scoringWeights,
+      analysis: scoredPointsResult.analysis,
+      error: scoredPointsResult.error
+    });
+
+    if (scoredPointsResult.scoredPoints && scoredPointsResult.scoredPoints.length > 0) {
+      console.log('🔍 Scored transfer points:', scoredPointsResult.scoredPoints.map((point: any, index: number) => ({
+        pointIndex: index,
+        score: point.score,
+        coordinates: point.coordinates,
+        fromRoute: point.fromRoute,
+        toRoute: point.toRoute
+      })));
+    }
+
     if (!scoredPointsResult.success || scoredPointsResult.scoredPoints.length === 0) {
+      console.log('⚠️ No viable transfer points found after scoring');
       return {
         requiresMultiLeg: true,
         multiLegOptions: [],
@@ -1320,7 +1359,28 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       destinationAddress: args.destinationAddress
     });
 
+    console.log('🔍 Transfer sequence optimization result:', {
+      success: optimizationResult.success,
+      optimizedSequenceCount: optimizationResult.optimizedSequence?.length || 0,
+      journeyLegsCount: optimizationResult.journeyLegs?.length || 0,
+      summary: optimizationResult.summary,
+      alternativeOptionsCount: optimizationResult.alternativeOptions?.length || 0,
+      error: optimizationResult.error
+    });
+
+    if (optimizationResult.journeyLegs && optimizationResult.journeyLegs.length > 0) {
+      console.log('🔍 Generated journey legs:', optimizationResult.journeyLegs.map((leg: any, index: number) => ({
+        legIndex: index,
+        from: leg.fromAddress,
+        to: leg.toAddress,
+        routeId: leg.routeId,
+        estimatedFare: leg.estimatedFare,
+        estimatedDuration: leg.estimatedDuration
+      })));
+    }
+
     if (!optimizationResult.success) {
+      console.log('⚠️ Failed to optimize transfer sequence');
       return {
         requiresMultiLeg: true,
         multiLegOptions: [],
