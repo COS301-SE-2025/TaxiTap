@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect, useCallback } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Linking } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Linking, Modal } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -218,6 +218,7 @@ export default function SeatReserved() {
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
 	const { t } = useLanguage();
+	const mapContext = useMapContext();
 	const { 
 		currentLocation,
 		destination,
@@ -231,7 +232,7 @@ export default function SeatReserved() {
 		setRouteLoaded,
 		getCachedRoute,
 		setCachedRoute
-	} = useMapContext();
+	} = mapContext;
 	const { notifications, markAsRead } = useNotifications();
 	const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
@@ -262,7 +263,28 @@ export default function SeatReserved() {
 	const [isFollowing, setIsFollowing] = useState(true);
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
 	const [rideJustEnded, setRideJustEnded] = useState(false);
+
+	// Leg preview state
+	const [showLegPreview, setShowLegPreview] = useState(false);
+	const [previewLegIndex, setPreviewLegIndex] = useState<number | null>(null);
+	const [previewLegData, setPreviewLegData] = useState<any>(null);
+	const [previewAvailableTaxis, setPreviewAvailableTaxis] = useState<any[]>([]);
+	const [isLoadingPreviewTaxis, setIsLoadingPreviewTaxis] = useState(false);
+	const [previewTaxiSearchParams, setPreviewTaxiSearchParams] = useState<any>(null);
 	
+	// Query for taxi search in leg preview
+	const previewTaxiSearchResult = useQuery(
+		api.functions.routes.enhancedTaxiMatching.findAvailableTaxisForJourney,
+		previewTaxiSearchParams ? {
+			originLat: previewTaxiSearchParams.originLat,
+			originLng: previewTaxiSearchParams.originLng,
+			destinationLat: previewTaxiSearchParams.destinationLat,
+			destinationLng: previewTaxiSearchParams.destinationLng,
+			radius: previewTaxiSearchParams.radius || 2,
+			_pollTime: previewTaxiSearchParams._pollTime
+		} : "skip"
+	);
+
 	// Fetch taxi and driver info for the current reservation using Convex
 	// FIXED: Skip query when ride has ended to prevent continuous error logs
 	const taxiInfo = useQuery(
@@ -272,6 +294,18 @@ export default function SeatReserved() {
 
 	// Helper to determine ride status
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+
+	// Handle preview taxi search results
+	useEffect(() => {
+		if (previewTaxiSearchResult && previewTaxiSearchParams) {
+			console.log('🔍 Preview taxi search result:', previewTaxiSearchResult);
+			
+			if (previewTaxiSearchResult.availableTaxis) {
+				setPreviewAvailableTaxis(previewTaxiSearchResult.availableTaxis);
+				setIsLoadingPreviewTaxis(false);
+			}
+		}
+	}, [previewTaxiSearchResult, previewTaxiSearchParams]);
 
 	// Automatically set rideJustEnded when ride is completed or cancelled
 	useEffect(() => {
@@ -1019,6 +1053,51 @@ export default function SeatReserved() {
 		router.push('/ChangePage');
 	};
 
+	// Handle leg preview
+	const handleLegPreview = async (legIndex: number) => {
+		// Get journey data from MapContext
+		const journey = (mapContext as any).currentJourney || null;
+		
+		// If no journey data available, show a message
+		if (!journey || !journey.legs || !journey.legs[legIndex]) {
+			showGlobalAlert(
+				'Leg Preview Unavailable',
+				'Journey data is not available for preview. Please try again later.',
+				[{ text: 'OK' }]
+			);
+			return;
+		}
+
+		const leg = journey.legs[legIndex];
+		setPreviewLegIndex(legIndex);
+		setPreviewLegData(leg);
+		setShowLegPreview(true);
+		setPreviewAvailableTaxis([]);
+		setIsLoadingPreviewTaxis(true);
+
+		// Set taxi search parameters to trigger the Convex query
+		const searchParams = {
+			originLat: leg.fromCoordinates.latitude,
+			originLng: leg.fromCoordinates.longitude,
+			destinationLat: leg.toCoordinates.latitude,
+			destinationLng: leg.toCoordinates.longitude,
+			radius: 2, // Start with 2km radius
+			_pollTime: Date.now()
+		};
+		
+		setPreviewTaxiSearchParams(searchParams);
+		console.log('🔍 Starting taxi search for leg preview:', searchParams);
+	};
+
+	// Clear preview search when modal is closed
+	const handleCloseLegPreview = () => {
+		setShowLegPreview(false);
+		setPreviewTaxiSearchParams(null);
+		setPreviewAvailableTaxis([]);
+		setIsLoadingPreviewTaxis(false);
+	};
+
+
 	// Get current location text based on map mode and live location
 	const getCurrentLocationText = () => {
 		if (mapMode === 'to_driver') {
@@ -1426,6 +1505,168 @@ export default function SeatReserved() {
 			shadowRadius: 4,
 			elevation: 4,
 		},
+		
+		// Leg Preview Modal Styles
+		modalContainer: {
+			flex: 1,
+			backgroundColor: theme.background,
+		},
+		modalHeader: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			padding: 20,
+			borderBottomWidth: 1,
+			borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+		},
+		modalTitle: {
+			fontSize: 20,
+			fontWeight: 'bold',
+			color: theme.text,
+		},
+		modalCloseButton: {
+			padding: 8,
+		},
+		modalContent: {
+			flex: 1,
+			padding: 20,
+		},
+		legPreviewCard: {
+			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+			borderRadius: 16,
+			padding: 20,
+			marginBottom: 20,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+		},
+		legPreviewHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginBottom: 16,
+		},
+		legPreviewTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: theme.text,
+			marginLeft: 8,
+		},
+		legPreviewRoute: {
+			marginBottom: 20,
+		},
+		routePoint: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginVertical: 4,
+		},
+		routePointDot: {
+			width: 12,
+			height: 12,
+			borderRadius: 6,
+			backgroundColor: theme.primary,
+			marginRight: 12,
+		},
+		routePointDotEnd: {
+			backgroundColor: '#FF6B6B',
+		},
+		routePointText: {
+			flex: 1,
+			fontSize: 14,
+			color: theme.text,
+			fontWeight: '500',
+		},
+		routeLine: {
+			alignItems: 'center',
+			marginVertical: 8,
+			marginLeft: 6,
+		},
+		legStatsContainer: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+		},
+		legStatItem: {
+			flex: 1,
+			alignItems: 'center',
+			padding: 12,
+		},
+		legStatLabel: {
+			fontSize: 12,
+			color: theme.textSecondary,
+			marginTop: 4,
+			marginBottom: 2,
+		},
+		legStatValue: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: theme.text,
+		},
+		loadingContainer: {
+			alignItems: 'center',
+			padding: 40,
+		},
+		loadingText: {
+			fontSize: 14,
+			color: theme.textSecondary,
+			marginTop: 12,
+		},
+		taxiListContainer: {
+			gap: 12,
+		},
+		taxiItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			padding: 16,
+			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.6)',
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+		},
+		taxiAvatar: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			backgroundColor: theme.primary,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 12,
+		},
+		taxiInfo: {
+			flex: 1,
+		},
+		taxiName: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: theme.text,
+			marginBottom: 2,
+		},
+		taxiStatus: {
+			fontSize: 12,
+			color: theme.textSecondary,
+		},
+		taxiLicense: {
+			fontSize: 11,
+			color: theme.textSecondary,
+			marginTop: 2,
+		},
+		taxiDistance: {
+			padding: 8,
+		},
+		noTaxisContainer: {
+			alignItems: 'center',
+			padding: 40,
+		},
+		noTaxisText: {
+			fontSize: 16,
+			fontWeight: '500',
+			color: theme.text,
+			marginTop: 16,
+			textAlign: 'center',
+		},
+		noTaxisSubtext: {
+			fontSize: 14,
+			color: theme.textSecondary,
+			marginTop: 8,
+			textAlign: 'center',
+		},
 	});
 
 	// Early return for loading state - but ensure all hooks are called first
@@ -1516,12 +1757,14 @@ export default function SeatReserved() {
 								</View>
 								<View style={dynamicStyles.journeyProgressBar}>
 									{Array.from({length: multiLegInfo.totalLegs}, (_, i) => (
-										<View
+										<TouchableOpacity
 											key={i}
 											style={[
 												dynamicStyles.progressDot,
 												i <= multiLegInfo.currentLegIndex && dynamicStyles.progressDotActive
 											]}
+											onPress={() => handleLegPreview(i)}
+											activeOpacity={0.7}
 										/>
 									))}
 								</View>
@@ -1717,6 +1960,140 @@ export default function SeatReserved() {
 					</View>
 				</View>
 			</ScrollView>
+
+			{/* Leg Preview Modal */}
+			<Modal
+				visible={showLegPreview}
+				animationType="slide"
+				presentationStyle="pageSheet"
+				onRequestClose={handleCloseLegPreview}
+			>
+				<SafeAreaView style={dynamicStyles.modalContainer}>
+					<View style={dynamicStyles.modalHeader}>
+						<Text style={dynamicStyles.modalTitle}>
+							Leg {previewLegIndex !== null ? previewLegIndex + 1 : ''} Preview
+						</Text>
+						<TouchableOpacity
+							style={dynamicStyles.modalCloseButton}
+							onPress={handleCloseLegPreview}
+						>
+							<Icon name="close" size={24} color={theme.text} />
+						</TouchableOpacity>
+					</View>
+
+					<ScrollView style={dynamicStyles.modalContent}>
+						{previewLegData && (
+							<>
+								{/* Route Information */}
+								<View style={dynamicStyles.legPreviewCard}>
+									<View style={dynamicStyles.legPreviewHeader}>
+										<Icon name="location" size={20} color={theme.primary} />
+										<Text style={dynamicStyles.legPreviewTitle}>Route Details</Text>
+									</View>
+									
+									<View style={dynamicStyles.legPreviewRoute}>
+										<View style={dynamicStyles.routePoint}>
+											<View style={dynamicStyles.routePointDot} />
+											<Text style={dynamicStyles.routePointText}>
+												{previewLegData.fromAddress}
+											</Text>
+										</View>
+										
+										<View style={dynamicStyles.routeLine}>
+											<Icon name="arrow-down" size={16} color={theme.textSecondary} />
+										</View>
+										
+										<View style={dynamicStyles.routePoint}>
+											<View style={[dynamicStyles.routePointDot, dynamicStyles.routePointDotEnd]} />
+											<Text style={dynamicStyles.routePointText}>
+												{previewLegData.toAddress}
+											</Text>
+										</View>
+									</View>
+
+									{/* Leg Statistics */}
+									<View style={dynamicStyles.legStatsContainer}>
+										<View style={dynamicStyles.legStatItem}>
+											<Icon name="time" size={16} color={theme.primary} />
+											<Text style={dynamicStyles.legStatLabel}>Duration</Text>
+											<Text style={dynamicStyles.legStatValue}>
+												{Math.round(previewLegData.estimatedDuration / 60)} min
+											</Text>
+										</View>
+										
+										<View style={dynamicStyles.legStatItem}>
+											<Icon name="cash" size={16} color={theme.primary} />
+											<Text style={dynamicStyles.legStatLabel}>Fare</Text>
+											<Text style={dynamicStyles.legStatValue}>
+												R{previewLegData.estimatedFare.toFixed(2)}
+											</Text>
+										</View>
+										
+										<View style={dynamicStyles.legStatItem}>
+											<Icon name="car" size={16} color={theme.primary} />
+											<Text style={dynamicStyles.legStatLabel}>Available Taxis</Text>
+											<Text style={dynamicStyles.legStatValue}>
+												{isLoadingPreviewTaxis ? 'Loading...' : previewAvailableTaxis.length}
+											</Text>
+										</View>
+									</View>
+								</View>
+
+								{/* Available Taxis */}
+								<View style={dynamicStyles.legPreviewCard}>
+									<View style={dynamicStyles.legPreviewHeader}>
+										<Icon name="car-outline" size={20} color={theme.primary} />
+										<Text style={dynamicStyles.legPreviewTitle}>Available Taxis</Text>
+									</View>
+									
+									{isLoadingPreviewTaxis ? (
+										<View style={dynamicStyles.loadingContainer}>
+											<LoadingSpinner />
+											<Text style={dynamicStyles.loadingText}>Finding available taxis...</Text>
+										</View>
+									) : previewAvailableTaxis.length > 0 ? (
+										<View style={dynamicStyles.taxiListContainer}>
+											{previewAvailableTaxis.map((taxi, index) => (
+												<View key={taxi._id || index} style={dynamicStyles.taxiItem}>
+													<View style={dynamicStyles.taxiAvatar}>
+														<Icon name="person" size={20} color={theme.text} />
+													</View>
+													<View style={dynamicStyles.taxiInfo}>
+														<Text style={dynamicStyles.taxiName}>
+															{taxi.driver?.name || taxi.name || 'Available Driver'}
+														</Text>
+														<Text style={dynamicStyles.taxiStatus}>
+															{taxi.routeInfo?.directConnection ? 'Direct Route' : 'Multi-leg Required'}
+														</Text>
+														{taxi.taxi?.licensePlate && (
+															<Text style={dynamicStyles.taxiLicense}>
+																License: {taxi.taxi.licensePlate}
+															</Text>
+														)}
+													</View>
+													<View style={dynamicStyles.taxiDistance}>
+														<Icon name="location-outline" size={16} color={theme.textSecondary} />
+													</View>
+												</View>
+											))}
+										</View>
+									) : (
+										<View style={dynamicStyles.noTaxisContainer}>
+											<Icon name="car-outline" size={48} color={theme.textSecondary} />
+											<Text style={dynamicStyles.noTaxisText}>
+												No taxis available for this leg at the moment
+											</Text>
+											<Text style={dynamicStyles.noTaxisSubtext}>
+												Check back later or consider alternative routes
+											</Text>
+										</View>
+									)}
+								</View>
+							</>
+						)}
+					</ScrollView>
+				</SafeAreaView>
+			</Modal>
 		</SafeAreaView>
 	);
 }

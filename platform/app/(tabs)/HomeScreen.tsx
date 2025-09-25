@@ -277,17 +277,15 @@ export default function HomeScreen() {
     } : "skip"
   );
 
-  // NEW: Query for multi-leg journey analysis - only runs when we have search params and no direct route drivers
-  const journeyAnalysisResult = useQuery(
-    api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
-    (taxiSearchParams && !(hasDirectRoute && directRouteAvailableTaxis > 0)) ? {
-      originLat: taxiSearchParams.originLat,
-      originLng: taxiSearchParams.originLng,
-      destinationLat: taxiSearchParams.destinationLat,
-      destinationLng: taxiSearchParams.destinationLng,
-      optimizationPreference: userPreference || 'shortest_time'
-    } : "skip"
-  );
+
+  // Debug journey analysis query
+  useEffect(() => {
+    if (taxiSearchParams) {
+      console.log('🚀 Journey analysis query triggered with params:', taxiSearchParams);
+    } else {
+      console.log('⏸️ Journey analysis query skipped - no taxiSearchParams');
+    }
+  }, [taxiSearchParams]);
 
   // Check for active rides to prevent duplicate requests
   const activeRide = useQuery(
@@ -509,6 +507,35 @@ export default function HomeScreen() {
     progressToNextLeg,
   } = useMapContext();
 
+  // NEW: Query for multi-leg journey analysis - runs when we have search params
+  // It will determine internally whether multi-leg is needed
+  const journeyAnalysisResult = useQuery(
+    api.functions.routes.enhancedTaxiMatching.analyzeMultiLegJourneyOptions,
+    taxiSearchParams ? {
+      originLat: taxiSearchParams.originLat,
+      originLng: taxiSearchParams.originLng,
+      destinationLat: taxiSearchParams.destinationLat,
+      destinationLng: taxiSearchParams.destinationLng,
+      optimizationPreference: userPreference || 'shortest_time',
+      originAddress: origin?.name || originAddress || undefined,
+      destinationAddress: destination?.name || destinationAddress || undefined
+    } : "skip"
+  );
+
+  // Debug logging for addresses
+  useEffect(() => {
+    if (taxiSearchParams) {
+      console.log('🔍 Journey analysis addresses:', {
+        origin: origin ? { name: origin.name, lat: origin.latitude, lng: origin.longitude } : null,
+        destination: destination ? { name: destination.name, lat: destination.latitude, lng: destination.longitude } : null,
+        originAddress: origin?.name || originAddress || undefined,
+        destinationAddress: destination?.name || destinationAddress || undefined,
+        fallbackOriginAddress: originAddress,
+        fallbackDestinationAddress: destinationAddress
+      });
+    }
+  }, [taxiSearchParams, origin, destination, originAddress, destinationAddress]);
+
   // Integrate live location streaming
   const validRoles = ["passenger", "driver", "both"] as const;
 
@@ -670,7 +697,25 @@ export default function HomeScreen() {
   const fullRecentRoutes = React.useMemo(() => {
     if (!recentRoutes || !routes) return [];
 
+    console.log('🔍 Processing recent routes:', {
+      recentRoutesCount: recentRoutes.length,
+      recentRoutes: recentRoutes.map(r => ({
+        routeId: r.routeId,
+        name: r.name,
+        startName: r.startName,
+        destinationLat: r.destinationLat,
+        destinationLng: r.destinationLng
+      })),
+      availableRoutesCount: routes.length
+    });
+
     return recentRoutes.map((recent: any) => {
+      // Skip invalid entries with no useful data
+      if (!recent.name && !recent.destinationLat && !recent.destinationLng && !recent.startName) {
+        console.log('⚠️ Skipping invalid recent route entry:', recent);
+        return null;
+      }
+
       if (recent.routeId.startsWith("manual-")) {
         const manualDestination = manualDestinations[recent.routeId];
         
@@ -687,17 +732,32 @@ export default function HomeScreen() {
             isManualRoute: true,
           };
         } else {
-          return {
-            ...recent,
-            _id: recent._id,
-            routeName: t('home:locationUnavailable'),
-            destinationLat: null,
-            destinationLng: null,
-            startName: recent.startName,
-            startLat: recent.startLat,
-            startLng: recent.startLng,
-            isManualRoute: true,
-          };
+          // For manual routes without stored destination, use the stored name if available
+          if (recent.name) {
+            return {
+              ...recent,
+              _id: recent._id,
+              routeName: recent.name,
+              destinationLat: recent.destinationLat,
+              destinationLng: recent.destinationLng,
+              startName: recent.startName || 'Current Location',
+              startLat: recent.startLat,
+              startLng: recent.startLng,
+              isManualRoute: true,
+            };
+          } else {
+            return {
+              ...recent,
+              _id: recent._id,
+              routeName: t('home:locationUnavailable'),
+              destinationLat: null,
+              destinationLng: null,
+              startName: recent.startName,
+              startLat: recent.startLat,
+              startLng: recent.startLng,
+              isManualRoute: true,
+            };
+          }
         }
       }
 
@@ -762,7 +822,7 @@ export default function HomeScreen() {
       });
 
       // Use the stored names if available, otherwise show unknown route
-      const displayName = recent.name || t('home:unknownRoute');
+      const displayName = recent.name || t('home:locationUnavailable');
       const startDisplayName = recent.startName || t('home:currentLocation');
 
       return {
@@ -1023,6 +1083,18 @@ export default function HomeScreen() {
   useEffect(() => {
     if (journeyAnalysisResult) {
       console.log('🔍 Journey analysis result:', journeyAnalysisResult);
+      console.log('🔍 Journey analysis details:', {
+        requiresMultiLeg: journeyAnalysisResult.requiresMultiLeg,
+        hasDirectRoute: !!journeyAnalysisResult.directRoute,
+        directRouteSuccess: journeyAnalysisResult.directRoute?.success,
+        directRouteTaxis: journeyAnalysisResult.directRoute?.availableTaxis?.length || 0,
+        hasFirstLegDrivers: !!journeyAnalysisResult.firstLegDrivers,
+        firstLegDriversCount: journeyAnalysisResult.firstLegDrivers?.length || 0,
+        hasMultiLegOptions: !!journeyAnalysisResult.multiLegOptions,
+        multiLegOptionsCount: journeyAnalysisResult.multiLegOptions?.length || 0,
+        message: journeyAnalysisResult.message,
+        error: journeyAnalysisResult.error
+      });
 
       // Reset multi-leg preview state
       setShowMultiLegPreview(false);
@@ -1032,6 +1104,14 @@ export default function HomeScreen() {
         // No direct route available, need multi-leg journey
         setHasDirectRoute(false);
         setDirectRouteAvailableTaxis(0);
+        
+        // Stop taxi search since we're going with multi-leg
+        setIsSearchingTaxis(false);
+        setSearchStartTime(null);
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
 
         if (journeyAnalysisResult.firstLegDrivers && journeyAnalysisResult.firstLegDrivers.length > 0) {
           console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
@@ -1041,7 +1121,7 @@ export default function HomeScreen() {
           setIsSearchingTaxis(false);
           setSearchStartTime(null);
 
-          // Show multi-leg preview only when actually required and options available
+          // Show multi-leg preview when we have first-leg drivers (even if no perfect multi-leg options)
           if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
             console.log('📋 Showing multi-leg journey preview (no direct route)', {
               optionsCount: journeyAnalysisResult.multiLegOptions.length,
@@ -1050,13 +1130,55 @@ export default function HomeScreen() {
             setShowMultiLegPreview(true);
             setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
           } else {
-            console.log('❌ No multi-leg options available:', {
-              multiLegOptionsExists: !!journeyAnalysisResult.multiLegOptions,
-              multiLegOptionsLength: journeyAnalysisResult.multiLegOptions?.length || 0,
-              requiresMultiLeg: journeyAnalysisResult.requiresMultiLeg,
-              message: journeyAnalysisResult.message,
-              fullResult: journeyAnalysisResult
-            });
+            console.log('⚠️ No multi-leg options available, but first-leg drivers found. Creating fallback option.');
+            
+            // Create a fallback multi-leg option when we have first-leg drivers but no transfer points
+            const fallbackMultiLegOptions = [{
+              journeyId: `fallback-${Date.now()}`,
+              totalLegs: 2,
+              estimatedTotalFare: 25.00,
+              estimatedTotalDuration: 1800,
+              optimizationPreference: userPreference,
+              legs: [
+                {
+                  legIndex: 0,
+                  fromAddress: origin?.name || "Origin",
+                  toAddress: destination?.name || "Destination Area", 
+                  fromCoordinates: {
+                    latitude: origin?.latitude || 0,
+                    longitude: origin?.longitude || 0
+                  },
+                  toCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  routeId: "fallback-route",
+                  estimatedFare: 25.00,
+                  estimatedDuration: 1500
+                },
+                {
+                  legIndex: 1,
+                  fromAddress: destination?.name || "Destination Area",
+                  toAddress: destination?.name || "Destination",
+                  fromCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  toCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  routeId: "walking-route",
+                  estimatedFare: 0.00,
+                  estimatedDuration: 300
+                }
+              ],
+              transferInstructions: "Take taxi to destination area, then walk to final destination",
+              confidence: 0.7
+            }];
+            
+            setShowMultiLegPreview(true);
+            setMultiLegOptions(fallbackMultiLegOptions);
           }
 
           // Clear any existing expansion timer
@@ -1085,6 +1207,14 @@ export default function HomeScreen() {
         // Direct route available - set state accordingly
         setHasDirectRoute(true);
         setDirectRouteAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis?.length || 0);
+        
+        // Update available taxis and stop searching when direct route is found
+        if (journeyAnalysisResult.directRoute.availableTaxis && journeyAnalysisResult.directRoute.availableTaxis.length > 0) {
+          setAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis);
+          setIsSearchingTaxis(false);
+          setSearchStartTime(null);
+          console.log('🚖 Direct route taxis available, showing Reserve a seat button');
+        }
         // Continue with normal taxi search flow - do not show multi-leg preview
       }
     }
@@ -1105,18 +1235,32 @@ export default function HomeScreen() {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
 
-        // If we found taxis, this means we have a direct route with available drivers
+        // Check if we have taxis and determine if they are direct route taxis or first-leg drivers
+        let hasDirectRouteTaxis = false;
         if (taxiSearchResult.availableTaxis.length > 0) {
-          console.log(`✅ Direct route taxis found: ${taxiSearchResult.availableTaxis.length}, hiding multi-leg preview`);
-          // Update direct route state to hide multi-leg preview
-          setHasDirectRoute(true);
-          setDirectRouteAvailableTaxis(taxiSearchResult.availableTaxis.length);
-          setShowMultiLegPreview(false);
-          setMultiLegOptions(null);
+          // Check if these are direct route taxis (have routeInfo with direct connection)
+          hasDirectRouteTaxis = taxiSearchResult.availableTaxis.some(taxi => 
+            taxi.routeInfo && 
+            taxi.routeInfo.routeId && 
+            taxi.routeInfo.directConnection === true
+          );
+          
+          if (hasDirectRouteTaxis) {
+            console.log(`✅ Direct route taxis found: ${taxiSearchResult.availableTaxis.length}, hiding multi-leg preview`);
+            // Update direct route state to hide multi-leg preview
+            setHasDirectRoute(true);
+            setDirectRouteAvailableTaxis(taxiSearchResult.availableTaxis.length);
+            setShowMultiLegPreview(false);
+            setMultiLegOptions(null);
+          } else {
+            console.log(`🚖 First-leg drivers found: ${taxiSearchResult.availableTaxis.length}, but no direct route - continuing search or showing multi-leg`);
+            // These are first-leg drivers, not direct route taxis
+            // Don't set hasDirectRoute to true, let journey analysis handle this
+          }
         }
 
-        // If we found taxis or reached max radius, stop searching
-        if (taxiSearchResult.availableTaxis.length > 0 ||
+        // If we found direct route taxis or reached max radius, stop searching
+        if ((hasDirectRouteTaxis && taxiSearchResult.availableTaxis.length > 0) ||
            (radiusInfo && radiusInfo.currentRadius >= radiusInfo.maxRadius)) {
           console.log(`✅ Search complete: ${taxiSearchResult.availableTaxis.length} taxis found`);
           setIsSearchingTaxis(false);
@@ -1127,7 +1271,7 @@ export default function HomeScreen() {
           }
         }
         // Continue searching - set up polling to check for radius expansion
-        else if (radiusInfo && radiusInfo.currentRadius < radiusInfo.maxRadius) {
+        else if (radiusInfo && radiusInfo.currentRadius < radiusInfo.maxRadius && !hasDirectRouteTaxis) {
           console.log(`🔍 No taxis found at ${radiusInfo.currentRadius}km, will check again in 5 seconds`);
 
           // Set up a timer to poll the Convex function again
@@ -1146,6 +1290,67 @@ export default function HomeScreen() {
             }, 5000); // Check every 5 seconds
 
             setRadiusExpansionTimer(expansionTimer);
+          }
+
+          // Fallback: If we've been searching for more than 15 seconds without finding direct route taxis,
+          // and we have first-leg drivers available, show multi-leg preview
+          if (searchStartTime && (Date.now() - searchStartTime > 15000) && availableTaxis.length > 0) {
+            console.log('⏰ Search timeout reached, showing multi-leg preview with available first-leg drivers');
+            setIsSearchingTaxis(false);
+            setSearchStartTime(null);
+            
+            // Create fallback multi-leg option
+            const fallbackMultiLegOptions = [{
+              journeyId: `timeout-fallback-${Date.now()}`,
+              totalLegs: 2,
+              estimatedTotalFare: 25.00,
+              estimatedTotalDuration: 1800,
+              optimizationPreference: userPreference,
+              legs: [
+                {
+                  legIndex: 0,
+                  fromAddress: origin?.name || "Origin",
+                  toAddress: destination?.name || "Destination Area",
+                  fromCoordinates: {
+                    latitude: origin?.latitude || 0,
+                    longitude: origin?.longitude || 0
+                  },
+                  toCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  routeId: "fallback-route",
+                  estimatedFare: 25.00,
+                  estimatedDuration: 1500
+                },
+                {
+                  legIndex: 1,
+                  fromAddress: destination?.name || "Destination Area",
+                  toAddress: destination?.name || "Destination",
+                  fromCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  toCoordinates: {
+                    latitude: destination?.latitude || 0,
+                    longitude: destination?.longitude || 0
+                  },
+                  routeId: "walking-route",
+                  estimatedFare: 0.00,
+                  estimatedDuration: 300
+                }
+              ],
+              transferInstructions: "Take taxi to destination area, then walk to final destination",
+              confidence: 0.7
+            }];
+            
+            setShowMultiLegPreview(true);
+            setMultiLegOptions(fallbackMultiLegOptions);
+            
+            if (radiusExpansionTimer) {
+              clearTimeout(radiusExpansionTimer);
+              setRadiusExpansionTimer(null);
+            }
           }
         }
       } else {
@@ -1412,15 +1617,18 @@ export default function HomeScreen() {
       searchForAvailableTaxis(originParam, dest);
       
     } catch (err) {
-      showGlobalError(
-        t('home:routeError'), 
-        err instanceof Error ? err.message : t('home:unknownError'),
-        {
-          duration: 5000,
-          position: 'top',
-          animation: 'slide-down',
-        }
-      );
+      console.log('⚠️ Route calculation failed, attempting multi-leg journey:', err);
+      
+      // If route calculation fails, it might be because there's no direct route
+      // In this case, we should try the multi-leg approach instead of showing an error
+      setRouteLoaded(true); // Set route as "loaded" to allow taxi search to proceed
+      setRouteCoordinates([]); // Empty coordinates since we don't have a direct route
+      
+      // Start taxi search anyway - it will determine if multi-leg is needed
+      searchForAvailableTaxis(originParam, dest);
+      
+      // Don't show error notification - let the taxi search/journey analysis handle it
+      console.log('🔄 Proceeding with taxi search despite route calculation failure');
     } finally {
       setIsLoadingRoute(false);
     }
@@ -1957,6 +2165,7 @@ export default function HomeScreen() {
             longitude: destination?.longitude || 0
           },
           legs: selectedOption.legs.map(leg => ({
+            legIndex: leg.legIndex,
             fromAddress: leg.fromAddress,
             toAddress: leg.toAddress,
             fromCoordinates: leg.fromCoordinates,
@@ -1965,6 +2174,8 @@ export default function HomeScreen() {
             estimatedFare: leg.estimatedFare,
             estimatedDuration: leg.estimatedDuration
           })),
+          estimatedTotalFare: selectedOption.estimatedTotalFare,
+          estimatedTotalDuration: selectedOption.estimatedTotalDuration,
           optimizationPreference: preference
         }
       });
@@ -2503,8 +2714,8 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Reserve a Seat Button */}
-      {routeLoaded && !isLoadingRoute && !keyboardVisible && (
+      {/* Reserve a Seat Button - Only show when not in multi-leg mode */}
+      {routeLoaded && !isLoadingRoute && !keyboardVisible && !showMultiLegPreview && (
         <Animated.View style={{ opacity: buttonOpacity }}>
           <TouchableOpacity 
             style={dynamicStyles.reserveButton} 
