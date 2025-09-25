@@ -116,6 +116,9 @@ export const findNearbyRouteIntersections = internalQuery({
                 },
                 intersectionType: intersection.type,
                 confidence: intersection.confidence,
+                // Preserve the stop information for proper naming
+                route1Stop: intersection.route1Stop,
+                route2Stop: intersection.route2Stop,
               });
             }
           }
@@ -133,6 +136,18 @@ export const findNearbyRouteIntersections = internalQuery({
       const feasibleIntersections = [];
 
       for (const intersection of topIntersections) {
+        // Skip transfer points with stop names containing "drop", "off", or "and"
+        const route1StopName = intersection.route1Stop?.name?.toLowerCase() || '';
+        const route2StopName = intersection.route2Stop?.name?.toLowerCase() || '';
+        
+        if (route1StopName.includes('drop') || route1StopName.includes('off') || route1StopName.includes('and') ||
+            route2StopName.includes('drop') || route2StopName.includes('off') || route2StopName.includes('and')) {
+          console.log('🚫 Skipping transfer point with excluded stop names:', {
+            route1Stop: intersection.route1Stop?.name,
+            route2Stop: intersection.route2Stop?.name
+          });
+          continue;
+        }
         // Calculate distances for feasibility check
         const route1Obj = await ctx.db.get(intersection.route1.id);
         const route2Obj = await ctx.db.get(intersection.route2.id);
@@ -157,7 +172,7 @@ export const findNearbyRouteIntersections = internalQuery({
               name: intersection.route2.name,
             },
             transferDetails: intersection.transferDetails,
-            intersectionType: intersection.type,
+            intersectionType: intersection.intersectionType,
             confidence: intersection.confidence,
             // Preserve the stop information for proper naming
             route1Stop: intersection.route1Stop,
@@ -180,7 +195,7 @@ export const findNearbyRouteIntersections = internalQuery({
               name: intersection.route1.name,
             },
             transferDetails: intersection.transferDetails,
-            intersectionType: intersection.type,
+            intersectionType: intersection.intersectionType,
             confidence: intersection.confidence,
             // Preserve the stop information for proper naming (swap for reverse direction)
             route1Stop: intersection.route2Stop,
@@ -247,6 +262,26 @@ export const scoreTransferPoints = internalQuery({
       }),
       intersectionType: v.string(),
       confidence: v.number(),
+      route1Stop: v.optional(v.object({
+        name: v.string(),
+        coordinates: v.object({
+          lat: v.number(),
+          lng: v.number(),
+        }),
+        routeName: v.string(),
+        stopOrder: v.number(),
+        isTerminal: v.boolean(),
+      })),
+      route2Stop: v.optional(v.object({
+        name: v.string(),
+        coordinates: v.object({
+          lat: v.number(),
+          lng: v.number(),
+        }),
+        routeName: v.string(),
+        stopOrder: v.number(),
+        isTerminal: v.boolean(),
+      })),
     })),
     weights: v.optional(v.object({
       taxiAvailability: v.number(),
@@ -500,6 +535,19 @@ async function findRouteToRouteIntersections(route1: any, route2: any) {
 
       // If stops are within walking distance (1km), create transfer point
       if (distance <= 1000) {
+        // Skip transfer points with stop names containing "drop", "off", or "and"
+        const stop1Name = stop1.name?.toLowerCase() || '';
+        const stop2Name = stop2.name?.toLowerCase() || '';
+        
+        if (stop1Name.includes('drop') || stop1Name.includes('off') || stop1Name.includes('and') ||
+            stop2Name.includes('drop') || stop2Name.includes('off') || stop2Name.includes('and')) {
+          console.log('🚫 Skipping intersection with excluded stop names:', {
+            stop1: stop1.name,
+            stop2: stop2.name
+          });
+          continue;
+        }
+
         const midpoint = {
           latitude: (stop1.coordinates.lat + stop2.coordinates.lat) / 2,
           longitude: (stop1.coordinates.lng + stop2.coordinates.lng) / 2,

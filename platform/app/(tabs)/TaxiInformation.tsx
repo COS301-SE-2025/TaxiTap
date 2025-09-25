@@ -148,6 +148,13 @@ export default function TaxiInformation() {
     }
   }, [fallbackNearbyTaxis, shouldUseOriginalQuery]);
 
+  // Clear selected taxi when no taxis are available
+  useEffect(() => {
+    if (nearbyTaxis.length === 0 && selectedTaxi) {
+      setSelectedTaxi(null);
+    }
+  }, [nearbyTaxis.length, selectedTaxi]);
+
   // Animation for book button
   useEffect(() => {
     if (selectedTaxi) {
@@ -629,7 +636,7 @@ export default function TaxiInformation() {
       </View>
 
       {/* Book Ride Button */}
-      {selectedTaxi && (
+      {selectedTaxi && nearbyTaxis.length > 0 && (
         <Animated.View 
           style={{ 
             opacity: buttonOpacity,
