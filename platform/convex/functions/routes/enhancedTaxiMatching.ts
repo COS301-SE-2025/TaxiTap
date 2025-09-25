@@ -1511,6 +1511,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       return {
         requiresMultiLeg: true,
         multiLegOptions: [],
+        firstLegDrivers: [],
         message: "No viable transfer points found after scoring"
       };
     }
@@ -1559,6 +1560,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       return {
         requiresMultiLeg: true,
         multiLegOptions: [],
+        firstLegDrivers: [],
         message: "Failed to optimize transfer sequence"
       };
     }
@@ -1630,9 +1632,40 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
 
     console.log(`🎯 Generated ${multiLegOptions.length} multi-leg journey options`);
 
+    // Find available drivers for the first leg of the primary option
+    let firstLegDrivers: any[] = [];
+    if (multiLegOptions.length > 0 && multiLegOptions[0].legs && multiLegOptions[0].legs.length > 0) {
+      const firstLeg = multiLegOptions[0].legs[0];
+      console.log('🔍 Finding drivers for first leg:', {
+        from: firstLeg.fromAddress,
+        to: firstLeg.toAddress,
+        routeId: firstLeg.routeId
+      });
+
+      try {
+        const firstLegDriverResult = await findFirstLegAvailableDrivers(ctx, {
+          originLat: args.originLat,
+          originLng: args.originLng,
+          maxOriginDistance: 2.0,
+          maxTaxiDistance: 3.0,
+          maxResults: 10
+        });
+
+        if (firstLegDriverResult.success) {
+          firstLegDrivers = firstLegDriverResult.availableTaxis || [];
+          console.log(`✅ Found ${firstLegDrivers.length} drivers for first leg`);
+        } else {
+          console.log('⚠️ No drivers found for first leg:', firstLegDriverResult.message);
+        }
+      } catch (error) {
+        console.error('❌ Error finding first leg drivers:', error);
+      }
+    }
+
     return {
       requiresMultiLeg: true,
       multiLegOptions,
+      firstLegDrivers,
       analysis: {
         totalTransferPointsFound: intersectionResult.intersectionPoints.length,
         scoredTransferPoints: scoredPointsResult.scoredPoints.length,
@@ -1647,6 +1680,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     return {
       requiresMultiLeg: true,
       multiLegOptions: [],
+      firstLegDrivers: [],
       error: "Failed to generate multi-leg journey options"
     };
   }
