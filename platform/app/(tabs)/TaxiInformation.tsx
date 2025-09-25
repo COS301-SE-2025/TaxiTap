@@ -46,6 +46,8 @@ export default function TaxiInformation() {
     isMultiLeg,
     currentLegIndex,
     totalLegs,
+    originalDestinationName,
+    originalCurrentName,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -61,6 +63,8 @@ export default function TaxiInformation() {
     isMultiLeg?: string;
     currentLegIndex?: string;
     totalLegs?: string;
+    originalDestinationName?: string;
+    originalCurrentName?: string;
   }>();
 
   // State management
@@ -574,12 +578,12 @@ export default function TaxiInformation() {
           {/* Destination Box */}
           <DestinationBox
             startLocation={{
-              name: currentName || 'Current Location',
+              name: originalCurrentName || currentName || 'Current Location',
               latitude: parseFloat(currentLat || '0'),
               longitude: parseFloat(currentLng || '0'),
             }}
             endLocation={{
-              name: destinationName || 'Destination',
+              name: originalDestinationName || destinationName || 'Destination',
               latitude: parseFloat(destinationLat || '0'),
               longitude: parseFloat(destinationLng || '0'),
             }}

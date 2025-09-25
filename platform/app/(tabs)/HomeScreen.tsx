@@ -699,7 +699,7 @@ export default function HomeScreen() {
 
     console.log('🔍 Processing recent routes:', {
       recentRoutesCount: recentRoutes.length,
-      recentRoutes: recentRoutes.map(r => ({
+      recentRoutes: recentRoutes.map((r: any) => ({
         routeId: r.routeId,
         name: r.name,
         startName: r.startName,
@@ -975,7 +975,11 @@ export default function HomeScreen() {
         setIsSearchingTaxis(false);
         setAvailableTaxis([]);
         setRouteMatchResults(null);
-        
+
+        // Clear MultiLegJourneyPreview when navigating away
+        setShowMultiLegPreview(false);
+        setMultiLegOptions(null);
+
         // Clear any existing expansion timer
         if (radiusExpansionTimer) {
           clearTimeout(radiusExpansionTimer);
@@ -1143,42 +1147,42 @@ export default function HomeScreen() {
                 {
                   legIndex: 0,
                   fromAddress: origin?.name || "Origin",
-                  toAddress: destination?.name || "Destination Area", 
+                  toAddress: "Transfer Point",
                   fromCoordinates: {
                     latitude: origin?.latitude || 0,
                     longitude: origin?.longitude || 0
                   },
                   toCoordinates: {
-                    latitude: destination?.latitude || 0,
-                    longitude: destination?.longitude || 0
+                    latitude: (origin?.latitude || 0) + ((destination?.latitude || 0) - (origin?.latitude || 0)) * 0.6,
+                    longitude: (origin?.longitude || 0) + ((destination?.longitude || 0) - (origin?.longitude || 0)) * 0.6
                   },
                   routeId: "fallback-route",
-                  estimatedFare: 25.00,
-                  estimatedDuration: 1500
+                  estimatedFare: 15.00,
+                  estimatedDuration: 900
                 },
                 {
                   legIndex: 1,
-                  fromAddress: destination?.name || "Destination Area",
+                  fromAddress: "Transfer Point",
                   toAddress: destination?.name || "Destination",
                   fromCoordinates: {
-                    latitude: destination?.latitude || 0,
-                    longitude: destination?.longitude || 0
+                    latitude: (origin?.latitude || 0) + ((destination?.latitude || 0) - (origin?.latitude || 0)) * 0.6,
+                    longitude: (origin?.longitude || 0) + ((destination?.longitude || 0) - (origin?.longitude || 0)) * 0.6
                   },
                   toCoordinates: {
                     latitude: destination?.latitude || 0,
                     longitude: destination?.longitude || 0
                   },
-                  routeId: "walking-route",
-                  estimatedFare: 0.00,
-                  estimatedDuration: 300
+                  routeId: "fallback-route-2",
+                  estimatedFare: 10.00,
+                  estimatedDuration: 900
                 }
               ],
-              transferInstructions: "Take taxi to destination area, then walk to final destination",
+              transferInstructions: "Take first taxi to transfer point, then connect to second taxi to reach destination",
               confidence: 0.7
             }];
             
             setShowMultiLegPreview(true);
-            setMultiLegOptions(fallbackMultiLegOptions);
+            setMultiLegOptions(fallbackMultiLegOptions as any);
           }
 
           // Clear any existing expansion timer
@@ -1207,7 +1211,11 @@ export default function HomeScreen() {
         // Direct route available - set state accordingly
         setHasDirectRoute(true);
         setDirectRouteAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis?.length || 0);
-        
+
+        // Hide multi-leg preview since we have direct route
+        setShowMultiLegPreview(false);
+        setMultiLegOptions(null);
+
         // Update available taxis and stop searching when direct route is found
         if (journeyAnalysisResult.directRoute.availableTaxis && journeyAnalysisResult.directRoute.availableTaxis.length > 0) {
           setAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis);
@@ -1238,12 +1246,27 @@ export default function HomeScreen() {
         // Check if we have taxis and determine if they are direct route taxis or first-leg drivers
         let hasDirectRouteTaxis = false;
         if (taxiSearchResult.availableTaxis.length > 0) {
+          // Debug: Log taxi structure to understand directConnection property
+          console.log('🔍 Taxi search result debug:', {
+            taxiCount: taxiSearchResult.availableTaxis.length,
+            sampleTaxi: taxiSearchResult.availableTaxis[0],
+            routeInfo: taxiSearchResult.availableTaxis[0]?.routeInfo
+          });
+
           // Check if these are direct route taxis (have routeInfo with direct connection)
-          hasDirectRouteTaxis = taxiSearchResult.availableTaxis.some(taxi => 
-            taxi.routeInfo && 
-            taxi.routeInfo.routeId && 
-            taxi.routeInfo.directConnection === true
+          hasDirectRouteTaxis = taxiSearchResult.availableTaxis.some(taxi =>
+            taxi.routeInfo &&
+            taxi.routeInfo.routeId &&
+            (taxi.routeInfo as any).directConnection === true
           );
+
+          // If no directConnection property found, assume direct route if we have route info
+          if (!hasDirectRouteTaxis && taxiSearchResult.success) {
+            hasDirectRouteTaxis = taxiSearchResult.availableTaxis.some(taxi =>
+              taxi.routeInfo && taxi.routeInfo.routeId
+            );
+            console.log('🔍 Falling back to routeInfo check for direct routes:', hasDirectRouteTaxis);
+          }
           
           if (hasDirectRouteTaxis) {
             console.log(`✅ Direct route taxis found: ${taxiSearchResult.availableTaxis.length}, hiding multi-leg preview`);
@@ -1340,12 +1363,12 @@ export default function HomeScreen() {
                   estimatedDuration: 300
                 }
               ],
-              transferInstructions: "Take taxi to destination area, then walk to final destination",
+              transferInstructions: "Take first taxi to transfer point, then connect to second taxi to reach destination",
               confidence: 0.7
             }];
             
             setShowMultiLegPreview(true);
-            setMultiLegOptions(fallbackMultiLegOptions);
+            setMultiLegOptions(fallbackMultiLegOptions as any);
             
             if (radiusExpansionTimer) {
               clearTimeout(radiusExpansionTimer);
@@ -1535,6 +1558,9 @@ export default function HomeScreen() {
         currentName: origin.name,
         currentLat: origin.latitude.toString(),
         currentLng: origin.longitude.toString(),
+        // Add original passenger addresses if they differ from route stops
+        originalDestinationName: destinationAddress || destination.name,
+        originalCurrentName: originAddress || origin.name,
         routeId: selectedRouteId,
         availableTaxisCount: availableTaxis.length.toString(),
         routeMatchData: JSON.stringify(routeMatchResults),
@@ -1707,7 +1733,7 @@ export default function HomeScreen() {
         longitude: route.startLng,
         name: route.startName,
       };
-      
+
       setOrigin(startLocation);
       setOriginAddress(route.startName);
       console.log('📍 Using stored start location:', startLocation);
@@ -2207,12 +2233,12 @@ export default function HomeScreen() {
                 router.push({
                   pathname: './TaxiInformation',
                   params: {
-                    destinationName: firstLeg.toAddress,
-                    destinationLat: firstLeg.toCoordinates.latitude.toString(),
-                    destinationLng: firstLeg.toCoordinates.longitude.toString(),
-                    currentName: firstLeg.fromAddress,
-                    currentLat: firstLeg.fromCoordinates.latitude.toString(),
-                    currentLng: firstLeg.fromCoordinates.longitude.toString(),
+                    destinationName: destination?.name || '',
+                    destinationLat: destination?.latitude.toString() || '',
+                    destinationLng: destination?.longitude.toString() || '',
+                    currentName: origin?.name || '',
+                    currentLat: origin?.latitude.toString() || '',
+                    currentLng: origin?.longitude.toString() || '',
                     routeId: firstLeg.routeId || '',
                     estimatedFare: firstLeg.estimatedFare.toString(),
                     journeyId: journeyResult.journeyId,
@@ -2759,6 +2785,7 @@ export default function HomeScreen() {
       {/* Annie: the issues were due to a variable using anytype so i changed it to infer the types. it should work now im just unsure about the imports*/}
       {showMultiLegPreview && multiLegOptions && (
         <MultiLegJourneyPreview
+          visible={showMultiLegPreview}
           options={multiLegOptions.map((opt: any) => ({
             ...opt,
             journeyId: opt.journeyId ?? opt.optionId ?? '',

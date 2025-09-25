@@ -108,7 +108,7 @@ export const handlePassengerPayment = async (
       legIndex: ride.legIndex,
       amountPaid,
       isPaid,
-      paymentNotes: null,
+      paymentNotes: "Standard payment completion",
     });
   }
 

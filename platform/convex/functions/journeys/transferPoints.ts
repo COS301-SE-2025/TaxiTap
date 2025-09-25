@@ -640,24 +640,30 @@ async function createTwoLegSequence(
   const destinationAddr = destinationAddress || `Destination (${destination.lat.toFixed(4)}, ${destination.lng.toFixed(4)})`;
   const transferAddr = `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
   
+  // Find the actual route stops for each leg
+  const leg1FromStop = findClosestRouteStop(fromRoute, origin);
+  const leg1ToStop = transferPoint.route1Stop;
+  const leg2FromStop = transferPoint.route2Stop;
+  const leg2ToStop = findClosestRouteStop(toRoute, destination);
+
   return {
     legs: [
       {
         legIndex: 0,
-        fromAddress: originAddr,
-        toAddress: transferAddr,
-        fromCoordinates: { latitude: origin.lat, longitude: origin.lng },
-        toCoordinates: { latitude: transferPoint.coordinates.latitude, longitude: transferPoint.coordinates.longitude },
+        fromAddress: leg1FromStop.name || `${fromRoute.name} Stop`,
+        toAddress: leg1ToStop.name,
+        fromCoordinates: { latitude: leg1FromStop.coordinates.lat, longitude: leg1FromStop.coordinates.lng },
+        toCoordinates: { latitude: leg1ToStop.coordinates.lat, longitude: leg1ToStop.coordinates.lng },
         routeId: transferPoint.fromRoute.id,
         estimatedDuration: leg1Duration,
         estimatedFare: leg1Cost,
       },
       {
         legIndex: 1,
-        fromAddress: transferAddr,
-        toAddress: destinationAddr,
-        fromCoordinates: { latitude: transferPoint.coordinates.latitude, longitude: transferPoint.coordinates.longitude },
-        toCoordinates: { latitude: destination.lat, longitude: destination.lng },
+        fromAddress: leg2FromStop.name,
+        toAddress: leg2ToStop.name || `${toRoute.name} Stop`,
+        fromCoordinates: { latitude: leg2FromStop.coordinates.lat, longitude: leg2FromStop.coordinates.lng },
+        toCoordinates: { latitude: leg2ToStop.coordinates.lat, longitude: leg2ToStop.coordinates.lng },
         routeId: transferPoint.toRoute.id,
         estimatedDuration: leg2Duration,
         estimatedFare: leg2Cost,
@@ -745,6 +751,30 @@ function calculateLegCost(from: any, to: any, route?: any): number {
   
   const distance = calculateDistance(fromLat, fromLng, toLat, toLng);
   return calculateFare(distance / 1000); // Convert to km and use existing fare calculation
+}
+
+/**
+ * Find the closest route stop to a given location
+ */
+function findClosestRouteStop(route: any, location: { lat: number; lng: number }) {
+  const routeStops = getAllRouteStops(route);
+
+  let closestStop = routeStops[0];
+  let minDistance = Infinity;
+
+  for (const stop of routeStops) {
+    const distance = calculateDistance(
+      location.lat, location.lng,
+      stop.coordinates.lat, stop.coordinates.lng
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestStop = stop;
+    }
+  }
+
+  return closestStop;
 }
 
 /**

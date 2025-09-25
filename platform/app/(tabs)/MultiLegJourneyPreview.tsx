@@ -122,9 +122,10 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     },
   });
 
-  const formatDuration = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+  const formatDuration = (seconds: number): string => {
+    const totalMinutes = Math.floor(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     if (hours > 0) {
       return `${hours}h ${mins}m`;
     }
