@@ -157,11 +157,11 @@ export const findNearbyRouteIntersections = internalQuery({
               name: intersection.route2.name,
             },
             transferDetails: intersection.transferDetails,
-            intersectionType: intersection.intersectionType,
+            intersectionType: intersection.type,
             confidence: intersection.confidence,
             // Preserve the stop information for proper naming
-            route1Stop: (intersection as any).route1Stop,
-            route2Stop: (intersection as any).route2Stop,
+            route1Stop: intersection.route1Stop,
+            route2Stop: intersection.route2Stop,
           });
         }
 
@@ -180,11 +180,11 @@ export const findNearbyRouteIntersections = internalQuery({
               name: intersection.route1.name,
             },
             transferDetails: intersection.transferDetails,
-            intersectionType: intersection.intersectionType,
+            intersectionType: intersection.type,
             confidence: intersection.confidence,
             // Preserve the stop information for proper naming (swap for reverse direction)
-            route1Stop: (intersection as any).route2Stop,
-            route2Stop: (intersection as any).route1Stop,
+            route1Stop: intersection.route2Stop,
+            route2Stop: intersection.route1Stop,
           });
         }
       }
@@ -715,11 +715,27 @@ async function createTwoLegSequence(
     ? `${transferPoint.route1Stop.name} ↔ ${transferPoint.route2Stop.name}`
     : `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
   
+  // Debug: Log transfer point stop information
+  console.log('🔍 Transfer point stop debug:', {
+    hasRoute1Stop: !!transferPoint.route1Stop,
+    hasRoute2Stop: !!transferPoint.route2Stop,
+    route1Stop: transferPoint.route1Stop,
+    route2Stop: transferPoint.route2Stop,
+    transferPointCoords: transferPoint.coordinates
+  });
+
   // Find the actual route stops for each leg
   const leg1FromStop = findClosestRouteStop(fromRoute, origin);
   const leg1ToStop = transferPoint.route1Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
   const leg2FromStop = transferPoint.route2Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
   const leg2ToStop = findClosestRouteStop(toRoute, destination);
+
+  console.log('🔍 Journey leg stops debug:', {
+    leg1FromStopName: leg1FromStop?.name,
+    leg1ToStopName: leg1ToStop?.name,
+    leg2FromStopName: leg2FromStop?.name,
+    leg2ToStopName: leg2ToStop?.name
+  });
 
   return {
     legs: [

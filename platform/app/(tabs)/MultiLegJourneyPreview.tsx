@@ -57,6 +57,23 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 }) => {
   const { theme, isDark } = useTheme();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🎭 MultiLegJourneyPreview received options:', {
+      optionsCount: options.length,
+      visible,
+      hasDirectRoute,
+      availableTaxis,
+      multilegReason,
+      options: options.map(opt => ({
+        journeyId: opt.journeyId,
+        totalLegs: opt.totalLegs,
+        estimatedTotalDuration: opt.estimatedTotalDuration,
+        estimatedTotalFare: opt.estimatedTotalFare
+      }))
+    });
+  }, [options, visible, hasDirectRoute, availableTaxis, multilegReason]);
   
   // Gesture handling for drag interactions
   const translateY = useRef(new Animated.Value(0)).current;

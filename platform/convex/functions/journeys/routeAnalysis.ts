@@ -611,6 +611,14 @@ async function findRouteIntersectionPoints(route1: any, route2: any) {
         );
         
         if (distance <= intersectionThreshold) {
+          console.log('🔍 Creating intersection with stops:', {
+            stop1Name: stop1.name,
+            stop2Name: stop2.name,
+            stop1Coords: stop1.coordinates,
+            stop2Coords: stop2.coordinates,
+            distance
+          });
+
           intersections.push({
             coordinates: {
               latitude: (stop1.coordinates[0] + stop2.coordinates[0]) / 2,

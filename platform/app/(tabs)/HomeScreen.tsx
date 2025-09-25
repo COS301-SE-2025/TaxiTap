@@ -1104,7 +1104,7 @@ export default function HomeScreen() {
       if (journeyAnalysisResult.multiLegOptions) {
         console.log('🔍 Multi-leg options detailed:', journeyAnalysisResult.multiLegOptions.map((option: any, index: number) => ({
           optionIndex: index,
-          optionId: option.optionId || option.journeyId,
+          journeyId: option.journeyId,
           totalLegs: option.totalLegs,
           legs: option.legs?.map((leg: any) => ({
             legIndex: leg.legIndex,
@@ -1113,8 +1113,8 @@ export default function HomeScreen() {
             routeId: leg.routeId
           })),
           transferPoints: option.transferPoints,
-          estimatedTime: option.estimatedTotalTime || option.estimatedTotalDuration,
-          estimatedCost: option.estimatedTotalCost || option.estimatedTotalFare
+          estimatedTotalDuration: option.estimatedTotalDuration,
+          estimatedTotalFare: option.estimatedTotalFare
         })));
       }
 
@@ -1157,124 +1157,9 @@ export default function HomeScreen() {
           setRadiusExpansionTimer(null);
         }
 
-        if (journeyAnalysisResult.firstLegDrivers && journeyAnalysisResult.firstLegDrivers.length > 0) {
-          console.log('🚖 Found first-leg drivers, checking if they are actually direct route drivers');
-
-          // Debug: Log route info for all first-leg drivers
-          journeyAnalysisResult.firstLegDrivers.forEach((taxi, index) => {
-            console.log(`🔍 First-leg driver ${index + 1} route info:`, {
-              name: taxi.name,
-              routeId: taxi.routeInfo?.routeId,
-              routeName: taxi.routeInfo?.routeName,
-              startProximity: taxi.routeInfo?.startProximity,
-              endProximity: taxi.routeInfo?.endProximity,
-              hasRouteInfo: !!taxi.routeInfo
-            });
-          });
-
-          // Check if any of the first-leg drivers are actually on direct routes
-          // A direct route means the taxi's route serves BOTH origin and destination within acceptable distance
-          const hasDirectRouteTaxis = journeyAnalysisResult.firstLegDrivers.some(taxi =>
-            taxi.routeInfo &&
-            taxi.routeInfo.routeId &&
-            taxi.routeInfo.endProximity !== undefined &&
-            taxi.routeInfo.endProximity <= 3.0 && // Destination is within 3km of route
-            taxi.routeInfo.startProximity !== undefined &&
-            taxi.routeInfo.startProximity <= 3.0 // Origin is within 3km of route
-          );
-
-          if (hasDirectRouteTaxis) {
-            console.log('✅ First-leg drivers are actually direct route taxis, treating as direct route');
-            setHasDirectRoute(true);
-            setDirectRouteAvailableTaxis(journeyAnalysisResult.firstLegDrivers.length);
-            setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
-            setIsSearchingTaxis(false);
-            setSearchStartTime(null);
-            // Don't show multi-leg preview for direct routes
-            setShowMultiLegPreview(false);
-            setMultiLegOptions(null);
-          } else {
-            console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
-
-            // Show first-leg drivers as available taxis for immediate booking
-            setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
-            setIsSearchingTaxis(false);
-            setSearchStartTime(null);
-
-            // Show multi-leg preview when we have first-leg drivers (even if no perfect multi-leg options)
-            if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
-            console.log('📋 Showing multi-leg journey preview (no direct route)', {
-              optionsCount: journeyAnalysisResult.multiLegOptions.length,
-              options: journeyAnalysisResult.multiLegOptions
-            });
-            setShowMultiLegPreview(true);
-            setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
-          } else {
-            console.log('⚠️ No multi-leg options available, but first-leg drivers found. Creating fallback option.');
-            
-            // Create a fallback multi-leg option when we have first-leg drivers but no transfer points
-            const fallbackMultiLegOptions = [{
-              journeyId: `fallback-${Date.now()}`,
-              totalLegs: 2,
-              estimatedTotalFare: 25.00,
-              estimatedTotalDuration: 1800,
-              optimizationPreference: userPreference,
-              legs: [
-                {
-                  legIndex: 0,
-                  fromAddress: origin?.name || "Origin",
-                  toAddress: "Transfer Stop",
-                  fromCoordinates: {
-                    latitude: origin?.latitude || 0,
-                    longitude: origin?.longitude || 0
-                  },
-                  toCoordinates: {
-                    latitude: (origin?.latitude || 0) + ((destination?.latitude || 0) - (origin?.latitude || 0)) * 0.6,
-                    longitude: (origin?.longitude || 0) + ((destination?.longitude || 0) - (origin?.longitude || 0)) * 0.6
-                  },
-                  routeId: "fallback-route",
-                  estimatedFare: 15.00,
-                  estimatedDuration: 900
-                },
-                {
-                  legIndex: 1,
-                  fromAddress: "Transfer Stop",
-                  toAddress: destination?.name || "Destination",
-                  fromCoordinates: {
-                    latitude: (origin?.latitude || 0) + ((destination?.latitude || 0) - (origin?.latitude || 0)) * 0.6,
-                    longitude: (origin?.longitude || 0) + ((destination?.longitude || 0) - (origin?.longitude || 0)) * 0.6
-                  },
-                  toCoordinates: {
-                    latitude: destination?.latitude || 0,
-                    longitude: destination?.longitude || 0
-                  },
-                  routeId: "fallback-route-2",
-                  estimatedFare: 10.00,
-                  estimatedDuration: 900
-                }
-              ],
-              transferInstructions: "Take first taxi to transfer point, then connect to second taxi to reach destination",
-              confidence: 0.7
-            }];
-            
-            setShowMultiLegPreview(true);
-            setMultiLegOptions(fallbackMultiLegOptions as any);
-            }
-
-            // Clear any existing expansion timer
-            if (radiusExpansionTimer) {
-              clearTimeout(radiusExpansionTimer);
-              setRadiusExpansionTimer(null);
-            }
-          }
-
-          // Clear any existing expansion timer
-          if (radiusExpansionTimer) {
-            clearTimeout(radiusExpansionTimer);
-            setRadiusExpansionTimer(null);
-          }
-        } else if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
-          console.log('🔄 Multi-leg journey required but no first-leg drivers, showing preview only', {
+        if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
+          console.log('🚖 Multi-leg journey options available, showing MultiLegJourneyPreview');
+          console.log('📋 Showing multi-leg journey preview', {
             optionsCount: journeyAnalysisResult.multiLegOptions.length,
             options: journeyAnalysisResult.multiLegOptions
           });
@@ -1282,12 +1167,16 @@ export default function HomeScreen() {
           setMultiLegOptions(journeyAnalysisResult.multiLegOptions);
           setIsSearchingTaxis(false);
           setSearchStartTime(null);
+        } else {
+          console.log('⚠️ No multi-leg options available - no viable route connections found');
+          setIsSearchingTaxis(false);
+          setSearchStartTime(null);
+        }
 
-          // Clear any existing expansion timer
-          if (radiusExpansionTimer) {
-            clearTimeout(radiusExpansionTimer);
-            setRadiusExpansionTimer(null);
-          }
+        // Clear any existing expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
         }
       }
     }

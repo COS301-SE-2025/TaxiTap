@@ -851,15 +851,13 @@ export type MultiLegJourneyResult = {
   directRoute?: TaxiSearchResult | null;
   firstLegDrivers?: AvailableTaxi[]; // Add available first-leg drivers
   multiLegOptions?: Array<{
-    optionId: string;
+    journeyId: string;
     totalLegs: number;
     legs: any[];
+    estimatedTotalFare: number;
+    estimatedTotalDuration: number;
+    optimizationPreference: string;
     transferPoints: any[];
-    summary: any;
-    estimatedTotalTime: number;
-    estimatedTotalCost: number;
-    optimizationCriteria: string;
-    confidence: string;
   }>;
   analysis?: {
     totalTransferPointsFound: number;
@@ -917,43 +915,14 @@ export const analyzeMultiLegJourneyOptions = query({
         };
       }
 
-      // Check if there are available first-leg drivers even without direct routes
-      const firstLegDriversResult = await findFirstLegAvailableDrivers(ctx, {
-        originLat: args.originLat,
-        originLng: args.originLng,
-        maxOriginDistance: 2.0,
-        maxTaxiDistance: 3.0,
-        maxResults: 10
-      });
-
-      if (firstLegDriversResult.success && firstLegDriversResult.availableTaxis.length > 0) {
-        console.log('🚖 Found first-leg drivers, proceeding with multi-leg analysis', {
-          availableFirstLegDrivers: firstLegDriversResult.availableTaxis.length
-        });
-        // Continue with multi-leg generation since we have first-leg drivers available
-      } else {
-        console.log('❌ No first-leg drivers available, cannot proceed with multi-leg journey');
-        return {
-          requiresMultiLeg: false,
-          directRoute: null,
-          message: "No drivers available for the first leg of the journey"
-        };
-      }
-
       console.log('🔄 No direct route found, generating multi-leg options', {
         directRouteSuccess: directRouteResult.success,
         availableTaxisCount: directRouteResult.availableTaxis?.length || 0,
         message: directRouteResult.message
       });
-      // Generate multi-leg options and include first-leg drivers
-      const multiLegResult = await generateMultiLegOptions(ctx, args);
 
-      // Add first-leg drivers to the result
-      if (multiLegResult.requiresMultiLeg) {
-        multiLegResult.firstLegDrivers = firstLegDriversResult.availableTaxis;
-      }
-
-      return multiLegResult;
+      // Generate multi-leg options using proper route connectivity analysis
+      return await generateMultiLegOptions(ctx, args);
       
     } catch (error) {
       console.error("❌ Error analyzing multi-leg journey options:", error);
@@ -1609,15 +1578,13 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     if (optimizationResult.optimizedSequence.length > 0 && optimizationResult.journeyLegs && optimizationResult.summary) {
       console.log('✅ Creating primary multi-leg option');
       multiLegOptions.push({
-        optionId: "primary",
+        journeyId: "primary",
         totalLegs: optimizationResult.journeyLegs.length,
         legs: optimizationResult.journeyLegs,
+        estimatedTotalFare: optimizationResult.summary.estimatedTotalCost,
+        estimatedTotalDuration: optimizationResult.summary.estimatedTotalTime,
+        optimizationPreference: args.optimizationPreference,
         transferPoints: optimizationResult.optimizedSequence,
-        summary: optimizationResult.summary,
-        estimatedTotalTime: optimizationResult.summary.estimatedTotalTime,
-        estimatedTotalCost: optimizationResult.summary.estimatedTotalCost,
-        optimizationCriteria: args.optimizationPreference,
-        confidence: "high"
       });
     } else {
       console.log('❌ Cannot create primary option:', {
@@ -1650,15 +1617,13 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
 
       if (altSequence.success && altSequence.journeyLegs && altSequence.journeyLegs.length > 0 && altSequence.summary) {
         multiLegOptions.push({
-          optionId: `alternative_${i}`,
+          journeyId: `alternative_${i}`,
           totalLegs: altSequence.journeyLegs.length,
           legs: altSequence.journeyLegs,
+          estimatedTotalFare: altSequence.summary.estimatedTotalCost,
+          estimatedTotalDuration: altSequence.summary.estimatedTotalTime,
+          optimizationPreference: args.optimizationPreference,
           transferPoints: altSequence.optimizedSequence,
-          summary: altSequence.summary,
-          estimatedTotalTime: altSequence.summary.estimatedTotalTime,
-          estimatedTotalCost: altSequence.summary.estimatedTotalCost,
-          optimizationCriteria: args.optimizationPreference,
-          confidence: "medium"
         });
       }
     }
