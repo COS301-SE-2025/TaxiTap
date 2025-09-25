@@ -102,28 +102,20 @@ export const findNearbyRouteIntersections = internalQuery({
             if (accessibilityCheck.accessible) {
               allIntersectionPoints.push({
                 coordinates: intersection.coordinates,
-                address: intersection.address,
                 route1: {
                   id: route1._id,
                   name: route1.name,
-                  route: route1,
                 },
                 route2: {
                   id: route2._id,
                   name: route2.name,
-                  route: route2,
                 },
                 transferDetails: {
                   walkingDistance: accessibilityCheck.walkingDistance,
                   estimatedTransferTime: accessibilityCheck.estimatedTransferTime,
-                  accessibility: accessibilityCheck.accessibilityFeatures,
                 },
                 intersectionType: intersection.type,
                 confidence: intersection.confidence,
-                // Add scoring data for further optimization
-                totalJourneyDistance,
-                originRouteDistance: originRouteData.distance,
-                destinationRouteDistance: destRouteData.distance,
               });
             }
           }
@@ -131,62 +123,74 @@ export const findNearbyRouteIntersections = internalQuery({
       }
 
       // OPTIMIZATION 4: Sort intersections by quality and limit processing
-      allIntersectionPoints.sort((a, b) => {
-        // Prioritize by confidence score, then by total journey distance
-        const confidenceDiff = b.confidence - a.confidence;
-        if (Math.abs(confidenceDiff) > 5) return confidenceDiff;
-        return a.totalJourneyDistance - b.totalJourneyDistance;
-      });
+      allIntersectionPoints.sort((a, b) => b.confidence - a.confidence);
 
       // Limit to top 100 intersections to avoid timeout
       const TOP_INTERSECTIONS_TO_PROCESS = 100;
       const topIntersections = allIntersectionPoints.slice(0, TOP_INTERSECTIONS_TO_PROCESS);
 
-      // Filter intersections by journey feasibility (using pre-calculated distances)
+      // Filter intersections by journey feasibility
       const feasibleIntersections = [];
 
       for (const intersection of topIntersections) {
-        // Use pre-calculated distances from earlier filtering
-        const route1OriginDistance = intersection.originRouteDistance;
-        const route2DestinationDistance = intersection.destinationRouteDistance;
-        const route2OriginDistance = calculateRouteProximity(intersection.route2.route, { lat: originLat, lng: originLng }).distance;
-        const route1DestinationDistance = calculateRouteProximity(intersection.route1.route, { lat: destinationLat, lng: destinationLng }).distance;
+        // Calculate distances for feasibility check
+        const route1Obj = await ctx.db.get(intersection.route1.id);
+        const route2Obj = await ctx.db.get(intersection.route2.id);
+        
+        const route1OriginDistance = calculateRouteProximity(route1Obj, { lat: originLat, lng: originLng }).distance;
+        const route2DestinationDistance = calculateRouteProximity(route2Obj, { lat: destinationLat, lng: destinationLng }).distance;
+        const route2OriginDistance = calculateRouteProximity(route2Obj, { lat: originLat, lng: originLng }).distance;
+        const route1DestinationDistance = calculateRouteProximity(route1Obj, { lat: destinationLat, lng: destinationLng }).distance;
 
         // Check if route1 → route2 journey is feasible
         if (route1OriginDistance <= maxTransferDistance && route2DestinationDistance <= maxTransferDistance) {
           feasibleIntersections.push({
-            ...intersection,
+            coordinates: intersection.coordinates,
             fromRoute: {
-              ...intersection.route1,
               distanceFromOrigin: route1OriginDistance,
+              id: intersection.route1.id,
+              name: intersection.route1.name,
             },
             toRoute: {
-              ...intersection.route2,
               distanceFromDestination: route2DestinationDistance,
+              id: intersection.route2.id,
+              name: intersection.route2.name,
             },
-            journeyScore: intersection.confidence - (intersection.totalJourneyDistance / 1000), // Higher is better
+            transferDetails: intersection.transferDetails,
+            intersectionType: intersection.intersectionType,
+            confidence: intersection.confidence,
+            // Preserve the stop information for proper naming
+            route1Stop: (intersection as any).route1Stop,
+            route2Stop: (intersection as any).route2Stop,
           });
         }
 
         // Check if route2 → route1 journey is feasible (different direction)
         if (route2OriginDistance <= maxTransferDistance && route1DestinationDistance <= maxTransferDistance) {
           feasibleIntersections.push({
-            ...intersection,
+            coordinates: intersection.coordinates,
             fromRoute: {
-              ...intersection.route2,
               distanceFromOrigin: route2OriginDistance,
+              id: intersection.route2.id,
+              name: intersection.route2.name,
             },
             toRoute: {
-              ...intersection.route1,
               distanceFromDestination: route1DestinationDistance,
+              id: intersection.route1.id,
+              name: intersection.route1.name,
             },
-            journeyScore: intersection.confidence - (intersection.totalJourneyDistance / 1000), // Higher is better
+            transferDetails: intersection.transferDetails,
+            intersectionType: intersection.intersectionType,
+            confidence: intersection.confidence,
+            // Preserve the stop information for proper naming (swap for reverse direction)
+            route1Stop: (intersection as any).route2Stop,
+            route2Stop: (intersection as any).route1Stop,
           });
         }
       }
 
       // OPTIMIZATION 5: Final sorting and limiting of results
-      feasibleIntersections.sort((a, b) => b.journeyScore - a.journeyScore);
+      feasibleIntersections.sort((a, b) => b.confidence - a.confidence);
       const MAX_FINAL_RESULTS = 50; // Limit final results to top 50
       const finalResults = feasibleIntersections.slice(0, MAX_FINAL_RESULTS);
 
@@ -513,7 +517,6 @@ async function findRouteToRouteIntersections(route1: any, route2: any) {
 
         intersections.push({
           coordinates: midpoint,
-          address: `Transfer Point: ${stopDescription}`,
           type: transferType,
           confidence: Math.max(0, 100 - (distance / 10)), // Higher confidence for closer stops
           route1Stop: {
@@ -706,7 +709,11 @@ async function createTwoLegSequence(
   // Use provided addresses or fallback to coordinates
   const originAddr = originAddress || `Origin (${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)})`;
   const destinationAddr = destinationAddress || `Destination (${destination.lat.toFixed(4)}, ${destination.lng.toFixed(4)})`;
-  const transferAddr = `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
+  
+  // Use actual stop names for transfer point instead of generic "Transfer Point"
+  const transferStopName = transferPoint.route1Stop?.name && transferPoint.route2Stop?.name 
+    ? `${transferPoint.route1Stop.name} ↔ ${transferPoint.route2Stop.name}`
+    : `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
   
   // Find the actual route stops for each leg
   const leg1FromStop = findClosestRouteStop(fromRoute, origin);
@@ -801,12 +808,6 @@ function estimateTravelTime(from: any, to: any, route?: any): number {
  * Calculates cost for a leg of the journey using existing fare calculation
  */
 function calculateLegCost(from: any, to: any, route?: any): number {
-  // If route has fare, use it (this is the preferred method)
-  if (route?.fare && route.fare > 0) {
-    return route.fare;
-  }
-  
-  // Fallback: use enhanced taxi matching fare calculation
   const fromLat = from.lat || from.latitude;
   const fromLng = from.lng || from.longitude;
   const toLat = to.lat || to.latitude;
@@ -818,6 +819,9 @@ function calculateLegCost(from: any, to: any, route?: any): number {
   }
   
   const distance = calculateDistance(fromLat, fromLng, toLat, toLng);
+  
+  // Always calculate proportional fare based on distance, not use full route fare
+  // This ensures each leg gets its own price based on the actual distance traveled
   return calculateFare(distance / 1000); // Convert to km and use existing fare calculation
 }
 

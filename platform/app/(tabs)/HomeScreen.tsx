@@ -1122,7 +1122,29 @@ export default function HomeScreen() {
       setShowMultiLegPreview(false);
       setMultiLegOptions(null);
 
-      if (journeyAnalysisResult.requiresMultiLeg) {
+      // PRIORITY: Check for direct route first, even if multi-leg options exist
+      if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success && journeyAnalysisResult.directRoute.availableTaxis && journeyAnalysisResult.directRoute.availableTaxis.length > 0) {
+        console.log('✅ Direct route available with taxis, prioritizing direct route over multi-leg');
+        // Direct route available with taxis - prioritize this
+        setHasDirectRoute(true);
+        setDirectRouteAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis.length);
+
+        // Hide multi-leg preview since we have direct route with taxis
+        setShowMultiLegPreview(false);
+        setMultiLegOptions(null);
+
+        // Update available taxis and stop searching when direct route is found
+        setAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis);
+        setIsSearchingTaxis(false);
+        setSearchStartTime(null);
+        console.log('🚖 Direct route taxis available, showing Reserve a seat button');
+        
+        // Clear any expansion timer
+        if (radiusExpansionTimer) {
+          clearTimeout(radiusExpansionTimer);
+          setRadiusExpansionTimer(null);
+        }
+      } else if (journeyAnalysisResult.requiresMultiLeg) {
         // No direct route available, need multi-leg journey
         setHasDirectRoute(false);
         setDirectRouteAvailableTaxis(0);
@@ -1165,7 +1187,7 @@ export default function HomeScreen() {
                 {
                   legIndex: 0,
                   fromAddress: origin?.name || "Origin",
-                  toAddress: "Transfer Point",
+                  toAddress: "Transfer Stop",
                   fromCoordinates: {
                     latitude: origin?.latitude || 0,
                     longitude: origin?.longitude || 0
@@ -1180,7 +1202,7 @@ export default function HomeScreen() {
                 },
                 {
                   legIndex: 1,
-                  fromAddress: "Transfer Point",
+                  fromAddress: "Transfer Stop",
                   toAddress: destination?.name || "Destination",
                   fromCoordinates: {
                     latitude: (origin?.latitude || 0) + ((destination?.latitude || 0) - (origin?.latitude || 0)) * 0.6,
@@ -1224,24 +1246,6 @@ export default function HomeScreen() {
             setRadiusExpansionTimer(null);
           }
         }
-      } else if (journeyAnalysisResult.directRoute && journeyAnalysisResult.directRoute.success) {
-        console.log('✅ Direct route available, proceeding with single-leg search');
-        // Direct route available - set state accordingly
-        setHasDirectRoute(true);
-        setDirectRouteAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis?.length || 0);
-
-        // Hide multi-leg preview since we have direct route
-        setShowMultiLegPreview(false);
-        setMultiLegOptions(null);
-
-        // Update available taxis and stop searching when direct route is found
-        if (journeyAnalysisResult.directRoute.availableTaxis && journeyAnalysisResult.directRoute.availableTaxis.length > 0) {
-          setAvailableTaxis(journeyAnalysisResult.directRoute.availableTaxis);
-          setIsSearchingTaxis(false);
-          setSearchStartTime(null);
-          console.log('🚖 Direct route taxis available, showing Reserve a seat button');
-        }
-        // Continue with normal taxi search flow - do not show multi-leg preview
       }
     }
   }, [journeyAnalysisResult]);
@@ -2248,21 +2252,31 @@ export default function HomeScreen() {
               onPress: () => {
                 // Navigate to TaxiInformation for first leg
                 const firstLeg = selectedOption.legs[0];
+                
+                // Create route match data for first leg with available drivers
+                const firstLegRouteMatchData = {
+                  availableTaxis: journeyAnalysisResult.firstLegDrivers || [],
+                  matchingRoutes: [],
+                  success: true,
+                  message: "First leg drivers available"
+                };
+                
                 router.push({
                   pathname: './TaxiInformation',
                   params: {
-                    destinationName: destination?.name || '',
-                    destinationLat: destination?.latitude.toString() || '',
-                    destinationLng: destination?.longitude.toString() || '',
-                    currentName: origin?.name || '',
-                    currentLat: origin?.latitude.toString() || '',
-                    currentLng: origin?.longitude.toString() || '',
+                    destinationName: firstLeg.toAddress || destination?.name || '',
+                    destinationLat: firstLeg.toCoordinates?.latitude?.toString() || destination?.latitude.toString() || '',
+                    destinationLng: firstLeg.toCoordinates?.longitude?.toString() || destination?.longitude.toString() || '',
+                    currentName: firstLeg.fromAddress || origin?.name || '',
+                    currentLat: firstLeg.fromCoordinates?.latitude?.toString() || origin?.latitude.toString() || '',
+                    currentLng: firstLeg.fromCoordinates?.longitude?.toString() || origin?.longitude.toString() || '',
                     routeId: firstLeg.routeId || '',
                     estimatedFare: firstLeg.estimatedFare.toString(),
                     journeyId: journeyResult.journeyId,
                     isMultiLeg: 'true',
                     currentLegIndex: '0',
-                    totalLegs: selectedOption.totalLegs.toString()
+                    totalLegs: selectedOption.totalLegs.toString(),
+                    routeMatchData: JSON.stringify(firstLegRouteMatchData)
                   }
                 });
               }
@@ -2465,35 +2479,6 @@ export default function HomeScreen() {
                 autoCorrect={false}
                 autoCapitalize="words"
               />
-                {detectedLocation && !origin && (
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: theme.primary,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 16,
-                      marginLeft: 8,
-                    }}
-                    onPress={() => {
-                      // Clear the manual reset flag when user manually sets origin
-                      hasManuallyReset.current = false;
-                      setOrigin({
-                        latitude: detectedLocation.latitude,
-                        longitude: detectedLocation.longitude,
-                        name: t('home:currentLocation')
-                      });
-                      setOriginAddress(t('home:currentLocation'));
-                    }}
-                  >
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 12,
-                      fontWeight: '600',
-                    }}>
-{t('home:useCurrent')}
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
               {isGeocodingOrigin && (
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>

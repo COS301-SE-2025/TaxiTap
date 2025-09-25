@@ -57,39 +57,29 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 }) => {
   const { theme, isDark } = useTheme();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
-  const [userPreference, setUserPreference] = useState<'shortest_time' | 'fewest_transfers' | 'most_reliable'>('shortest_time');
   
   // Gesture handling for drag interactions
   const translateY = useRef(new Animated.Value(0)).current;
-  const lastGestureY = useRef(0);
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: (evt, gestureState) => {
-      // Only respond to gestures that start near the drag handle area
-      return gestureState.y0 < 100; // Only respond if gesture starts in top 100px
+      return gestureState.y0 < 100;
     },
     onMoveShouldSetPanResponder: (evt, gestureState) => {
-      // Only respond to vertical gestures with sufficient movement
       return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 50;
     },
     onPanResponderGrant: () => {
-      // Reset the animated value when gesture starts
       translateY.setOffset(translateY._value);
       translateY.setValue(0);
     },
     onPanResponderMove: (evt, gestureState) => {
-      // Only allow downward movement or small upward movement
-      const newValue = Math.max(0, gestureState.dy); // Prevent upward dragging beyond original position
+      const newValue = Math.max(0, gestureState.dy);
       translateY.setValue(newValue);
-      lastGestureY.current = gestureState.dy;
     },
     onPanResponderRelease: (evt, gestureState) => {
-      // Clear the offset
       translateY.flattenOffset();
       
-      // If dragged down significantly, close the modal
       if (gestureState.dy > 150) {
-        // Animate modal sliding down and close
         Animated.timing(translateY, {
           toValue: 1000,
           duration: 300,
@@ -100,19 +90,6 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
         return;
       }
       
-      // If dragged up, snap back to original position
-      if (gestureState.dy < -50) {
-        // Animate modal expanding upward (could be extended for more functionality)
-        Animated.spring(translateY, {
-          toValue: -50,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }).start();
-        return;
-      }
-      
-      // Reset position for small movements
       Animated.spring(translateY, {
         toValue: 0,
         useNativeDriver: true,
@@ -133,54 +110,24 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   };
 
   const formatFare = (fare: number): string => {
-    return `R${fare.toFixed(2)}`;
+    return `R${fare.toFixed(0)}`;
   };
 
-  const getPreferenceLabel = (preference: string): string => {
+  const getRouteTypeInfo = (preference: string) => {
     switch (preference) {
       case 'shortest_time':
-        return 'Fastest Route';
+        return { label: 'Fastest', icon: 'flash', color: '#4CAF50' };
       case 'fewest_transfers':
-        return 'Fewest Transfers';
+        return { label: 'Direct', icon: 'arrow-forward', color: '#2196F3' };
       case 'most_reliable':
-        return 'Most Reliable';
+        return { label: 'Reliable', icon: 'shield-checkmark', color: '#FF9800' };
       default:
-        return 'Unknown';
-    }
-  };
-
-  const getPreferenceIcon = (preference: string): string => {
-    switch (preference) {
-      case 'shortest_time':
-        return 'time-outline';
-      case 'fewest_transfers':
-        return 'swap-horizontal-outline';
-      case 'most_reliable':
-        return 'shield-checkmark-outline';
-      default:
-        return 'help-outline';
-    }
-  };
-
-  // Determine if multileg journey should be shown
-  const shouldShowMultileg = !hasDirectRoute || availableTaxis === 0;
-  
-  // Get appropriate warning message based on reason
-  const getWarningMessage = (): string => {
-    switch (multilegReason) {
-      case 'no_direct_route':
-        return 'No single taxi route connects your origin and destination. You\'ll need to transfer between taxis. We\'ll help guide you through each leg.';
-      case 'no_taxis_available':
-        return 'No taxis are currently available for a direct route. A multi-leg journey with transfers is your best option.';
-      case 'no_intersections':
-        return 'No suitable transfer points found between routes. Please try a different destination or wait for more taxi availability.';
-      default:
-        return 'No direct route available. You\'ll need to transfer between taxis. We\'ll help guide you through each leg.';
+        return { label: 'Route', icon: 'help', color: theme.textSecondary };
     }
   };
 
   // Don't show the modal if there's a direct route with available taxis
-  if (!shouldShowMultileg) {
+  if (hasDirectRoute && availableTaxis > 0) {
     return null;
   }
 
@@ -196,136 +143,82 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       return;
     }
 
-    onConfirm(selectedOption, userPreference);
+    onConfirm(selectedOption, selectedOption.optimizationPreference);
   };
 
-  const renderJourneyLeg = (leg: JourneyLeg, isLast: boolean) => (
+  const renderSimplifiedLeg = (leg: JourneyLeg, isLast: boolean, totalLegs: number) => (
     <View key={leg.legIndex} style={dynamicStyles.legContainer}>
-      <View style={dynamicStyles.legHeader}>
-        <View style={dynamicStyles.legIndicator}>
-          <View style={dynamicStyles.startDot} />
-          {!isLast && (
-            <View style={dynamicStyles.legLine}>
-              {[...Array(6)].map((_, index) => (
-                <View key={index} style={dynamicStyles.legLineDot} />
-              ))}
-            </View>
-          )}
+      <View style={dynamicStyles.legContent}>
+        <View style={dynamicStyles.legNumber}>
+          <Text style={dynamicStyles.legNumberText}>{leg.legIndex + 1}</Text>
         </View>
         
-        <View style={dynamicStyles.legInfo}>
-          <Text style={dynamicStyles.legTitle}>Leg {leg.legIndex + 1}</Text>
-          <Text style={dynamicStyles.legRoute}>
+        <View style={dynamicStyles.legDetails}>
+          <Text style={dynamicStyles.legRoute} numberOfLines={1}>
             {leg.fromAddress} → {leg.toAddress}
           </Text>
-          <View style={dynamicStyles.legDetails}>
-            <Text style={dynamicStyles.legTime}>
-              {formatDuration(leg.estimatedDuration)}
-            </Text>
-            <Text style={dynamicStyles.legFare}>
-              {formatFare(leg.estimatedFare)}
-            </Text>
+          <View style={dynamicStyles.legMeta}>
+            <Text style={dynamicStyles.legTime}>{formatDuration(leg.estimatedDuration)}</Text>
+            <Text style={dynamicStyles.legDot}>•</Text>
+            <Text style={dynamicStyles.legFare}>{formatFare(leg.estimatedFare)}</Text>
           </View>
         </View>
       </View>
       
       {!isLast && (
-        <View style={dynamicStyles.transferInfo}>
-          <Icon name="swap-horizontal" size={16} color={theme.primary} />
-          <Text style={dynamicStyles.transferText}>Transfer required</Text>
+        <View style={dynamicStyles.transferIndicator}>
+          <View style={dynamicStyles.transferLine} />
+          <View style={dynamicStyles.transferDot}>
+            <Icon name="swap-horizontal" size={12} color={theme.primary} />
+          </View>
         </View>
       )}
     </View>
   );
 
-  const renderJourneyOption = (option: MultiLegJourneyOption, index: number) => (
-    <TouchableOpacity
-      key={option.journeyId}
-      style={[
-        dynamicStyles.optionCard,
-        selectedOptionIndex === index && dynamicStyles.optionCardSelected,
-      ]}
-      onPress={() => setSelectedOptionIndex(index)}
-    >
-      <View style={dynamicStyles.optionHeader}>
-        <View style={dynamicStyles.optionTitleContainer}>
-          <Icon 
-            name={getPreferenceIcon(option.optimizationPreference)} 
-            size={20} 
-            color={theme.primary} 
-          />
-          <Text style={dynamicStyles.optionTitle}>
-            {getPreferenceLabel(option.optimizationPreference)}
-          </Text>
+  const renderJourneyOption = (option: MultiLegJourneyOption, index: number) => {
+    const routeInfo = getRouteTypeInfo(option.optimizationPreference);
+    const isSelected = selectedOptionIndex === index;
+    
+    return (
+      <TouchableOpacity
+        key={option.journeyId}
+        style={[
+          dynamicStyles.optionCard,
+          isSelected && dynamicStyles.optionCardSelected,
+        ]}
+        onPress={() => setSelectedOptionIndex(index)}
+      >
+        <View style={dynamicStyles.optionHeader}>
+          <View style={dynamicStyles.routeTypeContainer}>
+            <View style={[dynamicStyles.routeTypeBadge, { backgroundColor: routeInfo.color }]}>
+              <Icon name={routeInfo.icon} size={14} color="white" />
+            </View>
+            <Text style={dynamicStyles.routeTypeLabel}>{routeInfo.label}</Text>
+          </View>
+          
+          <View style={dynamicStyles.optionSummary}>
+            <Text style={dynamicStyles.totalTime}>{formatDuration(option.estimatedTotalDuration)}</Text>
+            <Text style={dynamicStyles.totalFare}>{formatFare(option.estimatedTotalFare)}</Text>
+          </View>
         </View>
-        <View style={dynamicStyles.optionSummary}>
-          <Text style={dynamicStyles.totalTime}>
-            {formatDuration(option.estimatedTotalDuration)}
-          </Text>
-          <Text style={dynamicStyles.totalFare}>
-            {formatFare(option.estimatedTotalFare)}
-          </Text>
-        </View>
-      </View>
 
-      <View style={dynamicStyles.optionStats}>
-        <View style={dynamicStyles.statItem}>
-          <Icon name="layers-outline" size={16} color={theme.textSecondary} />
-          <Text style={dynamicStyles.statText}>
-            {option.totalLegs} legs
+        <View style={dynamicStyles.transfersInfo}>
+          <Text style={dynamicStyles.transfersText}>
+            {option.totalLegs} rides • {option.totalLegs - 1} transfer{option.totalLegs - 1 !== 1 ? 's' : ''}
           </Text>
         </View>
-        <View style={dynamicStyles.statItem}>
-          <Icon name="location-outline" size={16} color={theme.textSecondary} />
-          <Text style={dynamicStyles.statText}>
-            {option.totalLegs - 1} transfers
-          </Text>
-        </View>
-      </View>
 
-      {selectedOptionIndex === index && (
-        <View style={dynamicStyles.legsList}>
-          {option.legs.map((leg, legIndex) => 
-            renderJourneyLeg(leg, legIndex === option.legs.length - 1)
-          )}
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
-  const renderPreferenceSelector = () => (
-    <View style={dynamicStyles.preferenceContainer}>
-      <Text style={dynamicStyles.preferenceTitle}>Optimize for:</Text>
-      <View style={dynamicStyles.preferenceButtons}>
-        {[
-          { key: 'shortest_time', label: 'Speed', icon: 'time-outline' },
-          { key: 'fewest_transfers', label: 'Transfers', icon: 'swap-horizontal-outline' },
-          { key: 'most_reliable', label: 'Reliability', icon: 'shield-checkmark-outline' },
-        ].map((pref) => (
-          <TouchableOpacity
-            key={pref.key}
-            style={[
-              dynamicStyles.preferenceButton,
-              userPreference === pref.key && dynamicStyles.preferenceButtonSelected,
-            ]}
-            onPress={() => setUserPreference(pref.key as any)}
-          >
-            <Icon 
-              name={pref.icon} 
-              size={18} 
-              color={userPreference === pref.key ? (isDark ? '#121212' : '#FFFFFF') : theme.textSecondary} 
-            />
-            <Text style={[
-              dynamicStyles.preferenceButtonText,
-              userPreference === pref.key && dynamicStyles.preferenceButtonTextSelected,
-            ]}>
-              {pref.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
+        {isSelected && (
+          <View style={dynamicStyles.legsList}>
+            {option.legs.map((leg, legIndex) => 
+              renderSimplifiedLeg(leg, legIndex === option.legs.length - 1, option.totalLegs)
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const dynamicStyles = StyleSheet.create({
     modalOverlay: {
@@ -337,9 +230,8 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       backgroundColor: theme.surface,
       borderTopLeftRadius: 25,
       borderTopRightRadius: 25,
-      maxHeight: '90%',
+      maxHeight: '85%',
       paddingTop: 20,
-      position: 'relative',
     },
     closeButton: {
       position: 'absolute',
@@ -348,7 +240,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'transparent',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
@@ -356,8 +248,6 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     header: {
       alignItems: 'center',
       paddingBottom: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
       marginHorizontal: 20,
     },
     dragHandle: {
@@ -365,99 +255,59 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       height: 4,
       backgroundColor: theme.textSecondary,
       borderRadius: 2,
-      marginBottom: 15,
+      marginBottom: 20,
+      opacity: 0.3,
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: '600',
+      fontSize: 22,
+      fontWeight: '700',
       color: theme.text,
-      marginBottom: 5,
+      marginBottom: 8,
     },
     headerSubtitle: {
-      fontSize: 14,
+      fontSize: 15,
       color: theme.textSecondary,
       textAlign: 'center',
+      lineHeight: 20,
     },
     contentContainer: {
-      padding: 20,
-    },
-    warningContainer: {
-      backgroundColor: isDark ? 'rgba(255, 184, 77, 0.1)' : '#FFF8E1',
-      borderRadius: 12,
-      padding: 15,
-      marginBottom: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    warningText: {
-      color: theme.primary,
-      fontSize: 14,
-      flex: 1,
-      marginLeft: 10,
-      fontWeight: '500',
-    },
-    preferenceContainer: {
-      marginBottom: 25,
-    },
-    preferenceTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.text,
-      marginBottom: 12,
-    },
-    preferenceButtons: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    preferenceButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: isDark ? theme.background : '#F5F5F5',
-      borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 8,
-      gap: 6,
-    },
-    preferenceButtonSelected: {
-      backgroundColor: theme.primary,
-    },
-    preferenceButtonText: {
-      fontSize: 13,
-      fontWeight: '500',
-      color: theme.textSecondary,
-    },
-    preferenceButtonTextSelected: {
-      color: isDark ? '#121212' : '#FFFFFF',
+      paddingHorizontal: 20,
     },
     optionsContainer: {
       marginBottom: 20,
     },
     optionCard: {
-      backgroundColor: isDark ? theme.background : '#F8F9FA',
-      borderRadius: 15,
-      padding: 15,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+      borderRadius: 16,
+      padding: 16,
       marginBottom: 12,
-      borderWidth: 2,
-      borderColor: 'transparent',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
     },
     optionCardSelected: {
       borderColor: theme.primary,
-      backgroundColor: isDark ? 'rgba(255, 184, 77, 0.05)' : 'rgba(255, 184, 77, 0.1)',
+      backgroundColor: isDark ? 'rgba(255, 184, 77, 0.08)' : 'rgba(255, 184, 77, 0.08)',
+      borderWidth: 2,
     },
     optionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 10,
+      marginBottom: 8,
     },
-    optionTitleContainer: {
+    routeTypeContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
     },
-    optionTitle: {
+    routeTypeBadge: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    routeTypeLabel: {
       fontSize: 16,
       fontWeight: '600',
       color: theme.text,
@@ -466,118 +316,119 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       alignItems: 'flex-end',
     },
     totalTime: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '700',
       color: theme.text,
+      marginBottom: 2,
     },
     totalFare: {
       fontSize: 16,
       fontWeight: '600',
       color: theme.primary,
     },
-    optionStats: {
-      flexDirection: 'row',
-      gap: 20,
+    transfersInfo: {
+      marginBottom: 4,
     },
-    statItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    statText: {
+    transfersText: {
       fontSize: 14,
       color: theme.textSecondary,
     },
     legsList: {
-      marginTop: 15,
-      paddingTop: 15,
+      marginTop: 16,
+      paddingTop: 16,
       borderTopWidth: 1,
-      borderTopColor: theme.border,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
     },
     legContainer: {
-      marginBottom: 15,
-    },
-    legHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-    },
-    legIndicator: {
-      alignItems: 'center',
-      marginRight: 12,
-      paddingTop: 2,
-    },
-    startDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: theme.primary,
       marginBottom: 8,
     },
-    legLine: {
+    legContent: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      height: 30,
+      gap: 12,
     },
-    legLineDot: {
-      width: 2,
-      height: 3,
-      backgroundColor: theme.textSecondary,
-      borderRadius: 1,
+    legNumber: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    legInfo: {
+    legNumberText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: isDark ? '#121212' : '#FFFFFF',
+    },
+    legDetails: {
       flex: 1,
     },
-    legTitle: {
+    legRoute: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '500',
       color: theme.text,
       marginBottom: 4,
     },
-    legRoute: {
-      fontSize: 13,
-      color: theme.textSecondary,
-      marginBottom: 6,
-    },
-    legDetails: {
+    legMeta: {
       flexDirection: 'row',
-      gap: 15,
+      alignItems: 'center',
+      gap: 8,
     },
     legTime: {
+      fontSize: 13,
+      color: theme.textSecondary,
+    },
+    legDot: {
       fontSize: 12,
       color: theme.textSecondary,
     },
     legFare: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
       color: theme.primary,
     },
-    transferInfo: {
-      flexDirection: 'row',
+    transferIndicator: {
       alignItems: 'center',
-      marginTop: 10,
-      marginLeft: 18,
-      gap: 6,
+      paddingVertical: 8,
     },
-    transferText: {
-      fontSize: 12,
-      color: theme.primary,
-      fontStyle: 'italic',
+    transferLine: {
+      width: 2,
+      height: 16,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+      marginBottom: 4,
+    },
+    transferDot: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(255, 184, 77, 0.2)' : 'rgba(255, 184, 77, 0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     buttonContainer: {
       paddingHorizontal: 20,
       paddingBottom: 30,
       paddingTop: 10,
+      backgroundColor: theme.surface,
     },
     confirmButton: {
       backgroundColor: theme.primary,
       borderRadius: 25,
       paddingVertical: 16,
       alignItems: 'center',
+      shadowColor: theme.primary,
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
     },
     confirmButtonText: {
       color: isDark ? '#121212' : '#FFFFFF',
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '700',
     },
   });
 
@@ -598,32 +449,19 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
           ]}
           {...panResponder.panHandlers}
         >
-          {/* X button in top right corner */}
           <TouchableOpacity style={dynamicStyles.closeButton} onPress={onCancel}>
-            <Icon name="close" size={24} color="#000000" />
+            <Icon name="close" size={20} color={theme.textSecondary} />
           </TouchableOpacity>
           
           <View style={dynamicStyles.header}>
             <View style={dynamicStyles.dragHandle} />
-            <Text style={dynamicStyles.headerTitle}>Multi-Leg Journey</Text>
+            <Text style={dynamicStyles.headerTitle}>Multiple Rides Needed</Text>
             <Text style={dynamicStyles.headerSubtitle}>
-              {hasDirectRoute && availableTaxis === 0 
-                ? 'No taxis available for direct route. Choose your journey option below.'
-                : 'No direct route available. Choose your journey option below.'
-              }
+              No direct route available. Choose your preferred journey below.
             </Text>
           </View>
 
           <ScrollView style={dynamicStyles.contentContainer} showsVerticalScrollIndicator={false}>
-            <View style={dynamicStyles.warningContainer}>
-              <Icon name="information-circle" size={20} color={theme.primary} />
-              <Text style={dynamicStyles.warningText}>
-                {getWarningMessage()}
-              </Text>
-            </View>
-
-            {renderPreferenceSelector()}
-
             <View style={dynamicStyles.optionsContainer}>
               {options.map((option, index) => renderJourneyOption(option, index))}
             </View>
@@ -631,7 +469,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 
           <View style={dynamicStyles.buttonContainer}>
             <TouchableOpacity style={dynamicStyles.confirmButton} onPress={handleConfirm}>
-              <Text style={dynamicStyles.confirmButtonText}>Start Journey</Text>
+              <Text style={dynamicStyles.confirmButtonText}>Book Journey</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

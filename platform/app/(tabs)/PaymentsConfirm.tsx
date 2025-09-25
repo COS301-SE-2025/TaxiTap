@@ -55,26 +55,71 @@ export default function PaymentConfirmation() {
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
 
-        setTimeout(() => {
+        setTimeout(async () => {
           if (result.canProgressToNextLeg && result.nextLeg) {
-            // Navigate to next leg taxi selection
-            router.push({
-              pathname: '/TaxiInformation',
-              params: {
-                destinationName: result.nextLeg.toAddress,
-                destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
-                destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
-                currentName: result.nextLeg.fromAddress,
-                currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
-                currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
-                routeId: result.nextLeg.routeId || '',
-                estimatedFare: result.nextLeg.estimatedFare.toString(),
+            // Find available drivers for the next leg's route
+            try {
+              const nextLegDriverSearch = await api.functions.routes.enhancedTaxiMatching.findAvailableDriversForLeg({
+                legIndex: result.nextLeg.legIndex,
                 journeyId: journeyId as string,
-                isMultiLeg: 'true',
-                currentLegIndex: result.nextLeg.legIndex.toString(),
-                totalLegs: totalLegs as string,
-              }
-            });
+                originLat: result.nextLeg.fromCoordinates.latitude,
+                originLng: result.nextLeg.fromCoordinates.longitude,
+                destinationLat: result.nextLeg.toCoordinates.latitude,
+                destinationLng: result.nextLeg.toCoordinates.longitude,
+                routeId: result.nextLeg.routeId,
+                maxOriginDistance: 2.0,
+                maxTaxiDistance: 3.0,
+                maxResults: 10
+              });
+
+              // Create route match data for next leg with available drivers
+              const nextLegRouteMatchData = {
+                availableTaxis: nextLegDriverSearch.availableTaxis || [],
+                matchingRoutes: [],
+                success: nextLegDriverSearch.success,
+                message: nextLegDriverSearch.message || "Next leg drivers available"
+              };
+
+              // Navigate to next leg taxi selection with driver data
+              router.push({
+                pathname: '/TaxiInformation',
+                params: {
+                  destinationName: result.nextLeg.toAddress,
+                  destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
+                  destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
+                  currentName: result.nextLeg.fromAddress,
+                  currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
+                  currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
+                  routeId: result.nextLeg.routeId || '',
+                  estimatedFare: result.nextLeg.estimatedFare.toString(),
+                  journeyId: journeyId as string,
+                  isMultiLeg: 'true',
+                  currentLegIndex: result.nextLeg.legIndex.toString(),
+                  totalLegs: totalLegs as string,
+                  routeMatchData: JSON.stringify(nextLegRouteMatchData)
+                }
+              });
+            } catch (error) {
+              console.error('❌ Error finding drivers for next leg:', error);
+              // Fallback navigation without driver data
+              router.push({
+                pathname: '/TaxiInformation',
+                params: {
+                  destinationName: result.nextLeg.toAddress,
+                  destinationLat: result.nextLeg.toCoordinates.latitude.toString(),
+                  destinationLng: result.nextLeg.toCoordinates.longitude.toString(),
+                  currentName: result.nextLeg.fromAddress,
+                  currentLat: result.nextLeg.fromCoordinates.latitude.toString(),
+                  currentLng: result.nextLeg.fromCoordinates.longitude.toString(),
+                  routeId: result.nextLeg.routeId || '',
+                  estimatedFare: result.nextLeg.estimatedFare.toString(),
+                  journeyId: journeyId as string,
+                  isMultiLeg: 'true',
+                  currentLegIndex: result.nextLeg.legIndex.toString(),
+                  totalLegs: totalLegs as string,
+                }
+              });
+            }
           } else if (result.canProgressToNextLeg) {
             // Fallback if next leg details not available
             router.push('/HomeScreen');

@@ -967,6 +967,212 @@ export const analyzeMultiLegJourneyOptions = query({
 });
 
 /**
+ * Find available drivers for a specific leg of a multi-leg journey
+ */
+export const findAvailableDriversForLeg = query({
+  args: {
+    legIndex: v.number(),
+    journeyId: v.string(),
+    originLat: v.number(),
+    originLng: v.number(),
+    destinationLat: v.number(),
+    destinationLng: v.number(),
+    routeId: v.optional(v.string()),
+    maxOriginDistance: v.optional(v.number()),
+    maxTaxiDistance: v.optional(v.number()),
+    maxResults: v.optional(v.number())
+  },
+  handler: findAvailableDriversForLegHandler
+});
+
+/**
+ * Handler for finding available drivers for a specific leg
+ */
+async function findAvailableDriversForLegHandler(ctx: QueryCtx, args: {
+  legIndex: number;
+  journeyId: string;
+  originLat: number;
+  originLng: number;
+  destinationLat: number;
+  destinationLng: number;
+  routeId?: string;
+  maxOriginDistance?: number;
+  maxTaxiDistance?: number;
+  maxResults?: number;
+}): Promise<TaxiSearchResult> {
+  try {
+    console.log(`🔍 Finding drivers for leg ${args.legIndex} of journey ${args.journeyId}`, {
+      routeId: args.routeId,
+      origin: { lat: args.originLat, lng: args.originLng },
+      destination: { lat: args.destinationLat, lng: args.destinationLng }
+    });
+
+    // If we have a specific route ID, find drivers for that route
+    if (args.routeId) {
+      const route = await ctx.db
+        .query("routes")
+        .withIndex("by_route_id", (q: any) => q.eq("routeId", args.routeId))
+        .unique();
+
+      if (route) {
+        console.log(`📍 Found route ${route.name} for leg ${args.legIndex}`);
+        
+        // Find taxis on this specific route
+        const availableTaxis = await ctx.db
+          .query("taxis")
+          .withIndex("by_is_available", (q: any) => q.eq("isAvailable", true))
+          .collect();
+
+        const routeDrivers: AvailableTaxi[] = [];
+        for (const taxi of availableTaxis) {
+          const driver = await ctx.db.get(taxi.driverId);
+          if (driver && (driver.activeRoute === route._id || driver.assignedRoute === route._id)) {
+            // Get user information from taxiTap_users table
+            const user = await ctx.db.get(driver.userId);
+            if (!user) continue;
+
+            // For now, use default location since taxis don't have currentLocation in schema
+            // In a real app, this would come from a separate location tracking system
+            const defaultLat = args.originLat + (Math.random() - 0.5) * 0.01; // Random nearby location
+            const defaultLng = args.originLng + (Math.random() - 0.5) * 0.01;
+            
+            const distanceToOrigin = calculateDistance(
+              defaultLat,
+              defaultLng,
+              args.originLat,
+              args.originLng
+            );
+
+            if (distanceToOrigin <= (args.maxTaxiDistance || 3.0) * 1000) {
+              routeDrivers.push({
+                driverId: driver._id,
+                userId: driver.userId,
+                name: user.name,
+                phoneNumber: user.email, // Using email as phone number fallback
+                vehicleRegistration: taxi.licensePlate,
+                vehicleModel: taxi.model,
+                vehicleColor: taxi.color,
+                vehicleYear: taxi.year,
+                taxiAssociation: route.taxiAssociation,
+                currentLocation: {
+                  latitude: defaultLat,
+                  longitude: defaultLng,
+                  lastUpdated: Date.now()
+                },
+                distanceToOrigin: distanceToOrigin / 1000, // Convert to km
+                isAvailable: taxi.isAvailable,
+                numberOfRidesCompleted: driver.numberOfRidesCompleted,
+                averageRating: driver.averageRating || 0,
+                routeInfo: {
+                  routeId: route.routeId,
+                  routeName: route.name,
+                  taxiAssociation: route.taxiAssociation,
+                  fare: route.fare,
+                  estimatedDuration: route.estimatedDuration || 1800,
+                  startProximity: 0,
+                  endProximity: 0,
+                  totalScore: 100,
+                  passengerDisplacement: 0,
+                  calculatedFare: route.fare || 20,
+                  closestStartStop: null,
+                  closestEndStop: null
+                }
+              });
+            }
+          }
+        }
+
+        // Sort by distance and limit results
+        routeDrivers.sort((a, b) => a.distanceToOrigin - b.distanceToOrigin);
+        const limitedDrivers = routeDrivers.slice(0, args.maxResults || 10);
+
+        console.log(`✅ Found ${limitedDrivers.length} drivers for route ${route.name}`);
+
+        return {
+          success: true,
+          availableTaxis: limitedDrivers,
+          matchingRoutes: [{
+            routeId: route.routeId,
+            routeName: route.name,
+            taxiAssociation: route.taxiAssociation,
+            fare: route.fare,
+            availableDrivers: limitedDrivers.length,
+            startProximity: 0,
+            endProximity: 0,
+            totalScore: 100,
+            passengerDisplacement: 0,
+            calculatedFare: route.fare || 20
+          }],
+          totalTaxisFound: limitedDrivers.length,
+          totalRoutesChecked: 1,
+          validRoutesFound: 1,
+          message: `Found ${limitedDrivers.length} drivers for leg ${args.legIndex}`,
+          searchCriteria: {
+            origin: { latitude: args.originLat, longitude: args.originLng },
+            destination: { latitude: args.destinationLat, longitude: args.destinationLng },
+            maxOriginDistance: args.maxOriginDistance || 2.0,
+            maxDestinationDistance: 2.0,
+            maxTaxiDistance: args.maxTaxiDistance || 3.0,
+            maxResults: args.maxResults || 10
+          },
+          radiusInfo: {
+            currentRadius: args.maxTaxiDistance || 3.0,
+            initialRadius: 1.0,
+            maxRadius: 5.0,
+            searchStartTime: Date.now(),
+            elapsedTime: 0,
+            nextExpansionTime: null,
+            expansionsRemaining: 3
+          }
+        };
+      }
+    }
+
+    // Fallback: use general taxi search if no specific route found
+    console.log(`⚠️ No specific route found for leg ${args.legIndex}, using general search`);
+    return await findAvailableTaxisForJourneyHandler(ctx, {
+      originLat: args.originLat,
+      originLng: args.originLng,
+      destinationLat: args.destinationLat,
+      destinationLng: args.destinationLng,
+      maxOriginDistance: args.maxOriginDistance || 2.0,
+      maxDestinationDistance: 2.0,
+      maxTaxiDistance: args.maxTaxiDistance || 3.0,
+      maxResults: args.maxResults || 10
+    });
+
+  } catch (error) {
+    console.error(`❌ Error finding drivers for leg ${args.legIndex}:`, error);
+    return {
+      success: false,
+      availableTaxis: [],
+      matchingRoutes: [],
+      totalTaxisFound: 0,
+      totalRoutesChecked: 0,
+      validRoutesFound: 0,
+      message: `Driver search failed for leg ${args.legIndex}: ${error}`,
+      searchCriteria: {
+        origin: { latitude: args.originLat, longitude: args.originLng },
+        destination: { latitude: args.destinationLat, longitude: args.destinationLng },
+        maxOriginDistance: args.maxOriginDistance || 2.0,
+        maxDestinationDistance: 2.0,
+        maxTaxiDistance: args.maxTaxiDistance || 3.0,
+        maxResults: args.maxResults || 10
+      },
+      radiusInfo: {
+        currentRadius: 0,
+        initialRadius: 0,
+        maxRadius: 0,
+        searchStartTime: Date.now(),
+        elapsedTime: 0,
+        nextExpansionTime: null,
+        expansionsRemaining: 0
+      }
+    };
+  }
+}
+
+/**
  * Find available drivers for first leg only (ignoring destination proximity)
  */
 async function findFirstLegAvailableDrivers(ctx: QueryCtx, {
