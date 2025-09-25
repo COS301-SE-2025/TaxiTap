@@ -2243,12 +2243,14 @@ export default function HomeScreen() {
         startMultiLegJourney(journey);
 
         // Show success message and navigate to first leg taxi selection
-        Alert.alert(
-          'Multi-Leg Journey Started',
-          `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
-          [
+        showGlobalAlert({
+          title: 'Multi-Leg Journey Started',
+          message: `Starting ${selectedOption.totalLegs}-leg journey. Total estimated time: ${Math.round(selectedOption.estimatedTotalDuration / 60)} minutes, Total fare: R${selectedOption.estimatedTotalFare.toFixed(2)}`,
+          type: 'success',
+          duration: 0,
+          actions: [
             {
-              text: 'OK',
+              label: 'OK',
               onPress: () => {
                 // Navigate to TaxiInformation for first leg
                 const firstLeg = selectedOption.legs[0];
@@ -2279,10 +2281,13 @@ export default function HomeScreen() {
                     routeMatchData: JSON.stringify(firstLegRouteMatchData)
                   }
                 });
-              }
-            }
-          ]
-        );
+              },
+              style: 'default',
+            },
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
       } else {
         throw new Error(journeyResult.error || 'Failed to create multi-leg journey');
       }
