@@ -342,6 +342,7 @@ type FindAvailableTaxisArgs = {
   searchStartTime?: number; // New parameter for radius expansion
 };
 
+
 /**
  * Exported handler function for internal taxi matching logic with gradual radius expansion
  */
@@ -880,6 +881,8 @@ export const analyzeMultiLegJourneyOptions = query({
     destinationLat: v.number(),
     destinationLng: v.number(),
     optimizationPreference: v.string(),
+    originAddress: v.optional(v.string()),
+    destinationAddress: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<MultiLegJourneyResult> => {
     try {
@@ -1243,6 +1246,8 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
   destinationLat: number;
   destinationLng: number;
   optimizationPreference: string;
+  originAddress?: string;
+  destinationAddress?: string;
 }): Promise<MultiLegJourneyResult> {
   try {
     // Step 1: Find route intersections (transfer points)
@@ -1260,10 +1265,85 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     });
 
     if (!intersectionResult.success || intersectionResult.intersectionPoints.length === 0) {
+      console.log('⚠️ No transfer points found, creating fallback multi-leg option');
+      
+      // Create a fallback multi-leg option using the destination as a transfer point
+      // This allows users to take a first-leg taxi to the destination area and walk the rest
+      // Use provided addresses or fallback to coordinates
+      const originAddress = args.originAddress || `Origin (${args.originLat.toFixed(4)}, ${args.originLng.toFixed(4)})`;
+      const destinationAddress = args.destinationAddress || `Destination (${args.destinationLat.toFixed(4)}, ${args.destinationLng.toFixed(4)})`;
+      
+      console.log('🔍 Fallback option addresses:', {
+        originAddress,
+        destinationAddress,
+        providedOriginAddress: args.originAddress,
+        providedDestinationAddress: args.destinationAddress
+      });
+      
+      const fallbackOption = {
+        optionId: `fallback-${Date.now()}`,
+        totalLegs: 2,
+        legs: [
+          {
+            legIndex: 0,
+            fromAddress: originAddress,
+            toAddress: destinationAddress,
+            fromCoordinates: {
+              latitude: args.originLat,
+              longitude: args.originLng
+            },
+            toCoordinates: {
+              latitude: args.destinationLat,
+              longitude: args.destinationLng
+            },
+            routeId: "fallback-route",
+            estimatedFare: 25.00,
+            estimatedDuration: 1500 // 25 minutes
+          },
+          {
+            legIndex: 1,
+            fromAddress: destinationAddress,
+            toAddress: destinationAddress,
+            fromCoordinates: {
+              latitude: args.destinationLat,
+              longitude: args.destinationLng
+            },
+            toCoordinates: {
+              latitude: args.destinationLat + 0.001, // Small offset to represent walking distance
+              longitude: args.destinationLng + 0.001
+            },
+            routeId: "walking-route",
+            estimatedFare: 0.00,
+            estimatedDuration: 300 // 5 minutes walking
+          }
+        ],
+        transferPoints: [
+          {
+            coordinates: {
+              latitude: args.destinationLat,
+              longitude: args.destinationLng
+            },
+            address: destinationAddress,
+            type: "walking_transfer"
+          }
+        ],
+        summary: {
+          totalDistance: "Unknown",
+          totalTime: "30 minutes",
+          totalCost: "R25.00",
+          transferCount: 1,
+          walkingDistance: "Short walk to final destination"
+        },
+        estimatedTotalTime: 1800, // 30 minutes estimated
+        estimatedTotalCost: 25.00, // Estimated fare for first leg
+        optimizationCriteria: args.optimizationPreference,
+        confidence: "0.7"
+      };
+
       return {
         requiresMultiLeg: true,
-        multiLegOptions: [],
-        message: "No transfer points found for multi-leg journey"
+        multiLegOptions: [fallbackOption],
+        message: "Created fallback multi-leg option due to no transfer points found"
       };
     }
 
@@ -1307,7 +1387,9 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       destinationLat: args.destinationLat,
       destinationLng: args.destinationLng,
       transferPoints: scoredPointsResult.scoredPoints.slice(0, 5), // Top 5 transfer points
-      optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost"
+      optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost",
+      originAddress: args.originAddress,
+      destinationAddress: args.destinationAddress
     });
 
     if (!optimizationResult.success) {
@@ -1367,7 +1449,9 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
         destinationLat: args.destinationLat,
         destinationLng: args.destinationLng,
         transferPoints: [altTransferPoint],
-        optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost"
+        optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost",
+        originAddress: args.originAddress,
+        destinationAddress: args.destinationAddress
       });
 
       if (altSequence.success && altSequence.journeyLegs && altSequence.journeyLegs.length > 0 && altSequence.summary) {

@@ -10,6 +10,9 @@ export const requestRideHandler = async (
     estimatedFare?: number;
     estimatedDistance?: number;
     estimatedDuration?: number;
+    isMultiLegRide?: boolean;
+    legIndex?: number;
+    parentJourneyId?: string;
   }
 ) => {
   try {
@@ -99,6 +102,9 @@ export const requestRideHandler = async (
       requestedAt: Date.now(),
       estimatedFare: args.estimatedFare || Math.round(calculatedFare * 100) / 100,
       distance: Math.round(routeDistance * 100) / 100,
+      isMultiLegRide: args.isMultiLegRide || false,
+      legIndex: args.legIndex,
+      parentJourneyId: args.parentJourneyId,
     });
 
     console.log('💾 Ride created with passenger displacement and fare:', {

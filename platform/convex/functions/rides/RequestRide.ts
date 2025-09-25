@@ -23,6 +23,9 @@ export const requestRide = mutation({
     estimatedFare: v.optional(v.number()),
     estimatedDistance: v.optional(v.number()),
     estimatedDuration: v.optional(v.number()),
+    isMultiLegRide: v.optional(v.boolean()),
+    legIndex: v.optional(v.number()),
+    parentJourneyId: v.optional(v.string()),
   },
   handler: requestRideHandler,
 });

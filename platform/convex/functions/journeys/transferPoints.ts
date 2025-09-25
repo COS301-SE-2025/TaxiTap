@@ -11,6 +11,7 @@
 import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 
+
 // ============================================================================
 // TRANSFER POINT ANALYSIS
 // ============================================================================
@@ -282,6 +283,8 @@ export const optimizeTransferSequence = internalQuery({
       v.literal("most_reliable"),
       v.literal("lowest_cost")
     ),
+    originAddress: v.optional(v.string()),
+    destinationAddress: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { 
@@ -315,7 +318,9 @@ export const optimizeTransferSequence = internalQuery({
           ctx,
           { lat: originLat, lng: originLng },
           { lat: destinationLat, lng: destinationLng },
-          transferPoint
+          transferPoint,
+          args.originAddress,
+          args.destinationAddress
         );
         
         return {
@@ -332,7 +337,9 @@ export const optimizeTransferSequence = internalQuery({
         { lat: originLat, lng: originLng },
         { lat: destinationLat, lng: destinationLng },
         transferPoints,
-        optimizationCriteria
+        optimizationCriteria,
+        args.originAddress,
+        args.destinationAddress
       );
       
       return {
@@ -615,7 +622,9 @@ async function createTwoLegSequence(
   ctx: any,
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
-  transferPoint: any
+  transferPoint: any,
+  originAddress?: string,
+  destinationAddress?: string
 ) {
   // Get route data for accurate fare and duration calculations
   const fromRoute = await ctx.db.get(transferPoint.fromRoute.id);
@@ -626,23 +635,32 @@ async function createTwoLegSequence(
   const leg1Cost = calculateLegCost(origin, transferPoint.coordinates, fromRoute);
   const leg2Cost = calculateLegCost(transferPoint.coordinates, destination, toRoute);
   
+  // Use provided addresses or fallback to coordinates
+  const originAddr = originAddress || `Origin (${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)})`;
+  const destinationAddr = destinationAddress || `Destination (${destination.lat.toFixed(4)}, ${destination.lng.toFixed(4)})`;
+  const transferAddr = `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
+  
   return {
     legs: [
       {
         legIndex: 0,
-        from: origin,
-        to: transferPoint.coordinates,
+        fromAddress: originAddr,
+        toAddress: transferAddr,
+        fromCoordinates: { latitude: origin.lat, longitude: origin.lng },
+        toCoordinates: { latitude: transferPoint.coordinates.latitude, longitude: transferPoint.coordinates.longitude },
         routeId: transferPoint.fromRoute.id,
         estimatedDuration: leg1Duration,
-        estimatedCost: leg1Cost,
+        estimatedFare: leg1Cost,
       },
       {
         legIndex: 1,
-        from: transferPoint.coordinates,
-        to: destination,
+        fromAddress: transferAddr,
+        toAddress: destinationAddr,
+        fromCoordinates: { latitude: transferPoint.coordinates.latitude, longitude: transferPoint.coordinates.longitude },
+        toCoordinates: { latitude: destination.lat, longitude: destination.lng },
         routeId: transferPoint.toRoute.id,
         estimatedDuration: leg2Duration,
-        estimatedCost: leg2Cost,
+        estimatedFare: leg2Cost,
       },
     ],
     summary: {
@@ -661,11 +679,13 @@ async function findOptimalTransferCombination(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   transferPoints: any[],
-  optimizationCriteria: string
+  optimizationCriteria: string,
+  originAddress?: string,
+  destinationAddress?: string
 ) {
   // Return the best single transfer point
   const bestPoint = transferPoints[0]; // Assume pre-sorted by score
-  const sequence = await createTwoLegSequence(ctx, origin, destination, bestPoint);
+  const sequence = await createTwoLegSequence(ctx, origin, destination, bestPoint, originAddress, destinationAddress);
   
   return {
     sequence: [bestPoint],
