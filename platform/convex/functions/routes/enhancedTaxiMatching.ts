@@ -353,8 +353,8 @@ export const _findAvailableTaxisForJourneyHandler = async (
     originLng,
     destinationLat,
     destinationLng,
-    maxOriginDistance = 1.0,
-    maxDestinationDistance = 1.0,
+    maxOriginDistance = 3.0,
+    maxDestinationDistance = 3.0,
     maxTaxiDistance,
     maxResults = 10,
     searchStartTime
@@ -1530,7 +1530,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     if (scoredPointsResult.scoredPoints && scoredPointsResult.scoredPoints.length > 0) {
       console.log('🔍 Scored transfer points:', scoredPointsResult.scoredPoints.map((point: any, index: number) => ({
         pointIndex: index,
-        score: point.score,
+        score: point.scores?.total || point.score,
         coordinates: point.coordinates,
         fromRoute: point.fromRoute,
         toRoute: point.toRoute

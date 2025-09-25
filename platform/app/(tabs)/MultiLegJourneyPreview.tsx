@@ -69,7 +69,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dx) < 50;
     },
     onPanResponderGrant: () => {
-      translateY.setOffset(translateY._value);
+      translateY.setOffset((translateY as any)._value);
       translateY.setValue(0);
     },
     onPanResponderMove: (evt, gestureState) => {

@@ -1158,15 +1158,51 @@ export default function HomeScreen() {
         }
 
         if (journeyAnalysisResult.firstLegDrivers && journeyAnalysisResult.firstLegDrivers.length > 0) {
-          console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
+          console.log('🚖 Found first-leg drivers, checking if they are actually direct route drivers');
 
-          // Show first-leg drivers as available taxis for immediate booking
-          setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
-          setIsSearchingTaxis(false);
-          setSearchStartTime(null);
+          // Debug: Log route info for all first-leg drivers
+          journeyAnalysisResult.firstLegDrivers.forEach((taxi, index) => {
+            console.log(`🔍 First-leg driver ${index + 1} route info:`, {
+              name: taxi.name,
+              routeId: taxi.routeInfo?.routeId,
+              routeName: taxi.routeInfo?.routeName,
+              startProximity: taxi.routeInfo?.startProximity,
+              endProximity: taxi.routeInfo?.endProximity,
+              hasRouteInfo: !!taxi.routeInfo
+            });
+          });
 
-          // Show multi-leg preview when we have first-leg drivers (even if no perfect multi-leg options)
-          if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
+          // Check if any of the first-leg drivers are actually on direct routes
+          // A direct route means the taxi's route serves BOTH origin and destination within acceptable distance
+          const hasDirectRouteTaxis = journeyAnalysisResult.firstLegDrivers.some(taxi =>
+            taxi.routeInfo &&
+            taxi.routeInfo.routeId &&
+            taxi.routeInfo.endProximity !== undefined &&
+            taxi.routeInfo.endProximity <= 3.0 && // Destination is within 3km of route
+            taxi.routeInfo.startProximity !== undefined &&
+            taxi.routeInfo.startProximity <= 3.0 // Origin is within 3km of route
+          );
+
+          if (hasDirectRouteTaxis) {
+            console.log('✅ First-leg drivers are actually direct route taxis, treating as direct route');
+            setHasDirectRoute(true);
+            setDirectRouteAvailableTaxis(journeyAnalysisResult.firstLegDrivers.length);
+            setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
+            setIsSearchingTaxis(false);
+            setSearchStartTime(null);
+            // Don't show multi-leg preview for direct routes
+            setShowMultiLegPreview(false);
+            setMultiLegOptions(null);
+          } else {
+            console.log('🚖 Found first-leg drivers, showing available drivers for immediate booking');
+
+            // Show first-leg drivers as available taxis for immediate booking
+            setAvailableTaxis(journeyAnalysisResult.firstLegDrivers);
+            setIsSearchingTaxis(false);
+            setSearchStartTime(null);
+
+            // Show multi-leg preview when we have first-leg drivers (even if no perfect multi-leg options)
+            if (journeyAnalysisResult.multiLegOptions && journeyAnalysisResult.multiLegOptions.length > 0) {
             console.log('📋 Showing multi-leg journey preview (no direct route)', {
               optionsCount: journeyAnalysisResult.multiLegOptions.length,
               options: journeyAnalysisResult.multiLegOptions
@@ -1223,6 +1259,13 @@ export default function HomeScreen() {
             
             setShowMultiLegPreview(true);
             setMultiLegOptions(fallbackMultiLegOptions as any);
+            }
+
+            // Clear any existing expansion timer
+            if (radiusExpansionTimer) {
+              clearTimeout(radiusExpansionTimer);
+              setRadiusExpansionTimer(null);
+            }
           }
 
           // Clear any existing expansion timer
@@ -2257,7 +2300,7 @@ export default function HomeScreen() {
                 
                 // Create route match data for first leg with available drivers
                 const firstLegRouteMatchData = {
-                  availableTaxis: journeyAnalysisResult.firstLegDrivers || [],
+                  availableTaxis: journeyAnalysisResult?.firstLegDrivers || [],
                   matchingRoutes: [],
                   success: true,
                   message: "First leg drivers available"

@@ -717,8 +717,8 @@ async function createTwoLegSequence(
   
   // Find the actual route stops for each leg
   const leg1FromStop = findClosestRouteStop(fromRoute, origin);
-  const leg1ToStop = transferPoint.route1Stop;
-  const leg2FromStop = transferPoint.route2Stop;
+  const leg1ToStop = transferPoint.route1Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
+  const leg2FromStop = transferPoint.route2Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
   const leg2ToStop = findClosestRouteStop(toRoute, destination);
 
   return {
