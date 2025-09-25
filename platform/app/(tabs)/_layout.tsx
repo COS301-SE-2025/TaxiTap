@@ -377,6 +377,37 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead, currentLocation, destination, showGlobalSuccess]);
 
+  // Journey started notification handler (for multi-leg journeys)
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+
+    const journeyStarted = notifications.find(
+      n => n.type === 'journey_started' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
+
+    if (journeyStarted) {
+      processedNotificationsRef.current.add(journeyStarted._id); // Mark as processed
+
+      showGlobalAlert({
+        title: journeyStarted.title,
+        message: journeyStarted.message,
+        type: 'success',
+        duration: 0,
+        actions: [
+          {
+            label: t('notifications:ok'),
+            onPress: () => markAsRead(journeyStarted._id),
+            style: 'default',
+          },
+        ],
+        position: 'top',
+        animation: 'slide-down',
+      });
+    }
+  }, [notifications, markAsRead, showGlobalAlert, t]);
+
   // Ride cancelled notification handler
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;

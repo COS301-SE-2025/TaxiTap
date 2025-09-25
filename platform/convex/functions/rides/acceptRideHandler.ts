@@ -73,6 +73,33 @@ export const acceptRideHandler = async (
     }
   );
 
+  // If this is a multi-leg ride, send journey started notification
+  if (ride.isMultiLegRide && ride.parentJourneyId && ride.legIndex === 0) {
+    // Get journey information
+    const journey = await ctx.db
+      .query("multiLegJourneys")
+      .withIndex("by_journey_id", (q: any) => q.eq("journeyId", ride.parentJourneyId))
+      .first();
+
+    if (journey) {
+      // Send journey started notification
+      await ctx.runMutation(
+        require("../../_generated/api").internal.functions.notifications.journeyNotifications.sendJourneyProgressNotification,
+        {
+          journeyId: ride.parentJourneyId,
+          passengerId: ride.passengerId,
+          progressType: "journey_started",
+          legIndex: 0,
+          totalLegs: journey.totalLegs,
+          metadata: {
+            firstLegRideId: args.rideId,
+            driverId: args.driverId
+          }
+        }
+      );
+    }
+  }
+
   return {
     _id: updatedRideId,
     message: "Ride accepted successfully",
