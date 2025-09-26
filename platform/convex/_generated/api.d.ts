@@ -34,6 +34,7 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
+import type * as functions_journeys_multiLegJourneyFinder from "../functions/journeys/multiLegJourneyFinder.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -147,6 +148,7 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
+  "functions/journeys/multiLegJourneyFinder": typeof functions_journeys_multiLegJourneyFinder;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
