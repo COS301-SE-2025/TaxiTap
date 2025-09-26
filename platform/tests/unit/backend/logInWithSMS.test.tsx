@@ -19,7 +19,6 @@ describe("signUpSMSHandler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Fully cast db as 'any' to suppress TS complaints
     ctx = {
       db: {
         query: jest.fn(),
@@ -47,11 +46,12 @@ describe("signUpSMSHandler", () => {
       name: "Test User",
       password: "Password123!",
       accountType: "passenger" as const,
+      deviceId: "device1",
     };
 
     const result = await signUpSMSHandler(ctx, args);
 
-    expect(result).toEqual({ success: true, userId: "newUserId" });
+    expect(result).toEqual({ success: true, userId: "newUserId", reason: null });
     expect(ctx.db.insert).toHaveBeenCalledTimes(3);
   });
 
@@ -74,15 +74,16 @@ describe("signUpSMSHandler", () => {
       name: "Driver User",
       password: "DriverPass!23",
       accountType: "driver" as const,
+      deviceId: "device2",
     };
 
     const result = await signUpSMSHandler(ctx, args);
 
-    expect(result).toEqual({ success: true, userId: "driverUserId" });
+    expect(result).toEqual({ success: true, userId: "driverUserId", reason: null });
     expect(ctx.db.insert).toHaveBeenCalledTimes(3);
   });
 
-  it("throws if phone number already exists", async () => {
+  it("returns failure if phone number already exists", async () => {
     const firstMock = jest.fn().mockResolvedValue({ _id: "existingUserId" });
     (ctx.db.query as any).mockReturnValue({
       withIndex: jest.fn().mockReturnValue({
@@ -95,12 +96,18 @@ describe("signUpSMSHandler", () => {
       name: "Someone",
       password: "pass123",
       accountType: "passenger" as const,
+      deviceId: "device3",
     };
 
-    await expect(signUpSMSHandler(ctx, args)).rejects.toThrow("Phone number already exists");
+    const result = await signUpSMSHandler(ctx, args);
+    expect(result).toEqual({
+      success: false,
+      reason: "Phone number already exists",
+      userId: null,
+    });
   });
 
-  it("handles race condition on insert", async () => {
+  it("returns failure on race condition during insert", async () => {
     const firstMock = jest
       .fn()
       .mockResolvedValueOnce(null)
@@ -119,12 +126,18 @@ describe("signUpSMSHandler", () => {
       name: "Race User",
       password: "racePass!",
       accountType: "passenger" as const,
+      deviceId: "device4",
     };
 
-    await expect(signUpSMSHandler(ctx, args)).rejects.toThrow("Phone number already exists (race condition)");
+    const result = await signUpSMSHandler(ctx, args);
+    expect(result).toEqual({
+      success: false,
+      reason: "Signup failed",
+      userId: null,
+    });
   });
 
-  it("throws on unknown error", async () => {
+  it("returns failure on unknown DB error", async () => {
     const firstMock = jest.fn().mockResolvedValue(null);
     (ctx.db.query as any).mockReturnValue({
       withIndex: jest.fn().mockReturnValue({
@@ -139,8 +152,14 @@ describe("signUpSMSHandler", () => {
       name: "Error User",
       password: "errorPass",
       accountType: "passenger" as const,
+      deviceId: "device5",
     };
 
-    await expect(signUpSMSHandler(ctx, args)).rejects.toThrow("Unknown DB error");
+    const result = await signUpSMSHandler(ctx, args);
+    expect(result).toEqual({
+      success: false,
+      reason: "Signup failed",
+      userId: null,
+    });
   });
 });
