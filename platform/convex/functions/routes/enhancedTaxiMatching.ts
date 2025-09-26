@@ -320,6 +320,7 @@ type FindAvailableTaxisArgs = {
   maxTaxiDistance?: number;
   maxResults?: number;
   searchStartTime?: number; // New parameter for radius expansion
+  isMultiLegNotFinalLeg?: boolean;
 };
 
 
@@ -337,7 +338,8 @@ export const _findAvailableTaxisForJourneyHandler = async (
     maxDestinationDistance = 3.0,
     maxTaxiDistance,
     maxResults = 10,
-    searchStartTime
+    searchStartTime,
+    isMultiLegNotFinalLeg = false
   }: FindAvailableTaxisArgs
 ): Promise<TaxiSearchResult> => {
   try {
@@ -497,9 +499,11 @@ export const _findAvailableTaxisForJourneyHandler = async (
       const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng);
       
       // Check if route is valid
-      if (routeScore.startProximity > maxOriginDistance || 
-          routeScore.endProximity > maxDestinationDistance || 
-          !routeScore.hasDirectRoute) {
+      // For multi-leg non-final legs, only check startProximity (passenger can board)
+      // For direct routes and multi-leg final legs, check both startProximity and endProximity
+      if (routeScore.startProximity > maxOriginDistance ||
+          !routeScore.hasDirectRoute ||
+          (!isMultiLegNotFinalLeg && routeScore.endProximity > maxDestinationDistance)) {
         continue;
       }
 
@@ -703,7 +707,8 @@ export const _findAvailableTaxisForJourney = internalQuery({
     maxDestinationDistance: v.optional(v.number()),
     maxTaxiDistance: v.optional(v.number()),
     maxResults: v.optional(v.number()),
-    searchStartTime: v.optional(v.number())
+    searchStartTime: v.optional(v.number()),
+    isMultiLegNotFinalLeg: v.optional(v.boolean())
   },
   handler: _findAvailableTaxisForJourneyHandler
 });
@@ -731,7 +736,8 @@ export const findAvailableTaxisForJourney = query({
     maxDestinationDistance: v.optional(v.number()),
     maxTaxiDistance: v.optional(v.number()),
     maxResults: v.optional(v.number()),
-    searchStartTime: v.optional(v.number())
+    searchStartTime: v.optional(v.number()),
+    isMultiLegNotFinalLeg: v.optional(v.boolean())
   },
   handler: findAvailableTaxisForJourneyHandler
 });
@@ -1402,14 +1408,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     });
 
     if (intersectionResult.intersectionPoints && intersectionResult.intersectionPoints.length > 0) {
-      console.log('🔍 Transfer points found:', intersectionResult.intersectionPoints.map((point: any, index: number) => ({
-        pointIndex: index,
-        coordinates: point.coordinates,
-        fromRoute: point.fromRoute,
-        toRoute: point.toRoute,
-        transferDetails: point.transferDetails,
-        intersectionType: point.intersectionType
-      })));
+      console.log(`🔍 Found ${intersectionResult.intersectionPoints.length} transfer points`);
     }
 
     if (!intersectionResult.success || intersectionResult.intersectionPoints.length === 0) {
@@ -1450,13 +1449,7 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     });
 
     if (scoredPointsResult.scoredPoints && scoredPointsResult.scoredPoints.length > 0) {
-      console.log('🔍 Scored transfer points:', scoredPointsResult.scoredPoints.map((point: any, index: number) => ({
-        pointIndex: index,
-        score: point.scores?.total || point.score,
-        coordinates: point.coordinates,
-        fromRoute: point.fromRoute,
-        toRoute: point.toRoute
-      })));
+      console.log(`🔍 Found ${scoredPointsResult.scoredPoints.length} scored transfer points (best score: ${scoredPointsResult.scoredPoints[0]?.scores?.total || scoredPointsResult.scoredPoints[0]?.score})`);
     }
 
     if (!scoredPointsResult.success || scoredPointsResult.scoredPoints.length === 0) {

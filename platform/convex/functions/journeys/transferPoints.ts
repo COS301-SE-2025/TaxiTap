@@ -764,13 +764,6 @@ async function createTwoLegSequence(
     : `Transfer Point (${transferPoint.coordinates.latitude.toFixed(4)}, ${transferPoint.coordinates.longitude.toFixed(4)})`;
   
   // Debug: Log transfer point stop information
-  console.log('🔍 Transfer point stop debug:', {
-    hasRoute1Stop: !!transferPoint.route1Stop,
-    hasRoute2Stop: !!transferPoint.route2Stop,
-    route1Stop: transferPoint.route1Stop,
-    route2Stop: transferPoint.route2Stop,
-    transferPointCoords: transferPoint.coordinates
-  });
 
   // Find the actual route stops for each leg
   const leg1FromStop = findClosestRouteStop(fromRoute, origin);
@@ -788,6 +781,46 @@ async function createTwoLegSequence(
   const leg1ToStop = transferStopForBooking;
   const leg2FromStop = transferStopForBooking;
   const leg2ToStop = findClosestRouteStop(toRoute, destination);
+
+  // Validate route direction feasibility by finding valid boarding stops
+  // Check if passenger is close to a boarding stop that comes before the transfer point
+  if (transferPoint.route1Stop && transferPoint.route1Stop.stopOrder) {
+    const transferStop = fromRoute.stops?.find((stop: any) =>
+      stop.name === transferPoint.route1Stop.name
+    );
+
+    if (transferStop) {
+      // Find boarding stops that come before the transfer point AND are close to passenger origin
+      const validBoardingStops = fromRoute.stops?.filter((stop: any) => {
+        if (stop.order >= transferStop.order) return false; // Must come before transfer point
+
+        // Check if passenger is within reasonable distance (3km) of this boarding stop
+        const distanceToStop = calculateDistance(
+          origin.lat, origin.lng,
+          stop.coordinates?.lat || 0, stop.coordinates?.lng || 0
+        );
+        return distanceToStop <= 3.0; // Within 3km of boarding stop
+      });
+
+      if (!validBoardingStops || validBoardingStops.length === 0) {
+        throw new Error(`Cannot reach transfer point ${transferPoint.route1Stop.name} - passenger not close to any boarding stops that come before transfer point on route ${fromRoute.name}`);
+      }
+    }
+  }
+
+  // Check if passenger can travel forward from transfer point to destination on route2
+  if (transferPoint.route2Stop && leg2ToStop && transferPoint.route2Stop.stopOrder) {
+    const transferStop = toRoute.stops?.find((stop: any) =>
+      stop.name === transferPoint.route2Stop.name
+    );
+    const destinationStop = toRoute.stops?.find((stop: any) =>
+      stop.name === leg2ToStop.name
+    );
+
+    if (transferStop && destinationStop && transferStop.order >= destinationStop.order) {
+      throw new Error(`Cannot reach destination ${leg2ToStop.name} from transfer point - would require backward travel on route ${toRoute.name}`);
+    }
+  }
 
   console.log('🔍 Journey leg stops debug:', {
     leg1FromStopName: leg1FromStop?.name,
@@ -924,15 +957,46 @@ async function findOptimalTransferCombination(
     originalScore: bestPoint?.scores?.total || bestPoint?.score
   });
 
-  const sequence = await createTwoLegSequence(ctx, origin, destination, bestPoint, originAddress, destinationAddress);
+  // Try top 5 transfer points to find valid routes (without backward travel)
+  const validSequences = [];
+  const maxAttempts = Math.min(5, transferPoints.length);
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const point = transferPoints[i];
+    try {
+      const sequence = await createTwoLegSequence(ctx, origin, destination, point, originAddress, destinationAddress);
+      validSequences.push({
+        transferPoint: point,
+        legs: sequence.legs,
+        summary: sequence.summary
+      });
+
+      console.log(`✅ Valid sequence ${validSequences.length} created for transfer point: ${point.fromRoute?.name} → ${point.toRoute?.name}`);
+
+      // Stop after finding 3 valid sequences to avoid overloading
+      if (validSequences.length >= 3) break;
+
+    } catch (error) {
+      console.log(`⚠️ Skipping transfer point (${point.fromRoute?.name} → ${point.toRoute?.name}): ${error instanceof Error ? error.message : String(error)}`);
+      continue;
+    }
+  }
+
+  if (validSequences.length === 0) {
+    throw new Error('No valid transfer sequences found - all require backward travel');
+  }
+
+  console.log(`🎯 Created ${validSequences.length} valid transfer sequences`);
 
   return {
-    sequence: [bestPoint],
-    legs: sequence.legs,
-    summary: sequence.summary,
-    alternatives: transferPoints.slice(1, 3).map(point => ({
-      transferPoint: point,
-      estimatedImprovement: Math.random() * 10 - 5,
+    sequence: validSequences.map(seq => seq.transferPoint),
+    legs: validSequences[0].legs, // Primary option
+    summary: validSequences[0].summary,
+    alternatives: validSequences.slice(1).map((seq, index) => ({
+      transferPoint: seq.transferPoint,
+      legs: seq.legs,
+      summary: seq.summary,
+      estimatedImprovement: index * 2, // Simple improvement estimate
     })),
   };
 }

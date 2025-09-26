@@ -12,6 +12,7 @@ export const requestRideHandler = async (
     estimatedDuration?: number;
     isMultiLegRide?: boolean;
     legIndex?: number;
+    totalLegs?: number;
     parentJourneyId?: string;
   }
 ) => {
@@ -59,7 +60,8 @@ export const requestRideHandler = async (
         maxOriginDistance: 3.0,
         maxDestinationDistance: 3.0,
         maxTaxiDistance: 5.0,
-        maxResults: 50
+        maxResults: 50,
+        isMultiLegNotFinalLeg: args.isMultiLegRide && args.totalLegs && args.legIndex !== undefined && args.legIndex < args.totalLegs - 1
       }
     );
 
@@ -75,12 +77,15 @@ export const requestRideHandler = async (
 
     // Add specific debugging for multi-leg journeys
     if (args.isMultiLegRide) {
+      const isNotFinalLeg = args.totalLegs && args.legIndex !== undefined && args.legIndex < args.totalLegs - 1;
       console.log('🔍 Multi-leg ride validation:', {
         legIndex: args.legIndex,
+        totalLegs: args.totalLegs,
+        isNotFinalLeg,
         parentJourneyId: args.parentJourneyId,
         startAddress: args.startLocation.address,
         endAddress: args.endLocation.address,
-        note: 'For first leg, endLocation should be transfer point, not final destination'
+        note: isNotFinalLeg ? 'Non-final leg: only checking startProximity' : 'Final leg: checking both startProximity and endProximity'
       });
     }
 
@@ -136,6 +141,7 @@ export const requestRideHandler = async (
       distance: Math.round(routeDistance * 100) / 100,
       isMultiLegRide: args.isMultiLegRide || false,
       legIndex: args.legIndex,
+      totalLegs: args.totalLegs,
       parentJourneyId: args.parentJourneyId,
     });
 
