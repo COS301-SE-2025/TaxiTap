@@ -1,0 +1,173 @@
+# TaxiTap Monitoring Configuration
+# This file contains monitoring configurations for various tools
+
+# Prometheus Configuration for TaxiTap Metrics
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "taxi_tap_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Convex Backend Metrics
+  - job_name: 'convex-backend'
+    static_configs:
+      - targets: ['your-convex-deployment.convex.cloud:443']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    scheme: https
+    basic_auth:
+      username: '${CONVEX_MONITORING_USER}'
+      password: '${CONVEX_MONITORING_PASSWORD}'
+
+  # Application Performance Monitoring
+  - job_name: 'taxi-tap-apm'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Database Metrics
+  - job_name: 'convex-database'
+    static_configs:
+      - targets: ['convex-db-exporter:9090']
+    scrape_interval: 30s
+
+  # Load Balancer Metrics
+  - job_name: 'load-balancer'
+    static_configs:
+      - targets: ['lb-exporter:9090']
+    scrape_interval: 30s
+
+# Alert Rules for TaxiTap
+groups:
+  - name: taxi_tap_alerts
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: taxi_tap
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High Response Time Alert
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: taxi_tap
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: convex_database_connections_active / convex_database_connections_max > 0.8
+        for: 1m
+        labels:
+          severity: warning
+          service: convex_database
+        annotations:
+          summary: "Database connection pool nearly full"
+          description: "{{ $value }}% of database connections are in use"
+
+      # Ride Request Failures
+      - alert: RideRequestFailures
+        expr: rate(ride_requests_total{status="failed"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: ride_requests
+        annotations:
+          summary: "High ride request failure rate"
+          description: "{{ $value }} ride requests failing per second"
+
+      # Location Update Failures
+      - alert: LocationUpdateFailures
+        expr: rate(location_updates_total{status="failed"}[5m]) > 0.2
+        for: 2m
+        labels:
+          severity: warning
+          service: location_updates
+        annotations:
+          summary: "High location update failure rate"
+          description: "{{ $value }} location updates failing per second"
+
+      # Driver Matching Performance
+      - alert: DriverMatchingSlow
+        expr: histogram_quantile(0.95, rate(driver_matching_duration_seconds_bucket[5m])) > 4
+        for: 3m
+        labels:
+          severity: warning
+          service: driver_matching
+        annotations:
+          summary: "Driver matching is slow"
+          description: "95th percentile driver matching time is {{ $value }} seconds"
+
+      # Memory Usage Alert
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}%"
+
+      # CPU Usage Alert
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%"
+
+      # Disk Space Alert
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% available"
+
+      # WebSocket Connection Issues
+      - alert: WebSocketConnectionIssues
+        expr: rate(websocket_connections_total{status="failed"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: websocket
+        annotations:
+          summary: "WebSocket connection issues"
+          description: "{{ $value }} WebSocket connections failing per second"
+
+      # Real-time Subscription Failures
+      - alert: RealTimeSubscriptionFailures
+        expr: rate(realtime_subscriptions_total{status="failed"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: realtime
+        annotations:
+          summary: "Real-time subscription failures"
+          description: "{{ $value }} real-time subscriptions failing per second"

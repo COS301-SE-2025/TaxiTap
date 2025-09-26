@@ -1,0 +1,195 @@
+# TaxiTap Alert Rules
+# Prometheus alerting rules for TaxiTap application
+
+groups:
+  - name: taxi_tap_critical
+    rules:
+      # Critical alerts that require immediate attention
+      - alert: ServiceDown
+        expr: up{job="convex-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: taxi_tap
+        annotations:
+          summary: "TaxiTap service is down"
+          description: "The TaxiTap backend service has been down for more than 1 minute"
+
+      - alert: DatabaseDown
+        expr: up{job="convex-database"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: convex_database
+        annotations:
+          summary: "Convex database is down"
+          description: "The Convex database service has been down for more than 30 seconds"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: taxi_tap
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      - alert: RideRequestSystemFailure
+        expr: rate(ride_requests_total{status="failed"}[5m]) > 0.2
+        for: 1m
+        labels:
+          severity: critical
+          service: ride_requests
+        annotations:
+          summary: "Ride request system failure"
+          description: "{{ $value }} ride requests failing per second"
+
+  - name: taxi_tap_warning
+    rules:
+      # Warning alerts that need attention but aren't critical
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+          service: taxi_tap
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      - alert: DatabaseConnectionPoolHigh
+        expr: convex_database_connections_active / convex_database_connections_max > 0.7
+        for: 3m
+        labels:
+          severity: warning
+          service: convex_database
+        annotations:
+          summary: "Database connection pool usage high"
+          description: "{{ $value }}% of database connections are in use"
+
+      - alert: LocationUpdateFailures
+        expr: rate(location_updates_total{status="failed"}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: location_updates
+        annotations:
+          summary: "Location update failures"
+          description: "{{ $value }} location updates failing per second"
+
+      - alert: DriverMatchingSlow
+        expr: histogram_quantile(0.95, rate(driver_matching_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: driver_matching
+        annotations:
+          summary: "Driver matching performance degraded"
+          description: "95th percentile driver matching time is {{ $value }} seconds"
+
+      - alert: WebSocketConnectionIssues
+        expr: rate(websocket_connections_total{status="failed"}[5m]) > 0.02
+        for: 3m
+        labels:
+          severity: warning
+          service: websocket
+        annotations:
+          summary: "WebSocket connection issues"
+          description: "{{ $value }} WebSocket connections failing per second"
+
+      - alert: RealTimeSubscriptionFailures
+        expr: rate(realtime_subscriptions_total{status="failed"}[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          service: realtime
+        annotations:
+          summary: "Real-time subscription failures"
+          description: "{{ $value }} real-time subscriptions failing per second"
+
+  - name: taxi_tap_system
+    rules:
+      # System-level alerts
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}%"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% available"
+
+      - alert: NetworkLatencyHigh
+        expr: histogram_quantile(0.95, rate(network_latency_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network latency"
+          description: "95th percentile network latency is {{ $value }} seconds"
+
+  - name: taxi_tap_business
+    rules:
+      # Business metrics alerts
+      - alert: LowRideCompletionRate
+        expr: rate(rides_total{status="completed"}[1h]) / rate(rides_total{status="requested"}[1h]) < 0.7
+        for: 10m
+        labels:
+          severity: warning
+          service: business_metrics
+        annotations:
+          summary: "Low ride completion rate"
+          description: "Ride completion rate is {{ $value }}%"
+
+      - alert: HighRideCancellationRate
+        expr: rate(rides_total{status="cancelled"}[1h]) / rate(rides_total{status="requested"}[1h]) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+          service: business_metrics
+        annotations:
+          summary: "High ride cancellation rate"
+          description: "Ride cancellation rate is {{ $value }}%"
+
+      - alert: DriverAvailabilityLow
+        expr: drivers_available_total / drivers_total < 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: business_metrics
+        annotations:
+          summary: "Low driver availability"
+          description: "Only {{ $value }}% of drivers are available"
+
+      - alert: PassengerWaitTimeHigh
+        expr: histogram_quantile(0.95, rate(passenger_wait_time_seconds_bucket[1h])) > 300
+        for: 10m
+        labels:
+          severity: warning
+          service: business_metrics
+        annotations:
+          summary: "High passenger wait time"
+          description: "95th percentile passenger wait time is {{ $value }} seconds"

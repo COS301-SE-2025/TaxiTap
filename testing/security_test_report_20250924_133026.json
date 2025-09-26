@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-09-24T13:30:26.364185",
+  "target": "https://affable-goose-538.convex.cloud",
+  "total_vulnerabilities": 10,
+  "severity_breakdown": {
+    "HIGH": 1,
+    "MEDIUM": 9,
+    "LOW": 0
+  },
+  "vulnerabilities": [
+    {
+      "timestamp": "2025-09-24T13:27:44.949683",
+      "severity": "MEDIUM",
+      "test": "Unexpected Response",
+      "description": "Endpoint /api/requestRide returned unexpected status 404",
+      "evidence": "Expected: 401/403, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:27:45.932750",
+      "severity": "MEDIUM",
+      "test": "Unexpected Response",
+      "description": "Endpoint /api/acceptRide returned unexpected status 404",
+      "evidence": "Expected: 401/403, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:27:45.848767",
+      "severity": "MEDIUM",
+      "test": "Unexpected Response",
+      "description": "Endpoint /api/updateUserLocation returned unexpected status 404",
+      "evidence": "Expected: 401/403, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:27:46.929518",
+      "severity": "MEDIUM",
+      "test": "Unexpected Response",
+      "description": "Endpoint /api/getNearbyDrivers returned unexpected status 404",
+      "evidence": "Expected: 401/403, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:27:47.933122",
+      "severity": "MEDIUM",
+      "test": "Unexpected Response",
+      "description": "Endpoint /api/completeRide returned unexpected status 404",
+      "evidence": "Expected: 401/403, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:28:09.502685",
+      "severity": "MEDIUM",
+      "test": "Input Validation",
+      "description": "Phone Number Validation - Unexpected response status",
+      "evidence": "Expected: 400, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:28:09.858294",
+      "severity": "MEDIUM",
+      "test": "Input Validation",
+      "description": "Email Validation - Unexpected response status",
+      "evidence": "Expected: 400, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:28:10.203103",
+      "severity": "MEDIUM",
+      "test": "Input Validation",
+      "description": "Coordinate Validation - Unexpected response status",
+      "evidence": "Expected: 400, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:28:10.496838",
+      "severity": "MEDIUM",
+      "test": "Input Validation",
+      "description": "Large Input - Unexpected response status",
+      "evidence": "Expected: 400, Got: 404"
+    },
+    {
+      "timestamp": "2025-09-24T13:30:26.364054",
+      "severity": "HIGH",
+      "test": "CORS Vulnerability",
+      "description": "CORS allows malicious origin",
+      "evidence": "Headers: {'Access-Control-Allow-Origin': 'https://malicious-site.com', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS,PATCH,DELETE,PUT', 'Access-Control-Allow-Headers': 'Content-Type'}"
+    }
+  ],
+  "recommendations": []
+}
