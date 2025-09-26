@@ -41,10 +41,6 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [routeLoaded, setRouteLoaded] = useState(false);
   const [cachedRoutes] = useState(new Map<string, { latitude: number; longitude: number }[]>());
   
-  // Multi-leg journey state (moved inside MapProvider)
-  const [currentJourney, setCurrentJourney] = useState<Journey | null>(null);
-  const [isMultiLegMode, setIsMultiLegMode] = useState(false);
-  const [currentLegIndex, setCurrentLegIndex] = useState(0);
 
   const setCachedRoute = (key: string, coords: { latitude: number; longitude: number }[]) => {
     cachedRoutes.set(key, coords);
@@ -62,10 +58,6 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setIsLoadingRoute(false);
     setRouteLoaded(false);
     cachedRoutes.clear();
-    // Clear multi-leg journey state
-    setCurrentJourney(null);
-    setIsMultiLegMode(false);
-    setCurrentLegIndex(0);
   };
 
   const value: MapContextType = {
@@ -103,12 +95,3 @@ export const createRouteKey = (origin: Location, destination: Location) => {
   return `${origin.latitude},${origin.longitude}-${destination.latitude},${destination.longitude}`;
 };
 
-//UNATHI: i made the following additions for multi-leg journey functionality. not sure if the edits i made to the provided code in the document are correct but please check and let me know if anything needs to be changed
-
-// Define a type for Journey
-interface Journey {
-  totalLegs: number;
-  // add other properties as needed
-}
-
-//end of Unathi's additions
