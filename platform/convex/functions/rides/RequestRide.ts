@@ -25,6 +25,7 @@ export const requestRide = mutation({
     estimatedDuration: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
     legIndex: v.optional(v.number()),
+    totalLegs: v.optional(v.number()),
     parentJourneyId: v.optional(v.string()),
   },
   handler: requestRideHandler,

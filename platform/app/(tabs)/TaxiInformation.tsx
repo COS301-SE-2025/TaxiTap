@@ -230,6 +230,7 @@ export default function TaxiInformation() {
         // Multi-leg journey fields
         parentJourneyId: isMultiLeg === 'true' ? journeyId : undefined,
         legIndex: isMultiLeg === 'true' ? parseInt(currentLegIndex || '0') : undefined,
+        totalLegs: isMultiLeg === 'true' ? parseInt(totalLegs || '1') : undefined,
         isMultiLegRide: isMultiLeg === 'true',
       };
 

@@ -957,12 +957,12 @@ async function findOptimalTransferCombination(
     originalScore: bestPoint?.scores?.total || bestPoint?.score
   });
 
-  // Try top 5 transfer points to find valid routes (without backward travel)
+  // PRIORITY FIX: Try ALL transfer points to find valid routes, don't give up after first 5
   const validSequences = [];
-  const maxAttempts = Math.min(5, transferPoints.length);
+  const allPoints = [...transferPoints]; // Use all points, not just top 5
 
-  for (let i = 0; i < maxAttempts; i++) {
-    const point = transferPoints[i];
+  for (let i = 0; i < allPoints.length; i++) {
+    const point = allPoints[i];
     try {
       const sequence = await createTwoLegSequence(ctx, origin, destination, point, originAddress, destinationAddress);
       validSequences.push({

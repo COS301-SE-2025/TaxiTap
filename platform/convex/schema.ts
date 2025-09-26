@@ -152,6 +152,7 @@ export default defineSchema({
     // Multi-leg journey tracking
     parentJourneyId: v.optional(v.string()),
     legIndex: v.optional(v.number()),
+    totalLegs: v.optional(v.number()),
     isMultiLegRide: v.optional(v.boolean()),
 
     // Per-leg payment processing fields

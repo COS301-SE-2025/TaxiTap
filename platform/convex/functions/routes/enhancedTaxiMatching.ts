@@ -1629,12 +1629,101 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     }
 
     if (!optimizationResult.success) {
-      console.log('⚠️ Failed to optimize transfer sequence');
+      console.log('⚠️ Failed to optimize transfer sequence - attempting fallback with valid first-leg routes');
+
+      // FALLBACK: If we have valid first-leg routes but optimization failed,
+      // create a simplified multi-leg option using the first available transfer point
+      if (args.knownValidFirstLegRoutes && args.knownValidFirstLegRoutes.length > 0 &&
+          scoredPointsResult.scoredPoints && scoredPointsResult.scoredPoints.length > 0) {
+
+        console.log('🔄 Creating fallback multi-leg option with known valid first-leg route');
+
+        // Create a simple 2-leg journey using the best transfer point
+        const bestTransferPoint = scoredPointsResult.scoredPoints[0];
+        const firstValidRoute = args.knownValidFirstLegRoutes[0];
+
+        const fallbackOption = {
+          journeyId: "fallback_primary",
+          totalLegs: 2,
+          legs: [
+            {
+              legIndex: 0,
+              fromAddress: args.originAddress || `Origin (${args.originLat.toFixed(4)}, ${args.originLng.toFixed(4)})`,
+              toAddress: bestTransferPoint.route1Stop?.name || "Transfer Point",
+              fromCoordinates: { latitude: args.originLat, longitude: args.originLng },
+              toCoordinates: {
+                latitude: bestTransferPoint.coordinates.latitude,
+                longitude: bestTransferPoint.coordinates.longitude
+              },
+              routeId: firstValidRoute.routeId,
+              routeName: firstValidRoute.routeName,
+              estimatedFare: 20,
+              estimatedDuration: 1800, // 30 minutes default
+            },
+            {
+              legIndex: 1,
+              fromAddress: bestTransferPoint.route2Stop?.name || "Transfer Point",
+              toAddress: args.destinationAddress || `Destination (${args.destinationLat.toFixed(4)}, ${args.destinationLng.toFixed(4)})`,
+              fromCoordinates: {
+                latitude: bestTransferPoint.coordinates.latitude,
+                longitude: bestTransferPoint.coordinates.longitude
+              },
+              toCoordinates: { latitude: args.destinationLat, longitude: args.destinationLng },
+              routeId: bestTransferPoint.toRoute?.id,
+              routeName: bestTransferPoint.toRoute?.name,
+              estimatedFare: 20,
+              estimatedDuration: 1800, // 30 minutes default
+            }
+          ],
+          estimatedTotalFare: 40,
+          estimatedTotalDuration: 3900, // 65 minutes (30+30+5 transfer)
+          optimizationPreference: "shortest_time",
+          transferPoints: [bestTransferPoint],
+        };
+
+        // Find drivers for the fallback first leg
+        let fallbackFirstLegDrivers: any[] = [];
+        try {
+          const firstLegDriverResult = await findFirstLegAvailableDrivers(ctx, {
+            originLat: args.originLat,
+            originLng: args.originLng,
+            destinationLat: bestTransferPoint.coordinates.latitude,
+            destinationLng: bestTransferPoint.coordinates.longitude,
+            maxOriginDistance: 2.0,
+            maxTaxiDistance: 3.0,
+            maxResults: 10
+          });
+
+          if (firstLegDriverResult.success) {
+            fallbackFirstLegDrivers = firstLegDriverResult.availableTaxis || [];
+            console.log(`✅ Found ${fallbackFirstLegDrivers.length} drivers for fallback first leg`);
+          } else {
+            console.log('⚠️ No drivers found for fallback first leg:', firstLegDriverResult.message);
+          }
+        } catch (error) {
+          console.error('❌ Error finding fallback first leg drivers:', error);
+        }
+
+        return {
+          requiresMultiLeg: true,
+          multiLegOptions: [fallbackOption],
+          firstLegDrivers: fallbackFirstLegDrivers,
+          analysis: {
+            totalTransferPointsFound: intersectionResult.intersectionPoints.length,
+            scoredTransferPoints: scoredPointsResult.scoredPoints.length,
+            generatedOptions: 1,
+            optimizationPreference: args.optimizationPreference
+          },
+          message: `Created fallback multi-leg option with ${fallbackFirstLegDrivers.length} drivers for first leg`
+        };
+      }
+
+      // If no fallback possible, return empty result
       return {
         requiresMultiLeg: true,
         multiLegOptions: [],
         firstLegDrivers: [],
-        message: "Failed to optimize transfer sequence"
+        message: "Failed to optimize transfer sequence and no fallback available"
       };
     }
 
