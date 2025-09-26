@@ -443,4 +443,91 @@ routes: defineTable({
   .index("by_badge_type", ["badgeType"])
   .index("by_user_and_type", ["userId", "badgeType"])
   .index("by_active_badges", ["userId", "isActive"]),
+
+  // Multi-leg journey management
+  multiLegJourneys: defineTable({
+    journeyId: v.string(),
+    passengerId: v.id("taxiTap_users"),
+    status: v.union(
+      v.literal("planned"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("timeout")
+    ),
+    currentLegIndex: v.number(),
+    totalLegs: v.number(),
+
+    originLocation: v.object({
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      address: v.string(),
+    }),
+
+    finalDestination: v.object({
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      address: v.string(),
+    }),
+
+    transferPoint: v.object({
+      stop1_id: v.string(),
+      stop2_id: v.string(),
+      walkingDistance: v.number(),
+      estimatedWalkingTime: v.optional(v.number()),
+    }),
+
+    legs: v.array(v.object({
+      legIndex: v.number(),
+      routeName: v.string(),
+      origin: v.object({
+        coordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number(),
+        }),
+        address: v.string(),
+      }),
+      destination: v.object({
+        coordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number(),
+        }),
+        address: v.string(),
+      }),
+      originStopId: v.string(),
+      destinationStopId: v.string(),
+      estimatedCost: v.number(),
+      actualCost: v.optional(v.number()),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("in_progress"),
+        v.literal("completed"),
+        v.literal("cancelled")
+      ),
+      rideId: v.optional(v.id("rides")),
+      driverId: v.optional(v.id("taxiTap_users")),
+      startedAt: v.optional(v.number()),
+      completedAt: v.optional(v.number()),
+    })),
+
+    totalEstimatedCost: v.number(),
+    totalActualCost: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+
+    transferTimeoutAt: v.optional(v.number()),
+    transferWindowExpiredAt: v.optional(v.number()),
+  })
+    .index("by_journey_id", ["journeyId"])
+    .index("by_passenger", ["passengerId"])
+    .index("by_status", ["status"])
+    .index("by_passenger_and_status", ["passengerId", "status"])
+    .index("by_created_at", ["createdAt"]),
 });
