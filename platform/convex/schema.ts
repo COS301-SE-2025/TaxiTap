@@ -265,7 +265,8 @@ routes: defineTable({
     estimatedDistance: v.optional(v.number()), // Added estimated distance field
     isActive: v.boolean(),
     taxiAssociation: v.string(),
-    taxiAssociationRegistrationNumber: v.string()
+    taxiAssociationRegistrationNumber: v.string(),
+    reliability: v.optional(v.number()) // Reliability multiplier: higher = more reliable (1.0 = default, 1.5 = 50% more reliable, 0.8 = 20% less reliable)
   }).index("by_route_id", ["routeId"]),
 
   routeStops: defineTable({

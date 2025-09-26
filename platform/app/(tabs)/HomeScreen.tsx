@@ -1297,6 +1297,7 @@ export default function HomeScreen() {
                     longitude: destination?.longitude || 0
                   },
                   routeId: "fallback-route",
+                  routeName: `${origin?.name || "Origin"} → ${destination?.name || "Destination Area"}`,
                   estimatedFare: 25.00,
                   estimatedDuration: 1500
                 },
@@ -1313,6 +1314,7 @@ export default function HomeScreen() {
                     longitude: destination?.longitude || 0
                   },
                   routeId: "walking-route",
+                  routeName: "Walking Connection",
                   estimatedFare: 0.00,
                   estimatedDuration: 300
                 }

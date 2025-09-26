@@ -148,7 +148,7 @@ type RouteScore = {
 
 async function calculateRouteScore(
   ctx: QueryCtx,
-  route: { routeId: string; stops: RouteStop[] },
+  route: { routeId: string; stops: RouteStop[]; reliability?: number; name: string },
   startLat: number,
   startLon: number,
   endLat: number,
@@ -195,10 +195,30 @@ async function calculateRouteScore(
   
   const START_WEIGHT = 0.6;
   const END_WEIGHT = 0.4;
-  
+
   const startProximity = closestToStart.distance;
   const endProximity = closestToEnd.distance;
-  const totalScore = (startProximity * START_WEIGHT) + (endProximity * END_WEIGHT);
+
+  // Calculate base score
+  let totalScore = (startProximity * START_WEIGHT) + (endProximity * END_WEIGHT);
+
+  // Apply database reliability multiplier if set
+  // Higher reliability values make routes MORE preferred (lower score = better)
+  // If reliability is not set, use default behavior (multiplier = 1.0)
+  const reliabilityMultiplier = route.reliability || 1.0;
+  const originalScore = totalScore;
+  totalScore = totalScore / reliabilityMultiplier;
+
+  // Log reliability boost if applied
+  if (route.reliability && route.reliability !== 1.0) {
+    console.log(`🎯 Route reliability boost applied:`, {
+      routeName: route.name,
+      reliabilityMultiplier,
+      originalScore: Math.round(originalScore * 100) / 100,
+      adjustedScore: Math.round(totalScore * 100) / 100,
+      improvement: `${Math.round((1 - totalScore/originalScore) * 100)}%`
+    });
+  }
   
   // Check if this could be a direct route (start stop comes before end stop)
   const hasDirectRoute: boolean = Boolean(closestToStart.stop && closestToEnd.stop &&
@@ -1576,18 +1596,52 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       optimizationResult: optimizationResult
     });
 
-    // Primary option (best transfer point)
+    // Helper function to check if a route combination has high reliability
+    const hasHighReliabilityRoutes = async (legs: any[]): Promise<boolean> => {
+      for (const leg of legs) {
+        if (leg.routeId) {
+          const route = await ctx.db
+            .query("routes")
+            .withIndex("by_route_id", (q: any) => q.eq("routeId", leg.routeId))
+            .unique();
+
+          if (route && route.reliability && route.reliability > 1.5) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // Primary option (best transfer point) - create both fastest and reliable variants
     if (optimizationResult.optimizedSequence.length > 0 && optimizationResult.journeyLegs && optimizationResult.summary) {
-      console.log('✅ Creating primary multi-leg option');
+      console.log('✅ Creating primary multi-leg options (fastest and reliable)');
+
+      // Always create fastest option
       multiLegOptions.push({
-        journeyId: "primary",
+        journeyId: "fastest_primary",
         totalLegs: optimizationResult.journeyLegs.length,
         legs: optimizationResult.journeyLegs,
         estimatedTotalFare: optimizationResult.summary.estimatedTotalCost,
         estimatedTotalDuration: optimizationResult.summary.estimatedTotalTime,
-        optimizationPreference: args.optimizationPreference,
+        optimizationPreference: "shortest_time",
         transferPoints: optimizationResult.optimizedSequence,
       });
+
+      // Check if this combination has reliable routes and create reliable option
+      const isReliableRoute = await hasHighReliabilityRoutes(optimizationResult.journeyLegs);
+      if (isReliableRoute) {
+        console.log('✅ Creating reliable variant for primary option');
+        multiLegOptions.push({
+          journeyId: "reliable_primary",
+          totalLegs: optimizationResult.journeyLegs.length,
+          legs: optimizationResult.journeyLegs,
+          estimatedTotalFare: optimizationResult.summary.estimatedTotalCost,
+          estimatedTotalDuration: optimizationResult.summary.estimatedTotalTime,
+          optimizationPreference: "most_reliable",
+          transferPoints: optimizationResult.optimizedSequence,
+        });
+      }
     } else {
       console.log('❌ Cannot create primary option:', {
         hasOptimizedSequence: optimizationResult.optimizedSequence?.length > 0,
@@ -1618,15 +1672,31 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       });
 
       if (altSequence.success && altSequence.journeyLegs && altSequence.journeyLegs.length > 0 && altSequence.summary) {
+        // Always create fastest alternative
         multiLegOptions.push({
-          journeyId: `alternative_${i}`,
+          journeyId: `fastest_alt_${i}`,
           totalLegs: altSequence.journeyLegs.length,
           legs: altSequence.journeyLegs,
           estimatedTotalFare: altSequence.summary.estimatedTotalCost,
           estimatedTotalDuration: altSequence.summary.estimatedTotalTime,
-          optimizationPreference: args.optimizationPreference,
+          optimizationPreference: "shortest_time",
           transferPoints: altSequence.optimizedSequence,
         });
+
+        // Check if this alternative has reliable routes
+        const isReliableAlt = await hasHighReliabilityRoutes(altSequence.journeyLegs);
+        if (isReliableAlt) {
+          console.log(`✅ Creating reliable variant for alternative ${i}`);
+          multiLegOptions.push({
+            journeyId: `reliable_alt_${i}`,
+            totalLegs: altSequence.journeyLegs.length,
+            legs: altSequence.journeyLegs,
+            estimatedTotalFare: altSequence.summary.estimatedTotalCost,
+            estimatedTotalDuration: altSequence.summary.estimatedTotalTime,
+            optimizationPreference: "most_reliable",
+            transferPoints: altSequence.optimizedSequence,
+          });
+        }
       }
     }
 
