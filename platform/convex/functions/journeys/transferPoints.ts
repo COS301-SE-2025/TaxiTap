@@ -774,8 +774,19 @@ async function createTwoLegSequence(
 
   // Find the actual route stops for each leg
   const leg1FromStop = findClosestRouteStop(fromRoute, origin);
-  const leg1ToStop = transferPoint.route1Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
-  const leg2FromStop = transferPoint.route2Stop || { name: "Transfer Stop", coordinates: { lat: transferPoint.coordinates.latitude, lng: transferPoint.coordinates.longitude } };
+
+  // CRITICAL: Use the exact transfer point that was found during analysis
+  // This ensures ride booking uses the same coordinates/address as driver matching
+  const transferStopForBooking = {
+    name: transferPoint.route1Stop?.name || transferPoint.route2Stop?.name || "Transfer Point",
+    coordinates: {
+      lat: transferPoint.coordinates.latitude,
+      lng: transferPoint.coordinates.longitude
+    }
+  };
+
+  const leg1ToStop = transferStopForBooking;
+  const leg2FromStop = transferStopForBooking;
   const leg2ToStop = findClosestRouteStop(toRoute, destination);
 
   console.log('🔍 Journey leg stops debug:', {
@@ -783,6 +794,22 @@ async function createTwoLegSequence(
     leg1ToStopName: leg1ToStop?.name,
     leg2FromStopName: leg2FromStop?.name,
     leg2ToStopName: leg2ToStop?.name
+  });
+
+  console.log('🔍 Transfer point consistency check:', {
+    originalTransferPoint: {
+      latitude: transferPoint.coordinates.latitude,
+      longitude: transferPoint.coordinates.longitude,
+      route1StopName: transferPoint.route1Stop?.name,
+      route2StopName: transferPoint.route2Stop?.name
+    },
+    journeyLegTransferPoint: {
+      latitude: transferStopForBooking.coordinates.lat,
+      longitude: transferStopForBooking.coordinates.lng,
+      name: transferStopForBooking.name
+    },
+    coordinatesMatch: transferPoint.coordinates.latitude === transferStopForBooking.coordinates.lat &&
+                     transferPoint.coordinates.longitude === transferStopForBooking.coordinates.lng
   });
 
   return {
@@ -830,10 +857,75 @@ async function findOptimalTransferCombination(
   originAddress?: string,
   destinationAddress?: string
 ) {
-  // Return the best single transfer point
-  const bestPoint = transferPoints[0]; // Assume pre-sorted by score
+  console.log(`🔍 Finding optimal transfer combination with criteria: ${optimizationCriteria}`);
+
+  let bestPoint;
+
+  if (optimizationCriteria === "most_reliable") {
+    console.log('🔍 Applying reliability-based optimization...');
+
+    // For reliability optimization, prioritize transfer points that involve high-reliability routes
+    const reliableTransferPoints = [];
+
+    for (const point of transferPoints) {
+      let reliabilityScore = 0;
+
+      // Check if fromRoute has high reliability
+      if (point.fromRoute?.id) {
+        const fromRoute = await ctx.db.get(point.fromRoute.id);
+        if (fromRoute && 'reliability' in fromRoute && fromRoute.reliability && fromRoute.reliability > 1.5) {
+          reliabilityScore += fromRoute.reliability;
+          console.log(`🔍 High reliability fromRoute: ${fromRoute.name} (${fromRoute.reliability})`);
+        }
+      }
+
+      // Check if toRoute has high reliability
+      if (point.toRoute?.id) {
+        const toRoute = await ctx.db.get(point.toRoute.id);
+        if (toRoute && 'reliability' in toRoute && toRoute.reliability && toRoute.reliability > 1.5) {
+          reliabilityScore += toRoute.reliability;
+          console.log(`🔍 High reliability toRoute: ${toRoute.name} (${toRoute.reliability})`);
+        }
+      }
+
+      reliableTransferPoints.push({
+        ...point,
+        reliabilityScore
+      });
+    }
+
+    // Sort by reliability score (highest first), then by original score
+    reliableTransferPoints.sort((a, b) => {
+      if (a.reliabilityScore !== b.reliabilityScore) {
+        return b.reliabilityScore - a.reliabilityScore;
+      }
+      return (b.scores?.total || b.score || 0) - (a.scores?.total || a.score || 0);
+    });
+
+    console.log('🔍 Reliability-sorted transfer points:', reliableTransferPoints.map(p => ({
+      fromRoute: p.fromRoute?.name,
+      toRoute: p.toRoute?.name,
+      reliabilityScore: p.reliabilityScore,
+      originalScore: p.scores?.total || p.score
+    })));
+
+    bestPoint = reliableTransferPoints[0];
+  } else {
+    // For other optimization criteria (shortest_time, fewest_transfers, etc.)
+    // Use the original scoring (already sorted by total score)
+    console.log(`🔍 Using standard optimization for ${optimizationCriteria}`);
+    bestPoint = transferPoints[0];
+  }
+
+  console.log(`🔍 Selected best transfer point for ${optimizationCriteria}:`, {
+    fromRoute: bestPoint?.fromRoute?.name,
+    toRoute: bestPoint?.toRoute?.name,
+    reliabilityScore: bestPoint?.reliabilityScore,
+    originalScore: bestPoint?.scores?.total || bestPoint?.score
+  });
+
   const sequence = await createTwoLegSequence(ctx, origin, destination, bestPoint, originAddress, destinationAddress);
-  
+
   return {
     sequence: [bestPoint],
     legs: sequence.legs,

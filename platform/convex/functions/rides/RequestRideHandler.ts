@@ -48,6 +48,7 @@ export const requestRideHandler = async (
     let calculatedDuration = args.estimatedDuration || 0;
 
     // Use the enhanced taxi matching to get route information
+    // For multi-leg journeys, we only validate the current leg
     const taxiMatchingResult = await ctx.runQuery(
       require("../../_generated/api").internal.functions.routes.enhancedTaxiMatching._findAvailableTaxisForJourney,
       {
@@ -62,13 +63,44 @@ export const requestRideHandler = async (
       }
     );
 
+    console.log('🔍 Taxi matching result for ride request:', {
+      availableTaxisCount: taxiMatchingResult.availableTaxis?.length || 0,
+      targetDriverId: args.driverId,
+      isMultiLeg: args.isMultiLegRide,
+      legIndex: args.legIndex,
+      startLocation: args.startLocation,
+      endLocation: args.endLocation,
+      foundDriverIds: taxiMatchingResult.availableTaxis?.map((taxi: any) => taxi.userId) || []
+    });
+
+    // Add specific debugging for multi-leg journeys
+    if (args.isMultiLegRide) {
+      console.log('🔍 Multi-leg ride validation:', {
+        legIndex: args.legIndex,
+        parentJourneyId: args.parentJourneyId,
+        startAddress: args.startLocation.address,
+        endAddress: args.endLocation.address,
+        note: 'For first leg, endLocation should be transfer point, not final destination'
+      });
+    }
+
     // Find the specific driver in the results to get route distance
     const matchedTaxi = taxiMatchingResult.availableTaxis.find(
       (taxi: any) => taxi.userId === args.driverId
     );
 
     if (!matchedTaxi) {
-      throw new Error(`Driver ${args.driverId} is not available for this route or no matching route found`);
+      console.error('❌ Driver not found in taxi matching results:', {
+        searchedDriverId: args.driverId,
+        availableDriverIds: taxiMatchingResult.availableTaxis?.map((taxi: any) => taxi.userId) || [],
+        routeSearched: `${args.startLocation.address} → ${args.endLocation.address}`,
+        isMultiLeg: args.isMultiLegRide,
+        legIndex: args.legIndex,
+        taxiMatchingSuccess: taxiMatchingResult.success,
+        totalAvailableTaxis: taxiMatchingResult.availableTaxis?.length || 0
+      });
+
+      throw new Error(`Driver ${args.driverId} is not available for this route or no matching route found. Route searched: ${args.startLocation.address} → ${args.endLocation.address}. Available drivers: ${taxiMatchingResult.availableTaxis?.map((taxi: any) => taxi.userId).join(', ') || 'none'}`);
     }
 
     if (matchedTaxi.routeInfo.passengerDisplacement >= 0) {

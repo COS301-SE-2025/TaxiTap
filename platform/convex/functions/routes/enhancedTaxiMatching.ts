@@ -18,36 +18,25 @@ function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): 
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  // Input validation
   if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
-    console.warn('Invalid coordinates in calculateDistance:', { lat1, lon1, lat2, lon2 });
     return 0;
   }
-  
-  // If coordinates are the same, distance is 0
+
   if (lat1 === lat2 && lon1 === lon2) {
     return 0;
   }
-  
-  const R = 6371; // Earth's radius in kilometers
+
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  
-  const a = 
+
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2);
-  
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  
-  console.log('🧮 Distance calculation:', {
-    from: { lat: lat1, lon: lon1 },
-    to: { lat: lat2, lon: lon2 },
-    distance: distance.toFixed(3) + 'km'
-  });
-  
-  return distance;
+  return R * c;
 }
 
 /**
@@ -154,19 +143,6 @@ async function calculateRouteScore(
   endLat: number,
   endLon: number
 ): Promise<RouteScore> {
-  console.log('🔍 calculateRouteScore input:', {
-    routeId: route.routeId,
-    startLat,
-    startLon,
-    endLat,
-    endLon,
-    inputTypes: {
-      startLat: typeof startLat,
-      startLon: typeof startLon,
-      endLat: typeof endLat,
-      endLon: typeof endLon
-    }
-  });
 
   // Get enriched stops or fall back to original stops
   const enrichedRoute = await ctx.db
@@ -209,16 +185,6 @@ async function calculateRouteScore(
   const originalScore = totalScore;
   totalScore = totalScore / reliabilityMultiplier;
 
-  // Log reliability boost if applied
-  if (route.reliability && route.reliability !== 1.0) {
-    console.log(`🎯 Route reliability boost applied:`, {
-      routeName: route.name,
-      reliabilityMultiplier,
-      originalScore: Math.round(originalScore * 100) / 100,
-      adjustedScore: Math.round(totalScore * 100) / 100,
-      improvement: `${Math.round((1 - totalScore/originalScore) * 100)}%`
-    });
-  }
   
   // Check if this could be a direct route (start stop comes before end stop)
   const hasDirectRoute: boolean = Boolean(closestToStart.stop && closestToEnd.stop &&
@@ -232,28 +198,22 @@ async function calculateRouteScore(
   passengerDisplacement = calculateDistance(startLat, startLon, endLat, endLon);
   
   if (hasDirectRoute && closestToStart.stop && closestToEnd.stop) {
-    // Fare based on passenger displacement from origin
     calculatedFare = calculateFare(passengerDisplacement);
-    
-    console.log('📍 Route calculation debug:', {
-      startLat, startLon, endLat, endLon,
-      passengerDisplacement,
-      calculatedFare,
-      hasDirectRoute,
-      startStopName: closestToStart.stop.name,
-      endStopName: closestToEnd.stop.name
-    });
   } else {
-    // Even if no direct route, we can still calculate fare based on displacement
     calculatedFare = calculateFare(passengerDisplacement);
-    
-    console.log('⚠️ No direct route found, but calculated displacement:', {
-      startLat, startLon, endLat, endLon,
-      passengerDisplacement,
-      calculatedFare
+  }
+
+  // Debug only failing route validation
+  if (startProximity > 3.0 || endProximity > 3.0 || !hasDirectRoute) {
+    console.log('❌ Route validation failed:', {
+      routeName: route.name,
+      startProximity: startProximity > 3.0 ? `${Math.round(startProximity * 100) / 100}km (exceeds 3km limit)` : `${Math.round(startProximity * 100) / 100}km ✓`,
+      endProximity: endProximity > 3.0 ? `${Math.round(endProximity * 100) / 100}km (exceeds 3km limit)` : `${Math.round(endProximity * 100) / 100}km ✓`,
+      hasDirectRoute: hasDirectRoute ? 'Yes ✓' : 'No ❌',
+      endStopName: closestToEnd.stop?.name || 'None found'
     });
   }
-  
+
   return {
     totalScore,
     startProximity,
@@ -389,31 +349,8 @@ export const _findAvailableTaxisForJourneyHandler = async (
     const nextExpansionTime = getNextExpansionTime(startTime, currentRadius);
     const expansionsRemaining = Math.floor((RADIUS_CONFIG.MAX_RADIUS - currentRadius) / RADIUS_CONFIG.EXPANSION_INTERVAL);
     
-    console.log('🔍 Finding available taxis for journey with dynamic radius:', {
-      origin: { lat: originLat, lng: originLng },
-      destination: { lat: destinationLat, lng: destinationLng },
-      radiusInfo: {
-        currentRadius: currentRadius.toFixed(1) + 'km',
-        elapsedTime: ((Date.now() - startTime) / 1000).toFixed(1) + 's',
-        expansionsRemaining,
-        nextExpansionIn: nextExpansionTime ? ((nextExpansionTime - Date.now()) / 1000).toFixed(1) + 's' : 'none'
-      }
-    });
-
-    console.log('📍 Passenger location being used for search:', {
-      latitude: originLat,
-      longitude: originLng,
-      searchRadius: currentRadius + 'km'
-    });
-
-    // Calculate passenger displacement once
     const passengerDisplacement = calculateDistance(originLat, originLng, destinationLat, destinationLng);
     const calculatedFare = calculateFare(passengerDisplacement);
-    
-    console.log('🧪 Passenger displacement:', {
-      displacement: passengerDisplacement.toFixed(3) + 'km',
-      fare: 'R' + calculatedFare.toFixed(2)
-    });
 
     // Step 1: Get all drivers with current locations who are nearby (using current radius)
     const locations = await ctx.db.query("locations").collect();
@@ -452,7 +389,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       };
     }
 
-    console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers within ${currentRadius.toFixed(1)}km`);
 
     // Step 2: Filter drivers who are actually online (have active work sessions)
     const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
@@ -496,7 +432,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       };
     }
 
-    console.log(`✅ Found ${onlineDriverLocations.length} online drivers out of ${nearbyDriverLocations.length} nearby drivers`);
 
     // Step 4: Get driver profiles for online drivers only
     const onlineDriverUserIds = onlineDriverLocations.map(loc => loc.userId);
@@ -544,7 +479,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       ))
       .collect();
 
-    console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} online drivers`);
 
     // Step 6: Only calculate route scores for routes that have online drivers
     const validRoutes = [];
@@ -638,7 +572,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       }
     }
 
-    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis within ${currentRadius.toFixed(1)}km`);
 
     if (availableTaxis.length === 0) {
       return {
@@ -1600,12 +1533,11 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
     const hasHighReliabilityRoutes = async (legs: any[]): Promise<boolean> => {
       for (const leg of legs) {
         if (leg.routeId) {
-          const route = await ctx.db
-            .query("routes")
-            .withIndex("by_route_id", (q: any) => q.eq("routeId", leg.routeId))
-            .unique();
+          const route = await ctx.db.get(leg.routeId);
 
-          if (route && route.reliability && route.reliability > 1.5) {
+          // Check if this is a route document and has reliability
+          if (route && 'name' in route && 'reliability' in route && route.reliability && route.reliability > 1.5) {
+            console.log(`🔍 Found high reliability route: ${route.name} with reliability ${route.reliability}`);
             return true;
           }
         }
@@ -1613,11 +1545,9 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
       return false;
     };
 
-    // Primary option (best transfer point) - create both fastest and reliable variants
+    // Create fastest option (time-optimized)
     if (optimizationResult.optimizedSequence.length > 0 && optimizationResult.journeyLegs && optimizationResult.summary) {
-      console.log('✅ Creating primary multi-leg options (fastest and reliable)');
-
-      // Always create fastest option
+      console.log('✅ Creating fastest multi-leg option');
       multiLegOptions.push({
         journeyId: "fastest_primary",
         totalLegs: optimizationResult.journeyLegs.length,
@@ -1627,31 +1557,60 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
         optimizationPreference: "shortest_time",
         transferPoints: optimizationResult.optimizedSequence,
       });
-
-      // Check if this combination has reliable routes and create reliable option
-      const isReliableRoute = await hasHighReliabilityRoutes(optimizationResult.journeyLegs);
-      if (isReliableRoute) {
-        console.log('✅ Creating reliable variant for primary option');
-        multiLegOptions.push({
-          journeyId: "reliable_primary",
-          totalLegs: optimizationResult.journeyLegs.length,
-          legs: optimizationResult.journeyLegs,
-          estimatedTotalFare: optimizationResult.summary.estimatedTotalCost,
-          estimatedTotalDuration: optimizationResult.summary.estimatedTotalTime,
-          optimizationPreference: "most_reliable",
-          transferPoints: optimizationResult.optimizedSequence,
-        });
-      }
     } else {
-      console.log('❌ Cannot create primary option:', {
+      console.log('❌ Cannot create fastest option:', {
         hasOptimizedSequence: optimizationResult.optimizedSequence?.length > 0,
         hasJourneyLegs: !!optimizationResult.journeyLegs,
         hasSummary: !!optimizationResult.summary
       });
     }
 
-    // Alternative options (other good transfer points)
-    for (let i = 1; i < Math.min(3, scoredPointsResult.scoredPoints.length); i++) {
+    // Create reliable option (reliability-optimized) - run separate optimization
+    console.log('🔍 Creating reliability-optimized route...');
+    const reliableOptimizationResult: {
+      success: boolean;
+      optimizedSequence: any[];
+      journeyLegs?: any[];
+      summary?: any;
+      alternativeOptions?: any[];
+      error?: string;
+    } = await ctx.runQuery(internal.functions.journeys.transferPoints.optimizeTransferSequence, {
+      originLat: args.originLat,
+      originLng: args.originLng,
+      destinationLat: args.destinationLat,
+      destinationLng: args.destinationLng,
+      transferPoints: scoredPointsResult.scoredPoints.slice(0, 5), // Use top 5 transfer points
+      optimizationCriteria: "most_reliable", // Specifically optimize for reliability
+      originAddress: args.originAddress,
+      destinationAddress: args.destinationAddress
+    });
+
+    if (reliableOptimizationResult.success && reliableOptimizationResult.optimizedSequence.length > 0 &&
+        reliableOptimizationResult.journeyLegs && reliableOptimizationResult.summary) {
+
+      // Only add if it has high reliability routes
+      const hasReliableRoutes = await hasHighReliabilityRoutes(reliableOptimizationResult.journeyLegs);
+      if (hasReliableRoutes) {
+        console.log('✅ Creating reliable multi-leg option with high reliability routes');
+        multiLegOptions.push({
+          journeyId: "reliable_primary",
+          totalLegs: reliableOptimizationResult.journeyLegs.length,
+          legs: reliableOptimizationResult.journeyLegs,
+          estimatedTotalFare: reliableOptimizationResult.summary.estimatedTotalCost,
+          estimatedTotalDuration: reliableOptimizationResult.summary.estimatedTotalTime,
+          optimizationPreference: "most_reliable",
+          transferPoints: reliableOptimizationResult.optimizedSequence,
+        });
+      } else {
+        console.log('ℹ️ Reliable optimization result does not contain high reliability routes, skipping');
+      }
+    } else {
+      console.log('❌ Cannot create reliable option:', reliableOptimizationResult.error || 'Unknown error');
+    }
+
+    // Alternative options (other good transfer points) - only create time-optimized alternatives
+    console.log('🔍 Creating alternative fastest options...');
+    for (let i = 1; i < Math.min(2, scoredPointsResult.scoredPoints.length); i++) {
       const altTransferPoint = scoredPointsResult.scoredPoints[i];
       const altSequence: {
         success: boolean;
@@ -1666,13 +1625,13 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
         destinationLat: args.destinationLat,
         destinationLng: args.destinationLng,
         transferPoints: [altTransferPoint],
-        optimizationCriteria: args.optimizationPreference as "shortest_time" | "fewest_transfers" | "most_reliable" | "lowest_cost",
+        optimizationCriteria: "shortest_time", // Always optimize for time for alternatives
         originAddress: args.originAddress,
         destinationAddress: args.destinationAddress
       });
 
       if (altSequence.success && altSequence.journeyLegs && altSequence.journeyLegs.length > 0 && altSequence.summary) {
-        // Always create fastest alternative
+        console.log(`✅ Creating alternative fastest option ${i}`);
         multiLegOptions.push({
           journeyId: `fastest_alt_${i}`,
           totalLegs: altSequence.journeyLegs.length,
@@ -1682,21 +1641,8 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
           optimizationPreference: "shortest_time",
           transferPoints: altSequence.optimizedSequence,
         });
-
-        // Check if this alternative has reliable routes
-        const isReliableAlt = await hasHighReliabilityRoutes(altSequence.journeyLegs);
-        if (isReliableAlt) {
-          console.log(`✅ Creating reliable variant for alternative ${i}`);
-          multiLegOptions.push({
-            journeyId: `reliable_alt_${i}`,
-            totalLegs: altSequence.journeyLegs.length,
-            legs: altSequence.journeyLegs,
-            estimatedTotalFare: altSequence.summary.estimatedTotalCost,
-            estimatedTotalDuration: altSequence.summary.estimatedTotalTime,
-            optimizationPreference: "most_reliable",
-            transferPoints: altSequence.optimizedSequence,
-          });
-        }
+      } else {
+        console.log(`❌ Cannot create alternative ${i}:`, altSequence.error || 'Unknown error');
       }
     }
 
