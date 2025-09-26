@@ -8,21 +8,22 @@ export default defineSchema({
     password: v.string(),
     age: v.number(),
     phoneNumber: v.string(),
-    
+
     isVerified: v.boolean(),
     isActive: v.boolean(),
+    isLoggedIn: v.optional(v.boolean()),
     accountType: v.union(
       v.literal("passenger"),
       v.literal("driver"),
       v.literal("both")
     ),
-    
+
     currentActiveRole: v.optional(v.union(
       v.literal("passenger"),
       v.literal("driver")
     )),
     lastRoleSwitchAt: v.optional(v.number()),
-    
+
     profilePicture: v.optional(v.string()),
     dateOfBirth: v.optional(v.number()),
     gender: v.optional(v.union(
@@ -31,7 +32,7 @@ export default defineSchema({
       v.literal("other"),
       v.literal("prefer_not_to_say")
     )),
-    
+
     // Added address fields
     homeAddress: v.optional(v.object({
       address: v.string(),
@@ -43,7 +44,7 @@ export default defineSchema({
       nickname: v.optional(v.string()), // e.g., "Home", "My Place"
 
     })),
-    
+
     workAddress: v.optional(v.object({
       address: v.string(),
       coordinates: v.object({
@@ -54,17 +55,18 @@ export default defineSchema({
       nickname: v.optional(v.string()), // e.g., "Work", "Office"
 
     })),
-        
+
     emergencyContact: v.optional(v.object({
       name: v.string(),
       phoneNumber: v.string(),
       relationship: v.string(),
     })),
-    
+
     createdAt: v.number(),
     updatedAt: v.number(),
     lastLoginAt: v.optional(v.number()),
-    
+    loggedInDeviceId: v.optional(v.string()),
+
     // Legacy fields - these should be removed in future versions
     // TODO: Remove these fields after running cleanupLegacyFields migration
     driverPin: v.optional(v.string()),
@@ -603,7 +605,9 @@ routes: defineTable({
     v.literal("requesting"),
     v.literal("active"),
     v.literal("completed"),
-    v.literal("failed")
+    v.literal("failed"),
+    v.literal("drivers_available"),
+    v.literal("no_drivers_found")
     ),
     rideId: v.optional(v.id("rides")),
     estimatedFare: v.number(),
@@ -613,6 +617,8 @@ routes: defineTable({
     completedAt: v.optional(v.number()),
     transferWindowStart: v.optional(v.number()),
     transferWindowEnd: v.optional(v.number()),
+    availableDrivers: v.optional(v.any()),
+    driverSearchCompletedAt: v.optional(v.number()),
 
     // Per-leg payment tracking
     paymentStatus: v.optional(v.union(

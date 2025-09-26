@@ -20,6 +20,7 @@ interface JourneyLeg {
   fromCoordinates: { latitude: number; longitude: number };
   toCoordinates: { latitude: number; longitude: number };
   routeId?: string;
+  routeName?: string;
   estimatedFare: number;
   estimatedDuration: number;
   transferWindowStart?: number;
@@ -171,7 +172,12 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
         </View>
         
         <View style={dynamicStyles.legDetails}>
-          <Text style={dynamicStyles.legRoute} numberOfLines={1}>
+          {leg.routeName && (
+            <Text style={dynamicStyles.legRouteName}>
+              {leg.routeName}
+            </Text>
+          )}
+          <Text style={dynamicStyles.legRoute}>
             {leg.fromAddress} → {leg.toAddress}
           </Text>
           <View style={dynamicStyles.legMeta}>
@@ -379,6 +385,12 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     },
     legDetails: {
       flex: 1,
+    },
+    legRouteName: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.primary,
+      marginBottom: 2,
     },
     legRoute: {
       fontSize: 14,

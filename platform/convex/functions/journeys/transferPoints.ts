@@ -142,10 +142,10 @@ export const findNearbyRouteIntersections = internalQuery({
         
         if (route1StopName.includes('drop') || route1StopName.includes('off') || route1StopName.includes('and') ||
             route2StopName.includes('drop') || route2StopName.includes('off') || route2StopName.includes('and')) {
-          console.log('🚫 Skipping transfer point with excluded stop names:', {
-            route1Stop: intersection.route1Stop?.name,
-            route2Stop: intersection.route2Stop?.name
-          });
+          // console.log('🚫 Skipping transfer point with excluded stop names:', {
+          //   route1Stop: intersection.route1Stop?.name,
+          //   route2Stop: intersection.route2Stop?.name
+          // });
           continue;
         }
         // Calculate distances for feasibility check
@@ -541,10 +541,10 @@ async function findRouteToRouteIntersections(route1: any, route2: any) {
         
         if (stop1Name.includes('drop') || stop1Name.includes('off') || stop1Name.includes('and') ||
             stop2Name.includes('drop') || stop2Name.includes('off') || stop2Name.includes('and')) {
-          console.log('🚫 Skipping intersection with excluded stop names:', {
-            stop1: stop1.name,
-            stop2: stop2.name
-          });
+          // console.log('🚫 Skipping intersection with excluded stop names:', {
+          //   stop1: stop1.name,
+          //   stop2: stop2.name
+          // });
           continue;
         }
 

@@ -267,7 +267,7 @@ export const autoProgressToSecondLeg = mutation({
 
       // First, process the payment for the completed leg
       const paymentResult = await ctx.runMutation(
-        api.functions.journeys.multiLegPaymentHandler.processLegPayment,
+        api.functions.journeys.multiLegPayment.processLegPayment,
         {
           rideId: `leg_${args.journeyId}_${args.completedLegIndex}`, // This would be the actual ride ID
           journeyId: args.journeyId,
