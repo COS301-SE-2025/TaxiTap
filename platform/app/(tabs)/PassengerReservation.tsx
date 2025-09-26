@@ -1361,7 +1361,7 @@ export default function SeatReserved() {
 			justifyContent: 'center',
 		},
 		frontPassengerButtonText: {
-			color: "#FFFFFF",
+			color: "#FF9500",
 			fontSize: 16,
 			fontWeight: "600",
 			marginLeft: 8,

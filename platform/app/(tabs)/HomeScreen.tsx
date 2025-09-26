@@ -1485,8 +1485,8 @@ export default function HomeScreen() {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.8)' 
-        : 'rgba(255, 255, 255, 0.9)',
+        ? 'rgba(30, 41, 59)' 
+        : 'rgba(255, 255, 255)',
       borderRadius: 24,
       borderWidth: 1,
       borderColor: isDark 
@@ -1494,7 +1494,7 @@ export default function HomeScreen() {
         : 'rgba(226, 232, 240, 0.8)',
       paddingVertical: 20,
       paddingHorizontal: 20,
-      marginBottom: keyboardVisible ? 20 : 32,
+      marginBottom: keyboardVisible ? 10 : 10,
       width: '100%',
       alignSelf: 'center',
       shadowColor: theme.shadow,
@@ -1663,8 +1663,8 @@ export default function HomeScreen() {
     },
     searchResultsCard: {
       backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.8)' 
-        : 'rgba(255, 255, 255, 0.9)',
+        ? 'rgba(30, 41, 59)' 
+        : 'rgba(255, 255, 255)',
       borderRadius: 20,
       padding: 20,
       borderWidth: 1,
@@ -1693,8 +1693,8 @@ export default function HomeScreen() {
     },
     routeCard: {
       backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.8)' 
-        : 'rgba(255, 255, 255, 0.9)',
+        ? 'rgba(30, 41, 59)' 
+        : 'rgba(255, 255, 255)',
       borderRadius: 20,
       flexDirection: 'row',
       alignItems: 'center',
@@ -2037,35 +2037,6 @@ export default function HomeScreen() {
                 autoCorrect={false}
                 autoCapitalize="words"
               />
-                {detectedLocation && !origin && (
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: theme.primary,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 16,
-                      marginLeft: 8,
-                    }}
-                    onPress={() => {
-                      // Clear the manual reset flag when user manually sets origin
-                      hasManuallyReset.current = false;
-                      setOrigin({
-                        latitude: detectedLocation.latitude,
-                        longitude: detectedLocation.longitude,
-                        name: t('home:currentLocation')
-                      });
-                      setOriginAddress(t('home:currentLocation'));
-                    }}
-                  >
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 12,
-                      fontWeight: '600',
-                    }}>
-{t('home:useCurrent')}
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
               {isGeocodingOrigin && (
                 <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
@@ -2178,7 +2149,6 @@ export default function HomeScreen() {
                 </Text>
               )}
 
-              {/* Destination Suggestions */}
               {showDestinationSuggestions && destinationSuggestions.length > 0 && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
@@ -2216,6 +2186,73 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        {detectedLocation && !origin && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: theme.primary,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 24,
+              marginBottom: 15,
+              marginTop: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: theme.shadow,
+              shadowOpacity: 0.2,
+              shadowOffset: { width: 0, height: 2 },
+              shadowRadius: 4,
+              elevation: 4,
+              width: "100%",
+            }}
+            onPress={() => {
+              // Clear the manual reset flag when user manually sets origin
+              hasManuallyReset.current = false;
+              
+              const currentLocationOrigin = {
+                latitude: detectedLocation.latitude,
+                longitude: detectedLocation.longitude,
+                name: t('home:currentLocation')
+              };
+              
+              // Set origin and address
+              setOrigin(currentLocationOrigin);
+              setOriginAddress(t('home:currentLocation'));
+              
+              // Animate map to current location to show the user where they are
+              mapRef.current?.animateToRegion(
+                {
+                  latitude: detectedLocation.latitude,
+                  longitude: detectedLocation.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                },
+                1000
+              );
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+              <Icon 
+                name="location" 
+                size={14} 
+                color="#FFFFFF" 
+                style={{ marginRight: 6 }} 
+              />
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                fontWeight: '600',
+                letterSpacing: 0.2,
+              }}>
+                {t('home:currentLocation')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Radius Expansion Status */}
         {isSearchingTaxis && !keyboardVisible && searchStartTime && (

@@ -69,6 +69,9 @@ export default defineSchema({
     // TODO: Remove these fields after running cleanupLegacyFields migration
     driverPin: v.optional(v.string()),
     pinUpdatedAt: v.optional(v.number()),
+
+    isLoggedIn: v.optional(v.boolean()),
+    loggedInDeviceId: v.optional(v.string()),
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phoneNumber"])

@@ -733,6 +733,8 @@ export default function RouteSelectionScreen() {
       padding: 20,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      borderRadius: 10,
+      marginTop: 10,
     },
     stopsTitle: {
       fontSize: 16,
@@ -926,12 +928,6 @@ export default function RouteSelectionScreen() {
               <Text style={dynamicStyles.stopName}>
                 {stop.name}
               </Text>
-                              <Text style={[
-                  dynamicStyles.stopType,
-                  { color: theme.textSecondary }
-                ]}>
-                  {t('routes:stop')} {stop.order}
-                </Text>
             </View>
           </View>
         ))}
