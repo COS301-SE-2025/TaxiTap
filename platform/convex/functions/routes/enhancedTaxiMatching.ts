@@ -141,7 +141,9 @@ async function calculateRouteScore(
   startLat: number,
   startLon: number,
   endLat: number,
-  endLon: number
+  endLon: number,
+  isMultiLegNotFinalLeg: boolean = false,
+  isDirectRoute: boolean = false
 ): Promise<RouteScore> {
 
   // Get enriched stops or fall back to original stops
@@ -204,13 +206,21 @@ async function calculateRouteScore(
   }
 
   // Debug only failing route validation
-  if (startProximity > 3.0 || endProximity > 3.0 || !hasDirectRoute) {
+  // For non-final legs (first, intermediate): only check start proximity
+  // For final leg: only check end proximity  
+  // For direct routes: check both start and end proximity
+  const startProximityExceedsLimit = isMultiLegNotFinalLeg && startProximity > 3.0;
+  const endProximityExceedsLimit = !isMultiLegNotFinalLeg && !isDirectRoute && endProximity > 3.0;
+  const directRouteExceedsLimit = isDirectRoute && (startProximity > 3.0 || endProximity > 3.0);
+  
+  if (startProximityExceedsLimit || endProximityExceedsLimit || directRouteExceedsLimit || !hasDirectRoute) {
     console.log('❌ Route validation failed:', {
       routeName: route.name,
       startProximity: startProximity > 3.0 ? `${Math.round(startProximity * 100) / 100}km (exceeds 3km limit)` : `${Math.round(startProximity * 100) / 100}km ✓`,
       endProximity: endProximity > 3.0 ? `${Math.round(endProximity * 100) / 100}km (exceeds 3km limit)` : `${Math.round(endProximity * 100) / 100}km ✓`,
       hasDirectRoute: hasDirectRoute ? 'Yes ✓' : 'No ❌',
-      endStopName: closestToEnd.stop?.name || 'None found'
+      endStopName: closestToEnd.stop?.name || 'None found',
+      legType: isMultiLegNotFinalLeg ? 'Non-final leg (start proximity only)' : isDirectRoute ? 'Direct route (both proximities)' : 'Final leg (end proximity only)'
     });
   }
 
@@ -496,14 +506,30 @@ export const _findAvailableTaxisForJourneyHandler = async (
       if (driversOnRouteLocations.length === 0) continue;
 
       // Calculate route score only once per route
-      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng);
+      // Determine if this is a direct route (not part of a multi-leg journey)
+      const isDirectRoute = !isMultiLegNotFinalLeg && originLat !== destinationLat && originLng !== destinationLng;
+      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng, isMultiLegNotFinalLeg, isDirectRoute);
       
       // Check if route is valid
-      // For multi-leg non-final legs, only check startProximity (passenger can board)
-      // For direct routes and multi-leg final legs, check both startProximity and endProximity
-      if (routeScore.startProximity > maxOriginDistance ||
-          !routeScore.hasDirectRoute ||
-          (!isMultiLegNotFinalLeg && routeScore.endProximity > maxDestinationDistance)) {
+      // For non-final legs (first, intermediate): only check startProximity (passenger can board/transfer)
+      // For final leg: only check endProximity (passenger can alight at destination)
+      // For direct routes: check both startProximity and endProximity
+      if (!routeScore.hasDirectRoute) {
+        continue;
+      }
+      
+      // For non-final legs: only check start proximity
+      if (isMultiLegNotFinalLeg && routeScore.startProximity > maxOriginDistance) {
+        continue;
+      }
+      
+      // For final leg: only check end proximity
+      if (!isMultiLegNotFinalLeg && !isDirectRoute && routeScore.endProximity > maxDestinationDistance) {
+        continue;
+      }
+      
+      // For direct routes: check both proximities
+      if (isDirectRoute && (routeScore.startProximity > maxOriginDistance || routeScore.endProximity > maxDestinationDistance)) {
         continue;
       }
 
@@ -833,10 +859,10 @@ export type MultiLegJourneyResult = {
  */
 export const analyzeMultiLegJourneyOptions = query({
   args: {
-    originLat: v.number(),
-    originLng: v.number(),
-    destinationLat: v.number(),
-    destinationLng: v.number(),
+    originLat: v.float64(),
+    originLng: v.float64(), 
+    destinationLat: v.float64(),
+    destinationLng: v.float64(),
     optimizationPreference: v.string(),
     originAddress: v.optional(v.string()),
     destinationAddress: v.optional(v.string()),
@@ -860,7 +886,8 @@ export const analyzeMultiLegJourneyOptions = query({
         maxOriginDistance: 2.0, // Increased from 1.0km to 2.0km
         maxDestinationDistance: 2.0, // Increased from 1.0km to 2.0km
         maxTaxiDistance: 3.0, // Increased from 1.0km to 3.0km for better coverage
-        maxResults: 10
+        maxResults: 10,
+        isMultiLegNotFinalLeg: false // This is a direct route check, so use full validation
       });
 
       if (directRouteResult.success && directRouteResult.availableTaxis.length > 0) {
@@ -880,8 +907,76 @@ export const analyzeMultiLegJourneyOptions = query({
         message: directRouteResult.message
       });
 
+      // Before generating multi-leg options, check for first-leg routes using actual transfer points
+      console.log('🔍 Checking for first-leg routes for multi-leg journey...');
+      
+      // Get a quick preview of transfer points to validate first-leg routes
+      const previewTransferPoints: {
+        success: boolean;
+        intersectionPoints: any[];
+        analysis?: any;
+        error?: string;
+      } = await ctx.runQuery(internal.functions.journeys.transferPoints.findNearbyRouteIntersections, {
+        originLat: args.originLat,
+        originLng: args.originLng,
+        destinationLat: args.destinationLat,
+        destinationLng: args.destinationLng,
+        maxTransferDistance: 3000 // 3km to match main transfer points search
+      });
+
+      // Use actual transfer points for first-leg validation if available
+      let firstLegResult: any = null;
+      if (previewTransferPoints.success && previewTransferPoints.intersectionPoints && previewTransferPoints.intersectionPoints.length > 0) {
+        // Take the first (best) transfer point for first-leg validation
+        const bestTransferPoint = previewTransferPoints.intersectionPoints[0];
+        
+        firstLegResult = await findAvailableTaxisForJourneyHandler(ctx, {
+          originLat: args.originLat,
+          originLng: args.originLng,
+          destinationLat: bestTransferPoint.coordinates.latitude,
+          destinationLng: bestTransferPoint.coordinates.longitude,
+          maxOriginDistance: 3.0, // Allow wider search for first leg
+          maxDestinationDistance: 1.0, // Transfer points should be close to routes
+          maxTaxiDistance: 3.0,
+          maxResults: 15,
+          isMultiLegNotFinalLeg: true // This is first-leg validation - only check start proximity
+        });
+
+        console.log('🔍 First-leg routes available (using actual transfer point):', {
+          success: firstLegResult.success,
+          availableFirstLegTaxis: firstLegResult.availableTaxis?.length || 0,
+          transferPointUsed: `${bestTransferPoint.coordinates.latitude.toFixed(4)}, ${bestTransferPoint.coordinates.longitude.toFixed(4)}`,
+          routes: firstLegResult.availableTaxis?.map((t: any) => `${t.routeInfo?.routeName} (start: ${t.routeInfo?.startProximity}km)`).slice(0, 5) || []
+        });
+
+        // If we found valid first-leg routes, ensure they are used in transfer points generation
+        if (firstLegResult.success && firstLegResult.availableTaxis && firstLegResult.availableTaxis.length > 0) {
+          console.log('🔄 Valid first-leg routes found - these should be prioritized in multi-leg generation:', {
+            validRoutes: firstLegResult.availableTaxis.map((t: any) => ({
+              routeId: t.routeInfo?.routeId,
+              routeName: t.routeInfo?.routeName,
+              startProximity: t.routeInfo?.startProximity
+            }))
+          });
+        }
+      } else {
+        console.log('⚠️ No transfer points found for first-leg validation preview');
+      }
+
       // Generate multi-leg options using proper route connectivity analysis
-      return await generateMultiLegOptions(ctx, args);
+      // Pass known valid first-leg routes if available
+      const validFirstLegRoutes = (previewTransferPoints.success && firstLegResult?.success && firstLegResult.availableTaxis) 
+        ? firstLegResult.availableTaxis.map((taxi: AvailableTaxi) => ({
+            routeId: taxi.routeInfo?.routeId,
+            routeName: taxi.routeInfo?.routeName,
+            startProximity: taxi.routeInfo?.startProximity
+          }))
+        : undefined;
+      
+      return await generateMultiLegOptions(ctx, {
+        ...args,
+        knownValidFirstLegRoutes: validFirstLegRoutes
+      });
       
     } catch (error) {
       console.error("❌ Error analyzing multi-leg journey options:", error);
@@ -1106,12 +1201,16 @@ async function findAvailableDriversForLegHandler(ctx: QueryCtx, args: {
 async function findFirstLegAvailableDrivers(ctx: QueryCtx, {
   originLat,
   originLng,
+  destinationLat,
+  destinationLng,
   maxOriginDistance = 2.0,
   maxTaxiDistance = 3.0,
   maxResults = 10
 }: {
   originLat: number;
   originLng: number;
+  destinationLat: number;
+  destinationLng: number;
   maxOriginDistance?: number;
   maxTaxiDistance?: number;
   maxResults?: number;
@@ -1231,10 +1330,9 @@ async function findFirstLegAvailableDrivers(ctx: QueryCtx, {
       if (driversOnRouteLocations.length === 0) continue;
 
       // Calculate route score for origin proximity only
-      // For first leg, we only care about start proximity, so we use a dummy destination
-      const dummyDestinationLat = originLat + 0.01; // Small offset to avoid same-point issues
-      const dummyDestinationLng = originLng + 0.01;
-      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, dummyDestinationLat, dummyDestinationLng);
+      // For first leg validation, we use the actual destination but set isMultiLegNotFinalLeg=true
+      // This ensures we only validate start proximity and hasDirectRoute, ignoring end proximity
+      const routeScore = await calculateRouteScore(ctx, route, originLat, originLng, destinationLat, destinationLng, true, false);
 
       // Only check origin proximity for first leg (ignore destination proximity)
       if (routeScore.startProximity > maxOriginDistance) {
@@ -1384,6 +1482,11 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
   optimizationPreference: string;
   originAddress?: string;
   destinationAddress?: string;
+  knownValidFirstLegRoutes?: Array<{
+    routeId: string;
+    routeName: string;
+    startProximity: number;
+  }>;
 }): Promise<MultiLegJourneyResult> {
   try {
     // Step 1: Find route intersections (transfer points)
@@ -1409,6 +1512,30 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
 
     if (intersectionResult.intersectionPoints && intersectionResult.intersectionPoints.length > 0) {
       console.log(`🔍 Found ${intersectionResult.intersectionPoints.length} transfer points`);
+      
+      // PRIORITY FIX: If we have known valid first-leg routes, prioritize transfer points that use them
+      if (args.knownValidFirstLegRoutes && args.knownValidFirstLegRoutes.length > 0) {
+        const validRouteIds = new Set(args.knownValidFirstLegRoutes.map(r => r.routeId));
+        
+        // Separate transfer points into those using known valid routes and others
+        const priorityTransferPoints = intersectionResult.intersectionPoints.filter(point => 
+          validRouteIds.has(point.fromRoute?.id) || validRouteIds.has(point.toRoute?.id)
+        );
+        const otherTransferPoints = intersectionResult.intersectionPoints.filter(point => 
+          !validRouteIds.has(point.fromRoute?.id) && !validRouteIds.has(point.toRoute?.id)
+        );
+        
+        // Prioritize known valid routes by putting them first
+        intersectionResult.intersectionPoints = [...priorityTransferPoints, ...otherTransferPoints];
+        
+        console.log(`🎯 Prioritized ${priorityTransferPoints.length} transfer points using known valid first-leg routes:`, {
+          knownValidRoutes: args.knownValidFirstLegRoutes.map(r => r.routeName),
+          priorityTransferPoints: priorityTransferPoints.slice(0, 3).map(p => ({
+            fromRoute: p.fromRoute?.name,
+            toRoute: p.toRoute?.name
+          }))
+        });
+      }
     }
 
     if (!intersectionResult.success || intersectionResult.intersectionPoints.length === 0) {
@@ -1655,6 +1782,8 @@ async function generateMultiLegOptions(ctx: QueryCtx, args: {
         const firstLegDriverResult = await findFirstLegAvailableDrivers(ctx, {
           originLat: args.originLat,
           originLng: args.originLng,
+          destinationLat: firstLeg.toCoordinates?.latitude || args.destinationLat,
+          destinationLng: firstLeg.toCoordinates?.longitude || args.destinationLng,
           maxOriginDistance: 2.0,
           maxTaxiDistance: 3.0,
           maxResults: 10

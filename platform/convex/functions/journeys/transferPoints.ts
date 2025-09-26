@@ -26,7 +26,7 @@ export const findNearbyRouteIntersections = internalQuery({
     destinationLng: v.number(),
     maxTransferDistance: v.optional(v.number()), // Optional max walking distance to transfer point
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const { 
       originLat, 
       originLng, 
@@ -61,16 +61,16 @@ export const findNearbyRouteIntersections = internalQuery({
       destinationNearbyRoutes.sort((a, b) => a.distance - b.distance);
 
       const TOP_ROUTES_PER_ENDPOINT = 25; // Limit to top 25 routes per endpoint
-      const topOriginRoutes = originNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
-      const topDestinationRoutes = destinationNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
+      const topOriginRoutes: any[] = originNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
+      const topDestinationRoutes: any[] = destinationNearbyRoutes.slice(0, TOP_ROUTES_PER_ENDPOINT);
 
       // Find intersections only between promising route combinations
       const allIntersectionPoints = [];
 
       for (const originRouteData of topOriginRoutes) {
         for (const destRouteData of topDestinationRoutes) {
-          const route1 = originRouteData.route;
-          const route2 = destRouteData.route;
+          const route1: any = originRouteData.route;      
+          const route2: any = destRouteData.route;
 
           // Skip if same route
           if (route1._id === route2._id) {
@@ -130,7 +130,7 @@ export const findNearbyRouteIntersections = internalQuery({
 
       // Limit to top 100 intersections to avoid timeout
       const TOP_INTERSECTIONS_TO_PROCESS = 100;
-      const topIntersections = allIntersectionPoints.slice(0, TOP_INTERSECTIONS_TO_PROCESS);
+      const topIntersections: any[] = allIntersectionPoints.slice(0, TOP_INTERSECTIONS_TO_PROCESS);
 
       // Filter intersections by journey feasibility
       const feasibleIntersections = [];
@@ -207,7 +207,7 @@ export const findNearbyRouteIntersections = internalQuery({
       // OPTIMIZATION 5: Final sorting and limiting of results
       feasibleIntersections.sort((a, b) => b.confidence - a.confidence);
       const MAX_FINAL_RESULTS = 50; // Limit final results to top 50
-      const finalResults = feasibleIntersections.slice(0, MAX_FINAL_RESULTS);
+      const finalResults: any[] = feasibleIntersections.slice(0, MAX_FINAL_RESULTS);
 
       return {
         success: true,
