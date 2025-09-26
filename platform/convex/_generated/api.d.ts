@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as cors from "../cors.js";
 import type * as crons from "../crons.js";
 import type * as functions_badges_awardTrustedPayerBadge from "../functions/badges/awardTrustedPayerBadge.js";
 import type * as functions_badges_badgeService from "../functions/badges/badgeService.js";
@@ -132,6 +133,7 @@ import type * as functions_work_sessions_startWorkSessionHandler from "../functi
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  cors: typeof cors;
   crons: typeof crons;
   "functions/badges/awardTrustedPayerBadge": typeof functions_badges_awardTrustedPayerBadge;
   "functions/badges/badgeService": typeof functions_badges_badgeService;
