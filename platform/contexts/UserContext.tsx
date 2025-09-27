@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/convex/_generated/api';
 import { useMutation } from "convex/react";
@@ -43,8 +44,9 @@ export const getDeviceId = async (): Promise<string> => {
   const DEVICE_ID_KEY = 'deviceId';
   let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
   if (!deviceId) {
-    deviceId = uuidv4();
-    await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+    const newDeviceId = uuidv4();
+    await AsyncStorage.setItem(DEVICE_ID_KEY, newDeviceId);
+    return newDeviceId;
   }
   return deviceId;
 };

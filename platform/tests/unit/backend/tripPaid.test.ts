@@ -9,16 +9,18 @@ describe("tripPaidHandler", () => {
       db: {
         query: jest.fn().mockReturnThis(),
         withIndex: jest.fn().mockReturnThis(),
+        filter: jest.fn().mockReturnThis(),
         first: jest.fn(),
         patch: jest.fn(),
         get: jest.fn(),
+        collect: jest.fn().mockResolvedValue([]),
       },
     };
   });
 
   it("updates tripPaid when ride exists and user is passenger", async () => {
     const ride = { _id: "ride123", passengerId: "user1" as Id<"taxiTap_users">, tripPaid: false };
-    mockCtx.db.get.mockResolvedValueOnce(ride);
+    mockCtx.db.first.mockResolvedValueOnce(ride);
 
     await tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact");
 
@@ -31,7 +33,7 @@ describe("tripPaidHandler", () => {
   });
 
   it("throws an error if ride is not found", async () => {
-    mockCtx.db.get.mockResolvedValueOnce(null);
+    mockCtx.db.first.mockResolvedValueOnce(null);
 
     await expect(
       tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact")
@@ -40,7 +42,7 @@ describe("tripPaidHandler", () => {
 
   it("throws an error if user is not the passenger", async () => {
     const ride = { _id: "ride123", passengerId: "user2" as Id<"taxiTap_users">, tripPaid: false };
-    mockCtx.db.get.mockResolvedValueOnce(ride);
+    mockCtx.db.first.mockResolvedValueOnce(ride);
 
     await expect(
       tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, null, "exact")
@@ -49,7 +51,7 @@ describe("tripPaidHandler", () => {
 
   it("handles paying false correctly", async () => {
     const ride = { _id: "ride123", passengerId: "user1" as Id<"taxiTap_users">, tripPaid: true };
-    mockCtx.db.get.mockResolvedValueOnce(ride);
+    mockCtx.db.first.mockResolvedValueOnce(ride);
 
     await tripPaidHandler(mockCtx, "ride123" as Id<"rides">, "user1" as Id<"taxiTap_users">, false, null, "exact");
 

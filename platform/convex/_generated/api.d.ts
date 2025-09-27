@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as cors from "../cors.js";
 import type * as crons from "../crons.js";
 import type * as functions_badges_awardTrustedPayerBadge from "../functions/badges/awardTrustedPayerBadge.js";
 import type * as functions_badges_badgeService from "../functions/badges/badgeService.js";
@@ -33,13 +34,11 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
-import type * as functions_journeys_journeyManagement from "../functions/journeys/journeyManagement.js";
-import type * as functions_journeys_multiLegPayment from "../functions/journeys/multiLegPayment.js";
-import type * as functions_journeys_multiLegPaymentHandler from "../functions/journeys/multiLegPaymentHandler.js";
-import type * as functions_journeys_paymentRecovery from "../functions/journeys/paymentRecovery.js";
-import type * as functions_journeys_paymentRecoveryHandler from "../functions/journeys/paymentRecoveryHandler.js";
-import type * as functions_journeys_routeAnalysis from "../functions/journeys/routeAnalysis.js";
-import type * as functions_journeys_transferPoints from "../functions/journeys/transferPoints.js";
+import type * as functions_journeys_getNextLegInfo from "../functions/journeys/getNextLegInfo.js";
+import type * as functions_journeys_journeyStateManager from "../functions/journeys/journeyStateManager.js";
+import type * as functions_journeys_multiLegJourneyFinder from "../functions/journeys/multiLegJourneyFinder.js";
+import type * as functions_journeys_transferProximityAction from "../functions/journeys/transferProximityAction.js";
+import type * as functions_journeys_transferProximityMonitor from "../functions/journeys/transferProximityMonitor.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -132,6 +131,7 @@ import type * as functions_work_sessions_startWorkSessionHandler from "../functi
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  cors: typeof cors;
   crons: typeof crons;
   "functions/badges/awardTrustedPayerBadge": typeof functions_badges_awardTrustedPayerBadge;
   "functions/badges/badgeService": typeof functions_badges_badgeService;
@@ -152,13 +152,11 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
-  "functions/journeys/journeyManagement": typeof functions_journeys_journeyManagement;
-  "functions/journeys/multiLegPayment": typeof functions_journeys_multiLegPayment;
-  "functions/journeys/multiLegPaymentHandler": typeof functions_journeys_multiLegPaymentHandler;
-  "functions/journeys/paymentRecovery": typeof functions_journeys_paymentRecovery;
-  "functions/journeys/paymentRecoveryHandler": typeof functions_journeys_paymentRecoveryHandler;
-  "functions/journeys/routeAnalysis": typeof functions_journeys_routeAnalysis;
-  "functions/journeys/transferPoints": typeof functions_journeys_transferPoints;
+  "functions/journeys/getNextLegInfo": typeof functions_journeys_getNextLegInfo;
+  "functions/journeys/journeyStateManager": typeof functions_journeys_journeyStateManager;
+  "functions/journeys/multiLegJourneyFinder": typeof functions_journeys_multiLegJourneyFinder;
+  "functions/journeys/transferProximityAction": typeof functions_journeys_transferProximityAction;
+  "functions/journeys/transferProximityMonitor": typeof functions_journeys_transferProximityMonitor;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;

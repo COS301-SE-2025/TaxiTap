@@ -51,7 +51,7 @@ export class ProximityAlertService {
       this.checkProximity(rideData.rideId, finalConfig, onProximityAlert);
     }, finalConfig.checkInterval * 1000);
     
-    this.checkIntervals.set(rideData.rideId, interval);
+    this.checkIntervals.set(rideData.rideId, interval as unknown as NodeJS.Timeout);
     
     console.log(`🚗 Started proximity monitoring for ride ${rideData.rideId}`);
   }

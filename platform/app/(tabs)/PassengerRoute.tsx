@@ -1049,7 +1049,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
-                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', { count: getRouteSearchStatus(route.routeId).availableTaxis.length }) : t('routes:noTaxisAvailable')}
+                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', getRouteSearchStatus(route.routeId).availableTaxis.length.toString()) : t('routes:noTaxisAvailable')}
                     </Text>
                   </View>
                 )}

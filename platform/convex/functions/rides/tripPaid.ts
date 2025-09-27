@@ -3,8 +3,8 @@ import { mutation } from "../../_generated/server";
 import { tripPaidHandler } from "./tripPaidHandler";
 
 export const tripPaid = mutation({
-  args: { 
-    rideId: v.id("rides"),
+  args: {
+    rideId: v.string(),
     userId: v.id("taxiTap_users"),
     paid: v.boolean(),
     amountPaid: v.optional(v.number()),

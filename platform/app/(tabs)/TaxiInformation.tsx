@@ -21,7 +21,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
-import { MultiLegJourney, JourneyLeg } from '../../types/multiLegJourney';
+import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
@@ -43,11 +43,11 @@ export default function TaxiInformation() {
     routeMatchData: routeMatchDataString,
     estimatedFare,
     // Multi-leg journey parameters
+    isMultiLeg,
     journeyId,
-    currentLegIndex,
+    legIndex,
     totalLegs,
-    isMultiLegRide,
-    nextLegInfo,
+    routeName,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -60,11 +60,11 @@ export default function TaxiInformation() {
     routeMatchData?: string;
     estimatedFare?: string;
     // Multi-leg journey parameters
+    isMultiLeg?: string;
     journeyId?: string;
-    currentLegIndex?: string;
+    legIndex?: string;
     totalLegs?: string;
-    isMultiLegRide?: string;
-    nextLegInfo?: string;
+    routeName?: string;
   }>();
 
   // State management
@@ -74,33 +74,44 @@ export default function TaxiInformation() {
   const [routeMatchData, setRouteMatchData] = useState<any>(null);
   const [isLoadingTaxis, setIsLoadingTaxis] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
-  
+
   // Multi-leg journey state
-  const [currentJourney, setCurrentJourney] = useState<MultiLegJourney | null>(null);
-  const [isMultiLegMode, setIsMultiLegMode] = useState(false);
-  const [currentLeg, setCurrentLeg] = useState<JourneyLeg | null>(null);
-  const [nextLeg, setNextLeg] = useState<JourneyLeg | null>(null);
+  const [currentJourneyState, setCurrentJourneyState] = useState<any>(null);
+
+  // Coordinate state - use params if available, otherwise will be set from nextLegInfo
+  const [effectiveCurrentLat, setEffectiveCurrentLat] = useState(currentLat || '');
+  const [effectiveCurrentLng, setEffectiveCurrentLng] = useState(currentLng || '');
+  const [effectiveCurrentName, setEffectiveCurrentName] = useState(currentName || '');
+  const [effectiveDestinationLat, setEffectiveDestinationLat] = useState(destinationLat || '');
+  const [effectiveDestinationLng, setEffectiveDestinationLng] = useState(destinationLng || '');
+  const [effectiveDestinationName, setEffectiveDestinationName] = useState(destinationName || '');
+
+  const isMultiLegJourney = isMultiLeg === 'true';
+  const currentLegIndex = parseInt(legIndex || '0');
+  const totalLegsCount = parseInt(totalLegs || '1');
+  
 
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   // Convex mutations
   const requestRide = useMutation(api.functions.rides.RequestRide.requestRide);
+  const startJourneyLeg = useMutation(api.functions.journeys.journeyStateManager.startJourneyLeg);
 
-  // Initialize multi-leg journey state
-  useEffect(() => {
-    if (isMultiLegRide === 'true' && journeyId && currentLegIndex && totalLegs) {
-      setIsMultiLegMode(true);
-      // Parse next leg info if provided
-      if (nextLegInfo) {
-        try {
-          const parsedNextLeg = JSON.parse(nextLegInfo);
-          setNextLeg(parsedNextLeg);
-        } catch (error) {
-          console.error('Error parsing next leg info:', error);
-        }
-      }
-    }
-  }, [isMultiLegRide, journeyId, currentLegIndex, totalLegs, nextLegInfo]);
+  // Multi-leg journey query - only runs if it's a multi-leg journey
+  const journeyState = useQuery(
+    api.functions.journeys.journeyStateManager.getJourneyState,
+    (isMultiLegJourney && journeyId) ? { journeyId } : "skip"
+  );
+
+  // Next leg information query - only runs when continuing to next leg
+  const nextLegInfo = useQuery(
+    api.functions.journeys.getNextLegInfo.getNextLegInfo,
+    (isMultiLegJourney && journeyId) ? { 
+      journeyId: journeyId,
+      currentLegIndex: currentLegIndex - 1 // We're looking for the next leg after the just completed one
+    } : "skip"
+  );
+
 
   // Process enhanced data from HomeScreen
   useEffect(() => {
@@ -170,6 +181,67 @@ export default function TaxiInformation() {
     }
   }, [fallbackNearbyTaxis, shouldUseOriginalQuery]);
 
+  // Handle next leg information for multi-leg journeys
+  useEffect(() => {
+    if (isMultiLegJourney && nextLegInfo && !routeMatchDataString) {
+      console.log('🚌 Processing next leg information:', nextLegInfo);
+
+      // Update missing coordinates from nextLegInfo if they're not provided
+      if (nextLegInfo.nextLeg && (!effectiveCurrentLat || !effectiveCurrentLng || !effectiveDestinationLat || !effectiveDestinationLng)) {
+        console.log('🔧 Updating missing coordinates from nextLeg data');
+        const { nextLeg } = nextLegInfo;
+
+        // Update the coordinate state if they're missing
+        if (!effectiveCurrentLat || !effectiveCurrentLng) {
+          setEffectiveCurrentLat(nextLeg.origin.coordinates.latitude.toString());
+          setEffectiveCurrentLng(nextLeg.origin.coordinates.longitude.toString());
+          setEffectiveCurrentName(nextLeg.origin.address);
+        }
+
+        if (!effectiveDestinationLat || !effectiveDestinationLng) {
+          setEffectiveDestinationLat(nextLeg.destination.coordinates.latitude.toString());
+          setEffectiveDestinationLng(nextLeg.destination.coordinates.longitude.toString());
+          setEffectiveDestinationName(nextLeg.destination.address);
+        }
+
+        console.log('✅ Updated coordinates from nextLeg:', {
+          origin: { lat: nextLeg.origin.coordinates.latitude, lng: nextLeg.origin.coordinates.longitude, name: nextLeg.origin.address },
+          destination: { lat: nextLeg.destination.coordinates.latitude, lng: nextLeg.destination.coordinates.longitude, name: nextLeg.destination.address }
+        });
+      }
+
+      if (nextLegInfo.hasNextLeg && nextLegInfo.availableDrivers) {
+        const nextLegTaxiData = nextLegInfo.availableDrivers.map((driver: any) => ({
+          _id: driver.driverId,
+          userId: driver.userId,
+          latitude: driver.currentLocation.latitude,
+          longitude: driver.currentLocation.longitude,
+          name: driver.name,
+          phoneNumber: driver.phoneNumber,
+          vehicleRegistration: driver.vehicleRegistration,
+          vehicleModel: driver.vehicleModel,
+          distanceToOrigin: driver.distanceToOrigin,
+          routeInfo: driver.routeInfo,
+          displayName: `${driver.name} - ${driver.vehicleModel}`,
+          displayDistance: `${driver.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
+          routeName: driver.routeInfo.routeName,
+          fare: driver.routeInfo.calculatedFare,
+        }));
+        
+        setNearbyTaxis(nextLegTaxiData);
+        setAvailableTaxis(nextLegInfo.availableDrivers);
+        console.log(`✅ Found ${nextLegTaxiData.length} drivers for next leg`);
+      } else {
+        // No drivers available for next leg
+        setNearbyTaxis([]);
+        setAvailableTaxis([]);
+        console.log('⚠️ No drivers available for next leg');
+      }
+      
+      setIsLoadingTaxis(false);
+    }
+  }, [nextLegInfo, isMultiLegJourney, routeMatchDataString, t]);
+
   // Animation for book button
   useEffect(() => {
     if (selectedTaxi) {
@@ -213,6 +285,27 @@ export default function TaxiInformation() {
       });
   };
 
+  // Handle cancel leg for multi-leg journeys
+  const handleCancelLeg = async () => {
+    console.log('🚫 User cancelled multi-leg journey');
+    
+    // Show success notification
+    showGlobalSuccess(
+      'Journey Cancelled',
+      'Your multi-leg journey has been cancelled. You can start a new journey from the home screen.',
+      { 
+        duration: 3000, 
+        position: 'top', 
+        animation: 'slide-down' 
+      }
+    );
+    
+    // Navigate to HomeScreen after a brief delay
+    setTimeout(() => {
+      router.push('/HomeScreen');
+    }, 500);
+  };
+
   // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
@@ -232,25 +325,19 @@ export default function TaxiInformation() {
         driverId: selectedTaxi.userId as Id<"taxiTap_users">,
         startLocation: {
           coordinates: {
-            latitude: parseFloat(currentLat),
-            longitude: parseFloat(currentLng),
+            latitude: parseFloat(effectiveCurrentLat),
+            longitude: parseFloat(effectiveCurrentLng),
           },
-          address: currentName,
+          address: effectiveCurrentName,
         },
         endLocation: {
           coordinates: {
-            latitude: parseFloat(destinationLat),
-            longitude: parseFloat(destinationLng),
+            latitude: parseFloat(effectiveDestinationLat),
+            longitude: parseFloat(effectiveDestinationLng),
           },
-          address: destinationName,
+          address: effectiveDestinationName,
         },
         estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
-        // Multi-leg journey context
-        ...(isMultiLegMode && {
-          parentJourneyId: journeyId,
-          legIndex: parseInt(currentLegIndex || '0'),
-          isMultiLegRide: true,
-        }),
       };
 
       console.log('📝 Creating ride request:', rideData);
@@ -258,37 +345,67 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
+        // If this is a multi-leg journey, update the journey state
+        if (isMultiLegJourney && journeyId && result._id) {
+          console.log(`🚗 Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+
+          await startJourneyLeg({
+            journeyId,
+            legIndex: currentLegIndex,
+            rideId: result._id,
+            driverId: selectedTaxi.userId as Id<"taxiTap_users">,
+          });
+        }
+
         showGlobalSuccess(
-          t('taxiInfo:rideRequestSent'),
-          t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
+          isMultiLegJourney
+            ? `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`
+            : t('taxiInfo:rideRequestSent'),
+          isMultiLegJourney
+            ? `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`
+            : t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
             actions: [
               {
                 label: t('common:ok'),
                 onPress: () => {
+                  const navigationParams = {
+                    currentLat: effectiveCurrentLat,
+                    currentLng: effectiveCurrentLng,
+                    currentName: effectiveCurrentName,
+                    destinationLat: effectiveDestinationLat,
+                    destinationLng: effectiveDestinationLng,
+                    destinationName: effectiveDestinationName,
+                    driverId: selectedTaxi.userId,
+                    driverName: selectedTaxi.name,
+                    fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
+                    rideId: result.rideId,
+                    // Pass multi-leg journey info
+                    ...(isMultiLegJourney && {
+                      isMultiLeg: 'true',
+                      journeyId,
+                      legIndex: currentLegIndex.toString(),
+                      totalLegs: totalLegs,
+                      routeName,
+                    }),
+                  };
+
+                  console.log('🚀 TaxiInformation DEBUG - Navigating to PassengerReservation with params:', {
+                    isMultiLegJourney,
+                    navigationParams,
+                    multiLegConditions: {
+                      isMultiLegJourney,
+                      journeyId,
+                      legIndex: currentLegIndex,
+                      totalLegs,
+                      routeName,
+                    },
+                  });
+
                   router.push({
                     pathname: './PassengerReservation',
-                    params: {
-                      currentLat,
-                      currentLng,
-                      currentName,
-                      destinationLat,
-                      destinationLng,
-                      destinationName,
-                      driverId: selectedTaxi.userId,
-                      driverName: selectedTaxi.name,
-                      fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
-                      rideId: result.rideId,
-                      // Multi-leg journey context
-                      ...(isMultiLegMode && {
-                        journeyId,
-                        currentLegIndex,
-                        totalLegs,
-                        isMultiLegRide: 'true',
-                        nextLegInfo: nextLegInfo,
-                      }),
-                    },
+                    params: navigationParams,
                   });
                 },
                 style: 'default',
@@ -322,48 +439,6 @@ export default function TaxiInformation() {
     }
   };
 
-  // Render multi-leg journey progress indicator
-  const renderJourneyProgress = () => {
-    if (!isMultiLegMode || !currentLegIndex || !totalLegs) return null;
-
-    const currentLegNum = parseInt(currentLegIndex) + 1;
-    const totalLegsNum = parseInt(totalLegs);
-
-    return (
-      <View style={dynamicStyles.journeyProgressCard}>
-        <View style={dynamicStyles.journeyProgressHeader}>
-          <Icon name="swap-horizontal" size={20} color={theme.primary} />
-          <Text style={dynamicStyles.journeyProgressTitle}>
-            Multi-Leg Journey
-          </Text>
-        </View>
-        <View style={dynamicStyles.journeyProgressContent}>
-          <Text style={dynamicStyles.journeyProgressText}>
-            Leg {currentLegNum} of {totalLegsNum}
-          </Text>
-          <View style={dynamicStyles.progressBar}>
-            <View 
-              style={[
-                dynamicStyles.progressFill, 
-                { width: `${(currentLegNum / totalLegsNum) * 100}%` }
-              ]} 
-            />
-          </View>
-        </View>
-        {nextLeg && (
-          <View style={dynamicStyles.nextLegPreview}>
-            <Text style={dynamicStyles.nextLegTitle}>Next Leg Preview:</Text>
-            <Text style={dynamicStyles.nextLegText}>
-              {nextLeg.fromAddress} → {nextLeg.toAddress}
-            </Text>
-            <Text style={dynamicStyles.nextLegFare}>
-              Estimated Fare: R{nextLeg.estimatedFare.toFixed(2)}
-            </Text>
-          </View>
-        )}
-      </View>
-    );
-  };
 
   // Enhanced taxi card rendering with improved styling
   const renderTaxiCard = (taxi: any, index: number) => {
@@ -533,66 +608,6 @@ export default function TaxiInformation() {
       fontSize: 14,
       color: theme.textSecondary,
       lineHeight: 20,
-    },
-    // Multi-leg journey progress styles
-    journeyProgressCard: {
-      backgroundColor: isDark ? theme.surface : `${theme.primary}10`,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
-    },
-    journeyProgressHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    journeyProgressTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.text,
-      marginLeft: 8,
-    },
-    journeyProgressContent: {
-      marginBottom: 12,
-    },
-    journeyProgressText: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      marginBottom: 8,
-    },
-    progressBar: {
-      height: 6,
-      backgroundColor: isDark ? theme.border : `${theme.primary}20`,
-      borderRadius: 3,
-      overflow: 'hidden',
-    },
-    progressFill: {
-      height: '100%',
-      backgroundColor: theme.primary,
-      borderRadius: 3,
-    },
-    nextLegPreview: {
-      backgroundColor: isDark ? theme.background : `${theme.primary}05`,
-      borderRadius: 8,
-      padding: 12,
-    },
-    nextLegTitle: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      marginBottom: 4,
-    },
-    nextLegText: {
-      fontSize: 13,
-      color: theme.text,
-      marginBottom: 4,
-    },
-    nextLegFare: {
-      fontSize: 12,
-      color: theme.primary,
-      fontWeight: '500',
     },
     taxiCard: {
       backgroundColor: theme.card,
@@ -819,7 +834,7 @@ export default function TaxiInformation() {
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
           <Text style={dynamicStyles.headerTitle2}>
-            {isMultiLegMode ? `Leg ${parseInt(currentLegIndex || '0') + 1} - ${t('taxiInfo:availableTaxis')}` : t('taxiInfo:availableTaxis')}
+            {t('taxiInfo:availableTaxis')}
           </Text>
         </View>
         <Text style={dynamicStyles.headerSubtitle}>
@@ -827,6 +842,52 @@ export default function TaxiInformation() {
           {' → '}
           {destinationName}
         </Text>
+
+        {/* Multi-leg journey progress indicator */}
+        {isMultiLegJourney && (
+          <View style={{
+            marginTop: 12,
+            padding: 12,
+            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Icon name="navigate-outline" size={16} color="#3B82F6" />
+              <Text style={{
+                marginLeft: 6,
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#3B82F6'
+              }}>
+                Multi-Leg Journey • Leg {currentLegIndex + 1} of {totalLegsCount}
+              </Text>
+            </View>
+            <Text style={{
+              fontSize: 12,
+              color: theme.textSecondary,
+              marginBottom: 8
+            }}>
+              Route: {routeName}
+            </Text>
+
+            {/* Progress bar */}
+            <View style={{
+              height: 4,
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+              borderRadius: 2,
+              overflow: 'hidden'
+            }}>
+              <View style={{
+                height: '100%',
+                width: `${((currentLegIndex + 1) / totalLegsCount) * 100}%`,
+                backgroundColor: '#3B82F6',
+                borderRadius: 2,
+              }} />
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Content */}
@@ -843,8 +904,6 @@ export default function TaxiInformation() {
             </View>
           ) : nearbyTaxis.length > 0 ? (
             <>
-              {/* Multi-leg journey progress indicator */}
-              {renderJourneyProgress()}
               
               {/* Route match summary */}
               {routeMatchData && (
@@ -875,9 +934,32 @@ export default function TaxiInformation() {
               <Text style={dynamicStyles.noTaxisText}>
                 {routeMatchData?.message || t('taxiInfo:noTaxisMessage')}
               </Text>
-              <Text style={dynamicStyles.noTaxisSubtext}>
-                {t('taxiInfo:tryAdjustingLocation')}
-              </Text>
+              
+              {/* Multi-leg journey specific message and cancel option */}
+              {isMultiLegJourney ? (
+                <>
+                  <Text style={[dynamicStyles.noTaxisText, { marginTop: 10, color: theme.primary }]}>
+                    Still looking for a driver, be on the lookout for taxis!
+                  </Text>
+                  
+                  <TouchableOpacity
+                    style={[dynamicStyles.bookButton, { 
+                      backgroundColor: '#FF3B30', // Red color for cancel button
+                      marginTop: 20,
+                      marginHorizontal: 0,
+                    }]}
+                    onPress={handleCancelLeg}
+                  >
+                    <Text style={dynamicStyles.bookButtonText}>
+                      Cancel Leg
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <Text style={dynamicStyles.noTaxisSubtext}>
+                  {t('taxiInfo:tryAdjustingLocation')}
+                </Text>
+              )}
             </View>
           )}
         </ScrollView>
@@ -899,9 +981,7 @@ export default function TaxiInformation() {
             <Text style={dynamicStyles.bookButtonText}>
               {isBooking 
                 ? t('taxiInfo:bookingRide') 
-                : isMultiLegMode 
-                  ? `Book Leg ${parseInt(currentLegIndex || '0') + 1} with ${selectedTaxi.name}`
-                  : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)
+                : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)
               }
             </Text>
           </TouchableOpacity>

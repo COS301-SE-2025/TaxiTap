@@ -58,7 +58,15 @@ export default function PassengerPinEntry() {
       endName,
       user: user?.id
     });
-  }, [rideId, driverId, driverName, licensePlate, fare, startName, endName, user?.id]);
+    console.log('🔍 PassengerPinEntry - Multi-leg params check:', {
+      isMultiLeg: params.isMultiLeg,
+      journeyId: params.journeyId,
+      legIndex: params.legIndex,
+      totalLegs: params.totalLegs,
+      routeName: params.routeName,
+      allParams: params
+    });
+  }, [rideId, driverId, driverName, licensePlate, fare, startName, endName, user?.id, params]);
 
   const verifyDriverPin = useMutation(api.functions.rides.verifyDriverPin.verifyDriverPin);
 
@@ -164,6 +172,12 @@ export default function PassengerPinEntry() {
               destinationLat: params.destinationLat,
               destinationLng: params.destinationLng,
               destinationName: params.destinationName,
+              // Pass through multi-leg journey parameters
+              isMultiLeg: params.isMultiLeg,
+              journeyId: params.journeyId,
+              legIndex: params.legIndex,
+              totalLegs: params.totalLegs,
+              routeName: params.routeName,
             },
           });
         } catch (navError) {

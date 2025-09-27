@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
@@ -26,12 +27,13 @@ export default function PaymentConfirmation() {
     journeyId,
     legIndex,
     totalLegs,
-    isMultiLeg
+    isMultiLeg,
+    continueToNext
   } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
-  const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
+  const processLegPayment = useMutation(api.functions.journeys.journeyStateManager.completeLegWithPayment);
 
   const handlePaid = async () => {
     try {
@@ -39,11 +41,9 @@ export default function PaymentConfirmation() {
       if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
         // Use multi-leg payment handler
         const result = await processLegPayment({
-          rideId: rideId as string,
           journeyId: journeyId as string,
           legIndex: parseInt(legIndex as string),
-          amountPaid: parseFloat(fare as string),
-          isPaid: true,
+          actualCost: parseFloat(fare as string),
         });
 
         const currentLeg = parseInt(legIndex as string) + 1;
@@ -51,14 +51,35 @@ export default function PaymentConfirmation() {
 
         showGlobalSuccess(
           'Leg Payment Confirmed',
-          `Payment for leg ${currentLeg} of ${total} confirmed!${result.canProgressToNextLeg ? ' Ready for next leg.' : ' Journey completed!'}`,
+          `Payment for leg ${currentLeg} of ${total} confirmed!${!result.journeyComplete ? ' Ready for next leg.' : ' Journey completed!'}`,
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
 
         setTimeout(() => {
-          if (result.canProgressToNextLeg) {
-            // Navigate back to journey progress or next leg preparation
-            router.push('/HomeScreen'); // Could be journey progress screen instead
+          if (!result.journeyComplete) {
+            // Check if this is a continue to next leg flow
+            if (continueToNext === 'true') {
+              // Navigate to feedback first, then to TaxiInformation
+              router.push({
+                pathname: '/SubmitFeedback',
+                params: {
+                  rideId: rideId as string,
+                  startName: startName as string,
+                  endName: endName as string,
+                  passengerId: passengerId as string || userId as string,
+                  driverId: driverId as string,
+                  isMultiLeg: 'true',
+                  journeyId: journeyId as string,
+                  legIndex: legIndex as string,
+                  totalLegs: totalLegs as string,
+                  routeName: '',
+                  continueToNext: 'true',
+                },
+              });
+            } else {
+              // Navigate back to journey progress or next leg preparation
+              router.push('/HomeScreen');
+            }
           } else {
             // Journey completed - go to feedback for the final leg
             router.push({
@@ -71,6 +92,8 @@ export default function PaymentConfirmation() {
                 driverId: driverId as string,
                 isMultiLeg: 'true',
                 journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
               },
             });
           }
@@ -78,7 +101,7 @@ export default function PaymentConfirmation() {
       } else {
         // Original single-leg payment logic
         const result = await markTripPaid({
-          rideId: rideId as Id<"rides">,
+          rideId: rideId as string,
           userId: userId as Id<"taxiTap_users">,
           paid: true,
         });
@@ -90,16 +113,36 @@ export default function PaymentConfirmation() {
         );
 
         setTimeout(() => {
-          router.push({
-            pathname: '/SubmitFeedback',
-            params: {
-              rideId: rideId as string,
-              startName: startName as string,
-              endName: endName as string,
-              passengerId: passengerId as string || userId as string,
-              driverId: driverId as string,
-            },
-          });
+          if (continueToNext === 'true') {
+            // Navigate to feedback with continue flag for next leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                isMultiLeg: isMultiLeg as string,
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                continueToNext: 'true',
+              },
+            });
+          } else {
+            // Standard single-leg payment flow
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+              },
+            });
+          }
         }, 2000);
       }
 
@@ -118,11 +161,9 @@ export default function PaymentConfirmation() {
       if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
         // Use multi-leg payment handler for "not paid"
         const result = await processLegPayment({
-          rideId: rideId as string,
           journeyId: journeyId as string,
           legIndex: parseInt(legIndex as string),
-          amountPaid: 0,
-          isPaid: false,
+          actualCost: 0,
         });
 
         const currentLeg = parseInt(legIndex as string) + 1;
@@ -153,7 +194,7 @@ export default function PaymentConfirmation() {
       } else {
         // Original single-leg "not paid" logic
         const result = await markTripPaid({
-          rideId: rideId as Id<"rides">,
+          rideId: rideId as string,
           userId: userId as Id<"taxiTap_users">,
           paid: false,
         });

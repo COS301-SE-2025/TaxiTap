@@ -1,6 +1,11 @@
 import { tripPaidHandler } from "../../convex/functions/rides/tripPaidHandler";
 import { Id } from "../../convex/_generated/dataModel";
 
+// Mock the badge service
+jest.mock("../../convex/functions/badges/badgeService", () => ({
+  checkAndAwardTrustedPayerBadge: jest.fn().mockResolvedValue(false),
+}));
+
 describe("tripPaidHandler - integration style", () => {
   let dbData: any;
   let ctx: any;
@@ -26,6 +31,21 @@ describe("tripPaidHandler - integration style", () => {
               first: async () => dbData[table].find((r: any) => r.rideId === targetValue) || null,
             };
           },
+          filter: (filterFn: any) => {
+            const q = { 
+              eq: (field: any, value: any) => ({ field, value }),
+              field: (fieldName: string) => fieldName
+            };
+            const filterResult = filterFn(q);
+            return {
+              first: async () => {
+                if (filterResult.field === "rideId") {
+                  return dbData[table].find((r: any) => r.rideId === filterResult.value) || null;
+                }
+                return null;
+              }
+            };
+          },
           collect: async () => dbData[table],
         }),
         patch: async (id: Id<"rides">, patchObj: any) => {
@@ -37,24 +57,24 @@ describe("tripPaidHandler - integration style", () => {
   });
 
   it("updates tripPaid when user is passenger", async () => {
-    await tripPaidHandler(ctx, "r1" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, 100, "exact");
+    await tripPaidHandler(ctx, "ride1", "user1" as Id<"taxiTap_users">, true, 100, "exact");
     expect(dbData.rides.find((r: any) => r.rideId === "ride1")!.tripPaid).toBe(true);
   });
 
   it("throws error when ride not found", async () => {
     await expect(
-      tripPaidHandler(ctx, "rX" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, 50, "underpaid")
+      tripPaidHandler(ctx, "rideX", "user1" as Id<"taxiTap_users">, true, 50, "underpaid")
     ).rejects.toThrow("Ride not found");
   });
 
   it("throws error when user is not passenger", async () => {
     await expect(
-      tripPaidHandler(ctx, "r2" as Id<"rides">, "user1" as Id<"taxiTap_users">, true, 100, "exact")
+      tripPaidHandler(ctx, "ride2", "user1" as Id<"taxiTap_users">, true, 100, "exact")
     ).rejects.toThrow("Only the passenger can confirm payment for this ride");
   });
 
   it("can set tripPaid to false", async () => {
-    await tripPaidHandler(ctx, "r2" as Id<"rides">, "user2" as Id<"taxiTap_users">, false, null, "underpaid");
+    await tripPaidHandler(ctx, "ride2", "user2" as Id<"taxiTap_users">, false, null, "underpaid");
     expect(dbData.rides.find((r: any) => r.rideId === "ride2")!.tripPaid).toBe(false);
   });
 });
