@@ -106,14 +106,14 @@ export default function SubmitFeedbackScreen() {
           // Journey continues - navigate to next leg
           const nextLeg = legResult.nextLeg;
 
-          showGlobalSuccess(
-            `Leg ${currentLegIndex + 1} Complete!`,
-            `Ready for leg ${currentLegIndex + 2}? You have 5 minutes to board the next taxi.`,
+           showGlobalSuccess(
+             translate('feedback.legComplete', { legNumber: currentLegIndex + 1 }),
+             translate('feedback.readyForNextLeg', { nextLegNumber: currentLegIndex + 2 }),
             {
               duration: 0,
               actions: [
                 {
-                  label: 'Continue to Next Leg',
+                  label: translate('feedback.continueToNextLeg'),
                   onPress: () => {
                     router.replace({
                       pathname: '/(tabs)/TaxiInformation',
@@ -137,7 +137,7 @@ export default function SubmitFeedbackScreen() {
                   style: 'default',
                 },
                 {
-                  label: 'Cancel Journey',
+                  label: translate('feedback.cancelJourney'),
                   onPress: () => router.replace('/HomeScreen'),
                   style: 'cancel',
                 },
@@ -147,13 +147,13 @@ export default function SubmitFeedbackScreen() {
           return;
         } else if (legResult.success && legResult.journeyComplete) {
           // Journey complete
-          showGlobalSuccess(
-            'Journey Complete!',
-            `Multi-leg journey completed successfully! Total cost: R${legResult.totalActualCost?.toFixed(2) || '0.00'}`,
+           showGlobalSuccess(
+             translate('feedback.journeyComplete'),
+             translate('feedback.multiLegJourneyCompleted', { totalCost: legResult.totalActualCost?.toFixed(2) || '0.00' }),
             {
               duration: 0,
               actions: [
-                { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+                { label: translate('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
               ],
             }
           );
