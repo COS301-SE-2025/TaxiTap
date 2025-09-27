@@ -92,6 +92,8 @@ export default function PaymentConfirmation() {
                 driverId: driverId as string,
                 isMultiLeg: 'true',
                 journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
               },
             });
           }
