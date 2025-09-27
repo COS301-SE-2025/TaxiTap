@@ -245,13 +245,13 @@ export default function TaxiInformation() {
 
       if (result) {
         // If this is a multi-leg journey, update the journey state
-        if (isMultiLegJourney && journeyId && result.rideId) {
+        if (isMultiLegJourney && journeyId && result._id) {
           console.log(`🚗 Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
 
           await startJourneyLeg({
             journeyId,
             legIndex: currentLegIndex,
-            rideId: result.rideId as Id<"rides">,
+            rideId: result._id,
             driverId: selectedTaxi.userId as Id<"taxiTap_users">,
           });
         }

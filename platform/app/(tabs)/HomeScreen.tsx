@@ -1144,12 +1144,21 @@ export default function HomeScreen() {
       setSelectedMultiLegOption(option);
 
       // Create the multi-leg journey in the database
-      const result = await createMultiLegJourney({
-        passengerId: userId as Id<"taxiTap_users">,
-        journeyOption: option,
-      });
+      console.log('🚀 Creating multi-leg journey with option:', JSON.stringify(option, null, 2));
+      console.log('🔑 PassengerId:', userId);
 
-      console.log(`✅ Created multi-leg journey: ${result.journeyId}`);
+      try {
+        const result = await createMultiLegJourney({
+          passengerId: userId as Id<"taxiTap_users">,
+          journeyOption: option,
+        });
+
+        console.log(`✅ Created multi-leg journey: ${result.journeyId}`);
+      } catch (error) {
+        console.error('❌ Failed to create multi-leg journey:', error);
+        console.error('❌ Option data was:', JSON.stringify(option, null, 2));
+        throw error; // Re-throw to trigger the outer catch block
+      }
 
       // Navigate to TaxiInformation for the first leg
       router.push({
