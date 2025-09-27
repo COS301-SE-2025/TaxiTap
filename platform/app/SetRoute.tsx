@@ -95,70 +95,10 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   const { currentLanguage, changeLanguage } = useLanguage();
   
   // ============================================================================
-  // HARDCODED TRANSLATIONS
+  // TRANSLATION SETUP
   // ============================================================================
   
-  const translations = {
-    en: {
-      yourAssignedRoute: "Your Assigned Route",
-      yourAssignedRouteMessage: "You already have a route assigned. Tap activate to start using it.",
-      currentRoute: "Current Route",
-      activateRoute: "Activate Route",
-      getYourRoute: "Get Your Route",
-      routeAssignment: "Route Assignment",
-      selectTaxiAssociation: "Select Taxi Association",
-      selectTaxiAssociationMessage: "Choose your taxi association to get assigned a route for today.",
-      selectTaxiAssociationFirst: "Select Taxi Association First",
-      selectTaxiAssociationFirstMessage: "Please select a taxi association to get your route assignment.",
-      userNotFound: "User Not Found",
-      userNotFoundMessage: "Please log in again to continue.",
-      noRouteAssigned: "No route could be assigned at this time",
-      assignmentFailed: "Assignment Failed",
-      assignmentFailedMessage: "Unable to assign route. Please try again.",
-      routeAssignedSuccessfully: "Route Assigned Successfully!",
-      routeAssignedMessage: "You have been assigned to:\n\n{route}\n\nAssociation: {association}\n\nThis is now your active route.",
-      routeActivated: "Route Activated!",
-      routeActivatedMessage: "Your route is now active:\n\n{route}",
-      getMyRoute: "Get My Route",
-      assigningRoute: "Assigning Route...",
-      ok: "OK"
-    },
-    zu: {
-      yourAssignedRoute: "Indlela Yakho Ebekelwe",
-      yourAssignedRouteMessage: "Lena indlela yakho ebekelwe yaphelele. Yenza isebenze ukuze uqale ukuthola abagibeli.",
-      currentRoute: "Indlela Yamanje",
-      activateRoute: "Yenza Indlela Isebenze",
-      getYourRoute: "Thola Indlela Yakho",
-      routeAssignment: "Ukubekwa Kwendlela",
-      selectTaxiAssociation: "Khetha Inhlangano YamaTekisi",
-      selectTaxiAssociationMessage: "Khetha inhlangano yakho yamaTekisi futhi sizokubekela indlela ngokuzenzakalela. Lokhu kuzoba indlela yakho yaphelele.",
-      selectTaxiAssociationFirst: "Khetha Inhlangano YamaTekisi",
-      selectTaxiAssociationFirstMessage: "Sicela ukhethe inhlangano yakho yamaTekisi kuqala.",
-      userNotFound: "Umsebenzisi Akatholakali",
-      userNotFoundMessage: "Kufanele ungene njengomshayeli.",
-      noRouteAssigned: "Akukho indlela ebekelwe. Sicela uzame futhi.",
-      assignmentFailed: "Ukubekwa Kuhlulekile",
-      assignmentFailedMessage: "Kuhlulekile ukubeka indlela. Sicela uzame futhi.",
-      routeAssignedSuccessfully: "Indlela Ibekwe Ngempumelelo!",
-      routeAssignedMessage: "Ubhekwe ku:\n\n{route}\n\nInhlangano: {association}\n\nLena manje indlela yakho yaphelele.",
-      routeActivated: "Indlela Iyasebenza",
-      routeActivatedMessage: "Indlela yakho iyasebenza:\n\n{route}",
-      getMyRoute: "Thola Indlela Yami",
-      assigningRoute: "Kubekwa Indlela...",
-      ok: "Kulungile"
-    }
-  };
-  
-  const t = (key: string, params?: any) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
-    const translation = translations[lang][key as keyof typeof translations[typeof lang]];
-    if (translation && params) {
-      return Object.keys(params).reduce((str, param) => {
-        return str.replace(`{${param}}`, params[param]);
-      }, translation);
-    }
-    return translation || key;
-  };
+  const { t: translate } = useLanguage();
 
   // ============================================================================
   // DATA FETCHING
@@ -233,7 +173,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
       // Check if result and assignedRoute exist
       if (!result || !result.assignedRoute) {
-        throw new Error(t('driver.noRouteAssigned'));
+        throw new Error(translate('driver.noRouteAssigned'));
       }
 
       const { start, destination } = parseRouteName(result.assignedRoute.name);
@@ -497,14 +437,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
           {/* Content */}
           <View style={dynamicStyles.content}>
             <Text style={dynamicStyles.sectionSubtitle}>
-              {t('yourAssignedRouteMessage')}
+              {translate('driver.yourAssignedRouteMessage')}
             </Text>
 
             {/* Route Information Card */}
             <View style={dynamicStyles.routeCard}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
                 <Icon name="map-outline" size={22} color={theme.primary} style={{ marginRight: 8, marginBottom: 10 }} />
-                <Text style={dynamicStyles.routeCardTitle}>{t('currentRoute')}</Text>
+                <Text style={dynamicStyles.routeCardTitle}>{translate('driver.currentRoute')}</Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                 <Icon name="navigate-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6, marginBottom: 7 }} />
@@ -523,7 +463,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
               style={dynamicStyles.primaryButton}
               onPress={handleActivateExistingRoute}
             >
-              <Text style={dynamicStyles.primaryButtonText}>{t('activateRoute')}</Text>
+              <Text style={dynamicStyles.primaryButtonText}>{translate('driver.activateRoute')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -556,14 +496,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
         {/* Content */}
         <View style={dynamicStyles.content}>
-          <Text style={dynamicStyles.sectionTitle}>{t('routeAssignment')}</Text>
+          <Text style={dynamicStyles.sectionTitle}>{translate('driver.routeAssignment')}</Text>
           <Text style={dynamicStyles.sectionSubtitle}>
-            {t('selectTaxiAssociationMessage')}
+            {translate('driver.selectTaxiAssociationMessage')}
           </Text>
 
           {/* Taxi Association Selection */}
           <View style={dynamicStyles.selectionCard}>
-            <Text style={dynamicStyles.selectionTitle}>{t('selectTaxiAssociation')}</Text>
+            <Text style={dynamicStyles.selectionTitle}>{translate('driver.selectTaxiAssociation')}</Text>
             
             {!allTaxiAssociations ? (
               <View style={{ alignItems: 'center', paddingVertical: 20 }}>
@@ -598,14 +538,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
             {isAssigning ? (
               <View style={dynamicStyles.loadingContainer}>
                 <LoadingSpinner size="small" />
-                <Text style={dynamicStyles.loadingText}>{t('assigningRoute')}</Text>
+                <Text style={dynamicStyles.loadingText}>{translate('driver.assigningRoute')}</Text>
               </View>
             ) : (
               <Text style={[
                 dynamicStyles.primaryButtonText,
                 (!taxiAssociation || isAssigning) && dynamicStyles.primaryButtonTextDisabled
               ]}>
-                {t('getMyRoute')}
+                {translate('driver.getMyRoute')}
               </Text>
             )}
           </TouchableOpacity>

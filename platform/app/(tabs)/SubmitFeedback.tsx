@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function SubmitFeedbackScreen() {
   const [name, setName] = useState('');
@@ -22,6 +23,7 @@ export default function SubmitFeedbackScreen() {
   const { user } = useUser();
   const router = useRouter();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+  const { t: translate } = useLanguage();
 
   const saveFeedback = useMutation(api.functions.feedback.saveFeedback.saveFeedback);
 
@@ -33,12 +35,12 @@ export default function SubmitFeedbackScreen() {
 
   const handleSubmit = async () => {
     if (!rating && !comment) {
-      showGlobalError('No Input', 'Please provide a rating or comment', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(translate('feedback.noInput'), translate('feedback.provideRatingOrComment'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     if (!rideId || !passengerId || !driverId || !startName || !endName) {
-      showGlobalError('Missing info', 'Cannot submit feedback: Missing ride/user info.', { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(translate('feedback.missingInfo'), translate('feedback.cannotSubmitFeedback'), { duration: 5000, position: 'top', animation: 'slide-down' });
       return;
     }
 
@@ -55,16 +57,16 @@ export default function SubmitFeedbackScreen() {
 
       setRating(0);
       setComment('');
-      showGlobalSuccess('Success', 'Feedback submitted successfully!', {
+      showGlobalSuccess(translate('feedback.success'), translate('feedback.feedbackSubmittedSuccessfully'), {
         duration: 0,
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+          { label: translate('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
         ],
       });
     } catch (err: any) {
-      showGlobalError('Error', err.message || 'Something went wrong.', { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(translate('feedback.error'), err.message || translate('feedback.somethingWentWrong'), { duration: 5000, position: 'top', animation: 'slide-down' });
     }
   };
 

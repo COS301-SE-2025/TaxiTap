@@ -5,9 +5,11 @@ import { api } from "@/convex/_generated/api";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Id } from "@/convex/_generated/dataModel";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
+  const { t: translate } = useLanguage();
 
   const transactions = useQuery(
     api.functions.users.wallet.getTransactionHistory,
@@ -15,16 +17,16 @@ const TransactionHistoryScreen = () => {
   );
 
   const paymentTypeLabels: Record<string, string> = {
-    overpaid: "Overpaid Trip",
-    exact: "Exact Payment",
-    underpaid: "Underpaid Trip",
-    not_paid: "Not Paid",
+    overpaid: translate("wallet.overpaidTrip"),
+    exact: translate("wallet.exactPayment"),
+    underpaid: translate("wallet.underpaidTrip"),
+    not_paid: translate("wallet.notPaid"),
   };
 
   if (!passengerId) {
     return (
       <View style={styles.center}>
-        <Text>No passenger ID provided</Text>
+        <Text>{translate("wallet.noPassengerId")}</Text>
       </View>
     );
   }
@@ -32,17 +34,17 @@ const TransactionHistoryScreen = () => {
   if (!transactions) {
     return (
       <View style={styles.center}>
-        <Text>Loading transactions...</Text>
+        <Text>{translate("wallet.loadingTransactions")}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.header}>Transaction History</Text>
+      <Text style={styles.header}>{translate("wallet.transactionHistory")}</Text>
 
       {transactions.length === 0 && (
-        <Text style={styles.empty}>No recent transactions</Text>
+        <Text style={styles.empty}>{translate("wallet.noRecentTransactions")}</Text>
       )}
 
       {transactions.map((tx) => (

@@ -7,12 +7,14 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Id } from '../convex/_generated/dataModel';
 
 export default function VehicleDriver() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+    const { t: translate } = useLanguage();
     const [vehicleType, setVehicleType] = useState('');
     const [licensePlate, setLicensePlate] = useState('');
     const [seats, setSeats] = useState('');
@@ -72,7 +74,7 @@ export default function VehicleDriver() {
 
     const handleSaveChanges = async () => {
         if (!user) {
-            showGlobalError("Not found", "User not loaded.", {
+            showGlobalError(translate("vehicle.permissionDenied"), translate("vehicle.permissionMessage"), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -83,7 +85,7 @@ export default function VehicleDriver() {
         // Validate seats - maximum 14 seats allowed
         const seatsNumber = parseInt(seats, 10);
         if (seatsNumber > 14) {
-            showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
+            showGlobalError(translate("vehicle.permissionDenied"), "Maximum 14 seats are allowed for taxis.", {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -101,14 +103,14 @@ export default function VehicleDriver() {
                 color,
                 year: parseInt(year, 10)
             });
-            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+            showGlobalSuccess(translate("vehicle.permissionDenied"), translate("vehicle.changesSaved"), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
             });
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            showGlobalError("Error", "Failed to update vehicle information.", {
+            showGlobalError(translate("vehicle.permissionDenied"), translate("vehicle.failedToSave"), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -232,7 +234,7 @@ export default function VehicleDriver() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ color: theme.text, fontSize: 16 }}>Loading user data...</Text>
+                    <Text style={{ color: theme.text, fontSize: 16 }}>{translate("vehicle.saving")}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -246,7 +248,7 @@ export default function VehicleDriver() {
             >
                 {/* Header Section */}
                 <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerTitle}>Vehicle Information</Text>
+                    <Text style={dynamicStyles.headerTitle}>{translate("vehicle.vehicleInformation")}</Text>
                     <Text style={dynamicStyles.headerSubtitle}>Update your taxi details</Text>
                 </View>
 
@@ -254,7 +256,7 @@ export default function VehicleDriver() {
                 <Text style={dynamicStyles.sectionHeader}>Vehicle Details</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Vehicle Type</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{translate("vehicle.vehicleType")}</Text>
                         <TextInput
                             value={vehicleType}
                             onChangeText={setVehicleType}
@@ -265,7 +267,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>License Plate</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{translate("vehicle.licensePlate")}</Text>
                         <TextInput
                             value={licensePlate}
                             onChangeText={setLicensePlate}
@@ -277,7 +279,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Color</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{translate("vehicle.color")}</Text>
                         <TextInput
                             value={color}
                             onChangeText={setColor}
@@ -288,7 +290,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Year</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{translate("vehicle.year")}</Text>
                         <TextInput
                             value={year}
                             onChangeText={setYear}
@@ -300,7 +302,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Total Seats</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{translate("vehicle.seats")}</Text>
                         <TextInput
                             value={seats}
                             onChangeText={setSeats}
@@ -313,7 +315,7 @@ export default function VehicleDriver() {
                 </View>
 
                 {/* Vehicle Photo Section */}
-                <Text style={dynamicStyles.sectionHeader}>Vehicle Photo</Text>
+                <Text style={dynamicStyles.sectionHeader}>{translate("vehicle.vehiclePhoto")}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.imageSection}>
                         <Image
@@ -330,7 +332,7 @@ export default function VehicleDriver() {
                             style={dynamicStyles.uploadButton}
                         >
                             <Ionicons name="camera" size={20} color={theme.text} />
-                            <Text style={dynamicStyles.uploadButtonText}>Upload Vehicle Photo</Text>
+                            <Text style={dynamicStyles.uploadButtonText}>{translate("vehicle.changePhoto")}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -340,7 +342,7 @@ export default function VehicleDriver() {
                     onPress={handleSaveChanges}
                     style={dynamicStyles.saveButton}
                 >
-                    <Text style={dynamicStyles.saveButtonText}>Save Changes</Text>
+                    <Text style={dynamicStyles.saveButtonText}>{translate("vehicle.saveChanges")}</Text>
                 </Pressable>
             </ScrollView>
         </SafeAreaView>

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface JourneyLeg {
   legIndex: number;
@@ -48,6 +49,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   visible = true,
 }) => {
   const { theme, isDark } = useTheme();
+  const { t: translate } = useLanguage();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
   const [userPreference, setUserPreference] = useState<'shortest_time' | 'fewest_transfers' | 'most_reliable'>('shortest_time');
 
@@ -67,13 +69,13 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   const getPreferenceLabel = (preference: string): string => {
     switch (preference) {
       case 'shortest_time':
-        return 'Fastest Route';
+        return translate('journeyPreview.fastestRoute');
       case 'fewest_transfers':
-        return 'Fewest Transfers';
+        return translate('journeyPreview.fewestTransfers');
       case 'most_reliable':
-        return 'Most Reliable';
+        return translate('journeyPreview.mostReliable');
       default:
-        return 'Unknown';
+        return translate('journeyPreview.unknown');
     }
   };
 
@@ -92,13 +94,13 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 
   const handleConfirm = () => {
     if (options.length === 0) {
-      Alert.alert('Error', 'No journey options available.');
+      Alert.alert(translate('common.error'), translate('journeyPreview.noJourneyOptions'));
       return;
     }
 
     const selectedOption = options[selectedOptionIndex];
     if (!selectedOption) {
-      Alert.alert('Error', 'Please select a journey option.');
+      Alert.alert(translate('common.error'), translate('journeyPreview.selectJourneyOption'));
       return;
     }
 
@@ -204,9 +206,9 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       <Text style={dynamicStyles.preferenceTitle}>Optimize for:</Text>
       <View style={dynamicStyles.preferenceButtons}>
         {[
-          { key: 'shortest_time', label: 'Speed', icon: 'time-outline' },
-          { key: 'fewest_transfers', label: 'Transfers', icon: 'swap-horizontal-outline' },
-          { key: 'most_reliable', label: 'Reliability', icon: 'shield-checkmark-outline' },
+          { key: 'shortest_time', label: translate('journeyPreview.speed'), icon: 'time-outline' },
+          { key: 'fewest_transfers', label: translate('journeyPreview.transfers'), icon: 'swap-horizontal-outline' },
+          { key: 'most_reliable', label: translate('journeyPreview.reliability'), icon: 'shield-checkmark-outline' },
         ].map((pref) => (
           <TouchableOpacity
             key={pref.key}

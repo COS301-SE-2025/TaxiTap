@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PaymentErrorHandlerProps {
   journeyId: string;
@@ -27,6 +28,7 @@ export default function PaymentErrorHandler({
   onDismiss,
 }: PaymentErrorHandlerProps) {
   const router = useRouter();
+  const { t: translate } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const recoveryOptions = useQuery(api.functions.journeys.paymentRecovery.getPaymentRecoveryOptions, {
@@ -78,15 +80,15 @@ export default function PaymentErrorHandler({
   const getErrorTitle = () => {
     switch (error.type) {
       case 'network':
-        return 'Connection Problem';
+        return translate('paymentError.connectionProblem');
       case 'validation':
-        return 'Payment Information Issue';
+        return translate('paymentError.paymentInformationIssue');
       case 'server':
-        return 'System Error';
+        return translate('paymentError.systemError');
       case 'user_cancelled':
-        return 'Payment Cancelled';
+        return translate('paymentError.paymentCancelled');
       default:
-        return 'Payment Failed';
+        return translate('paymentError.paymentFailed');
     }
   };
 
@@ -116,7 +118,7 @@ export default function PaymentErrorHandler({
       onRetry();
     } catch (err) {
       console.error('Recovery retry failed:', err);
-      Alert.alert('Error', 'Unable to retry payment. Please contact support.');
+      Alert.alert(translate('common.error'), translate('paymentError.unableToRetryPayment'));
     } finally {
       setIsProcessing(false);
     }
@@ -124,7 +126,7 @@ export default function PaymentErrorHandler({
 
   const handleCancelJourney = () => {
     Alert.alert(
-      'Cancel Journey',
+      translate('paymentError.cancelJourney'),
       'Are you sure you want to cancel your entire multi-leg journey? This cannot be undone.',
       [
         { text: 'No, Keep Journey', style: 'cancel' },
@@ -142,7 +144,7 @@ export default function PaymentErrorHandler({
               router.push('/HomeScreen');
             } catch (err) {
               console.error('Journey cancellation failed:', err);
-              Alert.alert('Error', 'Unable to cancel journey. Please contact support.');
+              Alert.alert(translate('common.error'), translate('paymentError.unableToCancelJourney'));
             } finally {
               setIsProcessing(false);
             }
@@ -156,7 +158,7 @@ export default function PaymentErrorHandler({
     const supportInfo = recoveryOptions?.emergencyContact;
     if (supportInfo) {
       Alert.alert(
-        'Contact Support',
+        translate('paymentError.contactSupport'),
         `Phone: ${supportInfo.phone}\nEmail: ${supportInfo.email}\n\nPlease mention your journey ID: ${journeyId}`,
         [
           { text: 'OK', style: 'default' },
