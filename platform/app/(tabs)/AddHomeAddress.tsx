@@ -14,7 +14,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function AddHomeAddress() {
     const [address, setAddress] = useState('');
-    const [nickname, setNickname] = useState('Home');
+    const [nickname, setNickname] = useState(() => t('address.home'));
     const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +40,7 @@ export default function AddHomeAddress() {
     useEffect(() => {
         if (convexUser && convexUser.homeAddress) {
             setAddress(convexUser.homeAddress.address);
-            setNickname(convexUser.homeAddress.nickname || 'Home');
+            setNickname(convexUser.homeAddress.nickname || t('address.home'));
             setCoordinates(convexUser.homeAddress.coordinates);
             setHasExistingAddress(true);
         }
@@ -395,7 +395,7 @@ export default function AddHomeAddress() {
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
                             onChangeText={setAddress}
-                            placeholder="Enter your home address"
+                            placeholder={t('address.enterHomeAddress')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             multiline
                             numberOfLines={3}
