@@ -11,6 +11,8 @@ import { Id } from "../convex/_generated/dataModel";
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
+import { t } from "i18next";
 
 export default () => {
     const params = useLocalSearchParams();

@@ -14,7 +14,6 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { MultiLegJourney, JourneyLeg } from '../../types/multiLegJourney';
 import { Badge } from '../../components/Badge';
 
 // Get platform-specific API key
@@ -23,6 +22,18 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
+	// Add error boundary state for crash prevention
+	const [hasError, setHasError] = useState(false);
+	const [errorMessage, setErrorMessage] = useState('');
+
+	// Global error handler for the component
+	const handleError = (error: Error, errorInfo?: any) => {
+		console.error('SeatReserved component error:', error, errorInfo);
+		setErrorMessage(error.message);
+		setHasError(true);
+		// Don't crash the app - show error state instead
+	};
+
 	const [useLiveLocation, setUseLiveLocation] = useState(false);
 	const params = useLocalSearchParams<{
 		currentLat?: string;
@@ -35,6 +46,12 @@ export default function SeatReserved() {
 		driverName?: string;
 		fare?: string;
 		rideId?: string;
+		// Multi-leg journey parameters
+		isMultiLeg?: string;
+		journeyId?: string;
+		legIndex?: string;
+		totalLegs?: string;
+		routeName?: string;
 		// Legacy parameters
 		plate?: string;
 		time?: string;
@@ -42,12 +59,6 @@ export default function SeatReserved() {
 		price?: string;
 		selectedVehicleId?: string;
 		userId?: string;
-		// Multi-leg journey parameters
-		journeyId?: string;
-		currentLegIndex?: string;
-		totalLegs?: string;
-		isMultiLegRide?: string;
-		nextLegInfo?: string;
 	}>();
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
@@ -75,18 +86,26 @@ export default function SeatReserved() {
 	const [rideJustEnded, setRideJustEnded] = useState(false);
 	const [isEndingRide, setIsEndingRide] = useState(false);
 
-	// Multi-leg journey state
-	const [currentJourney, setCurrentJourney] = useState<MultiLegJourney | null>(null);
-	const [isMultiLegMode, setIsMultiLegMode] = useState(false);
-	const [currentLegIndex, setCurrentLegIndex] = useState(0);
-	const [isInTransferWindow, setIsInTransferWindow] = useState(false);
-	const [nextLeg, setNextLeg] = useState<JourneyLeg | null>(null);
 
 	// Fetch taxi and driver info for the current reservation using Convex
+	// Wrap taxi info query with error handling
 	const taxiInfo = useQuery(
 		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
 		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
 	);
+
+	// Handle query errors
+	useEffect(() => {
+		try {
+			if (taxiInfo === undefined) {
+				// Still loading - this is normal
+				return;
+			}
+		} catch (error) {
+			console.error('Error in taxiInfo query:', error);
+			handleError(error as Error);
+		}
+	}, [taxiInfo]);
 
 	// Fetch driver badges
 	const driverBadges = useQuery(
@@ -104,31 +123,20 @@ export default function SeatReserved() {
 		}
 	}, [taxiInfo, rideJustEnded, isEndingRide, user]);
 
-	// Automatically set rideJustEnded when ride is completed or cancelled
+	// Automatically set rideJustEnded when ride is completed or cancelled with safety checks
 	useEffect(() => {
-		if (rideStatus === 'completed' || rideStatus === 'cancelled') {
-			setRideJustEnded(true);
-			setIsEndingRide(false);
+		try {
+			if (rideStatus === 'completed' || rideStatus === 'cancelled') {
+				console.log(`Ride status changed to: ${rideStatus}`);
+				setRideJustEnded(true);
+				setIsEndingRide(false);
+			}
+		} catch (error) {
+			console.error('Error in ride status update:', error);
+			// Don't crash the app
 		}
 	}, [rideStatus]);
 
-	// Initialize multi-leg journey state
-	useEffect(() => {
-		if (params.isMultiLegRide === 'true' && params.journeyId && params.currentLegIndex && params.totalLegs) {
-			setIsMultiLegMode(true);
-			setCurrentLegIndex(parseInt(params.currentLegIndex));
-			
-			// Parse next leg info if provided
-			if (params.nextLegInfo) {
-				try {
-					const parsedNextLeg = JSON.parse(params.nextLegInfo);
-					setNextLeg(parsedNextLeg);
-				} catch (error) {
-					console.error('Error parsing next leg info:', error);
-				}
-			}
-		}
-	}, [params.isMultiLegRide, params.journeyId, params.currentLegIndex, params.totalLegs, params.nextLegInfo]);
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
@@ -164,50 +172,45 @@ export default function SeatReserved() {
 		return R * c;
 	};
 
-	// Handle transfer window start
-	const handleTransferWindowStart = async () => {
-		if (!isMultiLegMode || !nextLeg) return;
-		
-		setIsInTransferWindow(true);
-		
-		// Show transfer preparation UI
-		Alert.alert(
-			'Transfer Window',
-			`You're approaching the transfer point for the next leg of your journey. The next taxi will be requested automatically.`,
-			[
-				{
-					text: 'OK',
-					onPress: () => {
-						// Request next leg automatically
-						requestNextLegTaxi();
-					},
-					style: 'default',
-				}
-			],
-			{ cancelable: false }
-		);
-	};
-
-	// Request next leg taxi (placeholder - would integrate with backend)
-	const requestNextLegTaxi = async () => {
-		if (!nextLeg || !params.journeyId) return;
-		
+	// Safety function to validate location updates and prevent crashes from sudden jumps
+	const validateLocationUpdate = (newLocation: { latitude: number; longitude: number }, currentLocation: { latitude: number; longitude: number } | null): boolean => {
 		try {
-			// This would call the backend function to request the next leg taxi
-			console.log('Requesting next leg taxi for journey:', params.journeyId);
-			console.log('Next leg details:', nextLeg);
-			
-			// For now, just show a message
-			Alert.alert(
-				'Next Leg Requested',
-				'Your next leg taxi has been requested. You will be notified when a driver accepts.',
-				[{ text: 'OK' }]
-			);
+			// Basic coordinate validation
+			if (!newLocation || typeof newLocation.latitude !== 'number' || typeof newLocation.longitude !== 'number') {
+				console.warn('Invalid location data received:', newLocation);
+				return false;
+			}
+
+			// Check for valid coordinate ranges
+			if (newLocation.latitude < -90 || newLocation.latitude > 90 ||
+				newLocation.longitude < -180 || newLocation.longitude > 180) {
+				console.warn('Location coordinates out of valid range:', newLocation);
+				return false;
+			}
+
+			// If we have a previous location, check for unreasonable jumps (>100km in one update)
+			if (currentLocation) {
+				const distance = calculateDistance(
+					currentLocation.latitude,
+					currentLocation.longitude,
+					newLocation.latitude,
+					newLocation.longitude
+				);
+
+				if (distance > 100) { // More than 100km jump
+					console.warn(`Location jump detected: ${distance.toFixed(2)}km. This might be due to fake GPS.`);
+					// Allow the update but log it - don't block fake GPS for testing
+					console.warn('Allowing location update despite large jump for testing purposes');
+				}
+			}
+
+			return true;
 		} catch (error) {
-			console.error('Error requesting next leg taxi:', error);
-			Alert.alert('Error', 'Failed to request next leg taxi. Please try again.');
+			console.error('Error validating location update:', error);
+			return false;
 		}
 	};
+
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -233,39 +236,61 @@ export default function SeatReserved() {
 		setUseLiveLocation(false);
 	}, []);
 
-	// Parse location data from params and update context
+	// Parse location data from params and update context with safety checks
 	useEffect(() => {
-		if (!useLiveLocation) {
-			const rawCurrentLat = getParamAsString(params.currentLat);
-			const rawCurrentLng = getParamAsString(params.currentLng);
-			const rawDestLat = getParamAsString(params.destinationLat);
-			const rawDestLng = getParamAsString(params.destinationLng);
+		try {
+			if (!useLiveLocation) {
+				const rawCurrentLat = getParamAsString(params.currentLat);
+				const rawCurrentLng = getParamAsString(params.currentLng);
+				const rawDestLat = getParamAsString(params.destinationLat);
+				const rawDestLng = getParamAsString(params.destinationLng);
 
-			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+				console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
-			const currentLat = parseFloat(rawCurrentLat);
-			const currentLng = parseFloat(rawCurrentLng);
-			const destLat = parseFloat(rawDestLat);
-			const destLng = parseFloat(rawDestLng);
+				const currentLat = parseFloat(rawCurrentLat);
+				const currentLng = parseFloat(rawCurrentLng);
+				const destLat = parseFloat(rawDestLat);
+				const destLng = parseFloat(rawDestLng);
 
-			if (
-				isNaN(currentLat) || isNaN(currentLng) ||
-				isNaN(destLat) || isNaN(destLng)
-			) {
-				console.warn('Skipping update due to invalid coordinates.');
-				return;
+				if (
+					isNaN(currentLat) || isNaN(currentLng) ||
+					isNaN(destLat) || isNaN(destLng)
+				) {
+					console.warn('Skipping update due to invalid coordinates.');
+					return;
+				}
+
+				const newCurrentLocation = {
+					latitude: currentLat,
+					longitude: currentLng,
+				};
+
+				const newDestination = {
+					latitude: destLat,
+					longitude: destLng,
+				};
+
+				// Validate location updates before applying them
+				if (validateLocationUpdate(newCurrentLocation, currentLocation) &&
+					validateLocationUpdate(newDestination, destination)) {
+
+					setCurrentLocation({
+						latitude: currentLat,
+						longitude: currentLng,
+						name: getParamAsString(params.currentName, "Current Location")
+					});
+					setDestination({
+						latitude: destLat,
+						longitude: destLng,
+						name: getParamAsString(params.destinationName, "")
+					});
+				} else {
+					console.warn('Location update blocked due to validation failure');
+				}
 			}
-
-			setCurrentLocation({
-				latitude: currentLat,
-				longitude: currentLng,
-				name: getParamAsString(params.currentName, "Current Location")
-			});
-			setDestination({
-				latitude: destLat,
-				longitude: destLng,
-				name: getParamAsString(params.destinationName, "")
-			});
+		} catch (error) {
+			console.error('Error in location update useEffect:', error);
+			// Don't crash the app - just log the error
 		}
 	}, [useLiveLocation]);
 
@@ -488,23 +513,6 @@ export default function SeatReserved() {
 		}
 	}, [currentLocation, rideStatus, isFollowing]);
 
-	// Enhanced proximity monitoring for multi-leg journeys
-	useEffect(() => {
-		if (isMultiLegMode && rideStatus === 'in_progress' && currentLocation && nextLeg) {
-			const transferProximity = calculateDistance(
-				currentLocation.latitude,
-				currentLocation.longitude,
-				nextLeg.toCoordinates.latitude,
-				nextLeg.toCoordinates.longitude
-			);
-			
-			// Trigger 5-minute window when within 2km of transfer point
-			if (transferProximity <= 2.0 && !isInTransferWindow) {
-				setIsInTransferWindow(true);
-				handleTransferWindowStart();
-			}
-		}
-	}, [currentLocation, rideStatus, isMultiLegMode, nextLeg, isInTransferWindow]);
 
 	// PIN entry functions
 	const handleNumberPress = (number: string) => {
@@ -701,6 +709,15 @@ export default function SeatReserved() {
 					passengerId: passengerId,
 					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
+					actualFare: result.fare.toString(), // Pass actual fare for payment validation
+					// Pass multi-leg journey parameters if applicable
+					...(params.isMultiLeg && {
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+					}),
 				},
 			});
 		} catch (error: any) {
@@ -732,56 +749,6 @@ export default function SeatReserved() {
 		}
 	};
 
-	// Render multi-leg journey progress indicator
-	const renderJourneyProgress = () => {
-		if (!isMultiLegMode || !params.currentLegIndex || !params.totalLegs) return null;
-
-		const currentLegNum = parseInt(params.currentLegIndex) + 1;
-		const totalLegsNum = parseInt(params.totalLegs);
-
-		return (
-			<View style={dynamicStyles.journeyProgressCard}>
-				<View style={dynamicStyles.journeyProgressHeader}>
-					<Icon name="swap-horizontal" size={20} color={theme.primary} />
-					<Text style={dynamicStyles.journeyProgressTitle}>
-						Multi-Leg Journey
-					</Text>
-				</View>
-				<View style={dynamicStyles.journeyProgressContent}>
-					<Text style={dynamicStyles.journeyProgressText}>
-						Leg {currentLegNum} of {totalLegsNum}
-					</Text>
-					<View style={dynamicStyles.progressBar}>
-						<View 
-							style={[
-								dynamicStyles.progressFill, 
-								{ width: `${(currentLegNum / totalLegsNum) * 100}%` }
-							]} 
-						/>
-					</View>
-				</View>
-				{nextLeg && (
-					<View style={dynamicStyles.nextLegPreview}>
-						<Text style={dynamicStyles.nextLegTitle}>Next Leg Preview:</Text>
-						<Text style={dynamicStyles.nextLegText}>
-							{nextLeg.fromAddress} → {nextLeg.toAddress}
-						</Text>
-						<Text style={dynamicStyles.nextLegFare}>
-							Estimated Fare: R{nextLeg.estimatedFare.toFixed(2)}
-						</Text>
-					</View>
-				)}
-				{isInTransferWindow && (
-					<View style={dynamicStyles.transferWindowAlert}>
-						<Icon name="time" size={16} color={theme.primary} />
-						<Text style={dynamicStyles.transferWindowText}>
-							Approaching transfer point - Next taxi will be requested
-						</Text>
-					</View>
-				)}
-			</View>
-		);
-	};
 
 	// Create dynamic styles based on theme
 	const dynamicStyles = StyleSheet.create({
@@ -1107,82 +1074,29 @@ export default function SeatReserved() {
 			fontSize: 20,
 			fontWeight: "bold",
 		},
-		// Multi-leg journey progress styles
-		journeyProgressCard: {
-			backgroundColor: isDark ? theme.surface : `${theme.primary}10`,
-			borderRadius: 12,
-			padding: 16,
-			marginBottom: 20,
-			borderLeftWidth: 4,
-			borderLeftColor: theme.primary,
-		},
-		journeyProgressHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			marginBottom: 12,
-		},
-		journeyProgressTitle: {
-			fontSize: 16,
-			fontWeight: '600',
-			color: theme.text,
-			marginLeft: 8,
-		},
-		journeyProgressContent: {
-			marginBottom: 12,
-		},
-		journeyProgressText: {
-			fontSize: 14,
-			color: theme.textSecondary,
-			marginBottom: 8,
-		},
-		progressBar: {
-			height: 6,
-			backgroundColor: isDark ? theme.border : `${theme.primary}20`,
-			borderRadius: 3,
-			overflow: 'hidden',
-		},
-		progressFill: {
-			height: '100%',
-			backgroundColor: theme.primary,
-			borderRadius: 3,
-		},
-		nextLegPreview: {
-			backgroundColor: isDark ? theme.background : `${theme.primary}05`,
-			borderRadius: 8,
-			padding: 12,
-			marginBottom: 8,
-		},
-		nextLegTitle: {
-			fontSize: 12,
-			fontWeight: '600',
-			color: theme.textSecondary,
-			marginBottom: 4,
-		},
-		nextLegText: {
-			fontSize: 13,
-			color: theme.text,
-			marginBottom: 4,
-		},
-		nextLegFare: {
-			fontSize: 12,
-			color: theme.primary,
-			fontWeight: '500',
-		},
-		transferWindowAlert: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}15`,
-			borderRadius: 8,
-			padding: 12,
-		},
-		transferWindowText: {
-			fontSize: 12,
-			color: theme.primary,
-			fontWeight: '500',
-			marginLeft: 8,
-			flex: 1,
-		},
 	});
+
+	// Early return for error state
+	if (hasError) {
+		return (
+			<SafeAreaView style={dynamicStyles.container}>
+				<View style={dynamicStyles.loadingContainer}>
+					<Text style={{ color: theme.text, textAlign: 'center', margin: 20 }}>
+						Error: {errorMessage}
+					</Text>
+					<TouchableOpacity
+						onPress={() => {
+							setHasError(false);
+							setErrorMessage('');
+						}}
+						style={{ padding: 10, backgroundColor: theme.primary, borderRadius: 5 }}
+					>
+						<Text style={{ color: 'white' }}>Retry</Text>
+					</TouchableOpacity>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
@@ -1199,43 +1113,92 @@ export default function SeatReserved() {
 		<SafeAreaView style={dynamicStyles.container}>
 			<ScrollView style={dynamicStyles.scrollView}>
 				<View>
-					{/* Map Section with Route */}
+					{/* Map Section with Route - Add error boundary */}
 					<View style={{ height: 300, position: 'relative' }}>
-						<MapView
-							ref={mapRef}
-							style={{ flex: 1 }}
-							provider={PROVIDER_GOOGLE}
-							initialRegion={{
-								latitude: (currentLocation.latitude + destination.latitude) / 2,
-								longitude: (currentLocation.longitude + destination.longitude) / 2,
-								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
-								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
-							}}
-							customMapStyle={isDark ? darkMapStyle : []}
-							onPanDrag={() => setIsFollowing(false)}
-							onRegionChangeComplete={() => setIsFollowing(false)}
-						>
-							<Marker
-								coordinate={currentLocation}
-								title="You are here"
-								pinColor="blue"
-							>
-							</Marker>
-							<Marker
-								coordinate={destination}
-								title={destination.name}
-								pinColor="orange"
-							>
-							</Marker>
-							{/* Render the route polyline */}
-							{routeCoordinates.length > 0 && (
-								<Polyline
-									coordinates={routeCoordinates}
-									strokeColor={theme.primary}
-									strokeWidth={4}
-								/>
-							)}
-						</MapView>
+						{(() => {
+							try {
+								// Validate coordinates before rendering map
+								const isValidCoordinates = (coord: any) => {
+									return coord &&
+										typeof coord.latitude === 'number' &&
+										typeof coord.longitude === 'number' &&
+										coord.latitude >= -90 && coord.latitude <= 90 &&
+										coord.longitude >= -180 && coord.longitude <= 180 &&
+										!isNaN(coord.latitude) && !isNaN(coord.longitude);
+								};
+
+								if (!isValidCoordinates(currentLocation) || !isValidCoordinates(destination)) {
+									console.warn('Invalid coordinates for map rendering:', { currentLocation, destination });
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								// Calculate safe region values
+								const centerLat = (currentLocation.latitude + destination.latitude) / 2;
+								const centerLng = (currentLocation.longitude + destination.longitude) / 2;
+								const latDelta = Math.max(Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01, 0.01);
+								const lngDelta = Math.max(Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01, 0.01);
+
+								// Validate region values
+								if (isNaN(centerLat) || isNaN(centerLng) || isNaN(latDelta) || isNaN(lngDelta)) {
+									console.warn('Invalid region calculation');
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								return (
+									<MapView
+										ref={mapRef}
+										style={{ flex: 1 }}
+										provider={PROVIDER_GOOGLE}
+										initialRegion={{
+											latitude: centerLat,
+											longitude: centerLng,
+											latitudeDelta: latDelta,
+											longitudeDelta: lngDelta,
+										}}
+										customMapStyle={isDark ? darkMapStyle : []}
+										onPanDrag={() => setIsFollowing(false)}
+										onRegionChangeComplete={() => setIsFollowing(false)}
+									>
+										<Marker
+											coordinate={currentLocation}
+											title="You are here"
+											pinColor="blue"
+										>
+										</Marker>
+										<Marker
+											coordinate={destination}
+											title={destination.name}
+											pinColor="orange"
+										>
+										</Marker>
+										{/* Render the route polyline */}
+										{routeCoordinates.length > 0 && (
+											<Polyline
+												coordinates={routeCoordinates}
+												strokeColor={theme.primary}
+												strokeWidth={4}
+											/>
+										)}
+									</MapView>
+								);
+							} catch (error) {
+								console.error('Error rendering map:', error);
+								handleError(error as Error);
+								return (
+									<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+										<Text style={{ color: theme.text }}>Map error - please retry</Text>
+									</View>
+								);
+							}
+						})()}
 
 						{/* Arrival Time Overlay */}
 						<View style={dynamicStyles.arrivalTimeOverlay}>
@@ -1253,8 +1216,6 @@ export default function SeatReserved() {
 					</View>
 
 					<View style={dynamicStyles.bottomSection}>
-						{/* Multi-leg journey progress indicator */}
-						{renderJourneyProgress()}
 						
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>

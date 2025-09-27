@@ -150,26 +150,6 @@ export default defineSchema({
 
     paymentConfirmedAt: v.optional(v.float64()),
 
-    // Multi-leg journey tracking
-    parentJourneyId: v.optional(v.string()),
-    legIndex: v.optional(v.number()),
-    isMultiLegRide: v.optional(v.boolean()),
-
-    // Per-leg payment processing fields
-    legPaymentStatus: v.optional(v.union(
-      v.literal("pending"),
-      v.literal("completed"),
-      v.literal("failed"),
-      v.literal("skipped")
-    )),
-    legPaymentMethod: v.optional(v.union(
-      v.literal("cash"),
-      v.literal("card"),
-      v.literal("digital"),
-      v.literal("other")
-    )),
-    isPartialJourneyPayment: v.optional(v.boolean()),
-    journeyLegNumber: v.optional(v.string()), // "2 of 3"
 
     updatedAt: v.optional(v.number()),
 
@@ -440,98 +420,6 @@ routes: defineTable({
   })
   .index("by_driver_and_start", ["driverId", "startTime"]),
 
-  multiLegJourneys: defineTable({
-    journeyId: v.string(),
-    passengerId: v.id("taxiTap_users"),
-    status: v.union(
-    v.literal("planning"),
-    v.literal("active"),
-    v.literal("paused"),
-    v.literal("completed"),
-    v.literal("cancelled")
-    ),
-    totalLegs: v.number(),
-    currentLegIndex: v.number(),
-    originAddress: v.string(),
-    destinationAddress: v.string(),
-    originCoordinates: v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    }),
-    destinationCoordinates: v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    }),
-    optimizationPreference: v.union(
-    v.literal("shortest_time"),
-    v.literal("fewest_transfers"),
-    v.literal("most_reliable")
-    ),
-    estimatedTotalFare: v.number(),
-    estimatedTotalDuration: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    completedAt: v.optional(v.number()),
-  })
-  .index("by_journey_id", ["journeyId"])
-  .index("by_passenger", ["passengerId"])
-  .index("by_status", ["status"])
-  .index("by_created_at", ["createdAt"]),
-
-  journeyLegs: defineTable({
-    journeyId: v.string(),
-    legIndex: v.number(),
-    fromAddress: v.string(),
-    toAddress: v.string(),
-    fromCoordinates: v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    }),
-    toCoordinates: v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    }),
-    routeId: v.optional(v.string()),
-    status: v.union(
-    v.literal("pending"),
-    v.literal("requesting"),
-    v.literal("active"),
-    v.literal("completed"),
-    v.literal("failed")
-    ),
-    rideId: v.optional(v.id("rides")),
-    estimatedFare: v.number(),
-    actualFare: v.optional(v.number()),
-    estimatedDuration: v.number(),
-    requestedAt: v.optional(v.number()),
-    completedAt: v.optional(v.number()),
-    transferWindowStart: v.optional(v.number()),
-    transferWindowEnd: v.optional(v.number()),
-
-    // Per-leg payment tracking
-    paymentStatus: v.optional(v.union(
-      v.literal("pending"),
-      v.literal("processing"),
-      v.literal("completed"),
-      v.literal("failed"),
-      v.literal("cancelled"),
-      v.literal("not_required")
-    )),
-    paymentConfirmedAt: v.optional(v.number()),
-    paymentAmount: v.optional(v.number()),
-    paymentMethod: v.optional(v.union(
-      v.literal("cash"),
-      v.literal("card"),
-      v.literal("digital"),
-      v.literal("other")
-    )),
-    paymentNotes: v.optional(v.string()),
-  })
-  .index("by_journey_id", ["journeyId"])
-  .index("by_journey_and_leg", ["journeyId", "legIndex"])
-  .index("by_status", ["status"])
-  .index("by_ride_id", ["rideId"])
-  .index("by_payment_status", ["paymentStatus"]),
 
   badges: defineTable({
     userId: v.id("taxiTap_users"),
@@ -555,4 +443,91 @@ routes: defineTable({
   .index("by_badge_type", ["badgeType"])
   .index("by_user_and_type", ["userId", "badgeType"])
   .index("by_active_badges", ["userId", "isActive"]),
+
+  // Multi-leg journey management
+  multiLegJourneys: defineTable({
+    journeyId: v.string(),
+    passengerId: v.id("taxiTap_users"),
+    status: v.union(
+      v.literal("planned"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("timeout")
+    ),
+    currentLegIndex: v.number(),
+    totalLegs: v.number(),
+
+    originLocation: v.object({
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      address: v.string(),
+    }),
+
+    finalDestination: v.object({
+      coordinates: v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      }),
+      address: v.string(),
+    }),
+
+    transferPoint: v.object({
+      stop1_id: v.string(),
+      stop2_id: v.string(),
+      walkingDistance: v.number(),
+      estimatedWalkingTime: v.optional(v.number()),
+    }),
+
+    legs: v.array(v.object({
+      legIndex: v.number(),
+      routeName: v.string(),
+      origin: v.object({
+        coordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number(),
+        }),
+        address: v.string(),
+      }),
+      destination: v.object({
+        coordinates: v.object({
+          latitude: v.number(),
+          longitude: v.number(),
+        }),
+        address: v.string(),
+      }),
+      originStopId: v.string(),
+      destinationStopId: v.string(),
+      estimatedCost: v.number(),
+      actualCost: v.optional(v.number()),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("in_progress"),
+        v.literal("completed"),
+        v.literal("cancelled")
+      ),
+      rideId: v.optional(v.id("rides")),
+      driverId: v.optional(v.id("taxiTap_users")),
+      startedAt: v.optional(v.number()),
+      completedAt: v.optional(v.number()),
+    })),
+
+    totalEstimatedCost: v.number(),
+    totalActualCost: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+
+    transferTimeoutAt: v.optional(v.number()),
+    transferWindowExpiredAt: v.optional(v.number()),
+  })
+    .index("by_journey_id", ["journeyId"])
+    .index("by_passenger", ["passengerId"])
+    .index("by_status", ["status"])
+    .index("by_passenger_and_status", ["passengerId", "status"])
+    .index("by_created_at", ["createdAt"]),
 });

@@ -11,4 +11,20 @@ crons.interval(
   { batchSize: 5 } // Process only 5 rides at a time
 );
 
+// Check transfer point proximity for multi-leg journeys every minute
+crons.interval(
+  "check transfer proximity",
+  { minutes: 1 },
+  api.functions.journeys.transferProximityAction.monitorTransferProximity,
+  { limit: 10 } // Process up to 10 journeys at a time
+);
+
+// Clean up expired transfer windows every 2 minutes
+crons.interval(
+  "cleanup expired transfers",
+  { minutes: 2 },
+  api.functions.journeys.journeyStateManager.cleanupExpiredTransfers,
+  {}
+);
+
 export default crons;

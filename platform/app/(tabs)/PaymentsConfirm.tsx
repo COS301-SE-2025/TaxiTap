@@ -33,7 +33,7 @@ export default function PaymentConfirmation() {
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
-  const processLegPayment = useMutation(api.functions.journeys.multiLegPayment.processLegPayment);
+  const processLegPayment = useMutation(api.functions.journeys.journeyStateManager.completeLegWithPayment);
 
   const handlePaid = async () => {
     try {
@@ -41,11 +41,9 @@ export default function PaymentConfirmation() {
       if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
         // Use multi-leg payment handler
         const result = await processLegPayment({
-          rideId: rideId as string,
           journeyId: journeyId as string,
           legIndex: parseInt(legIndex as string),
-          amountPaid: parseFloat(fare as string),
-          isPaid: true,
+          actualCost: parseFloat(fare as string),
         });
 
         const currentLeg = parseInt(legIndex as string) + 1;
@@ -58,7 +56,7 @@ export default function PaymentConfirmation() {
         );
 
         setTimeout(() => {
-          if (result.canProgressToNextLeg) {
+          if (!result.journeyComplete) {
             // Navigate back to journey progress or next leg preparation
             router.push('/HomeScreen'); // Could be journey progress screen instead
           } else {
@@ -120,11 +118,9 @@ export default function PaymentConfirmation() {
       if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
         // Use multi-leg payment handler for "not paid"
         const result = await processLegPayment({
-          rideId: rideId as string,
           journeyId: journeyId as string,
           legIndex: parseInt(legIndex as string),
-          amountPaid: 0,
-          isPaid: false,
+          actualCost: 0,
         });
 
         const currentLeg = parseInt(legIndex as string) + 1;

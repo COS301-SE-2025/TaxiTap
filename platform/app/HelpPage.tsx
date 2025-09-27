@@ -90,7 +90,7 @@ export default function HelpPage() {
       justifyContent: 'center',
       marginRight: 12,
     },
-    headerTitle: {
+    navigationHeaderTitle: {
       fontSize: 18,
       fontWeight: '600',
       color: theme.text,
