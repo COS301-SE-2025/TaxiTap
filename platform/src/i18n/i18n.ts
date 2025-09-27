@@ -230,6 +230,12 @@ const englishTranslations: TranslationStructure = {
   "feedback.ok": "OK",
   "feedback.error": "Error",
   "feedback.somethingWentWrong": "Something went wrong.",
+  "feedback.legComplete": "Leg {legNumber} Complete!",
+  "feedback.readyForNextLeg": "Ready for leg {nextLegNumber}? You have 5 minutes to board the next taxi.",
+  "feedback.continueToNextLeg": "Continue to Next Leg",
+  "feedback.cancelJourney": "Cancel Journey",
+  "feedback.journeyComplete": "Journey Complete!",
+  "feedback.multiLegJourneyCompleted": "Multi-leg journey completed successfully! Total cost: R{totalCost}",
 
   // Driver pin entry translations
   "driverPin.googleMapsApiKeyNotConfigured": "Google Maps API key is not configured",
@@ -257,6 +263,19 @@ const englishTranslations: TranslationStructure = {
   "driverRequest.rideMarkedAsCompleted": "Ride marked as completed!",
   "driverRequest.failedToActionRide": "Failed to {action} ride. Please try again.",
   "driverRequest.youAreHere": "You are here",
+
+  // Taxi information translations
+  "taxiInfo.phoneCallsNotSupported": "Phone calls are not supported on this device",
+  "taxiInfo.couldNotOpenPhoneApp": "Could not open phone app",
+  "taxiInfo.pleaseSelectTaxiAndLogin": "Please select a taxi and ensure you are logged in",
+  "taxiInfo.bookingError": "Booking Error",
+  "taxiInfo.bookingErrorAcknowledged": "Booking error acknowledged",
+
+  // Address management translations
+  "address.home": "Home",
+  "address.work": "Work",
+  "address.enterHomeAddress": "Enter your home address",
+  "address.enterWorkAddress": "Enter your work address",
 
   // Landing page content
   landing: {
@@ -1060,6 +1079,12 @@ const zuluTranslations: TranslationStructure = {
   "feedback.ok": "Kulungile",
   "feedback.error": "Iphutha",
   "feedback.somethingWentWrong": "Kukhona okuhambile.",
+  "feedback.legComplete": "Uhambo {legNumber} Luphele!",
+  "feedback.readyForNextLeg": "Silungiselele uhambo {nextLegNumber}? Unemizuzu emi-5 yokungena ethekisini elandelayo.",
+  "feedback.continueToNextLeg": "Qhubeka Uye Ohambweni Olulandelayo",
+  "feedback.cancelJourney": "Khansela Uhambo",
+  "feedback.journeyComplete": "Uhambo Luphele!",
+  "feedback.multiLegJourneyCompleted": "Uhambo olunamalengu amaningi luphele ngempumelelo! Isamba sezindleko: R{totalCost}",
 
   // Driver pin entry translations
   "driverPin.googleMapsApiKeyNotConfigured": "I-Google Maps API key ayikho icwangciswe",
@@ -1087,6 +1112,19 @@ const zuluTranslations: TranslationStructure = {
   "driverRequest.rideMarkedAsCompleted": "Uhambo luphawulwe njengokuphelele!",
   "driverRequest.failedToActionRide": "Kuhlulekile uku{action} uhambo. Sicela uzame futhi.",
   "driverRequest.youAreHere": "Ulapha",
+
+  // Taxi information translations
+  "taxiInfo.phoneCallsNotSupported": "Izinqingo azisekelwa kule divayisi",
+  "taxiInfo.couldNotOpenPhoneApp": "Awukwazi ukuvula uhlelo lwefoni",
+  "taxiInfo.pleaseSelectTaxiAndLogin": "Sicela ukhethe iteksi bese uqinisekisa ukuthi ungene ngemvume",
+  "taxiInfo.bookingError": "Iphutha Lokubhuka",
+  "taxiInfo.bookingErrorAcknowledged": "Iphutha lokubhuka liyavunywa",
+
+  // Address management translations
+  "address.home": "Ekhaya",
+  "address.work": "Emsebenzini",
+  "address.enterHomeAddress": "Faka ikheli lakho lasekhaya",
+  "address.enterWorkAddress": "Faka ikheli lakho lomsebenzi",
 
   // Landing page content
    landing: {
@@ -1974,6 +2012,12 @@ const tswanaTranslations: TranslationStructure = {
   "feedback.ok": "OK",
   "feedback.error": "Phoso",
   "feedback.somethingWentWrong": "Go na le sengwe se se sa tsamaeng sentle.",
+  "feedback.legComplete": "Leeto {legNumber} le Fedile!",
+  "feedback.readyForNextLeg": "Re Ikemiseditse leeto {nextLegNumber}? O na le metsotso e mehlano ya go tsena ka tekisi e e latelang.",
+  "feedback.continueToNextLeg": "Tswela pele go ya kwa Leetong le le Latelang",
+  "feedback.cancelJourney": "Khansela Leeto",
+  "feedback.journeyComplete": "Leeto le Fedile!",
+  "feedback.multiLegJourneyCompleted": "Leeto le le nang le malengu a mantsi le fedile ka katlego! Palo ya madi ka kakaretso: R{totalCost}",
 
   // Driver pin entry translations
   "driverPin.googleMapsApiKeyNotConfigured": "Google Maps API key ga e a beilwe",
@@ -2001,6 +2045,19 @@ const tswanaTranslations: TranslationStructure = {
   "driverRequest.rideMarkedAsCompleted": "Leeto le tlhomilwe jaaka le fedile!",
   "driverRequest.failedToActionRide": "Go palelwa ke go {action} leeto. Ka kopo leka gape.",
   "driverRequest.youAreHere": "O kwa gone",
+
+  // Taxi information translations
+  "taxiInfo.phoneCallsNotSupported": "Ditshiamiso ga di tshegediwe mo seshwaneng se",
+  "taxiInfo.couldNotOpenPhoneApp": "Ga go kgone go bulela leina la fono",
+  "taxiInfo.pleaseSelectTaxiAndLogin": "Ka kopo tlhopha tekisi mme o netefatse gore o kgenne",
+  "taxiInfo.bookingError": "Phoso ya Go Buka",
+  "taxiInfo.bookingErrorAcknowledged": "Phoso ya go buka e amogetswe",
+
+  // Address management translations
+  "address.home": "Gae",
+  "address.work": "Tirong",
+  "address.enterHomeAddress": "Tsenya aterese ya gago ya gae",
+  "address.enterWorkAddress": "Tsenya aterese ya gago ya tirong",
 
   // Landing page content
   landing: {
@@ -2780,6 +2837,12 @@ const afrikaansTranslations: TranslationStructure = {
   "feedback.ok": "OK",
   "feedback.error": "Fout",
   "feedback.somethingWentWrong": "Iets het verkeerd gegaan.",
+  "feedback.legComplete": "Been {legNumber} Voltooi!",
+  "feedback.readyForNextLeg": "Gereed vir been {nextLegNumber}? Jy het 5 minute om die volgende taxi te betree.",
+  "feedback.continueToNextLeg": "Gaan Voort na Volgende Been",
+  "feedback.cancelJourney": "Kanselleer Reis",
+  "feedback.journeyComplete": "Reis Voltooi!",
+  "feedback.multiLegJourneyCompleted": "Multi-been reis suksesvol voltooi! Totale koste: R{totalCost}",
 
   // Driver pin entry translations
   "driverPin.googleMapsApiKeyNotConfigured": "Google Maps API sleutel is nie gekonfigureer nie",
@@ -2807,6 +2870,19 @@ const afrikaansTranslations: TranslationStructure = {
   "driverRequest.rideMarkedAsCompleted": "Rit gemerk as voltooi!",
   "driverRequest.failedToActionRide": "Kon nie {action} rit nie. Probeer asseblief weer.",
   "driverRequest.youAreHere": "Jy is hier",
+
+  // Taxi information translations
+  "taxiInfo.phoneCallsNotSupported": "Telefoon oproepe word nie op hierdie toestel ondersteun nie",
+  "taxiInfo.couldNotOpenPhoneApp": "Kon nie telefoon app oopmaak nie",
+  "taxiInfo.pleaseSelectTaxiAndLogin": "Kies asseblief 'n taxi en maak seker jy is ingeteken",
+  "taxiInfo.bookingError": "Bespreking Fout",
+  "taxiInfo.bookingErrorAcknowledged": "Bespreking fout erken",
+
+  // Address management translations
+  "address.home": "Huis",
+  "address.work": "Werk",
+  "address.enterHomeAddress": "Voer jou huis adres in",
+  "address.enterWorkAddress": "Voer jou werk adres in",
 
   // Landing page content
   landing: {
