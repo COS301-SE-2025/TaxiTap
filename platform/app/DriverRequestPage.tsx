@@ -10,6 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default () => {
     const params = useLocalSearchParams();
@@ -18,6 +19,7 @@ export default () => {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
     const { showError, showSuccess } = useAlertHelpers();
+    const { t: translate } = useLanguage();
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -37,25 +39,25 @@ export default () => {
 
     const handleRideAction = async (action: 'accept' | 'decline' | 'complete') => {
         if (!user?.id || !rideId) {
-            showError('Error', 'User or ride data is not available.');
+            showError(translate('common.error'), translate('driverRequest.userOrRideDataNotAvailable'));
             return;
         }
 
         try {
             if (action === 'accept') {
                 await acceptRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride accepted! The passenger has been notified.');
+                showSuccess(translate('common.success'), translate('driverRequest.rideAccepted'));
             } else if (action === 'decline') {
                 await declineRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride declined.');
+                showSuccess(translate('common.success'), translate('driverRequest.rideDeclined'));
             } else if (action === 'complete') {
                 await completeRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride marked as completed!');
+                showSuccess(translate('common.success'), translate('driverRequest.rideMarkedAsCompleted'));
             }
             
             router.back();
         } catch (err: any) {
-            showError('Error', err.message || `Failed to ${action} ride. Please try again.`);
+            showError(translate('common.error'), err.message || translate('driverRequest.failedToActionRide', { action }));
         }
     };
     
@@ -291,7 +293,7 @@ export default () => {
                         >
                             <Marker
                                 coordinate={currentLocation}
-                                title="You are here"
+                                title={translate("driverRequest.youAreHere")}
                                 pinColor="blue"
                             >
                             </Marker>

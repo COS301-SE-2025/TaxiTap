@@ -18,12 +18,14 @@ import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DriverPinEntry() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { t: translate } = useLanguage();
   
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
@@ -105,7 +107,7 @@ export default function DriverPinEntry() {
   // Function to get route from Google Directions API
   const getRoute = async (origin: { latitude: number; longitude: number }, dest: { latitude: number; longitude: number }) => {
     if (!GOOGLE_MAPS_API_KEY) {
-      console.error('Google Maps API key is not configured');
+      console.error(translate('driverPin.googleMapsApiKeyNotConfigured'));
       return;
     }
 
@@ -133,13 +135,13 @@ export default function DriverPinEntry() {
         const route = data.routes[0];
         
         if (!route.overview_polyline || !route.overview_polyline.points) {
-          throw new Error('No polyline data in route');
+          throw new Error(translate('driverPin.noPolylineDataInRoute'));
         }
         
         const decodedCoords = decodePolyline(route.overview_polyline.points);
         setRouteCoordinates(decodedCoords);
       } else {
-        throw new Error('No routes found');
+        throw new Error(translate('driverPin.noRoutesFound'));
       }
     } catch (error) {
       console.error('Error fetching route:', error);
@@ -157,7 +159,7 @@ export default function DriverPinEntry() {
 
   const handleStartRide = async () => {
     if (!user || !ride) {
-      Alert.alert('Error', 'User or ride information not available.');
+      Alert.alert(translate('common.error'), translate('driverPin.userOrRideInfoNotAvailable'));
       return;
     }
 
@@ -186,10 +188,10 @@ export default function DriverPinEntry() {
           await getRoute(origin, destination);
         }
       } else {
-        Alert.alert('Error', 'Failed to start ride. Please try again.');
+        Alert.alert(translate('common.error'), translate('driverPin.failedToStartRide'));
       }
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to start ride. Please try again.');
+      Alert.alert(translate('common.error'), translate('driverPin.failedToStartRide'));
     }
   };
 
@@ -457,7 +459,7 @@ export default function DriverPinEntry() {
               >
                 <Marker
                   coordinate={startLocation}
-                  title="Pickup Location"
+                  title={translate("driverPin.pickupLocation")}
                   pinColor="blue"
                 />
                 <Marker

@@ -17,6 +17,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
@@ -62,7 +63,7 @@ interface DriverRoute {
 export default function DriverOnline({ 
   onGoOffline, 
   todaysEarnings,
-  currentRoute = "Not Set",
+  currentRoute,
 }: DriverOnlineProps) {
   const { width, height } = Dimensions.get('window');
 
@@ -74,7 +75,11 @@ export default function DriverOnline({
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
+  const { t: translate } = useLanguage();
   const userId = user?.id;
+  
+  // Set default route if not provided
+  const displayRoute = currentRoute || translate("driverOnline.notSet");
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -102,7 +107,7 @@ export default function DriverOnline({
           const result = await getOrCreateDriverPin({ driverId: user.id as Id<"taxiTap_users"> });
           setDriverPinData(result);
         } catch (e) {
-          console.error("Failed to get or create driver pin", e);
+          console.error(translate("driverOnline.failedToGetDriverPin"), e);
         }
       })();
     }
@@ -170,7 +175,7 @@ export default function DriverOnline({
         const currentLoc: LocationData = {
           latitude,
           longitude,
-          name: placeName || 'Unknown Location',
+          name: placeName || translate("driverOnline.unknownLocation"),
         };
 
         setCurrentLocation(currentLoc);
@@ -243,7 +248,7 @@ export default function DriverOnline({
       const newLocation: LocationData = {
         latitude: streamedLocation.latitude,
         longitude: streamedLocation.longitude,
-        name: 'Current Location',
+        name: translate("driverOnline.currentLocation"),
       };
       setCurrentLocation(newLocation);
 
@@ -269,7 +274,7 @@ export default function DriverOnline({
     if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
       shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
-        title: "New Ride Request",
+        title: translate("driverOnline.newRideRequest"),
         message: rideRequest.message,
         position: 'top',
         animation: 'slide-down',
@@ -277,19 +282,19 @@ export default function DriverOnline({
         type: 'info',
         actions: [
           {
-            label: 'Decline',
+            label: translate("driverOnline.decline"),
             style: 'destructive',
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(translate("common.error"), translate("driverOnline.failedToDeclineRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
           },
           {
-            label: 'Accept',
+            label: translate("driverOnline.accept"),
             style: 'default',
             onPress: async () => {
               try {
@@ -307,7 +312,7 @@ export default function DriverOnline({
                 
                 markAsRead(rideRequest._id);
               } catch (error) {
-                showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(translate("common.error"), translate("driverOnline.failedToAcceptRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
             },
           },
