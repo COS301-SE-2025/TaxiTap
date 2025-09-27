@@ -24,6 +24,8 @@ describe("endRideHandler", () => {
         eq: jest.fn().mockReturnThis(),
         first: jest.fn(),
         patch: jest.fn(),
+        filter: jest.fn().mockReturnThis(),
+        collect: jest.fn().mockResolvedValue([]),
       },
       runMutation: jest.fn(),
     };

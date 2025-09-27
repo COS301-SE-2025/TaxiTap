@@ -38,6 +38,13 @@ function createMockCtx(rideData: any) {
       query: jest.fn(() => ({
         withIndex: jest.fn(() => ({
           first: jest.fn(async () => ride),
+          filter: jest.fn(() => ({
+            collect: jest.fn(async () => []),
+          })),
+          collect: jest.fn(async () => []),
+        })),
+        filter: jest.fn(() => ({
+          collect: jest.fn(async () => []),
         })),
       })),
       patch: jest.fn(async (_id: any, update: any) => {

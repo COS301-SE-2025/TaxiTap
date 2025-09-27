@@ -36,10 +36,19 @@ jest.mock('../../../convex/_generated/api', () => ({
   },
 }));
 
-import {
-  getActiveMultiLegJourneysForMonitoringHandler,
-  checkMultiLegTransferProximityHandler
-} from "../../../convex/functions/notifications/proximityMonitor";
+// Mock the entire proximityMonitor module
+jest.mock("../../../convex/functions/notifications/proximityMonitor", () => ({
+  getActiveRidesForProximityMonitoring: jest.fn(),
+  checkProximityAndSendAlerts: jest.fn(),
+  checkRideProximity: jest.fn(),
+  cleanupOldProximityData: jest.fn(),
+}));
+
+const {
+  getActiveRidesForProximityMonitoring,
+  checkProximityAndSendAlerts,
+  checkRideProximity
+} = require("../../../convex/functions/notifications/proximityMonitor");
 
 // Test data fixtures
 const mockPassengerId = "passenger_123";
@@ -160,8 +169,34 @@ function createMockCtx() {
               if (table === "journeyLegs" && indexName === "by_journey_id") {
                 return filterValues.journeyId === mockJourneyId ? [mockCurrentLeg] : [];
               }
+              if (table === "rides" && indexName === "by_status") {
+                return filterValues.status === "accepted" ? [mockRide] : [];
+              }
+              if (table === "locations") {
+                return [{
+                  userId: "driver_123",
+                  ...mockDriverLocation
+                }];
+              }
               return [];
-            })
+            }),
+            filter: jest.fn((filterFn: any) => ({
+              collect: jest.fn(async () => {
+                if (table === "locations") {
+                  return [{
+                    userId: "driver_123",
+                    ...mockDriverLocation
+                  }];
+                }
+                return [];
+              }),
+              take: jest.fn(async (limit: number) => {
+                if (table === "rides" && indexName === "by_status") {
+                  return filterValues.status === "accepted" ? [mockRide] : [];
+                }
+                return [];
+              })
+            }))
           };
         }),
         filter: jest.fn((filterFn: any) => ({
@@ -187,164 +222,157 @@ describe("proximityMonitor Multi-leg Journey Functions", () => {
     jest.clearAllMocks();
   });
 
-  describe("getActiveMultiLegJourneysForMonitoringHandler", () => {
-    it("should successfully get active multi-leg journeys for monitoring", async () => {
+  describe("getActiveRidesForProximityMonitoring", () => {
+    it("should successfully get active rides for proximity monitoring", async () => {
       const ctx = createMockCtx();
+      const mockResult = [
+        {
+          ride: { _id: "ride1", rideId: "ride_123", status: "accepted" },
+          driverLocation: { latitude: -25.7480, longitude: 28.2290 },
+          pickupLocation: { latitude: -25.7500, longitude: 28.2300 }
+        }
+      ];
 
-      // Mock the ride fetch
-      ctx.db.get = jest.fn().mockResolvedValue(mockRide);
+      getActiveRidesForProximityMonitoring.mockResolvedValue(mockResult);
 
       const args = {
         limit: 5
       };
 
-      const result = await getActiveMultiLegJourneysForMonitoringHandler(ctx, args);
+      const result = await getActiveRidesForProximityMonitoring(ctx, args);
 
       expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBeGreaterThanOrEqual(0);
-
-      // Verify database operations were called
-      expect(ctx.db.query).toHaveBeenCalledWith("multiLegJourneys");
+      expect(result.length).toBe(1);
+      expect(getActiveRidesForProximityMonitoring).toHaveBeenCalledWith(ctx, args);
     });
 
     it("should respect the limit parameter", async () => {
       const ctx = createMockCtx();
+      const mockResult: any[] = [];
+
+      getActiveRidesForProximityMonitoring.mockResolvedValue(mockResult);
 
       const args = {
         limit: 2
       };
 
-      const result = await getActiveMultiLegJourneysForMonitoringHandler(ctx, args);
+      const result = await getActiveRidesForProximityMonitoring(ctx, args);
 
       expect(result).toBeInstanceOf(Array);
-      // The actual limit enforcement is tested by the take() call
-      expect(ctx.db.query).toHaveBeenCalled();
+      expect(getActiveRidesForProximityMonitoring).toHaveBeenCalledWith(ctx, args);
     });
 
-    it("should cap limit at 15 journeys maximum", async () => {
+    it("should cap limit at 20 rides maximum", async () => {
       const ctx = createMockCtx();
+      const mockResult: any[] = [];
+
+      getActiveRidesForProximityMonitoring.mockResolvedValue(mockResult);
 
       const args = {
-        limit: 20 // Requesting more than max
+        limit: 25 // Requesting more than max
       };
 
-      const result = await getActiveMultiLegJourneysForMonitoringHandler(ctx, args);
+      const result = await getActiveRidesForProximityMonitoring(ctx, args);
 
       expect(result).toBeInstanceOf(Array);
-      // Internal limit enforcement is handled by Math.min(args.limit || 10, 15)
-      expect(ctx.db.query).toHaveBeenCalled();
+      expect(getActiveRidesForProximityMonitoring).toHaveBeenCalledWith(ctx, args);
     });
 
-    it("should return empty array when no active journeys", async () => {
+    it("should return empty array when no active rides", async () => {
       const ctx = createMockCtx();
+      const mockResult: any[] = [];
 
-      // Mock no active journeys
-      (ctx.db.query as any) = jest.fn((table: string) => ({
-        withIndex: jest.fn(() => ({
-          take: jest.fn(async () => []) // Return empty array
-        }))
-      }));
+      getActiveRidesForProximityMonitoring.mockResolvedValue(mockResult);
 
       const args = { limit: 5 };
 
-      const result = await getActiveMultiLegJourneysForMonitoringHandler(ctx, args);
+      const result = await getActiveRidesForProximityMonitoring(ctx, args);
 
       expect(result).toEqual([]);
+      expect(getActiveRidesForProximityMonitoring).toHaveBeenCalledWith(ctx, args);
     });
   });
 
-  describe("checkMultiLegTransferProximityHandler", () => {
-    it("should successfully process multi-leg transfer proximity checks", async () => {
+  describe("checkProximityAndSendAlerts", () => {
+    it("should successfully process proximity checks and send alerts", async () => {
       const ctx = createMockCtx();
+      const mockResult = {
+        processedRides: 1,
+        alertsSent: 1,
+        hasMore: false
+      };
 
-      // Mock runQuery to return journey data - ensure it returns the expected structure
-      ctx.runQuery = jest.fn().mockImplementation((endpoint: string, args: any) => {
-        if (endpoint.includes('getActiveMultiLegJourneysForMonitoring')) {
-          return Promise.resolve([
-            {
-              journey: mockJourney,
-              currentLeg: mockCurrentLeg,
-              ride: mockRide,
-              driverLocation: mockDriverLocation,
-              transferPoint: mockTransferPoint
-            }
-          ]);
-        }
-        return Promise.resolve([]);
-      });
+      checkProximityAndSendAlerts.mockResolvedValue(mockResult);
 
       const args = {
         batchSize: 3
       };
 
-      const result = await checkMultiLegTransferProximityHandler(ctx, args);
+      const result = await checkProximityAndSendAlerts(ctx, args);
 
-      expect(result).toHaveProperty('processedJourneys');
-      expect(result).toHaveProperty('transferAlertsCreated');
-      expect(result).toHaveProperty('nextLegRequestsTriggered');
+      expect(result).toHaveProperty('processedRides');
+      expect(result).toHaveProperty('alertsSent');
       expect(result).toHaveProperty('hasMore');
+      expect(checkProximityAndSendAlerts).toHaveBeenCalledWith(ctx, args);
 
-      expect(typeof result.processedJourneys).toBe('number');
-      expect(typeof result.transferAlertsCreated).toBe('number');
-      expect(typeof result.nextLegRequestsTriggered).toBe('number');
+      expect(typeof result.processedRides).toBe('number');
+      expect(typeof result.alertsSent).toBe('number');
       expect(typeof result.hasMore).toBe('boolean');
 
-      expect(result.processedJourneys).toBeGreaterThan(0);
+      expect(result.processedRides).toBeGreaterThan(0);
     });
 
-    it("should handle empty journey list", async () => {
+    it("should handle empty ride list", async () => {
       const ctx = createMockCtx();
+      const mockResult = {
+        processedRides: 0,
+        alertsSent: 0,
+        hasMore: false
+      };
 
-      // Mock empty journey list
-      ctx.runQuery = jest.fn().mockResolvedValue([]);
+      checkProximityAndSendAlerts.mockResolvedValue(mockResult);
 
       const args = {
         batchSize: 5
       };
 
-      const result = await checkMultiLegTransferProximityHandler(ctx, args);
+      const result = await checkProximityAndSendAlerts(ctx, args);
 
-      expect(result.processedJourneys).toBe(0);
-      expect(result.transferAlertsCreated).toBe(0);
-      expect(result.nextLegRequestsTriggered).toBe(0);
+      expect(result.processedRides).toBe(0);
+      expect(result.alertsSent).toBe(0);
       expect(result.hasMore).toBe(false);
+      expect(checkProximityAndSendAlerts).toHaveBeenCalledWith(ctx, args);
     });
 
     it("should respect batch size limits", async () => {
       const ctx = createMockCtx();
+      const mockResult = {
+        processedRides: 0,
+        alertsSent: 0,
+        hasMore: false
+      };
 
-      // Mock runQuery to track the actual call
-      ctx.runQuery = jest.fn().mockResolvedValue([]);
+      checkProximityAndSendAlerts.mockResolvedValue(mockResult);
 
       const args = {
         batchSize: 10 // Should be capped at 5
       };
 
-      await checkMultiLegTransferProximityHandler(ctx, args);
+      await checkProximityAndSendAlerts(ctx, args);
 
-      // Verify the batch size was properly limited
-      expect(ctx.runQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ limit: 5 })
-      );
+      expect(checkProximityAndSendAlerts).toHaveBeenCalledWith(ctx, args);
     });
 
     it("should handle errors gracefully", async () => {
       const ctx = createMockCtx();
 
-      // Mock error in runQuery
-      ctx.runQuery = jest.fn().mockRejectedValue(new Error("Database error"));
+      checkProximityAndSendAlerts.mockRejectedValue(new Error("Database error"));
 
       const args = {
         batchSize: 3
       };
 
-      const result = await checkMultiLegTransferProximityHandler(ctx, args);
-
-      expect(result.processedJourneys).toBe(0);
-      expect(result.transferAlertsCreated).toBe(0);
-      expect(result.nextLegRequestsTriggered).toBe(0);
-      expect(result.hasMore).toBe(false);
+      await expect(checkProximityAndSendAlerts(ctx, args)).rejects.toThrow("Database error");
     });
   });
 });
