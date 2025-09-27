@@ -20,6 +20,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { MultiLegJourneyPreview } from '../../components/MultiLegJourneyPreview';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
@@ -56,6 +57,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  const createMultiLegJourney = useMutation(api.functions.journeys.journeyStateManager.createMultiLegJourney);
   const shouldRunQuery = !!userId;
 
   const recentRoutes = useQuery(
@@ -210,6 +212,12 @@ export default function HomeScreen() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
+
+  // Multi-leg journey states
+  const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+  const [multiLegOptions, setMultiLegOptions] = useState<any[]>([]);
+  const [isSearchingMultiLeg, setIsSearchingMultiLeg] = useState(false);
+  const [selectedMultiLegOption, setSelectedMultiLegOption] = useState<any>(null);
 
   // NEW: Keyboard event listeners
   useEffect(() => {
@@ -403,6 +411,16 @@ export default function HomeScreen() {
       maxDestinationDistance: 3.0, // 3km radius from destination
       maxTaxiDistance: 3.0,        // 3km radius for taxi proximity
       maxResults: 10
+    } : "skip"
+  );
+
+  // Query for multi-leg journey options - only runs when direct routes fail
+  const multiLegSearchResult = useQuery(
+    api.functions.journeys.multiLegJourneyFinder.findMultiLegJourneyOptions,
+    (taxiSearchParams && isSearchingMultiLeg) ? {
+      ...taxiSearchParams,
+      maxWalkingDistance: 1.0,     // 1km max walking from origin/to destination
+      maxTransferDistance: 4.0,    // 4km max walking between transfer points
     } : "skip"
   );
   
@@ -734,16 +752,50 @@ export default function HomeScreen() {
   useEffect(() => {
     if (taxiSearchResult) {
       setIsSearchingTaxis(false);
-      
-      if (taxiSearchResult.success) { 
+
+      if (taxiSearchResult.success && taxiSearchResult.availableTaxis.length > 0) {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
       } else {
+        // No direct routes found - trigger multi-leg journey search
+        console.log('🔄 No direct routes found, searching for multi-leg options...');
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
+        setIsSearchingMultiLeg(true);
       }
     }
   }, [taxiSearchResult]);
+
+  // Handle multi-leg search results
+  useEffect(() => {
+    if (multiLegSearchResult) {
+      setIsSearchingMultiLeg(false);
+
+      if (multiLegSearchResult.success && multiLegSearchResult.journeyOptions.length > 0) {
+        console.log(`🛤️ Found ${multiLegSearchResult.journeyOptions.length} multi-leg options`);
+        setMultiLegOptions(multiLegSearchResult.journeyOptions);
+        setShowMultiLegPreview(true);
+      } else {
+        console.log('❌ No multi-leg options found');
+        setMultiLegOptions([]);
+        showGlobalAlert({
+          title: 'No Routes Available',
+          message: 'No direct or multi-leg route options are available for your selected origin and destination. Please try different locations.',
+          type: 'warning',
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => console.log('No routes acknowledged'),
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
+      }
+    }
+  }, [multiLegSearchResult]);
 
   // NEW: Handle address changes with programmatic flag reset
   const handleOriginAddressChange = (text: string) => {
@@ -1079,6 +1131,58 @@ export default function HomeScreen() {
     setDestinationSuggestions([]);
     setJustSelectedOrigin(true);
     setJustSelectedDestination(true);
+  };
+
+  // Multi-leg journey handlers
+  const handleMultiLegOptionSelect = async (option: any) => {
+    try {
+      if (!userId) {
+        showGlobalError('Authentication Required', 'Please log in to book a multi-leg journey.');
+        return;
+      }
+
+      setSelectedMultiLegOption(option);
+
+      // Create the multi-leg journey in the database
+      const result = await createMultiLegJourney({
+        passengerId: userId as Id<"taxiTap_users">,
+        journeyOption: option,
+      });
+
+      console.log(`✅ Created multi-leg journey: ${result.journeyId}`);
+
+      // Navigate to TaxiInformation for the first leg
+      router.push({
+        pathname: '/(tabs)/TaxiInformation',
+        params: {
+          destinationName: option.leg1.destination.address,
+          destinationLat: option.leg1.destination.coordinates.latitude.toString(),
+          destinationLng: option.leg1.destination.coordinates.longitude.toString(),
+          currentName: option.leg1.origin.address,
+          currentLat: option.leg1.origin.coordinates.latitude.toString(),
+          currentLng: option.leg1.origin.coordinates.longitude.toString(),
+          routeId: option.journeyId,
+          estimatedFare: option.leg1.estimatedCost.toString(),
+          isMultiLeg: 'true',
+          journeyId: option.journeyId,
+          legIndex: '0',
+          totalLegs: '2',
+          routeName: option.leg1.routeName,
+        },
+      });
+
+      // Close the preview
+      setShowMultiLegPreview(false);
+    } catch (error) {
+      console.error('❌ Error creating multi-leg journey:', error);
+      showGlobalError('Booking Error', 'Failed to create multi-leg journey. Please try again.');
+    }
+  };
+
+  const handleMultiLegPreviewClose = () => {
+    setShowMultiLegPreview(false);
+    setMultiLegOptions([]);
+    setSelectedMultiLegOption(null);
   };
 
   // Show loading spinner if essential data is loading
@@ -1994,6 +2098,29 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </Animated.View>
+      )}
+
+      {/* Multi-leg journey preview overlay */}
+      {showMultiLegPreview && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingHorizontal: 20,
+        }}>
+          <MultiLegJourneyPreview
+            journeyOptions={multiLegOptions}
+            isLoading={isSearchingMultiLeg}
+            onSelectOption={handleMultiLegOptionSelect}
+            onClose={handleMultiLegPreviewClose}
+          />
+        </View>
       )}
     </KeyboardAvoidingView>
   );
