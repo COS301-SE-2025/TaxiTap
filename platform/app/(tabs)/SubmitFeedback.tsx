@@ -12,6 +12,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Id } from '../../convex/_generated/dataModel';
+import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMapContext } from '../../contexts/MapContext';
 
 export default function SubmitFeedbackScreen() {
@@ -39,6 +40,7 @@ export default function SubmitFeedbackScreen() {
     legIndex,
     totalLegs,
     routeName,
+    continueToNext,
   } = useLocalSearchParams<{
     rideId?: string;
     startName?: string;
@@ -52,6 +54,7 @@ export default function SubmitFeedbackScreen() {
     legIndex?: string;
     totalLegs?: string;
     routeName?: string;
+    continueToNext?: string;
   }>();
 
   // Multi-leg journey state
@@ -82,9 +85,9 @@ export default function SubmitFeedbackScreen() {
     try {
       // Submit feedback
       await saveFeedback({
-        rideId: rideId as any,
-        passengerId: passengerId as any,
-        driverId: driverId as any,
+        rideId: rideId as Id<"rides">,
+        passengerId: passengerId as Id<"taxiTap_users">,
+        driverId: driverId as Id<"taxiTap_users">,
         rating,
         comment,
         startLocation: startName,
@@ -159,6 +162,31 @@ export default function SubmitFeedbackScreen() {
           );
           return;
         }
+      }
+
+      // Check if this is a continue to next leg flow
+      if (continueToNext === 'true' && journeyId && legIndex) {
+        // Navigate to TaxiInformation for next leg
+        const nextLegIndex = parseInt(legIndex) + 1;
+        showGlobalSuccess('Feedback submitted!', 'Continuing to next leg...', {
+          duration: 2000,
+          position: 'top',
+          animation: 'slide-down',
+        });
+        
+        setTimeout(() => {
+          router.push({
+            pathname: '/TaxiInformation',
+            params: {
+              isMultiLeg: 'true',
+              journeyId,
+              legIndex: nextLegIndex.toString(),
+              totalLegs,
+              routeName: routeName || '',
+            },
+          });
+        }, 2000);
+        return;
       }
 
       // Standard single ride completion

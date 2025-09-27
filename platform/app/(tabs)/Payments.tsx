@@ -1,6 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from '../../contexts/UserContext';
 import { useRouter } from "expo-router";
@@ -28,10 +28,41 @@ export default function PaymentConfirmation() {
     currentName,
     destinationLat,
     destinationLng,
-    destinationName
+    destinationName,
+    // Multi-leg journey parameters
+    isMultiLeg,
+    journeyId,
+    legIndex,
+    totalLegs,
+    routeName
   } = useLocalSearchParams();
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
+
+  // Debug logging for parameter tracing
+  useEffect(() => {
+    console.log('🔍 Payments screen - All params received:', {
+      driverName,
+      licensePlate,
+      fare,
+      rideId,
+      startName,
+      endName,
+      driverId,
+      currentLat,
+      currentLng,
+      currentName,
+      destinationLat,
+      destinationLng,
+      destinationName,
+      // Multi-leg parameters
+      isMultiLeg,
+      journeyId,
+      legIndex,
+      totalLegs,
+      routeName,
+    });
+  }, [driverName, licensePlate, fare, rideId, startName, endName, driverId, currentLat, currentLng, currentName, destinationLat, destinationLng, destinationName, isMultiLeg, journeyId, legIndex, totalLegs, routeName]);
 
   const handlePaid = () => {
     markTripPaid({
@@ -53,6 +84,12 @@ export default function PaymentConfirmation() {
         driverName,
         fare,
         rideId,
+        // Pass through multi-leg journey parameters
+        isMultiLeg,
+        journeyId,
+        legIndex,
+        totalLegs,
+        routeName,
       }
     });
   };
@@ -77,6 +114,12 @@ export default function PaymentConfirmation() {
         driverName,
         fare,
         rideId,
+        // Pass through multi-leg journey parameters
+        isMultiLeg,
+        journeyId,
+        legIndex,
+        totalLegs,
+        routeName,
       }
     });
   };

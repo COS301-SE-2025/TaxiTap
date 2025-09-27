@@ -40,41 +40,13 @@ export const monitorTransferProximity = action({
             continue;
           }
 
-          // Check if driver reached transfer point and ride is active
-          if (ride.status === "in_progress" || ride.status === "accepted") {
-            console.log(`🎯 Driver reached transfer point for ride ${alert.rideId}`);
-
-            // Check if passenger has already paid
-            if (ride.tripPaid) {
-              console.log(`💰 Payment confirmed, auto-completing leg`);
-
-              // Auto-complete the ride since payment is done
-              await ctx.runMutation(internal.functions.rides.endRide.internalEndRide, {
-                rideId: ride.rideId,
-                userId: alert.passengerId,
-              });
-
-              // Trigger transfer point completion
-              await ctx.runMutation(
-                internal.functions.journeys.transferProximityMonitor.triggerTransferPointArrival,
-                {
-                  journeyId: alert.journeyId,
-                  currentLegIndex: alert.currentLegIndex,
-                  actualCost: ride.finalFare || ride.estimatedFare || 0,
-                }
-              );
-            } else {
-              console.log(`💳 Payment required - passenger must complete payment first`);
-
-              // Note: Passenger will see the transfer point reached on their screen
-              // They need to complete payment in SubmitFeedback before leg can be completed
-              // The ride remains "in_progress" until payment is done
-            }
-
-            alertsProcessed++;
-          } else {
-            console.log(`⏳ Ride ${alert.rideId} status: ${ride.status}, waiting for payment completion`);
-          }
+          // DISABLED: Automatic transfer logic removed for new manual flow
+          // Passengers now manually choose "End Ride" or "Continue to Next Leg"
+          console.log(`🛑 SKIP: Automatic transfer disabled for manual multi-leg flow (ride ${alert.rideId})`);
+          
+          // Note: With the new flow, passengers control when to end each leg
+          // - "End Ride" button ends the journey completely 
+          // - "Continue to Next Leg" button handles payment → feedback → next leg setup
         } catch (error) {
           console.error(`❌ Error processing transfer alert for journey ${alert.journeyId}:`, error);
         }

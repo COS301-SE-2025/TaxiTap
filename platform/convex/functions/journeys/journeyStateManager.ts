@@ -192,10 +192,10 @@ export const completeLegWithPayment = mutation({
         status: "completed",
         completedAt: now,
       }),
-      ...(isLastLeg && legIndex < journey.totalLegs - 1 && {
-        // Set up transfer window for next leg
-        transferTimeoutAt: now + (5 * 60 * 1000), // 5 minutes from now
-      }),
+      // REMOVED: Transfer timeout setup - manual flow doesn't use timeouts
+      // ...(isLastLeg && legIndex < journey.totalLegs - 1 && {
+      //   transferTimeoutAt: now + (5 * 60 * 1000), // 5 minutes from now
+      // }),
     });
 
     console.log(`✅ Completed leg ${legIndex + 1} of journey ${journeyId}${isJourneyComplete ? ' - Journey complete!' : ''}`);
@@ -210,7 +210,7 @@ export const completeLegWithPayment = mutation({
           ...nextLeg,
           legIndex: legIndex + 1,
         },
-        transferTimeoutAt: now + (5 * 60 * 1000),
+        // REMOVED: transferTimeoutAt - manual flow doesn't use timeouts
       };
     }
 
@@ -344,61 +344,20 @@ export const getActiveJourneyForPassenger = query({
 });
 
 /**
- * Clean up expired transfer timeouts
+ * Clean up expired transfer timeouts - DISABLED for manual multi-leg flow
  */
 export const cleanupExpiredTransfers = mutation({
   args: {},
   handler: async (ctx: MutationCtx) => {
-    const now = Date.now();
-
-    const expiredJourneys = await ctx.db
-      .query("multiLegJourneys")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("status"), "in_progress"),
-          q.neq(q.field("transferTimeoutAt"), undefined),
-          q.lt(q.field("transferTimeoutAt"), now)
-        )
-      )
-      .collect();
-
-    let cleanedCount = 0;
-
-    for (const journey of expiredJourneys) {
-      if (journey.transferTimeoutAt && journey.transferTimeoutAt < now) {
-        await ctx.db.patch(journey._id, {
-          status: "timeout",
-          transferWindowExpiredAt: now,
-          updatedAt: now,
-        });
-
-        // Send timeout notification to passenger
-        await ctx.db.insert("notifications", {
-          notificationId: `timeout-${journey.journeyId}-${now}`,
-          userId: journey.passengerId,
-          type: "transfer_window_expired",
-          title: "Transfer Window Expired",
-          message: `Your 5-minute transfer window has expired for your multi-leg journey. You can start a new journey from the home screen.`,
-          isRead: false,
-          isPush: true,
-          priority: "high",
-          createdAt: now,
-          metadata: {
-            passengerId: journey.passengerId,
-            additionalData: {
-              journeyId: journey.journeyId,
-              expiredAt: now,
-              originalTransferTime: journey.transferTimeoutAt,
-            },
-          },
-        });
-
-        cleanedCount++;
-      }
-    }
-
-    console.log(`🧹 Cleaned up ${cleanedCount} expired transfer windows`);
-
-    return { cleanedCount };
+    // DISABLED: Transfer window timeouts are not used in the new manual flow
+    // Passengers now control their own journey progression with "Continue to Next Leg" button
+    console.log(`🛑 SKIP: Transfer window cleanup disabled for manual multi-leg flow`);
+    
+    // Note: With the new manual flow:
+    // - No automatic timeouts during transfers
+    // - Passengers manually choose when to continue to next leg
+    // - Journey state remains stable until user action
+    
+    return { cleanedCount: 0, disabled: true, reason: "Manual multi-leg flow active" };
   },
 });

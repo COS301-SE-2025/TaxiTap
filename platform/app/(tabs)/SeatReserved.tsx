@@ -15,6 +15,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { Badge } from '../../components/Badge';
+import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -22,6 +23,9 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
+	// IMMEDIATE DEBUG - This should show up in logs right away
+	console.log('🟢 SeatReserved component loaded - checking for multi-leg params');
+
 	// Add error boundary state for crash prevention
 	const [hasError, setHasError] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
@@ -60,6 +64,39 @@ export default function SeatReserved() {
 		selectedVehicleId?: string;
 		userId?: string;
 	}>();
+
+	// IMMEDIATE DEBUG - Log params as soon as they're available
+	console.log('🔍 SeatReserved IMMEDIATE - Raw params received:', params);
+	console.log('🔍 SeatReserved IMMEDIATE - Multi-leg check:', {
+		isMultiLeg: params.isMultiLeg,
+		totalLegs: params.totalLegs,
+		legIndex: params.legIndex,
+		journeyId: params.journeyId
+	});
+
+	// Debug logging for multi-leg journey parameters
+	useEffect(() => {
+		console.log('🔍 SeatReserved DEBUG - Multi-leg journey parameters:', {
+			isMultiLeg: params.isMultiLeg,
+			journeyId: params.journeyId,
+			legIndex: params.legIndex,
+			totalLegs: params.totalLegs,
+			routeName: params.routeName,
+			allParams: params,
+		});
+		
+		const multiLegCheck = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+		const lastLegCheck = isLastLeg(params.legIndex, params.totalLegs);
+		
+		console.log('🔍 SeatReserved DEBUG - Button visibility logic:', {
+			isMultiLegJourney: multiLegCheck,
+			isLastLeg: lastLegCheck,
+			shouldShowContinueButton: multiLegCheck && !lastLegCheck,
+			rideStatus: rideStatus,
+			currentLegIndex: params.legIndex ? parseInt(params.legIndex) : undefined,
+			totalLegsCount: params.totalLegs ? parseInt(params.totalLegs) : undefined,
+		});
+	}, [params, rideStatus]);
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
@@ -729,6 +766,92 @@ export default function SeatReserved() {
 		}
 	};
 
+	const handleContinueToNextLeg = async () => {
+		if (!taxiInfo?.rideId || !user?.id) {
+			Alert.alert('Error', 'No ride or user information available.');
+			return;
+		}
+		
+		// Set this FIRST to prevent the query from being executed
+		setIsEndingRide(true);
+		setRideJustEnded(true);
+		
+		try {
+			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
+			
+			// Call endTrip first to get the fare before the ride status changes
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+			});
+			
+			console.log('💰 Trip ended, fare calculated:', result);
+			
+			// Then end the ride and update seat availability
+			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			console.log('✅ Ride ended successfully');
+			
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			console.log('🔄 Seat availability updated');
+			
+			if (!currentLocation || !destination) {
+				console.log('⚠️ Missing location data, cannot navigate to next leg');
+				return;
+			}
+			
+			// Check if payment is required
+			const hasAlreadyPaid = taxiInfo.tripPaid === true;
+			
+			if (hasAlreadyPaid) {
+				// User has already paid, go directly to feedback then TaxiInformation
+				router.push({
+					pathname: './SubmitFeedback',
+					params: {
+						startName: currentLocation.name,
+						endName: destination.name,
+						passengerId: passengerId,
+						rideId: taxiInfo?.rideDocId,
+						driverId: driverId,
+						actualFare: result.fare.toString(),
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+						continueToNext: 'true', // Flag to indicate this should continue to next leg
+					},
+				});
+			} else {
+				// Payment confirmation is needed first
+				router.push({
+					pathname: './PaymentsConfirm',
+					params: {
+						rideId: taxiInfo.rideId,
+						startName: currentLocation?.name || 'Current Location',
+						endName: destination?.name || 'Destination',
+						passengerId: user.id,
+						driverId: driverId || '',
+						fare: result.fare.toString(),
+						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+						continueToNext: 'true', // Flag to indicate this should continue to next leg
+					},
+				});
+			}
+			
+		} catch (error: any) {
+			// Reset the flags if there's an error
+			setIsEndingRide(false);
+			setRideJustEnded(false);
+			console.error('❌ Error continuing to next leg:', error);
+			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
+		}
+	};
+
 	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
 		if (!taxiInfo?.rideId || !user?.id) {
 			Alert.alert('Error', 'No ride or user information available.');
@@ -1391,13 +1514,27 @@ export default function SeatReserved() {
 							)}
 							{/* Only show End Ride when ride is started or in progress */}
 							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
-								<TouchableOpacity 
-									style={dynamicStyles.cancelButton} 
-									onPress={handleEndRide}>
-									<Text style={dynamicStyles.cancelButtonText}>
-										{"End Ride"}
-									</Text>
-								</TouchableOpacity>
+								<>
+									<TouchableOpacity 
+										style={dynamicStyles.cancelButton} 
+										onPress={handleEndRide}>
+										<Text style={dynamicStyles.cancelButtonText}>
+											{"End Ride"}
+										</Text>
+									</TouchableOpacity>
+									
+									{/* Show Continue to Next Leg button only for multi-leg journeys that are not on the last leg */}
+									{isMultiLegJourney(params.isMultiLeg, params.totalLegs) && 
+									 !isLastLeg(params.legIndex, params.totalLegs) && (
+										<TouchableOpacity 
+											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]} 
+											onPress={handleContinueToNextLeg}>
+											<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
+												{"Continue to Next Leg"}
+											</Text>
+										</TouchableOpacity>
+									)}
+								</>
 							)}
 						</View>
 					</View>

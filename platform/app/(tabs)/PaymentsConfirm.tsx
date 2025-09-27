@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
@@ -26,7 +27,8 @@ export default function PaymentConfirmation() {
     journeyId,
     legIndex,
     totalLegs,
-    isMultiLeg
+    isMultiLeg,
+    continueToNext
   } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
 
@@ -55,8 +57,29 @@ export default function PaymentConfirmation() {
 
         setTimeout(() => {
           if (!result.journeyComplete) {
-            // Navigate back to journey progress or next leg preparation
-            router.push('/HomeScreen'); // Could be journey progress screen instead
+            // Check if this is a continue to next leg flow
+            if (continueToNext === 'true') {
+              // Navigate to feedback first, then to TaxiInformation
+              router.push({
+                pathname: '/SubmitFeedback',
+                params: {
+                  rideId: rideId as string,
+                  startName: startName as string,
+                  endName: endName as string,
+                  passengerId: passengerId as string || userId as string,
+                  driverId: driverId as string,
+                  isMultiLeg: 'true',
+                  journeyId: journeyId as string,
+                  legIndex: legIndex as string,
+                  totalLegs: totalLegs as string,
+                  routeName: '',
+                  continueToNext: 'true',
+                },
+              });
+            } else {
+              // Navigate back to journey progress or next leg preparation
+              router.push('/HomeScreen');
+            }
           } else {
             // Journey completed - go to feedback for the final leg
             router.push({
@@ -88,16 +111,36 @@ export default function PaymentConfirmation() {
         );
 
         setTimeout(() => {
-          router.push({
-            pathname: '/SubmitFeedback',
-            params: {
-              rideId: rideId as string,
-              startName: startName as string,
-              endName: endName as string,
-              passengerId: passengerId as string || userId as string,
-              driverId: driverId as string,
-            },
-          });
+          if (continueToNext === 'true') {
+            // Navigate to feedback with continue flag for next leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                isMultiLeg: isMultiLeg as string,
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                continueToNext: 'true',
+              },
+            });
+          } else {
+            // Standard single-leg payment flow
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+              },
+            });
+          }
         }, 2000);
       }
 
