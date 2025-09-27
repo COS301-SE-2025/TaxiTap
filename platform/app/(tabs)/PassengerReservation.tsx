@@ -903,7 +903,7 @@ export default function SeatReserved() {
 								router.push({
 									pathname: '/SubmitFeedback',
 									params: {
-										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
+										rideId: taxiInfo.rideId,
 										startName: currentLocation?.name || 'Current Location',
 										endName: destination?.name || 'Destination',
 										passengerId: user.id,
@@ -938,7 +938,7 @@ export default function SeatReserved() {
 								router.push({
 									pathname: '/PaymentsConfirm',
 									params: {
-										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
+										rideId: taxiInfo.rideId,
 										startName: currentLocation?.name || 'Current Location',
 										endName: destination?.name || 'Destination',
 										passengerId: user.id,

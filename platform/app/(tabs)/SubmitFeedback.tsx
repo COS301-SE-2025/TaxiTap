@@ -12,6 +12,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Id } from '../../convex/_generated/dataModel';
+import { useMapContext } from '../../contexts/MapContext';
 
 export default function SubmitFeedbackScreen() {
   const [name, setName] = useState('');
@@ -22,6 +23,7 @@ export default function SubmitFeedbackScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
   const router = useRouter();
+  const { clearMapContext } = useMapContext();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
   const {
@@ -167,7 +169,14 @@ export default function SubmitFeedbackScreen() {
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+          {
+            label: 'OK',
+            onPress: () => {
+              clearMapContext();
+              router.replace('/HomeScreen');
+            },
+            style: 'default'
+          },
         ],
       });
     } catch (err: any) {

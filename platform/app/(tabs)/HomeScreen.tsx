@@ -72,7 +72,13 @@ export default function HomeScreen() {
     longitude: number;
   } | null>(null);
 
+  // Location loading state - moved here to fix declaration order
+  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
+
   useEffect(() => {
+    // Only run location detection if we're loading and don't have location yet
+    if (!isLoadingCurrentLocation || detectedLocation) return;
+
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -131,6 +137,9 @@ export default function HomeScreen() {
           latitude: latitude,
           longitude: longitude,
         });
+
+        // Stop loading state once location is detected
+        setIsLoadingCurrentLocation(false);
       } catch (error: any) {
         console.error('Error getting location:', error);
         
@@ -160,7 +169,7 @@ export default function HomeScreen() {
         setIsLoadingCurrentLocation(false);
       }
     })();
-  }, [showGlobalError]);
+  }, [showGlobalError, isLoadingCurrentLocation, detectedLocation]);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -177,7 +186,6 @@ export default function HomeScreen() {
   const [destinationAddress, setDestinationAddress] = useState('');
   const [isGeocodingOrigin, setIsGeocodingOrigin] = useState(false);
   const [isGeocodingDestination, setIsGeocodingDestination] = useState(false);
-  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
 
   // NEW: Autocomplete states
   const [originSuggestions, setOriginSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -656,23 +664,39 @@ export default function HomeScreen() {
       r.routeName
   );
 
-  // Only clear state on first load, not every focus
+  // Clear state on focus to ensure fresh state when returning from completed rides
   useFocusEffect(
     React.useCallback(() => {
+      // Always reset state when focusing HomeScreen to ensure clean state for new bookings
+      setRouteLoaded(false);
+      setOrigin(null);
+      setDestination(null);
+      setRouteCoordinates([]);
+      setSelectedRouteId(null);
+      setOriginAddress('');
+      setDestinationAddress('');
+      setAvailableTaxis([]);
+      setRouteMatchResults(null);
+      setIsSearchingTaxis(false);
+      setShowMultiLegPreview(false);
+      setMultiLegOptions([]);
+      setSelectedMultiLegOption(null);
+      setIsSearchingMultiLeg(false);
+      setTaxiSearchParams(null);
+      setRouteProgrammaticallySelected(false);
+      setJustSelectedOrigin(false);
+      setJustSelectedDestination(false);
+      setShowOriginSuggestions(false);
+      setShowDestinationSuggestions(false);
+
+      // Reset location loading state to ensure fresh location detection
+      setIsLoadingCurrentLocation(true);
+      setDetectedLocation(null);
+
       if (isFirstLoad) {
-        setRouteLoaded(false);
-        setOrigin(null);
-        setDestination(null);
-        setRouteCoordinates([]);
-        setSelectedRouteId(null);
-        setOriginAddress('');
-        setDestinationAddress('');
-        setAvailableTaxis([]);
-        setRouteMatchResults(null);
-        setIsSearchingTaxis(false);
         setIsFirstLoad(false);
       }
-    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
+    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates, isFirstLoad])
   );
 
   useLayoutEffect(() => {
@@ -1826,8 +1850,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Journey Status */}
-        {routeMatchResults && !keyboardVisible && !routeLoaded && (
+        {/* Journey Status - REMOVED to prevent showing after ride completion */}
+        {false && routeMatchResults && !keyboardVisible && !routeLoaded && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
               🚗 {t('home:journeyStatus')}

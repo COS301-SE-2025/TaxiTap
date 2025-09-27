@@ -76,7 +76,7 @@ export default function PaymentConfirmation() {
       } else {
         // Original single-leg payment logic
         const result = await markTripPaid({
-          rideId: rideId as Id<"rides">,
+          rideId: rideId as string,
           userId: userId as Id<"taxiTap_users">,
           paid: true,
         });
@@ -149,7 +149,7 @@ export default function PaymentConfirmation() {
       } else {
         // Original single-leg "not paid" logic
         const result = await markTripPaid({
-          rideId: rideId as Id<"rides">,
+          rideId: rideId as string,
           userId: userId as Id<"taxiTap_users">,
           paid: false,
         });

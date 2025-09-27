@@ -4,14 +4,18 @@ import { v } from "convex/values";
 import { checkAndAwardTrustedPayerBadge } from "../badges/badgeService";
 
 export const tripPaidHandler = async (
-  ctx: any, 
-  rideId: Id<"rides">, 
-  userId: Id<"taxiTap_users">, 
+  ctx: any,
+  rideId: string,
+  userId: Id<"taxiTap_users">,
   paid: boolean,
   amountPaid: number | null,
   paymentType: "exact" | "overpaid" | "underpaid"
 ) => {
-  const ride = await ctx.db.get(rideId);
+  // Find ride by custom rideId field since navigation params are strings
+  const ride = await ctx.db
+    .query("rides")
+    .filter((q: any) => q.eq(q.field("rideId"), rideId))
+    .first();
 
   if (!ride) {
     throw new Error("Ride not found");
