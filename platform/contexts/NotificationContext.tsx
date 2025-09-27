@@ -53,7 +53,7 @@ export const NotificationProvider: React.FC<{
 
   const userNotifications = useQuery(
     api.functions.notifications.getNotifications.getNotifications,
-    userId ? { userId } : "skip"
+    userId ? { userId: userId as Id<"taxiTap_users"> } : "skip"
   );
 
   // Calculate unread count from notifications if getUnreadCount doesn't exist
@@ -165,7 +165,7 @@ export const NotificationProvider: React.FC<{
       if (token && userId) {
         setExpoPushToken(token);
         await registerToken({
-          userId,
+          userId: userId as Id<"taxiTap_users">,
           token,
           platform: Platform.OS as "ios" | "android",
         });
@@ -213,7 +213,7 @@ export const NotificationProvider: React.FC<{
     if (!userId) return;
     
     try {
-      await markAllNotificationsAsRead({ userId });
+      await markAllNotificationsAsRead({ userId: userId as Id<"taxiTap_users"> });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }

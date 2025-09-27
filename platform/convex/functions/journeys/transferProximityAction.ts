@@ -1,5 +1,5 @@
 import { action, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -40,18 +40,36 @@ export const monitorTransferProximity = action({
             continue;
           }
 
-          // Only trigger if ride is completed (which indicates payment is done)
-          if (ride.status === "completed") {
-            console.log(`💰 Payment confirmed for ride ${alert.rideId}, triggering transfer completion`);
+          // Check if driver reached transfer point and ride is active
+          if (ride.status === "in_progress" || ride.status === "accepted") {
+            console.log(`🎯 Driver reached transfer point for ride ${alert.rideId}`);
 
-            await ctx.runMutation(
-              internal.functions.journeys.transferProximityMonitor.triggerTransferPointArrival,
-              {
-                journeyId: alert.journeyId,
-                currentLegIndex: alert.currentLegIndex,
-                actualCost: ride.finalFare || ride.estimatedFare || 0,
-              }
-            );
+            // Check if passenger has already paid
+            if (ride.tripPaid) {
+              console.log(`💰 Payment confirmed, auto-completing leg`);
+
+              // Auto-complete the ride since payment is done
+              await ctx.runMutation(internal.functions.rides.endRide.internalEndRide, {
+                rideId: ride.rideId,
+                userId: alert.passengerId,
+              });
+
+              // Trigger transfer point completion
+              await ctx.runMutation(
+                internal.functions.journeys.transferProximityMonitor.triggerTransferPointArrival,
+                {
+                  journeyId: alert.journeyId,
+                  currentLegIndex: alert.currentLegIndex,
+                  actualCost: ride.finalFare || ride.estimatedFare || 0,
+                }
+              );
+            } else {
+              console.log(`💳 Payment required - passenger must complete payment first`);
+
+              // Note: Passenger will see the transfer point reached on their screen
+              // They need to complete payment in SubmitFeedback before leg can be completed
+              // The ride remains "in_progress" until payment is done
+            }
 
             alertsProcessed++;
           } else {

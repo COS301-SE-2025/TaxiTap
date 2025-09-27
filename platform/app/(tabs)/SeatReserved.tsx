@@ -22,6 +22,18 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
+	// Add error boundary state for crash prevention
+	const [hasError, setHasError] = useState(false);
+	const [errorMessage, setErrorMessage] = useState('');
+
+	// Global error handler for the component
+	const handleError = (error: Error, errorInfo?: any) => {
+		console.error('SeatReserved component error:', error, errorInfo);
+		setErrorMessage(error.message);
+		setHasError(true);
+		// Don't crash the app - show error state instead
+	};
+
 	const [useLiveLocation, setUseLiveLocation] = useState(false);
 	const params = useLocalSearchParams<{
 		currentLat?: string;
@@ -76,10 +88,24 @@ export default function SeatReserved() {
 
 
 	// Fetch taxi and driver info for the current reservation using Convex
+	// Wrap taxi info query with error handling
 	const taxiInfo = useQuery(
 		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
 		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
 	);
+
+	// Handle query errors
+	useEffect(() => {
+		try {
+			if (taxiInfo === undefined) {
+				// Still loading - this is normal
+				return;
+			}
+		} catch (error) {
+			console.error('Error in taxiInfo query:', error);
+			handleError(error as Error);
+		}
+	}, [taxiInfo]);
 
 	// Fetch driver badges
 	const driverBadges = useQuery(
@@ -97,11 +123,17 @@ export default function SeatReserved() {
 		}
 	}, [taxiInfo, rideJustEnded, isEndingRide, user]);
 
-	// Automatically set rideJustEnded when ride is completed or cancelled
+	// Automatically set rideJustEnded when ride is completed or cancelled with safety checks
 	useEffect(() => {
-		if (rideStatus === 'completed' || rideStatus === 'cancelled') {
-			setRideJustEnded(true);
-			setIsEndingRide(false);
+		try {
+			if (rideStatus === 'completed' || rideStatus === 'cancelled') {
+				console.log(`Ride status changed to: ${rideStatus}`);
+				setRideJustEnded(true);
+				setIsEndingRide(false);
+			}
+		} catch (error) {
+			console.error('Error in ride status update:', error);
+			// Don't crash the app
 		}
 	}, [rideStatus]);
 
@@ -140,6 +172,45 @@ export default function SeatReserved() {
 		return R * c;
 	};
 
+	// Safety function to validate location updates and prevent crashes from sudden jumps
+	const validateLocationUpdate = (newLocation: { latitude: number; longitude: number }, currentLocation: { latitude: number; longitude: number } | null): boolean => {
+		try {
+			// Basic coordinate validation
+			if (!newLocation || typeof newLocation.latitude !== 'number' || typeof newLocation.longitude !== 'number') {
+				console.warn('Invalid location data received:', newLocation);
+				return false;
+			}
+
+			// Check for valid coordinate ranges
+			if (newLocation.latitude < -90 || newLocation.latitude > 90 ||
+				newLocation.longitude < -180 || newLocation.longitude > 180) {
+				console.warn('Location coordinates out of valid range:', newLocation);
+				return false;
+			}
+
+			// If we have a previous location, check for unreasonable jumps (>100km in one update)
+			if (currentLocation) {
+				const distance = calculateDistance(
+					currentLocation.latitude,
+					currentLocation.longitude,
+					newLocation.latitude,
+					newLocation.longitude
+				);
+
+				if (distance > 100) { // More than 100km jump
+					console.warn(`Location jump detected: ${distance.toFixed(2)}km. This might be due to fake GPS.`);
+					// Allow the update but log it - don't block fake GPS for testing
+					console.warn('Allowing location update despite large jump for testing purposes');
+				}
+			}
+
+			return true;
+		} catch (error) {
+			console.error('Error validating location update:', error);
+			return false;
+		}
+	};
+
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -165,39 +236,61 @@ export default function SeatReserved() {
 		setUseLiveLocation(false);
 	}, []);
 
-	// Parse location data from params and update context
+	// Parse location data from params and update context with safety checks
 	useEffect(() => {
-		if (!useLiveLocation) {
-			const rawCurrentLat = getParamAsString(params.currentLat);
-			const rawCurrentLng = getParamAsString(params.currentLng);
-			const rawDestLat = getParamAsString(params.destinationLat);
-			const rawDestLng = getParamAsString(params.destinationLng);
+		try {
+			if (!useLiveLocation) {
+				const rawCurrentLat = getParamAsString(params.currentLat);
+				const rawCurrentLng = getParamAsString(params.currentLng);
+				const rawDestLat = getParamAsString(params.destinationLat);
+				const rawDestLng = getParamAsString(params.destinationLng);
 
-			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+				console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
-			const currentLat = parseFloat(rawCurrentLat);
-			const currentLng = parseFloat(rawCurrentLng);
-			const destLat = parseFloat(rawDestLat);
-			const destLng = parseFloat(rawDestLng);
+				const currentLat = parseFloat(rawCurrentLat);
+				const currentLng = parseFloat(rawCurrentLng);
+				const destLat = parseFloat(rawDestLat);
+				const destLng = parseFloat(rawDestLng);
 
-			if (
-				isNaN(currentLat) || isNaN(currentLng) ||
-				isNaN(destLat) || isNaN(destLng)
-			) {
-				console.warn('Skipping update due to invalid coordinates.');
-				return;
+				if (
+					isNaN(currentLat) || isNaN(currentLng) ||
+					isNaN(destLat) || isNaN(destLng)
+				) {
+					console.warn('Skipping update due to invalid coordinates.');
+					return;
+				}
+
+				const newCurrentLocation = {
+					latitude: currentLat,
+					longitude: currentLng,
+				};
+
+				const newDestination = {
+					latitude: destLat,
+					longitude: destLng,
+				};
+
+				// Validate location updates before applying them
+				if (validateLocationUpdate(newCurrentLocation, currentLocation) &&
+					validateLocationUpdate(newDestination, destination)) {
+
+					setCurrentLocation({
+						latitude: currentLat,
+						longitude: currentLng,
+						name: getParamAsString(params.currentName, "Current Location")
+					});
+					setDestination({
+						latitude: destLat,
+						longitude: destLng,
+						name: getParamAsString(params.destinationName, "")
+					});
+				} else {
+					console.warn('Location update blocked due to validation failure');
+				}
 			}
-
-			setCurrentLocation({
-				latitude: currentLat,
-				longitude: currentLng,
-				name: getParamAsString(params.currentName, "Current Location")
-			});
-			setDestination({
-				latitude: destLat,
-				longitude: destLng,
-				name: getParamAsString(params.destinationName, "")
-			});
+		} catch (error) {
+			console.error('Error in location update useEffect:', error);
+			// Don't crash the app - just log the error
 		}
 	}, [useLiveLocation]);
 
@@ -983,6 +1076,28 @@ export default function SeatReserved() {
 		},
 	});
 
+	// Early return for error state
+	if (hasError) {
+		return (
+			<SafeAreaView style={dynamicStyles.container}>
+				<View style={dynamicStyles.loadingContainer}>
+					<Text style={{ color: theme.text, textAlign: 'center', margin: 20 }}>
+						Error: {errorMessage}
+					</Text>
+					<TouchableOpacity
+						onPress={() => {
+							setHasError(false);
+							setErrorMessage('');
+						}}
+						style={{ padding: 10, backgroundColor: theme.primary, borderRadius: 5 }}
+					>
+						<Text style={{ color: 'white' }}>Retry</Text>
+					</TouchableOpacity>
+				</View>
+			</SafeAreaView>
+		);
+	}
+
 	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
 		return (
@@ -998,43 +1113,92 @@ export default function SeatReserved() {
 		<SafeAreaView style={dynamicStyles.container}>
 			<ScrollView style={dynamicStyles.scrollView}>
 				<View>
-					{/* Map Section with Route */}
+					{/* Map Section with Route - Add error boundary */}
 					<View style={{ height: 300, position: 'relative' }}>
-						<MapView
-							ref={mapRef}
-							style={{ flex: 1 }}
-							provider={PROVIDER_GOOGLE}
-							initialRegion={{
-								latitude: (currentLocation.latitude + destination.latitude) / 2,
-								longitude: (currentLocation.longitude + destination.longitude) / 2,
-								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
-								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
-							}}
-							customMapStyle={isDark ? darkMapStyle : []}
-							onPanDrag={() => setIsFollowing(false)}
-							onRegionChangeComplete={() => setIsFollowing(false)}
-						>
-							<Marker
-								coordinate={currentLocation}
-								title="You are here"
-								pinColor="blue"
-							>
-							</Marker>
-							<Marker
-								coordinate={destination}
-								title={destination.name}
-								pinColor="orange"
-							>
-							</Marker>
-							{/* Render the route polyline */}
-							{routeCoordinates.length > 0 && (
-								<Polyline
-									coordinates={routeCoordinates}
-									strokeColor={theme.primary}
-									strokeWidth={4}
-								/>
-							)}
-						</MapView>
+						{(() => {
+							try {
+								// Validate coordinates before rendering map
+								const isValidCoordinates = (coord: any) => {
+									return coord &&
+										typeof coord.latitude === 'number' &&
+										typeof coord.longitude === 'number' &&
+										coord.latitude >= -90 && coord.latitude <= 90 &&
+										coord.longitude >= -180 && coord.longitude <= 180 &&
+										!isNaN(coord.latitude) && !isNaN(coord.longitude);
+								};
+
+								if (!isValidCoordinates(currentLocation) || !isValidCoordinates(destination)) {
+									console.warn('Invalid coordinates for map rendering:', { currentLocation, destination });
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								// Calculate safe region values
+								const centerLat = (currentLocation.latitude + destination.latitude) / 2;
+								const centerLng = (currentLocation.longitude + destination.longitude) / 2;
+								const latDelta = Math.max(Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01, 0.01);
+								const lngDelta = Math.max(Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01, 0.01);
+
+								// Validate region values
+								if (isNaN(centerLat) || isNaN(centerLng) || isNaN(latDelta) || isNaN(lngDelta)) {
+									console.warn('Invalid region calculation');
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								return (
+									<MapView
+										ref={mapRef}
+										style={{ flex: 1 }}
+										provider={PROVIDER_GOOGLE}
+										initialRegion={{
+											latitude: centerLat,
+											longitude: centerLng,
+											latitudeDelta: latDelta,
+											longitudeDelta: lngDelta,
+										}}
+										customMapStyle={isDark ? darkMapStyle : []}
+										onPanDrag={() => setIsFollowing(false)}
+										onRegionChangeComplete={() => setIsFollowing(false)}
+									>
+										<Marker
+											coordinate={currentLocation}
+											title="You are here"
+											pinColor="blue"
+										>
+										</Marker>
+										<Marker
+											coordinate={destination}
+											title={destination.name}
+											pinColor="orange"
+										>
+										</Marker>
+										{/* Render the route polyline */}
+										{routeCoordinates.length > 0 && (
+											<Polyline
+												coordinates={routeCoordinates}
+												strokeColor={theme.primary}
+												strokeWidth={4}
+											/>
+										)}
+									</MapView>
+								);
+							} catch (error) {
+								console.error('Error rendering map:', error);
+								handleError(error as Error);
+								return (
+									<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+										<Text style={{ color: theme.text }}>Map error - please retry</Text>
+									</View>
+								);
+							}
+						})()}
 
 						{/* Arrival Time Overlay */}
 						<View style={dynamicStyles.arrivalTimeOverlay}>

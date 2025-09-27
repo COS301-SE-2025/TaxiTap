@@ -12,7 +12,7 @@ interface JourneyPaymentSummaryProps {
 export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSummaryProps) {
   const router = useRouter();
 
-  const journeyPaymentData = useQuery(api.functions.journeys.multiLegPayment.getJourneyPaymentSummary, {
+  const journeyPaymentData = useQuery(api.functions.journeys.journeyStateManager.getJourneyState, {
     journeyId,
   });
 
@@ -57,12 +57,12 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
         <View style={styles.headerInfo}>
           <Text style={styles.journeyTitle}>Multi-Leg Journey Payment Summary</Text>
           <Text style={styles.journeyRoute}>
-            {journeyPaymentData.journey.originAddress} → {journeyPaymentData.journey.destinationAddress}
+            {journeyPaymentData.originLocation.address} → {journeyPaymentData.finalDestination.address}
           </Text>
         </View>
         <View style={styles.overallStatus}>
-          <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.overallStatus) }]}>
-            {journeyPaymentData.overallStatus === 'completed' ? 'All Paid' : 'Pending Payment'}
+          <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.status) }]}>
+            {journeyPaymentData.status === 'completed' ? 'All Paid' : 'Pending Payment'}
           </Text>
         </View>
       </View>
@@ -74,12 +74,12 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
           <View
             style={[
               styles.progressFill,
-              { width: `${(journeyPaymentData.completedLegs / journeyPaymentData.totalLegs) * 100}%` }
+              { width: `${(journeyPaymentData.legs.filter((leg: any) => leg.status === 'completed').length / journeyPaymentData.totalLegs) * 100}%` }
             ]}
           />
         </View>
         <Text style={styles.progressText}>
-          {journeyPaymentData.completedLegs} of {journeyPaymentData.totalLegs} legs paid
+          {journeyPaymentData.legs.filter((leg: any) => leg.status === 'completed').length} of {journeyPaymentData.totalLegs} legs paid
         </Text>
       </View>
 
@@ -88,19 +88,19 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
         <Text style={styles.totalsTitle}>Payment Totals</Text>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Estimated Total:</Text>
-          <Text style={styles.totalAmount}>R{journeyPaymentData.totalEstimatedFare.toFixed(2)}</Text>
+          <Text style={styles.totalAmount}>R{journeyPaymentData.totalEstimatedCost.toFixed(2)}</Text>
         </View>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Amount Paid:</Text>
           <Text style={[styles.totalAmount, { color: '#2ECC71' }]}>
-            R{journeyPaymentData.totalActualPaid.toFixed(2)}
+            R{(journeyPaymentData.totalActualCost || 0).toFixed(2)}
           </Text>
         </View>
-        {journeyPaymentData.pendingLegs > 0 && (
+        {journeyPaymentData.legs.filter((leg: any) => leg.status !== 'completed').length > 0 && (
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Remaining:</Text>
             <Text style={[styles.totalAmount, { color: '#FF9900' }]}>
-              R{(journeyPaymentData.totalEstimatedFare - journeyPaymentData.totalActualPaid).toFixed(2)}
+              R{(journeyPaymentData.totalEstimatedCost - (journeyPaymentData.totalActualCost || 0)).toFixed(2)}
             </Text>
           </View>
         )}
@@ -109,7 +109,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
       {/* Individual Leg Details */}
       <View style={styles.legsCard}>
         <Text style={styles.legsTitle}>Leg Details</Text>
-        {journeyPaymentData.legSummaries.map((leg, index) => (
+        {journeyPaymentData.legs.map((leg: any, index: number) => (
           <View key={index} style={styles.legItem}>
             <View style={styles.legHeader}>
               <View style={styles.legNumber}>
@@ -141,7 +141,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
 
       {/* Action Buttons */}
       <View style={styles.actionsCard}>
-        {journeyPaymentData.overallStatus === 'completed' ? (
+        {journeyPaymentData.status === 'completed' ? (
           <TouchableOpacity
             style={[styles.actionButton, styles.completeButton]}
             onPress={() => router.push('/HomeScreen')}

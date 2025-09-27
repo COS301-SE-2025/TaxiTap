@@ -140,7 +140,7 @@ export const MultiLegJourneyProvider: React.FC<MultiLegJourneyProviderProps> = (
 
   // Determine the active journey (prefer DB result over cached)
   const activeJourney = activeJourneyFromDB || cachedJourneyFromDB || null;
-  const isLoadingJourney = isLoadingCache || (user && activeJourneyFromDB === undefined) || (cachedJourneyId && cachedJourneyFromDB === undefined);
+  const isLoadingJourney = Boolean(isLoadingCache || (user && activeJourneyFromDB === undefined) || (cachedJourneyId && cachedJourneyFromDB === undefined));
 
   const refreshJourney = () => {
     // Force refresh by clearing and reloading cache
@@ -164,8 +164,8 @@ export const MultiLegJourneyProvider: React.FC<MultiLegJourneyProviderProps> = (
     }
   };
 
-  const hasActiveJourney = activeJourney !== null &&
-    (activeJourney.status === 'planned' || activeJourney.status === 'in_progress');
+  const hasActiveJourney = Boolean(activeJourney !== null &&
+    (activeJourney?.status === 'planned' || activeJourney?.status === 'in_progress'));
 
   const getCurrentLeg = () => {
     if (!activeJourney || !hasActiveJourney) return null;

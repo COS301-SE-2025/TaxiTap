@@ -60,6 +60,9 @@ export const useJourneyRestoration = (options: JourneyRestorationOptions = {}) =
             showGlobalAlert({
               title: 'Continue Multi-Leg Journey?',
               message: `You have a planned journey from ${activeJourney.originLocation.address} to ${activeJourney.finalDestination.address}. Would you like to continue?`,
+              type: 'info',
+              position: 'center',
+              animation: 'fade',
               actions: [
                 {
                   label: 'Continue Journey',
@@ -93,6 +96,9 @@ export const useJourneyRestoration = (options: JourneyRestorationOptions = {}) =
               showGlobalAlert({
                 title: 'Active Journey Found',
                 message: `You're currently on leg ${journeyProgress.currentLeg} of your multi-leg journey. Continue tracking your ride?`,
+                type: 'info',
+                position: 'center',
+                animation: 'fade',
                 actions: [
                   {
                     label: 'Continue Tracking',
@@ -126,6 +132,9 @@ export const useJourneyRestoration = (options: JourneyRestorationOptions = {}) =
                 showGlobalAlert({
                   title: 'Transfer Window Active',
                   message: `Leg ${journeyProgress.currentLeg - 1} complete! You have ${remainingMinutes} minutes to board your next taxi. Ready for leg ${journeyProgress.currentLeg}?`,
+                  type: 'warning',
+                  position: 'center',
+                  animation: 'fade',
                   actions: [
                     {
                       label: 'Continue to Next Leg',
@@ -153,6 +162,9 @@ export const useJourneyRestoration = (options: JourneyRestorationOptions = {}) =
               showGlobalAlert({
                 title: 'Transfer Window Expired',
                 message: 'Your 5-minute transfer window has expired. You can start a new journey from the home screen.',
+                type: 'error',
+                position: 'center',
+                animation: 'fade',
                 actions: [
                   {
                     label: 'OK',
