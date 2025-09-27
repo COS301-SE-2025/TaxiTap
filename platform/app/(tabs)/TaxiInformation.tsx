@@ -188,7 +188,7 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          showGlobalError('Error', 'Phone calls are not supported on this device', {
+          showGlobalError(t('common.error'), t('taxiInfo.phoneCallsNotSupported'), {
             duration: 4000,
             position: 'top',
             animation: 'slide-down',
@@ -197,7 +197,7 @@ export default function TaxiInformation() {
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        showGlobalError('Error', 'Could not open phone app', {
+        showGlobalError(t('common.error'), t('taxiInfo.couldNotOpenPhoneApp'), {
           duration: 4000,
           position: 'top',
           animation: 'slide-down',
@@ -208,7 +208,7 @@ export default function TaxiInformation() {
   // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
+      showGlobalError(t('common.error'), t('taxiInfo.pleaseSelectTaxiAndLogin'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -304,14 +304,14 @@ export default function TaxiInformation() {
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
       showGlobalError(
-        'Booking Error',
+        t('taxiInfo.bookingError'),
         'Failed to send ride request. Please try again.',
         {
           duration: 0,
           actions: [
             {
-              label: 'OK',
-              onPress: () => console.log('Booking error acknowledged'),
+              label: t('common.ok'),
+              onPress: () => console.log(t('taxiInfo.bookingErrorAcknowledged')),
               style: 'default',
             }
           ],
