@@ -48,34 +48,8 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { currentLanguage } = useLanguage();
   
-  // Hardcoded translations
-  const translations = {
-    en: {
-      weeklySummary: "Weekly Summary",
-      weeklyEarnings: "Weekly Earnings",
-      dailyBreakdown: "Daily Breakdown",
-      summary: "Summary",
-      hoursOnline: "Hours Online",
-      reservations: "Reservations",
-      avgPerHour: "Average per Hour",
-      loadingEarnings: "Loading earnings..."
-    },
-    zu: {
-      weeklySummary: "Isifinyezo Seviki",
-      weeklyEarnings: "Imali Yeviki",
-      dailyBreakdown: "Ukuhlukaniswa Kwemali Kwansuku",
-      summary: "Isifinyezo",
-      hoursOnline: "Amahora Okusebenza",
-      reservations: "Izibhukho",
-      avgPerHour: "Isilinganiso Ngehora",
-      loadingEarnings: "Kulayishwa imali..."
-    }
-  };
-  
-  const t = (key: string) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
-    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
-  };
+  // Use centralized translations
+  const { t: translate } = useLanguage();
 
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
@@ -262,12 +236,12 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
           {/* Earnings Card */}
           <View style={dynamicStyles.card}>
             <Text style={dynamicStyles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
-            <Text style={dynamicStyles.label}>{t('weeklyEarnings')}</Text>
+            <Text style={dynamicStyles.label}>{translate('driver.weeklyEarnings')}</Text>
           </View>
 
           {/* Bar Chart */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>{t('dailyBreakdown')}</Text>
+            <Text style={dynamicStyles.sectionTitle}>{translate('driver.dailyBreakdown')}</Text>
             <View style={dynamicStyles.barsContainer}>
               {currentWeek.dailyData.map((day: any, index: any) => (
                 <View key={index} style={dynamicStyles.barWrapper}>
@@ -281,17 +255,17 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
           {/* Summary */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>{t('summary')}</Text>
+            <Text style={dynamicStyles.sectionTitle}>{translate('driver.summary')}</Text>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('hoursOnline')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{translate('driver.hoursOnline')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.hoursOnline}h</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('reservations')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{translate('driver.reservations')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.reservations}</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('avgPerHour')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{translate('driver.avgPerHour')}</Text>
               <Text style={dynamicStyles.summaryValue}>R{averagePerHour.toFixed(2)}</Text>
             </View>
           </View>
