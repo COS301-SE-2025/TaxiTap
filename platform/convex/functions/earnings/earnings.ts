@@ -47,11 +47,10 @@ export const earningsHandler = async (ctx: any, args: { driverId: Id<"taxiTap_us
         .collect();
 
       const hoursOnline = sessions.reduce((sum: any, session: any) => {
-        if (session.endTime !== undefined) {
-          const duration = (session.endTime - session.startTime) / (1000 * 60 * 60); // hours
-          return sum + duration;
-        }
-        return sum;
+        if (!session.endTime || session.endTime < session.startTime) return sum;
+        const duration = (session.endTime - session.startTime) / (1000 * 60 * 60);
+        if (duration > 24) return sum;
+        return sum + duration;
       }, 0);
 
       const earnings = trips.reduce((sum: any, trip: any) => sum + trip.fare, 0);
