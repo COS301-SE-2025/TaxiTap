@@ -237,7 +237,11 @@ export default function SeatReserved() {
 		const currentRouteName = Array.isArray(params.routeName) ? params.routeName[0] : params.routeName;
 		
 		// Only update if we have multi-leg params and they're different from current state
-		if (currentIsMultiLeg && currentJourneyId && (!multiLegParams.isMultiLeg || multiLegParams.journeyId !== currentJourneyId)) {
+		if (currentIsMultiLeg && currentJourneyId && (
+			!multiLegParams.isMultiLeg ||
+			multiLegParams.journeyId !== currentJourneyId ||
+			multiLegParams.legIndex !== currentLegIndex
+		)) {
 			console.log('💾 PassengerReservation - Preserving multi-leg params in state:', {
 				isMultiLeg: currentIsMultiLeg,
 				journeyId: currentJourneyId,
@@ -384,9 +388,17 @@ export default function SeatReserved() {
 		const rawDestLat = getParamAsString(params.destinationLat);
 		const rawDestLng = getParamAsString(params.destinationLng);
 
-		// Only run once when component mounts if we have valid parameters
+		// Update locations when we have valid parameters
 		if (rawCurrentLat && rawCurrentLng && rawDestLat && rawDestLng) {
-			console.log('Setting initial locations from params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
+			console.log('Setting/updating locations from params:', {
+				rawCurrentLat,
+				rawCurrentLng,
+				rawDestLat,
+				rawDestLng,
+				currentName: params.currentName,
+				destinationName: params.destinationName,
+				legIndex: params.legIndex
+			});
 
 			const currentLat = parseFloat(rawCurrentLat);
 			const currentLng = parseFloat(rawCurrentLng);
@@ -394,7 +406,7 @@ export default function SeatReserved() {
 			const destLng = parseFloat(rawDestLng);
 
 			if (!isNaN(currentLat) && !isNaN(currentLng) && !isNaN(destLat) && !isNaN(destLng)) {
-				// NEVER update these again after initial setting
+				// Update locations when leg changes or initially
 				setCurrentLocation({
 					latitude: currentLat,
 					longitude: currentLng,
@@ -407,7 +419,7 @@ export default function SeatReserved() {
 				});
 			}
 		}
-	}, []); // NO DEPENDENCIES - run once only
+	}, [params.currentLat, params.currentLng, params.destinationLat, params.destinationLng, params.currentName, params.destinationName, params.legIndex]); // Update when location parameters or leg changes
 
 	// Use streamed location when live location is enabled - FIXED: Don't overwrite currentLocation
 	useEffect(() => {
@@ -986,7 +998,7 @@ export default function SeatReserved() {
 								router.push({
 									pathname: '/SubmitFeedback',
 									params: {
-										rideId: taxiInfo.rideId,
+										rideId: rideId,
 										startName: currentLocation?.name || 'Current Location',
 										endName: destination?.name || 'Destination',
 										passengerId: user.id,
@@ -1128,7 +1140,7 @@ export default function SeatReserved() {
 				router.push({
 					pathname: '/SubmitFeedback',
 					params: {
-						rideId: taxiInfo.rideId,
+						rideId: rideId,
 						startName: currentLocation?.name || 'Current Location',
 						endName: destination?.name || 'Destination',
 						passengerId: user.id,
@@ -1147,7 +1159,7 @@ export default function SeatReserved() {
 				router.push({
 					pathname: '/PaymentsConfirm',
 					params: {
-						rideId: taxiInfo.rideId,
+						rideId: rideId,
 						startName: currentLocation?.name || 'Current Location',
 						endName: destination?.name || 'Destination',
 						passengerId: user.id,

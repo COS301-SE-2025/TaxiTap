@@ -119,7 +119,7 @@ export default function SubmitFeedbackScreen() {
                   label: 'Continue to Next Leg',
                   onPress: () => {
                     router.replace({
-                      pathname: '/(tabs)/TaxiInformation',
+                      pathname: '/TaxiInformation',
                       params: {
                         destinationName: nextLeg.destination.address,
                         destinationLat: nextLeg.destination.coordinates.latitude.toString(),
@@ -533,7 +533,26 @@ export default function SubmitFeedbackScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={() => router.replace('/HomeScreen')}
+            onPress={() => {
+              // Check if this is a continue to next leg flow
+              if (continueToNext === 'true' && journeyId && legIndex) {
+                // Navigate to TaxiInformation for next leg
+                const nextLegIndex = parseInt(legIndex) + 1;
+                router.push({
+                  pathname: '/TaxiInformation',
+                  params: {
+                    isMultiLeg: 'true',
+                    journeyId,
+                    legIndex: nextLegIndex.toString(),
+                    totalLegs,
+                    routeName: routeName || '',
+                  },
+                });
+              } else {
+                // Standard skip feedback flow
+                router.replace('/HomeScreen');
+              }
+            }}
             style={dynamicStyles.skipButton}
             activeOpacity={0.8}
           >

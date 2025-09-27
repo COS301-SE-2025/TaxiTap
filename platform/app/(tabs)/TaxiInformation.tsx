@@ -77,6 +77,15 @@ export default function TaxiInformation() {
 
   // Multi-leg journey state
   const [currentJourneyState, setCurrentJourneyState] = useState<any>(null);
+
+  // Coordinate state - use params if available, otherwise will be set from nextLegInfo
+  const [effectiveCurrentLat, setEffectiveCurrentLat] = useState(currentLat || '');
+  const [effectiveCurrentLng, setEffectiveCurrentLng] = useState(currentLng || '');
+  const [effectiveCurrentName, setEffectiveCurrentName] = useState(currentName || '');
+  const [effectiveDestinationLat, setEffectiveDestinationLat] = useState(destinationLat || '');
+  const [effectiveDestinationLng, setEffectiveDestinationLng] = useState(destinationLng || '');
+  const [effectiveDestinationName, setEffectiveDestinationName] = useState(destinationName || '');
+
   const isMultiLegJourney = isMultiLeg === 'true';
   const currentLegIndex = parseInt(legIndex || '0');
   const totalLegsCount = parseInt(totalLegs || '1');
@@ -176,7 +185,31 @@ export default function TaxiInformation() {
   useEffect(() => {
     if (isMultiLegJourney && nextLegInfo && !routeMatchDataString) {
       console.log('🚌 Processing next leg information:', nextLegInfo);
-      
+
+      // Update missing coordinates from nextLegInfo if they're not provided
+      if (nextLegInfo.nextLeg && (!effectiveCurrentLat || !effectiveCurrentLng || !effectiveDestinationLat || !effectiveDestinationLng)) {
+        console.log('🔧 Updating missing coordinates from nextLeg data');
+        const { nextLeg } = nextLegInfo;
+
+        // Update the coordinate state if they're missing
+        if (!effectiveCurrentLat || !effectiveCurrentLng) {
+          setEffectiveCurrentLat(nextLeg.origin.coordinates.latitude.toString());
+          setEffectiveCurrentLng(nextLeg.origin.coordinates.longitude.toString());
+          setEffectiveCurrentName(nextLeg.origin.address);
+        }
+
+        if (!effectiveDestinationLat || !effectiveDestinationLng) {
+          setEffectiveDestinationLat(nextLeg.destination.coordinates.latitude.toString());
+          setEffectiveDestinationLng(nextLeg.destination.coordinates.longitude.toString());
+          setEffectiveDestinationName(nextLeg.destination.address);
+        }
+
+        console.log('✅ Updated coordinates from nextLeg:', {
+          origin: { lat: nextLeg.origin.coordinates.latitude, lng: nextLeg.origin.coordinates.longitude, name: nextLeg.origin.address },
+          destination: { lat: nextLeg.destination.coordinates.latitude, lng: nextLeg.destination.coordinates.longitude, name: nextLeg.destination.address }
+        });
+      }
+
       if (nextLegInfo.hasNextLeg && nextLegInfo.availableDrivers) {
         const nextLegTaxiData = nextLegInfo.availableDrivers.map((driver: any) => ({
           _id: driver.driverId,
@@ -292,17 +325,17 @@ export default function TaxiInformation() {
         driverId: selectedTaxi.userId as Id<"taxiTap_users">,
         startLocation: {
           coordinates: {
-            latitude: parseFloat(currentLat),
-            longitude: parseFloat(currentLng),
+            latitude: parseFloat(effectiveCurrentLat),
+            longitude: parseFloat(effectiveCurrentLng),
           },
-          address: currentName,
+          address: effectiveCurrentName,
         },
         endLocation: {
           coordinates: {
-            latitude: parseFloat(destinationLat),
-            longitude: parseFloat(destinationLng),
+            latitude: parseFloat(effectiveDestinationLat),
+            longitude: parseFloat(effectiveDestinationLng),
           },
-          address: destinationName,
+          address: effectiveDestinationName,
         },
         estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
       };
@@ -338,12 +371,12 @@ export default function TaxiInformation() {
                 label: t('common:ok'),
                 onPress: () => {
                   const navigationParams = {
-                    currentLat,
-                    currentLng,
-                    currentName,
-                    destinationLat,
-                    destinationLng,
-                    destinationName,
+                    currentLat: effectiveCurrentLat,
+                    currentLng: effectiveCurrentLng,
+                    currentName: effectiveCurrentName,
+                    destinationLat: effectiveDestinationLat,
+                    destinationLng: effectiveDestinationLng,
+                    destinationName: effectiveDestinationName,
                     driverId: selectedTaxi.userId,
                     driverName: selectedTaxi.name,
                     fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
@@ -352,7 +385,7 @@ export default function TaxiInformation() {
                     ...(isMultiLegJourney && {
                       isMultiLeg: 'true',
                       journeyId,
-                      legIndex: legIndex,
+                      legIndex: currentLegIndex.toString(),
                       totalLegs: totalLegs,
                       routeName,
                     }),
@@ -364,7 +397,7 @@ export default function TaxiInformation() {
                     multiLegConditions: {
                       isMultiLegJourney,
                       journeyId,
-                      legIndex,
+                      legIndex: currentLegIndex,
                       totalLegs,
                       routeName,
                     },

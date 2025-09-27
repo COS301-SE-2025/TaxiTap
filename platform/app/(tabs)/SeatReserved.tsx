@@ -74,6 +74,43 @@ export default function SeatReserved() {
 		journeyId: params.journeyId
 	});
 
+	// Context hooks need to be declared before any queries that use them
+	const navigation = useNavigation();
+	const { theme, isDark } = useTheme();
+	const { user } = useUser();
+	const { t } = useLanguage();
+	const {
+		currentLocation,
+		destination,
+		routeCoordinates,
+		isLoadingRoute,
+		routeLoaded,
+		setCurrentLocation,
+		setDestination,
+		setRouteCoordinates,
+		setIsLoadingRoute,
+		setRouteLoaded,
+		getCachedRoute,
+		setCachedRoute
+	} = useMapContext();
+	const { notifications, markAsRead } = useNotifications();
+
+	const mapRef = useRef<MapView | null>(null);
+
+	// State to track if ride has ended to prevent query errors
+	const [rideJustEnded, setRideJustEnded] = useState(false);
+	const [isEndingRide, setIsEndingRide] = useState(false);
+
+	// Fetch taxi and driver info for the current reservation using Convex
+	// Wrap taxi info query with error handling
+	const taxiInfo = useQuery(
+		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Helper to determine ride status - declared immediately after taxiInfo to ensure it's available for all useEffects
+	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+
 	// Debug logging for multi-leg journey parameters
 	useEffect(() => {
 		console.log('🔍 SeatReserved DEBUG - Multi-leg journey parameters:', {
@@ -97,39 +134,6 @@ export default function SeatReserved() {
 			totalLegsCount: params.totalLegs ? parseInt(params.totalLegs) : undefined,
 		});
 	}, [params, rideStatus]);
-	const navigation = useNavigation();
-	const { theme, isDark } = useTheme();
-	const { user } = useUser();
-	const { t } = useLanguage();
-	const { 
-		currentLocation,
-		destination,
-		routeCoordinates,
-		isLoadingRoute,
-		routeLoaded,
-		setCurrentLocation,
-		setDestination,
-		setRouteCoordinates,
-		setIsLoadingRoute,
-		setRouteLoaded,
-		getCachedRoute,
-		setCachedRoute
-	} = useMapContext();
-	const { notifications, markAsRead } = useNotifications();
-
-	const mapRef = useRef<MapView | null>(null);
-	
-	// State to track if ride has ended to prevent query errors
-	const [rideJustEnded, setRideJustEnded] = useState(false);
-	const [isEndingRide, setIsEndingRide] = useState(false);
-
-
-	// Fetch taxi and driver info for the current reservation using Convex
-	// Wrap taxi info query with error handling
-	const taxiInfo = useQuery(
-		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-	);
 
 	// Handle query errors
 	useEffect(() => {
@@ -149,9 +153,6 @@ export default function SeatReserved() {
 		api.functions.badges.getUserBadges.getUserBadgesQuery,
 		taxiInfo?.driver?.userId ? { userId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
 	);
-
-	// Helper to determine ride status
-	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 
 	// Handle query errors gracefully
 	useEffect(() => {
@@ -825,7 +826,7 @@ export default function SeatReserved() {
 				router.push({
 					pathname: './PaymentsConfirm',
 					params: {
-						rideId: taxiInfo.rideId,
+						rideId: taxiInfo?.rideDocId,
 						startName: currentLocation?.name || 'Current Location',
 						endName: destination?.name || 'Destination',
 						passengerId: user.id,
@@ -1523,11 +1524,28 @@ export default function SeatReserved() {
 										</Text>
 									</TouchableOpacity>
 									
-									{/* Show Continue to Next Leg button only for multi-leg journeys that are not on the last leg */}
-									{isMultiLegJourney(params.isMultiLeg, params.totalLegs) && 
-									 !isLastLeg(params.legIndex, params.totalLegs) && (
-										<TouchableOpacity 
-											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]} 
+									{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
+									{(() => {
+										const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+										const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
+
+										console.log('🔍 SeatReserved BUTTON DEBUG:', {
+											isMultiLeg,
+											legIndex,
+											totalLegs: params.totalLegs,
+											shouldShow: isMultiLeg && legIndex === 0,
+											params: {
+												isMultiLeg: params.isMultiLeg,
+												legIndex: params.legIndex,
+												totalLegs: params.totalLegs
+											}
+										});
+
+										// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
+										return isMultiLeg && legIndex === 0;
+									})() && (
+										<TouchableOpacity
+											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
 											onPress={handleContinueToNextLeg}>
 											<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
 												{"Continue to Next Leg"}
