@@ -207,8 +207,8 @@ export const completeLegWithPayment = mutation({
         success: true,
         journeyComplete: false,
         nextLeg: {
-          legIndex: legIndex + 1,
           ...nextLeg,
+          legIndex: legIndex + 1,
         },
         transferTimeoutAt: now + (5 * 60 * 1000),
       };
@@ -371,6 +371,28 @@ export const cleanupExpiredTransfers = mutation({
           transferWindowExpiredAt: now,
           updatedAt: now,
         });
+
+        // Send timeout notification to passenger
+        await ctx.db.insert("notifications", {
+          notificationId: `timeout-${journey.journeyId}-${now}`,
+          userId: journey.passengerId,
+          type: "transfer_window_expired",
+          title: "Transfer Window Expired",
+          message: `Your 5-minute transfer window has expired for your multi-leg journey. You can start a new journey from the home screen.`,
+          isRead: false,
+          isPush: true,
+          priority: "high",
+          createdAt: now,
+          metadata: {
+            passengerId: journey.passengerId,
+            additionalData: {
+              journeyId: journey.journeyId,
+              expiredAt: now,
+              originalTransferTime: journey.transferTimeoutAt,
+            },
+          },
+        });
+
         cleanedCount++;
       }
     }

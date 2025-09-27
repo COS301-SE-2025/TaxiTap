@@ -8,9 +8,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { Id } from '../../convex/_generated/dataModel';
 
 export default function SubmitFeedbackScreen() {
   const [name, setName] = useState('');
@@ -23,11 +24,45 @@ export default function SubmitFeedbackScreen() {
   const router = useRouter();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
-  const saveFeedback = useMutation(api.functions.feedback.saveFeedback.saveFeedback);
-
-  const { rideId, startName, endName, passengerId, driverId } = useLocalSearchParams<{
-    rideId?: string; startName?: string; endName?: string; passengerId?: string; driverId?: string;
+  const {
+    rideId,
+    startName,
+    endName,
+    passengerId,
+    driverId,
+    actualFare,
+    // Multi-leg journey parameters
+    isMultiLeg,
+    journeyId,
+    legIndex,
+    totalLegs,
+    routeName,
+  } = useLocalSearchParams<{
+    rideId?: string;
+    startName?: string;
+    endName?: string;
+    passengerId?: string;
+    driverId?: string;
+    actualFare?: string;
+    // Multi-leg journey parameters
+    isMultiLeg?: string;
+    journeyId?: string;
+    legIndex?: string;
+    totalLegs?: string;
+    routeName?: string;
   }>();
+
+  // Multi-leg journey state
+  const isMultiLegJourney = isMultiLeg === 'true';
+  const currentLegIndex = parseInt(legIndex || '0');
+  const totalLegsCount = parseInt(totalLegs || '1');
+
+  const saveFeedback = useMutation(api.functions.feedback.saveFeedback.saveFeedback);
+  const completeLegWithPayment = useMutation(api.functions.journeys.journeyStateManager.completeLegWithPayment);
+  const getJourneyState = useQuery(
+    api.functions.journeys.journeyStateManager.getJourneyState,
+    (isMultiLegJourney && journeyId) ? { journeyId } : "skip"
+  );
 
   useEffect(() => { if (user) setName(user.name || ''); }, [user]);
 
@@ -43,6 +78,7 @@ export default function SubmitFeedbackScreen() {
     }
 
     try {
+      // Submit feedback
       await saveFeedback({
         rideId: rideId as any,
         passengerId: passengerId as any,
@@ -53,6 +89,77 @@ export default function SubmitFeedbackScreen() {
         endLocation: endName,
       });
 
+      // Handle multi-leg journey progression
+      if (isMultiLegJourney && journeyId) {
+        console.log(`🔄 Completing leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+
+        // Complete the current leg with payment using actual fare from ride completion
+        const legResult = await completeLegWithPayment({
+          journeyId,
+          legIndex: currentLegIndex,
+          actualCost: actualFare ? parseFloat(actualFare) : 0,
+        });
+
+        if (legResult.success && !legResult.journeyComplete && legResult.nextLeg) {
+          // Journey continues - navigate to next leg
+          const nextLeg = legResult.nextLeg;
+
+          showGlobalSuccess(
+            `Leg ${currentLegIndex + 1} Complete!`,
+            `Ready for leg ${currentLegIndex + 2}? You have 5 minutes to board the next taxi.`,
+            {
+              duration: 0,
+              actions: [
+                {
+                  label: 'Continue to Next Leg',
+                  onPress: () => {
+                    router.replace({
+                      pathname: '/(tabs)/TaxiInformation',
+                      params: {
+                        destinationName: nextLeg.destination.address,
+                        destinationLat: nextLeg.destination.coordinates.latitude.toString(),
+                        destinationLng: nextLeg.destination.coordinates.longitude.toString(),
+                        currentName: nextLeg.origin.address,
+                        currentLat: nextLeg.origin.coordinates.latitude.toString(),
+                        currentLng: nextLeg.origin.coordinates.longitude.toString(),
+                        routeId: journeyId,
+                        estimatedFare: nextLeg.estimatedCost.toString(),
+                        isMultiLeg: 'true',
+                        journeyId: journeyId,
+                        legIndex: nextLeg.legIndex.toString(),
+                        totalLegs: totalLegsCount.toString(),
+                        routeName: nextLeg.routeName,
+                      },
+                    });
+                  },
+                  style: 'default',
+                },
+                {
+                  label: 'Cancel Journey',
+                  onPress: () => router.replace('/HomeScreen'),
+                  style: 'cancel',
+                },
+              ],
+            }
+          );
+          return;
+        } else if (legResult.success && legResult.journeyComplete) {
+          // Journey complete
+          showGlobalSuccess(
+            'Journey Complete!',
+            `Multi-leg journey completed successfully! Total cost: R${legResult.totalActualCost?.toFixed(2) || '0.00'}`,
+            {
+              duration: 0,
+              actions: [
+                { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+              ],
+            }
+          );
+          return;
+        }
+      }
+
+      // Standard single ride completion
       setRating(0);
       setComment('');
       showGlobalSuccess('Success', 'Feedback submitted successfully!', {

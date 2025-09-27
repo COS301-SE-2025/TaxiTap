@@ -41,11 +41,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
   
-  console.log('🧮 Distance calculation:', {
-    from: { lat: lat1, lon: lon1 },
-    to: { lat: lat2, lon: lon2 },
-    distance: distance.toFixed(3) + 'km'
-  });
+  // Distance calculation logging removed for cleaner output
   
   return distance;
 }

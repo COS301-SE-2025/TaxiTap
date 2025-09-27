@@ -99,44 +99,166 @@ interface MultiLegOption {
 }
 
 /**
+ * Filter routes to only those with drivers available in the general area
+ * This reduces computational load while keeping route planning separate from real-time availability
+ */
+async function getRoutesWithAvailableDrivers(
+  ctx: QueryCtx,
+  originLat: number,
+  originLng: number,
+  destinationLat: number,
+  destinationLng: number,
+  maxTaxiDistance: number = 10.0 // Wider radius for general area coverage
+): Promise<RouteWithStops[]> {
+  try {
+    // Get all active routes first
+    const allRoutes = await ctx.db
+      .query("routes")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    // Find drivers in the general journey area (origin, destination, and corridor between)
+    const locations = await ctx.db.query("locations").collect();
+    const nearbyDriverLocations = locations.filter((loc) => {
+      if (loc.role !== "driver" && loc.role !== "both") return false;
+
+      // Check if driver is within range of origin, destination, or the corridor between them
+      const distanceToOrigin = calculateDistance(originLat, originLng, loc.latitude, loc.longitude);
+      const distanceToDestination = calculateDistance(destinationLat, destinationLng, loc.latitude, loc.longitude);
+
+      // Also check midpoint for corridor coverage
+      const midpointLat = (originLat + destinationLat) / 2;
+      const midpointLng = (originLng + destinationLng) / 2;
+      const distanceToMidpoint = calculateDistance(midpointLat, midpointLng, loc.latitude, loc.longitude);
+
+      return distanceToOrigin <= maxTaxiDistance ||
+             distanceToDestination <= maxTaxiDistance ||
+             distanceToMidpoint <= maxTaxiDistance;
+    });
+
+    if (nearbyDriverLocations.length === 0) {
+      console.log('⚠️ No drivers found in general journey area');
+      return [];
+    }
+
+    // Get driver profiles for nearby drivers
+    const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
+    const driverProfiles = await ctx.db
+      .query("drivers")
+      .filter((q) => q.or(...driverUserIds.map(id => q.eq(q.field("userId"), id))))
+      .collect();
+
+    if (driverProfiles.length === 0) {
+      console.log('⚠️ No driver profiles found for nearby drivers');
+      return [];
+    }
+
+    // Get routes that have these drivers assigned
+    const routeIdsWithDrivers = [...new Set(driverProfiles.map(d => d.assignedRoute))];
+    const routesWithDrivers = allRoutes.filter(route =>
+      routeIdsWithDrivers.includes(route._id)
+    );
+
+    console.log(`🚗 Filtered routes: ${allRoutes.length} → ${routesWithDrivers.length} (routes with drivers in journey area)`);
+
+    return routesWithDrivers;
+  } catch (error) {
+    console.error('Error filtering routes by driver availability:', error);
+    // Fallback to all routes if filtering fails
+    return await ctx.db
+      .query("routes")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+  }
+}
+
+/**
  * Find viable transfer points between routes
  */
 async function findTransferPoints(
   ctx: QueryCtx,
   routes: RouteWithStops[],
-  maxTransferDistance: number = 4.0 // 4km max walking distance
+  maxTransferDistance: number = 4.0, // 4km max walking distance
+  originLat?: number,
+  originLng?: number,
+  destinationLat?: number,
+  destinationLng?: number
 ): Promise<TransferPointCandidate[]> {
   const transferPoints: TransferPointCandidate[] = [];
 
   for (let i = 0; i < routes.length; i++) {
     for (let j = i + 1; j < routes.length; j++) {
-      const route1 = routes[i];
-      const route2 = routes[j];
+      const routeA = routes[i];
+      const routeB = routes[j];
 
       // Skip if same route or same taxi association (should have direct route)
-      if (route1.routeId === route2.routeId || route1.taxiAssociation === route2.taxiAssociation) {
+      if (routeA.routeId === routeB.routeId || routeA.taxiAssociation === routeB.taxiAssociation) {
         continue;
       }
 
       // Get enriched stops or fall back to original
-      const enrichedRoute1 = await ctx.db
+      const enrichedRouteA = await ctx.db
         .query("enrichedRouteStops")
-        .withIndex("by_route_id", (q) => q.eq("routeId", route1.routeId))
+        .withIndex("by_route_id", (q) => q.eq("routeId", routeA.routeId))
         .unique();
 
-      const enrichedRoute2 = await ctx.db
+      const enrichedRouteB = await ctx.db
         .query("enrichedRouteStops")
-        .withIndex("by_route_id", (q) => q.eq("routeId", route2.routeId))
+        .withIndex("by_route_id", (q) => q.eq("routeId", routeB.routeId))
         .unique();
 
-      const stops1 = enrichedRoute1 ? enrichedRoute1.stops : route1.stops;
-      const stops2 = enrichedRoute2 ? enrichedRoute2.stops : route2.stops;
+      const stopsA = enrichedRouteA ? enrichedRouteA.stops : routeA.stops;
+      const stopsB = enrichedRouteB ? enrichedRouteB.stops : routeB.stops;
 
-      // Check all stop combinations between the two routes
-      for (const stop1 of stops1) {
-        for (const stop2 of stops2) {
-          const [lat1, lng1] = stop1.coordinates;
-          const [lat2, lng2] = stop2.coordinates;
+      // Determine which route should be origin route and which should be destination route
+      let originRoute, destinationRoute, originStops, destinationStops;
+
+      if (originLat !== undefined && originLng !== undefined && destinationLat !== undefined && destinationLng !== undefined) {
+        // Calculate which route is closer to origin and which to destination
+        const routeAToOrigin = Math.min(...stopsA.map(stop =>
+          calculateDistance(originLat, originLng, stop.coordinates[0], stop.coordinates[1])
+        ));
+        const routeBToOrigin = Math.min(...stopsB.map(stop =>
+          calculateDistance(originLat, originLng, stop.coordinates[0], stop.coordinates[1])
+        ));
+
+        const routeAToDestination = Math.min(...stopsA.map(stop =>
+          calculateDistance(destinationLat, destinationLng, stop.coordinates[0], stop.coordinates[1])
+        ));
+        const routeBToDestination = Math.min(...stopsB.map(stop =>
+          calculateDistance(destinationLat, destinationLng, stop.coordinates[0], stop.coordinates[1])
+        ));
+
+        // Assign routes based on which is closer to origin vs destination
+        if (routeAToOrigin < routeBToOrigin && routeBToDestination < routeAToDestination) {
+          // Route A is closer to origin, Route B is closer to destination
+          originRoute = routeA;
+          destinationRoute = routeB;
+          originStops = stopsA;
+          destinationStops = stopsB;
+        } else if (routeBToOrigin < routeAToOrigin && routeAToDestination < routeBToDestination) {
+          // Route B is closer to origin, Route A is closer to destination
+          originRoute = routeB;
+          destinationRoute = routeA;
+          originStops = stopsB;
+          destinationStops = stopsA;
+        } else {
+          // Ambiguous or neither route is clearly better - skip this pair
+          continue;
+        }
+      } else {
+        // Fallback to arbitrary assignment if no origin/destination provided
+        originRoute = routeA;
+        destinationRoute = routeB;
+        originStops = stopsA;
+        destinationStops = stopsB;
+      }
+
+      // Check all stop combinations between origin route and destination route
+      for (const originStop of originStops) {
+        for (const destinationStop of destinationStops) {
+          const [lat1, lng1] = originStop.coordinates;
+          const [lat2, lng2] = destinationStop.coordinates;
 
           const walkingDistance = calculateDistance(lat1, lng1, lat2, lng2);
 
@@ -145,8 +267,8 @@ async function findTransferPoints(
             const estimatedWalkingTime = Math.ceil((walkingDistance / 5) * 60); // minutes
 
             transferPoints.push({
-              stop1: { ...stop1, routeId: route1.routeId, routeName: route1.name },
-              stop2: { ...stop2, routeId: route2.routeId, routeName: route2.name },
+              stop1: { ...originStop, routeId: originRoute.routeId, routeName: originRoute.name },
+              stop2: { ...destinationStop, routeId: destinationRoute.routeId, routeName: destinationRoute.name },
               walkingDistance,
               estimatedWalkingTime,
             });
@@ -186,19 +308,22 @@ export const findMultiLegJourneyOptionsHandler = async (
       destination: { lat: destinationLat, lng: destinationLng }
     });
 
-    // Get all active routes
-    const allRoutes = await ctx.db
-      .query("routes")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
+    // Step 1: Filter routes to those with drivers in the journey area (performance optimization)
+    const routesWithDrivers = await getRoutesWithAvailableDrivers(
+      ctx,
+      originLat,
+      originLng,
+      destinationLat,
+      destinationLng
+    );
 
-    console.log(`📊 Found ${allRoutes.length} active routes to analyze`);
+    console.log(`📊 Found ${routesWithDrivers.length} routes with drivers available in journey area`);
 
-    if (allRoutes.length < 2) {
+    if (routesWithDrivers.length < 2) {
       return {
         success: false,
         journeyOptions: [],
-        message: "Insufficient routes for multi-leg journey",
+        message: "Insufficient routes with available drivers for multi-leg journey",
         searchCriteria: {
           origin: { latitude: originLat, longitude: originLng },
           destination: { latitude: destinationLat, longitude: destinationLng },
@@ -208,10 +333,29 @@ export const findMultiLegJourneyOptionsHandler = async (
       };
     }
 
-    // Find transfer points between different routes
-    const transferPoints = await findTransferPoints(ctx, allRoutes, maxTransferDistance);
+    // Step 2: Find transfer points between filtered routes (pure journey planning)
+    const transferPoints = await findTransferPoints(
+      ctx,
+      routesWithDrivers,
+      maxTransferDistance,
+      originLat,
+      originLng,
+      destinationLat,
+      destinationLng
+    );
 
     console.log(`🔄 Found ${transferPoints.length} potential transfer points`);
+
+    // Log the transfer points for debugging
+    if (transferPoints.length > 0) {
+      console.log('🔍 Transfer points found:', transferPoints.map(tp => ({
+        route1: tp.stop1.routeName,
+        route2: tp.stop2.routeName,
+        stop1: tp.stop1.name,
+        stop2: tp.stop2.name,
+        walkingDistance: tp.walkingDistance.toFixed(3) + 'km'
+      })));
+    }
 
     if (transferPoints.length === 0) {
       return {
@@ -230,11 +374,16 @@ export const findMultiLegJourneyOptionsHandler = async (
     const journeyOptions: MultiLegOption[] = [];
 
     for (const transferPoint of transferPoints) {
-      // Get route details for both legs
-      const route1 = allRoutes.find(r => r.routeId === transferPoint.stop1.routeId);
-      const route2 = allRoutes.find(r => r.routeId === transferPoint.stop2.routeId);
+      console.log(`🔍 Processing transfer: ${transferPoint.stop1.name} → ${transferPoint.stop2.name}`);
 
-      if (!route1 || !route2) continue;
+      // Get route details for both legs from filtered routes
+      const route1 = routesWithDrivers.find(r => r.routeId === transferPoint.stop1.routeId);
+      const route2 = routesWithDrivers.find(r => r.routeId === transferPoint.stop2.routeId);
+
+      if (!route1 || !route2) {
+        console.log(`❌ Route not found: route1=${!!route1}, route2=${!!route2}`);
+        continue;
+      }
 
       // Get enriched stops for both routes
       const enrichedRoute1 = await ctx.db
@@ -264,7 +413,10 @@ export const findMultiLegJourneyOptionsHandler = async (
         return distance <= maxWalkingDistance;
       });
 
+      console.log(`📍 Origin candidates (${route1.name}): ${originCandidates.length}, Destination candidates (${route2.name}): ${destinationCandidates.length}`);
+
       if (originCandidates.length === 0 || destinationCandidates.length === 0) {
+        console.log(`❌ Insufficient candidates: origin=${originCandidates.length}, dest=${destinationCandidates.length}`);
         continue;
       }
 

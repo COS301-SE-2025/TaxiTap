@@ -34,6 +34,12 @@ export default function SeatReserved() {
 		driverName?: string;
 		fare?: string;
 		rideId?: string;
+		// Multi-leg journey parameters
+		isMultiLeg?: string;
+		journeyId?: string;
+		legIndex?: string;
+		totalLegs?: string;
+		routeName?: string;
 		// Legacy parameters
 		plate?: string;
 		time?: string;
@@ -610,6 +616,15 @@ export default function SeatReserved() {
 					passengerId: passengerId,
 					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
+					actualFare: result.fare.toString(), // Pass actual fare for payment validation
+					// Pass multi-leg journey parameters if applicable
+					...(params.isMultiLeg && {
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+					}),
 				},
 			});
 		} catch (error: any) {

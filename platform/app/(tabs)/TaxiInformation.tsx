@@ -41,6 +41,12 @@ export default function TaxiInformation() {
     availableTaxisCount,
     routeMatchData: routeMatchDataString,
     estimatedFare,
+    // Multi-leg journey parameters
+    isMultiLeg,
+    journeyId,
+    legIndex,
+    totalLegs,
+    routeName,
   } = useLocalSearchParams<{
     destinationName: string;
     destinationLat: string;
@@ -52,6 +58,12 @@ export default function TaxiInformation() {
     availableTaxisCount?: string;
     routeMatchData?: string;
     estimatedFare?: string;
+    // Multi-leg journey parameters
+    isMultiLeg?: string;
+    journeyId?: string;
+    legIndex?: string;
+    totalLegs?: string;
+    routeName?: string;
   }>();
 
   // State management
@@ -61,12 +73,25 @@ export default function TaxiInformation() {
   const [routeMatchData, setRouteMatchData] = useState<any>(null);
   const [isLoadingTaxis, setIsLoadingTaxis] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
+
+  // Multi-leg journey state
+  const [currentJourneyState, setCurrentJourneyState] = useState<any>(null);
+  const isMultiLegJourney = isMultiLeg === 'true';
+  const currentLegIndex = parseInt(legIndex || '0');
+  const totalLegsCount = parseInt(totalLegs || '1');
   
 
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   // Convex mutations
   const requestRide = useMutation(api.functions.rides.RequestRide.requestRide);
+  const startJourneyLeg = useMutation(api.functions.journeys.journeyStateManager.startJourneyLeg);
+
+  // Multi-leg journey query - only runs if it's a multi-leg journey
+  const journeyState = useQuery(
+    api.functions.journeys.journeyStateManager.getJourneyState,
+    (isMultiLegJourney && journeyId) ? { journeyId } : "skip"
+  );
 
 
   // Process enhanced data from HomeScreen
@@ -219,9 +244,25 @@ export default function TaxiInformation() {
       const result = await requestRide(rideData);
 
       if (result) {
+        // If this is a multi-leg journey, update the journey state
+        if (isMultiLegJourney && journeyId && result.rideId) {
+          console.log(`🚗 Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+
+          await startJourneyLeg({
+            journeyId,
+            legIndex: currentLegIndex,
+            rideId: result.rideId as Id<"rides">,
+            driverId: selectedTaxi.userId as Id<"taxiTap_users">,
+          });
+        }
+
         showGlobalSuccess(
-          t('taxiInfo:rideRequestSent'),
-          t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
+          isMultiLegJourney
+            ? `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`
+            : t('taxiInfo:rideRequestSent'),
+          isMultiLegJourney
+            ? `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`
+            : t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
             actions: [
@@ -241,6 +282,14 @@ export default function TaxiInformation() {
                       driverName: selectedTaxi.name,
                       fare: (selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0).toString(),
                       rideId: result.rideId,
+                      // Pass multi-leg journey info
+                      ...(isMultiLegJourney && {
+                        isMultiLeg: 'true',
+                        journeyId,
+                        legIndex: legIndex,
+                        totalLegs: totalLegs,
+                        routeName,
+                      }),
                     },
                   });
                 },
@@ -678,6 +727,52 @@ export default function TaxiInformation() {
           {' → '}
           {destinationName}
         </Text>
+
+        {/* Multi-leg journey progress indicator */}
+        {isMultiLegJourney && (
+          <View style={{
+            marginTop: 12,
+            padding: 12,
+            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Icon name="navigate-outline" size={16} color="#3B82F6" />
+              <Text style={{
+                marginLeft: 6,
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#3B82F6'
+              }}>
+                Multi-Leg Journey • Leg {currentLegIndex + 1} of {totalLegsCount}
+              </Text>
+            </View>
+            <Text style={{
+              fontSize: 12,
+              color: theme.textSecondary,
+              marginBottom: 8
+            }}>
+              Route: {routeName}
+            </Text>
+
+            {/* Progress bar */}
+            <View style={{
+              height: 4,
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+              borderRadius: 2,
+              overflow: 'hidden'
+            }}>
+              <View style={{
+                height: '100%',
+                width: `${((currentLegIndex + 1) / totalLegsCount) * 100}%`,
+                backgroundColor: '#3B82F6',
+                borderRadius: 2,
+              }} />
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Content */}

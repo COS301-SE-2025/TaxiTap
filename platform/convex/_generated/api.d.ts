@@ -36,6 +36,8 @@ import type * as functions_feedback_showFeedback from "../functions/feedback/sho
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
 import type * as functions_journeys_journeyStateManager from "../functions/journeys/journeyStateManager.js";
 import type * as functions_journeys_multiLegJourneyFinder from "../functions/journeys/multiLegJourneyFinder.js";
+import type * as functions_journeys_transferProximityAction from "../functions/journeys/transferProximityAction.js";
+import type * as functions_journeys_transferProximityMonitor from "../functions/journeys/transferProximityMonitor.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -151,6 +153,8 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
   "functions/journeys/journeyStateManager": typeof functions_journeys_journeyStateManager;
   "functions/journeys/multiLegJourneyFinder": typeof functions_journeys_multiLegJourneyFinder;
+  "functions/journeys/transferProximityAction": typeof functions_journeys_transferProximityAction;
+  "functions/journeys/transferProximityMonitor": typeof functions_journeys_transferProximityMonitor;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
