@@ -13,8 +13,9 @@ import * as Location from 'expo-location';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function AddWorkAddress() {
+    const { t } = useLanguage();
     const [address, setAddress] = useState('');
-    const [nickname, setNickname] = useState('Work');
+    const [nickname, setNickname] = useState(t('address.work'));
     const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +24,6 @@ export default function AddWorkAddress() {
     const router = useRouter();
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
 
     // Query user data from Convex
@@ -40,7 +40,7 @@ export default function AddWorkAddress() {
     useEffect(() => {
         if (convexUser && convexUser.workAddress) {
             setAddress(convexUser.workAddress.address);
-            setNickname(convexUser.workAddress.nickname || 'Work');
+            setNickname(convexUser.workAddress.nickname || t('address.work'));
             setCoordinates(convexUser.workAddress.coordinates);
             setHasExistingAddress(true);
         }
@@ -395,7 +395,7 @@ export default function AddWorkAddress() {
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
                             onChangeText={setAddress}
-                            placeholder="Enter your work address"
+                            placeholder={t('address.enterWorkAddress')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             multiline
                             numberOfLines={3}
