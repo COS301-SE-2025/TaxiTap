@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Id } from '../convex/_generated/dataModel';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Notification {
   _id: Id<"notifications">;
@@ -24,6 +25,7 @@ interface Notification {
 
 const NotificationsScreen = () => {
   const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
+  const { t: translate } = useLanguage();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {

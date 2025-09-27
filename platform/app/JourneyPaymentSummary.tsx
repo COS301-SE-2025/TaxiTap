@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface JourneyPaymentSummaryProps {
   journeyId: string;
@@ -11,6 +12,7 @@ interface JourneyPaymentSummaryProps {
 
 export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSummaryProps) {
   const router = useRouter();
+  const { t: translate } = useLanguage();
 
   const journeyPaymentData = useQuery(api.functions.journeys.multiLegPayment.getJourneyPaymentSummary, {
     journeyId,
@@ -19,7 +21,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
   if (!journeyPaymentData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading payment summary...</Text>
+        <Text style={styles.loadingText}>{translate("journeyPayment.loadingPaymentSummary")}</Text>
       </View>
     );
   }
@@ -62,7 +64,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
         </View>
         <View style={styles.overallStatus}>
           <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.overallStatus) }]}>
-            {journeyPaymentData.overallStatus === 'completed' ? 'All Paid' : 'Pending Payment'}
+            {journeyPaymentData.overallStatus === 'completed' ? translate("journeyPayment.allPaid") : translate("journeyPayment.pendingPayment")}
           </Text>
         </View>
       </View>

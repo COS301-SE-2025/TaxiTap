@@ -8,10 +8,12 @@ import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
+  const { t: translate } = useLanguage();
   const userId = user?.id;
   const {
     driverName,
@@ -50,7 +52,7 @@ export default function PaymentConfirmation() {
         const total = parseInt(totalLegs as string);
 
         showGlobalSuccess(
-          'Leg Payment Confirmed',
+          translate('paymentConfirm.legPaymentConfirmed'),
           `Payment for leg ${currentLeg} of ${total} confirmed!${result.canProgressToNextLeg ? ' Ready for next leg.' : ' Journey completed!'}`,
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
@@ -84,7 +86,7 @@ export default function PaymentConfirmation() {
         });
 
         showGlobalSuccess(
-          'Payment Confirmed',
+          translate('paymentConfirm.paymentConfirmed'),
           'Thank you for confirming your payment!',
           { duration: 2000, position: 'top', animation: 'slide-down' }
         );
@@ -105,7 +107,7 @@ export default function PaymentConfirmation() {
 
     } catch (error: any) {
       showGlobalError(
-        'Payment Confirmation Failed',
+        translate('paymentConfirm.paymentConfirmationFailed'),
         error?.message || 'Unable to confirm payment. Please try again.',
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
@@ -129,20 +131,20 @@ export default function PaymentConfirmation() {
         const total = parseInt(totalLegs as string);
 
         showGlobalAlert({
-          title: 'Payment Required',
+          title: translate('paymentConfirm.paymentRequired'),
           message: `Payment for leg ${currentLeg} of ${total} is required before continuing your journey. Please pay the driver to proceed.`,
           type: 'warning',
           duration: 0,
           actions: [
             {
-              label: 'I Will Pay Now',
+              label: translate('paymentConfirm.iWillPayNow'),
               onPress: () => {
                 // Stay on payment screen to try again
               },
               style: 'default',
             },
             {
-              label: 'Cancel Journey',
+              label: translate('paymentConfirm.cancelJourney'),
               onPress: () => router.push('/HomeScreen'),
               style: 'cancel',
             }
@@ -159,13 +161,13 @@ export default function PaymentConfirmation() {
         });
 
         showGlobalAlert({
-          title: 'Payment Not Confirmed',
+          title: translate('paymentConfirm.paymentNotConfirmed'),
           message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
         type: 'warning',
         duration: 0,
         actions: [
           {
-            label: 'Continue to Feedback',
+            label: translate('paymentConfirm.continueToFeedback'),
             onPress: () => {
               router.push({
                 pathname: '/SubmitFeedback',
@@ -181,7 +183,7 @@ export default function PaymentConfirmation() {
             style: 'default',
           },
           {
-            label: 'Skip Feedback',
+            label: translate('paymentConfirm.skipFeedback'),
             onPress: () => router.push('/HomeScreen'),
             style: 'cancel',
           }

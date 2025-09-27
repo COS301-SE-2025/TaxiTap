@@ -7,10 +7,12 @@ import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
+  const { t: translate } = useLanguage();
   const userId = user?.id;
   const [amountPaid, setAmountPaid] = useState("");
   const [showAmountInput, setShowAmountInput] = useState(false);
@@ -133,7 +135,7 @@ export default function PaymentConfirmation() {
           </Text>
 
           <TextInput
-            placeholder="Enter amount paid"
+            placeholder={translate("payment.enterAmountPaid")}
             keyboardType="numeric"
             style={styles.amountInput}
             value={amountPaid}
@@ -158,7 +160,7 @@ export default function PaymentConfirmation() {
               disabled={processing}
             >
               <Text style={styles.buttonText}>
-                {processing ? "Processing..." : "Confirm Payment"}
+                {processing ? translate("payment.processing") : translate("payment.confirmPayment")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -212,7 +214,7 @@ export default function PaymentConfirmation() {
         </View>
 
         <Text style={styles.noteText}>
-          {processing ? "Processing..." : "Select your payment status to continue"}
+          {processing ? translate("payment.processing") : translate("payment.selectPaymentStatus")}
         </Text>
       </View>
     </View>
