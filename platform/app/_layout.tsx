@@ -359,17 +359,7 @@ function RootLayoutNav() {
           <Stack.Screen
             name="FeedbackHistoryScreen"
             options={{
-              headerShown: true,
-              title: "Feedback",
-              headerStyle: {
-                backgroundColor: theme.surface,
-              },
-              headerTintColor: theme.primary,
-              headerTitleStyle: {
-                fontWeight: "bold",
-                fontSize: 18,
-                color: "black",
-              },
+              headerShown: false,
             }}
           />
 

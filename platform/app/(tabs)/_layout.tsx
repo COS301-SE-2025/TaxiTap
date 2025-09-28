@@ -226,6 +226,7 @@ const TabNavigation: React.FC = () => {
         name="AddHomeAddress"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
 
@@ -233,6 +234,7 @@ const TabNavigation: React.FC = () => {
         name="AddWorkAddress"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
 
