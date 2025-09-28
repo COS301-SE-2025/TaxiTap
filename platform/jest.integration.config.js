@@ -23,5 +23,15 @@ module.exports = {
   testTimeout: 10000, // Integration tests might need more time
   verbose: true,
   // Suppress console warnings and errors during tests
-  silent: false
+  silent: false,
+  collectCoverage: true,
+  collectCoverageFrom: [
+    "src/**/*.ts",          // include your source files
+    "!src/**/__tests__/**", // exclude test files
+    "!src/**/integration/**" // exclude integration files
+  ],
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/tests/integration/" // ignore integration tests when running jest
+  ],
 }; 
