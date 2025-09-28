@@ -9,6 +9,7 @@ import {
   ListRenderItem
 } from 'react-native';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Id } from '../convex/_generated/dataModel';
 
 interface Notification {
@@ -24,7 +25,38 @@ interface Notification {
 
 const NotificationsScreen = () => {
   const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
+  const { currentLanguage } = useLanguage();
   const [refreshing, setRefreshing] = React.useState(false);
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    notifications: {
+      en: "Notifications",
+      zu: "Izaziso",
+      tn: "Ditsebiso",
+      af: "Kennisgewings"
+    },
+    markAllRead: {
+      en: "Mark All Read",
+      zu: "Maka Konke Kufundwe",
+      tn: "Tlhopha Tsotlhe di Balwa",
+      af: "Merk Alles as Gelees"
+    },
+    noNotificationsYet: {
+      en: "No notifications yet",
+      zu: "Awukho izaziso okwamanje",
+      tn: "Ga go na ditsebiso go fitlha jaanong",
+      af: "Nog geen kennisgewings nie"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -54,9 +86,9 @@ const NotificationsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{getTranslation('notifications')}</Text>
         <TouchableOpacity onPress={markAllAsRead}>
-          <Text style={styles.markAllRead}>Mark All Read</Text>
+          <Text style={styles.markAllRead}>{getTranslation('markAllRead')}</Text>
         </TouchableOpacity>
       </View>
       
@@ -69,7 +101,7 @@ const NotificationsScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
+            <Text style={styles.emptyText}>{getTranslation('noNotificationsYet')}</Text>
           </View>
         }
       />
