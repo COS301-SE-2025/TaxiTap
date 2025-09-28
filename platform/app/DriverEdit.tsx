@@ -31,7 +31,7 @@ export default function DriverPersonalInfoEdit() {
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     
     // Use centralized translations
-    const { t: translate } = useLanguage();
+    const { t } = useLanguage();
 
     // Initialize form data from user context
     useEffect(() => {
@@ -82,7 +82,7 @@ export default function DriverPersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            showGlobalError('Error', 'Failed to upload image', {
+            showGlobalError(t('common.error'), t('personalInfo.failedToUploadImage'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -92,7 +92,7 @@ export default function DriverPersonalInfoEdit() {
 
     const handleSave = async () => {
         if (!user?.id) {
-            showGlobalError('Error', 'User not loaded', {
+            showGlobalError(t('common.error'), t('personalInfo.userNotLoaded'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -102,7 +102,7 @@ export default function DriverPersonalInfoEdit() {
 
         // Validation
         if (!name.trim()) {
-            showGlobalError('Error', 'Name is required', {
+            showGlobalError(t('common.error'), t('personalInfo.nameRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -111,7 +111,7 @@ export default function DriverPersonalInfoEdit() {
         }
 
         if (!number.trim()) {
-            showGlobalError('Error', 'Phone number is required', {
+            showGlobalError(t('common.error'), t('personalInfo.phoneNumberRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -147,13 +147,13 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess(t('common.success'), t('personalInfo.changesSavedSuccessfully'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: 'OK',
+                        label: t('common.ok'),
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -162,7 +162,7 @@ export default function DriverPersonalInfoEdit() {
 
         } catch (error: any) {
             console.error('Update error:', error);
-            showGlobalError('Error', error.message || 'Failed to save changes', {
+            showGlobalError(t('common.error'), error.message || t('personalInfo.failedToSaveChanges'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -317,38 +317,38 @@ export default function DriverPersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
-                <Text style={dynamicStyles.sectionTitle}>{translate('personalInfo.basicInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo.basicInformation')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.fullName')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.fullName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder={translate('personalInfo.enterFullName')}
+                            placeholder={t('personalInfo.enterFullName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.phoneNumber')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={number}
                             onChangeText={setNumber}
-                            placeholder={translate('personalInfo.enterPhoneNumber')}
+                            placeholder={t('personalInfo.enterPhoneNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.email')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder={translate('personalInfo.enterEmail')}
+                            placeholder={t('personalInfo.enterEmail')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -357,38 +357,38 @@ export default function DriverPersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact Section */}
-                <Text style={dynamicStyles.sectionTitle}>{translate('personalInfo.emergencyContact')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo.emergencyContact')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.emergencyContactName')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder={translate('personalInfo.enterEmergencyContactName')}
+                            placeholder={t('personalInfo.enterEmergencyContactName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.emergencyContactPhone')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactNumber}
                             onChangeText={setEmergencyContactNumber}
-                            placeholder={translate('personalInfo.enterEmergencyContactNumber')}
+                            placeholder={t('personalInfo.enterEmergencyContactNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{translate('personalInfo.emergencyContactRelationship')}</Text>
+                        <Text style={dynamicStyles.label}>{t('personalInfo.emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder={translate('personalInfo.relationshipPlaceholder')}
+                            placeholder={t('personalInfo.relationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -401,7 +401,7 @@ export default function DriverPersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? translate('personalInfo.saving') : translate('personalInfo.saveChanges')}
+                        {isLoading ? t('personalInfo.saving') : t('personalInfo.saveChanges')}
                     </Text>
                 </Pressable>
             </ScrollView>

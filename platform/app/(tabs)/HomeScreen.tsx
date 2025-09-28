@@ -77,10 +77,10 @@ export default function HomeScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
+          Alert.alert(t('home.permissionDenied'), t('home.locationPermissionRequired'));
           showGlobalError(
-            "Permission denied", 
-            "Location permission is required to find nearby taxis.",
+            t('home.permissionDenied'), 
+            t('home.locationPermissionRequired'),
             {
               duration: 5000,
               position: 'top',
@@ -95,8 +95,8 @@ export default function HomeScreen() {
         const isLocationEnabled = await Location.hasServicesEnabledAsync();
         if (!isLocationEnabled) {
           showGlobalError(
-            "Location services disabled", 
-            "Please enable location services in your device settings.",
+            t('home.locationServicesDisabled'), 
+            t('home.locationServicesDisabledMessage'),
             {
               duration: 5000,
               position: 'top',
@@ -137,8 +137,8 @@ export default function HomeScreen() {
         // Handle specific location errors
         if (error.message?.includes('spoofer') || error.message?.includes('mock')) {
           showGlobalError(
-            "Location spoofer detected", 
-            "Please disable any location spoofing apps and use real GPS location.",
+            t('home.locationSpooferDetected'), 
+            t('home.locationSpooferDetectedMessage'),
             {
               duration: 5000,
               position: 'top',
@@ -147,8 +147,8 @@ export default function HomeScreen() {
           );
         } else {
           showGlobalError(
-            "Location error", 
-            "Unable to get your current location. Please enter your address manually.",
+            t('home.locationError'), 
+            t('home.unableToGetLocation'),
             {
               duration: 5000,
               position: 'top',
@@ -279,7 +279,7 @@ export default function HomeScreen() {
     if (!GOOGLE_MAPS_API_KEY) {
       showGlobalError(
         t('common:error'), 
-        'Google Maps API key is not configured',
+        t('home.googleMapsNotConfigured'),
         {
           duration: 4000,
           position: 'top',
@@ -304,7 +304,7 @@ export default function HomeScreen() {
         throw new Error('Place details not found');
       }
     } catch (error) {
-      Alert.alert(t('common:error'), 'Could not get place details. Please try again.');
+      Alert.alert(t('common.error'), t('home.addressNotFound'));
       return null;
     }
   };
@@ -531,7 +531,7 @@ export default function HomeScreen() {
       setCurrentLocation({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: t('common:currentLocation')
+        name: t('common.currentLocation')
       });
       setIsLoadingCurrentLocation(false);
     }
@@ -543,7 +543,7 @@ export default function HomeScreen() {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: t('common:currentLocation')
+        name: t('common.currentLocation')
       });
     }
   }, [detectedLocation, origin]);
@@ -553,13 +553,13 @@ export default function HomeScreen() {
       if (!detectedLocation && isLoadingCurrentLocation) {
         setIsLoadingCurrentLocation(false);
         showGlobalError(
-          'Location Error', 
-          'Unable to get your current location. Please enter your address manually.',
+          t('home.locationError'), 
+          t('home.unableToGetLocation'),
           {
             duration: 0,
             actions: [
               {
-                label: 'OK',
+                label: t('common.ok'),
                 onPress: () => console.log('Location error acknowledged'),
                 style: 'default',
               }
@@ -599,7 +599,7 @@ export default function HomeScreen() {
             routeName: manualDestination.name,
             destinationLat: manualDestination.latitude,
             destinationLng: manualDestination.longitude,
-            startName: recent.startName || 'Current Location',
+            startName: recent.startName || t('location.currentLocation'),
             startLat: recent.startLat,
             startLng: recent.startLng,
             isManualRoute: true,
@@ -608,7 +608,7 @@ export default function HomeScreen() {
           return {
             ...recent,
             _id: recent._id,
-            routeName: 'Location Unavailable',
+            routeName: t('location.locationUnavailable'),
             destinationLat: null,
             destinationLng: null,
             startName: recent.startName,
@@ -676,7 +676,7 @@ export default function HomeScreen() {
   );
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: t('navigation:home') });
+    navigation.setOptions({ title: t('navigation.home') });
   }, [navigation, t]);
 
   // Geocoding function (fallback for manual entry)
@@ -684,7 +684,7 @@ export default function HomeScreen() {
     if (!GOOGLE_MAPS_API_KEY) {
       showGlobalError(
         t('common:error'), 
-        'Google Maps API key is not configured',
+        t('home.googleMapsNotConfigured'),
         {
           duration: 4000,
           position: 'top',
@@ -710,7 +710,7 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      Alert.alert(t('common:error'), 'Could not find the address. Please try again.');
+      Alert.alert(t('common.error'), t('home.addressNotFound'));
       return null;
     }
   };
@@ -1116,9 +1116,9 @@ export default function HomeScreen() {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: 'Current Location'
+        name: t('location.currentLocation')
       });
-      setOriginAddress('Current Location');
+      setOriginAddress(t('location.currentLocation'));
     }
     
     const routeIdToUse = route.routeId.startsWith("manual-") ? route.routeId : route._id;
@@ -1593,7 +1593,7 @@ export default function HomeScreen() {
           {origin && 
             typeof origin.latitude === 'number' &&
             typeof origin.longitude === 'number' && (
-              <Marker coordinate={origin} title="Origin" pinColor="blue" />
+              <Marker coordinate={origin} title={t('home.origin')} pinColor="blue" />
             )}
 
           {destination &&
@@ -1614,7 +1614,7 @@ export default function HomeScreen() {
                   latitude: driver.latitude,
                   longitude: driver.longitude,
                 }}
-                title={driver.name || "Available Driver"}
+                title={driver.name || t('home.availableDriver')}
               >
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="car" size={36} color="green" />
@@ -1658,7 +1658,7 @@ export default function HomeScreen() {
             <View style={dynamicStyles.inputContainer}>
               <TextInput
                 style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-                placeholder={origin ? origin.name : t('home:enterOriginAddress')}
+                placeholder={origin ? origin.name : t('home.enterOriginAddress')}
                 value={originAddress}
                 onChangeText={handleOriginAddressChange}
                 onSubmitEditing={handleOriginSubmit}
@@ -1732,7 +1732,7 @@ export default function HomeScreen() {
             <View style={dynamicStyles.inputContainer}>
               <TextInput
                 style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
-                placeholder={t('home:enterDestinationAddress')}
+                placeholder={t('home.enterDestinationAddress')}
                 value={destinationAddress}
                 onChangeText={handleDestinationAddressChange}
                 onSubmitEditing={handleDestinationSubmit}

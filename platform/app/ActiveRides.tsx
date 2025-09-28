@@ -55,7 +55,7 @@ export default function ActiveRides() {
             console.log('Setting front passenger with rideId:', rideId); // Debug log
             
             if (!rideId) {
-                throw new Error('No ride ID provided');
+                throw new Error(t('activeRides.noRideIdProvided'));
             }
             
             setLoadingFrontPassenger(rideId);
@@ -81,11 +81,11 @@ export default function ActiveRides() {
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>No active trips found</Text>
+                        <Text style={dynamicStyles.headerSubtitle}>{t('activeRides.noActiveTrips')}</Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
                         <Ionicons name="car-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No active rides at the moment</Text>
+                        <Text style={dynamicStyles.emptyStateText}>{t('activeRides.noActiveRides')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -138,14 +138,14 @@ export default function ActiveRides() {
                                         dynamicStyles.statusWaiting
                                     ]}>
                                         <Text style={dynamicStyles.statusText}>
-                                            {p.tripPaid === true ? "Paid" :
-                                             p.tripPaid === false ? "Unpaid" :
-                                             "Pending"}
+                                            {p.tripPaid === true ? t('activeRides.paid') :
+                                             p.tripPaid === false ? t('activeRides.unpaid') :
+                                             t('activeRides.pending')}
                                         </Text>
                                     </View>
                                     {p.isFrontPassenger && (
                                         <View style={dynamicStyles.frontPassengerBadge}>
-                                            <Text style={dynamicStyles.frontPassengerText}>Front</Text>
+                                            <Text style={dynamicStyles.frontPassengerText}>{t('activeRides.front')}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -187,7 +187,7 @@ export default function ActiveRides() {
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
                                             ]}>
-                                                {p.isFrontPassenger ? 'Remove Front' : 'Set as Front'}
+                                                {p.isFrontPassenger ? t('activeRides.removeFront') : t('activeRides.setAsFront')}
                                             </Text>
                                         </View>
                                     )}

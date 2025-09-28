@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
@@ -12,8 +13,16 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 export default function FeedbackHistoryScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { t } = useLanguage();
   const router = useRouter();
   const navigation = useNavigation();
+
+  // Set navigation title
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t('feedback.title'),
+    });
+  }, [navigation, t]);
 
   const feedbackList = useQuery(
     user?.role === 'driver' 
@@ -137,14 +146,14 @@ export default function FeedbackHistoryScreen() {
             <View style={dynamicStyles.emptyState}>
               <Text style={dynamicStyles.emptyStateText}>
                 {user.role === 'driver' 
-                  ? "You haven't received any feedback yet." 
-                  : "You haven't left any reviews yet."
+                  ? t('feedback.noFeedbackDriver')
+                  : t('feedback.noFeedbackPassenger')
                 }
               </Text>
               <Text style={dynamicStyles.emptyStateText}>
                 {user.role === 'driver' 
-                  ? "Passenger feedback helps improve your service!" 
-                  : "Your feedback helps improve our service!"
+                  ? t('feedback.feedbackHelpsDriver')
+                  : t('feedback.feedbackHelpsPassenger')
                 }
               </Text>
             </View>
@@ -159,29 +168,29 @@ export default function FeedbackHistoryScreen() {
               >
                 <View style={dynamicStyles.feedbackContent}>
                   {entry.rating > 0 && (
-                    <Text style={dynamicStyles.feedbackText}>⭐ Rating: {entry.rating}</Text>
+                    <Text style={dynamicStyles.feedbackText}>⭐ {t('feedback.rating')}: {entry.rating}</Text>
                   )}
                   {entry.comment && (
-                    <Text style={dynamicStyles.feedbackText}>📝 Comment: {entry.comment}</Text>
+                    <Text style={dynamicStyles.feedbackText}>📝 {t('feedback.comment')}: {entry.comment}</Text>
                   )}
                   {user.role === 'driver' ? (
                     // For drivers, show passenger name
                     entry.passengerName && (
-                      <Text style={dynamicStyles.feedbackSecondary}>Passenger: {entry.passengerName}</Text>
+                      <Text style={dynamicStyles.feedbackSecondary}>{t('feedback.passenger')}: {entry.passengerName}</Text>
                     )
                   ) : (
                     // For passengers, show driver name
                     entry.driverName && (
-                      <Text style={dynamicStyles.feedbackSecondary}>Driver: {entry.driverName}</Text>
+                      <Text style={dynamicStyles.feedbackSecondary}>{t('feedback.driver')}: {entry.driverName}</Text>
                     )
                   )}
                   {(entry.startLocation || entry.endLocation) && (
                     <View>
                       <Text style={dynamicStyles.feedbackSecondary}>
-                        From: {entry.startLocation || 'N/A'}
+                        {t('feedback.from')}: {entry.startLocation || 'N/A'}
                       </Text>
                       <Text style={dynamicStyles.feedbackSecondary}>
-                        To: {entry.endLocation || 'N/A'}
+                        {t('feedback.to')}: {entry.endLocation || 'N/A'}
                       </Text>
                     </View>
                   )}

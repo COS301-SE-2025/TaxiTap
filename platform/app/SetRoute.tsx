@@ -50,11 +50,11 @@ interface SetRouteProps {
  * @param routeName - The route name to parse
  * @returns Object containing start and destination locations
  */
-function parseRouteName(routeName: string) {
-  const parts = routeName?.split("-").map(part => part.trim()) ?? ["Unknown", "Unknown"];
+function parseRouteName(routeName: string, t: any) {
+  const parts = routeName?.split("-").map(part => part.trim()) ?? [t('routes.unknown'), t('routes.unknown')];
   return {
-    start: parts[0] ?? "Unknown",
-    destination: parts[1] ?? "Unknown"
+    start: parts[0] ?? t('routes.unknown'),
+    destination: parts[1] ?? t('routes.unknown')
   };
 }
 
@@ -98,7 +98,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // TRANSLATION SETUP
   // ============================================================================
   
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
 
   // ============================================================================
   // DATA FETCHING
@@ -123,7 +123,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // Mount when assignedRoute changes
   useEffect(() => {
     if (assignedRoute) {
-      const { start, destination } = parseRouteName(assignedRoute.name);
+      const { start, destination } = parseRouteName(assignedRoute.name, t);
       setCurrentRoute(`${start} → ${destination}`);
     }
   }, [assignedRoute, setCurrentRoute]);
@@ -146,7 +146,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
    */
   const handleAssignRoute = async () => {
     if (!taxiAssociation) {
-      showGlobalError('Select Taxi Association', 'Please select your taxi association first.', {
+      showGlobalError(t('driver.selectTaxiAssociation'), t('driver.pleaseSelectTaxiAssociation'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -155,7 +155,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     }
 
     if (!user?.id) {
-      showGlobalError('User not found', 'You must be logged in as a driver.', {
+      showGlobalError(t('driver.userNotFound'), t('driver.mustBeLoggedInAsDriver'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -173,22 +173,22 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
       // Check if result and assignedRoute exist
       if (!result || !result.assignedRoute) {
-        throw new Error(translate('driver.noRouteAssigned'));
+        throw new Error(t('driver.noRouteAssigned'));
       }
 
-      const { start, destination } = parseRouteName(result.assignedRoute.name);
+      const { start, destination } = parseRouteName(result.assignedRoute.name, t);
       const routeString = `${start} → ${destination}`;
       
       setCurrentRoute(routeString);
       onRouteSet?.(routeString);
 
-      showGlobalSuccess('Route Assigned Successfully!', `You have been assigned to: ${routeString}`, {
+      showGlobalSuccess(t('driver.routeAssignedSuccessfully'), `${t('driver.youHaveBeenAssignedTo')}: ${routeString}`, {
         duration: 0,
         position: 'top',
         animation: 'slide-down',
         actions: [
           {
-            label: 'OK',
+            label: t('common.ok'),
             onPress: () => navigation.goBack(),
             style: 'default',
           },
@@ -196,8 +196,8 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       });
     } catch (error) {
       console.error("Error assigning route:", error);
-      const message = error instanceof Error ? error.message : 'Failed to assign route. Please try again.';
-      showGlobalError('Assignment Failed', message, {
+      const message = error instanceof Error ? error.message : t('driver.failedToAssignRoute');
+      showGlobalError(t('driver.assignmentFailed'), message, {
         duration: 5000,
         position: 'top',
         animation: 'slide-down',
@@ -220,13 +220,13 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
     setCurrentRoute(routeString);
     onRouteSet?.(routeString);
 
-    showGlobalSuccess('Route Activated', `Route activated: ${routeString}`, {
+    showGlobalSuccess(t('driver.routeActivated'), `${t('driver.routeActivatedMessage')}: ${routeString}`, {
       duration: 0,
       position: 'top',
       animation: 'slide-down',
       actions: [
         {
-          label: 'OK',
+          label: t('common.ok'),
           onPress: () => navigation.goBack(),
           style: 'default',
         },
@@ -437,23 +437,23 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
           {/* Content */}
           <View style={dynamicStyles.content}>
             <Text style={dynamicStyles.sectionSubtitle}>
-              {translate('driver.yourAssignedRouteMessage')}
+              {t('driver.yourAssignedRouteMessage')}
             </Text>
 
             {/* Route Information Card */}
             <View style={dynamicStyles.routeCard}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
                 <Icon name="map-outline" size={22} color={theme.primary} style={{ marginRight: 8, marginBottom: 10 }} />
-                <Text style={dynamicStyles.routeCardTitle}>{translate('driver.currentRoute')}</Text>
+                <Text style={dynamicStyles.routeCardTitle}>{t('driver.currentRoute')}</Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                 <Icon name="navigate-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6, marginBottom: 7 }} />
-                <Text style={dynamicStyles.routeText}>Route</Text>
+                <Text style={dynamicStyles.routeText}>{t('routes.route')}</Text>
               </View>
               <Text style={dynamicStyles.routeText2}>{start} → {destination}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4 }}>
                 <Icon name="people-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6 }} />
-                <Text style={dynamicStyles.associationText2}>Taxi Association</Text>
+                <Text style={dynamicStyles.associationText2}>{t('driver.taxiAssociation')}</Text>
               </View>
               <Text style={dynamicStyles.associationText}>{assignedRoute.taxiAssociation}</Text>
             </View>
@@ -463,7 +463,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
               style={dynamicStyles.primaryButton}
               onPress={handleActivateExistingRoute}
             >
-              <Text style={dynamicStyles.primaryButtonText}>{translate('driver.activateRoute')}</Text>
+              <Text style={dynamicStyles.primaryButtonText}>{t('driver.activateRoute')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -496,14 +496,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
         {/* Content */}
         <View style={dynamicStyles.content}>
-          <Text style={dynamicStyles.sectionTitle}>{translate('driver.routeAssignment')}</Text>
+          <Text style={dynamicStyles.sectionTitle}>{t('driver.routeAssignment')}</Text>
           <Text style={dynamicStyles.sectionSubtitle}>
-            {translate('driver.selectTaxiAssociationMessage')}
+            {t('driver.selectTaxiAssociationMessage')}
           </Text>
 
           {/* Taxi Association Selection */}
           <View style={dynamicStyles.selectionCard}>
-            <Text style={dynamicStyles.selectionTitle}>{translate('driver.selectTaxiAssociation')}</Text>
+            <Text style={dynamicStyles.selectionTitle}>{t('driver.selectTaxiAssociation')}</Text>
             
             {!allTaxiAssociations ? (
               <View style={{ alignItems: 'center', paddingVertical: 20 }}>
@@ -538,14 +538,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
             {isAssigning ? (
               <View style={dynamicStyles.loadingContainer}>
                 <LoadingSpinner size="small" />
-                <Text style={dynamicStyles.loadingText}>{translate('driver.assigningRoute')}</Text>
+                <Text style={dynamicStyles.loadingText}>{t('driver.assigningRoute')}</Text>
               </View>
             ) : (
               <Text style={[
                 dynamicStyles.primaryButtonText,
                 (!taxiAssociation || isAssigning) && dynamicStyles.primaryButtonTextDisabled
               ]}>
-                {translate('driver.getMyRoute')}
+                {t('driver.getMyRoute')}
               </Text>
             )}
           </TouchableOpacity>

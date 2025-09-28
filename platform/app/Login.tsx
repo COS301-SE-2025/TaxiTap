@@ -34,7 +34,7 @@ export default function Login() {
     const deviceId = await getDeviceId();
 
     if (!number || !password) {
-      showGlobalError('Error', 'Please fill all fields', {
+      showGlobalError(t('common.error'), t('auth.pleaseFillAllFields'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -44,7 +44,7 @@ export default function Login() {
 
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showGlobalError('Error', 'Invalid number format', {
+      showGlobalError(t('common.error'), t('auth.invalidNumberFormat'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -60,14 +60,14 @@ export default function Login() {
       );
 
       if (!result.success) {
-        if (result.reason === "Already logged in on another device") {
-          showGlobalError('Login Error', 'You are already logged in on another device. Please log out first.', {
+        if (result.reason === t('auth.alreadyLoggedInOnAnotherDevice')) {
+          showGlobalError(t('auth.loginError'), t('auth.alreadyLoggedInMessage'), {
             duration: 5000,
             position: 'top',
             animation: 'slide-down',
           });
         } else {
-          showGlobalError('Login Error', 'Phone number or password incorrect', {
+          showGlobalError(t('auth.loginError'), t('auth.phoneNumberIncorrect'), {
             duration: 4000,
             position: 'top',
             animation: 'slide-down',
@@ -90,7 +90,7 @@ export default function Login() {
         });
       }
     } catch (err) {
-      showGlobalError('Error', 'An unexpected error occurred', {
+      showGlobalError(t('common.error'), t('auth.unexpectedError'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -129,7 +129,7 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:phoneNumber')}
+              {t('auth.phoneNumber')}
           </Text>
 
           <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -167,7 +167,7 @@ export default function Login() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:password')}
+              {t('auth.password')}
           </Text>
 
           <View
@@ -184,7 +184,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('auth:password')}
+              placeholder={t('auth.password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -203,7 +203,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -220,7 +220,7 @@ export default function Login() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              {t('auth:login')}
+              {t('auth.login')}
             </Text>
           </Pressable>
         </View>

@@ -14,7 +14,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function AddHomeAddress() {
     const [address, setAddress] = useState('');
-    const [nickname, setNickname] = useState(() => t('address.home'));
+    const [nickname, setNickname] = useState('');
     const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +25,11 @@ export default function AddHomeAddress() {
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
+
+    // Initialize nickname with translated text
+    useEffect(() => {
+        setNickname(t('address.home'));
+    }, [t]);
 
     // Query user data from Convex
     const convexUser = useQuery(

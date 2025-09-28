@@ -9,7 +9,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
 
   const transactions = useQuery(
     api.functions.users.wallet.getTransactionHistory,
@@ -17,16 +17,16 @@ const TransactionHistoryScreen = () => {
   );
 
   const paymentTypeLabels: Record<string, string> = {
-    overpaid: translate("wallet.overpaidTrip"),
-    exact: translate("wallet.exactPayment"),
-    underpaid: translate("wallet.underpaidTrip"),
-    not_paid: translate("wallet.notPaid"),
+    overpaid: t("wallet.overpaidTrip"),
+    exact: t("wallet.exactPayment"),
+    underpaid: t("wallet.underpaidTrip"),
+    not_paid: t("wallet.notPaid"),
   };
 
   if (!passengerId) {
     return (
       <View style={styles.center}>
-        <Text>{translate("wallet.noPassengerId")}</Text>
+        <Text>{t("wallet.noPassengerId")}</Text>
       </View>
     );
   }
@@ -34,17 +34,17 @@ const TransactionHistoryScreen = () => {
   if (!transactions) {
     return (
       <View style={styles.center}>
-        <Text>{translate("wallet.loadingTransactions")}</Text>
+        <Text>{t("wallet.loadingTransactions")}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.header}>{translate("wallet.transactionHistory")}</Text>
+      <Text style={styles.header}>{t("wallet.transactionHistory")}</Text>
 
       {transactions.length === 0 && (
-        <Text style={styles.empty}>{translate("wallet.noRecentTransactions")}</Text>
+        <Text style={styles.empty}>{t("wallet.noRecentTransactions")}</Text>
       )}
 
       {transactions.map((tx) => (

@@ -27,10 +27,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   };
 
   // Simple wrapper function for easier usage
-  const translate = (key: string, namespace?: string) => {
-    if (namespace) {
-      return t(`${namespace}:${key}`);
+  const translate = (key: string) => {
+    // Handle dot notation like 'auth.login'
+    if (key.includes('.')) {
+      const [namespace, keyName] = key.split('.', 2);
+      return t(keyName, { ns: namespace });
     }
+    // Fallback to default namespace
     return t(key);
   };
 

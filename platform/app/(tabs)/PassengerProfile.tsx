@@ -96,7 +96,7 @@ export default function PassengerProfile() {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess(t('home:success'), t('profile:successfullySwitchedToDriver'));
+                          showGlobalSuccess(t('common.success'), t('profile.successfullySwitchedToDriver'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -106,8 +106,8 @@ export default function PassengerProfile() {
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                  title: t('profile:switchProfile'),
-                  message: t('profile:switchProfileMessage'),
+                  title: t('profile.switchProfile'),
+                  message: t('profile.switchProfileMessage'),
                   type: 'info',
                   duration: 0,
                   position: 'top',
@@ -118,7 +118,7 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess(t('home:success'), t('profile:switchedToDriverMode'));
+                          showGlobalSuccess(t('common.success'), t('profile.switchedToDriverMode'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -416,8 +416,8 @@ export default function PassengerProfile() {
                         <Ionicons name="camera" size={14} color="white" />
                     </View>
                 </Pressable>
-                <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
-                <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
+                <Text style={dynamicStyles.userName}>{name || t('personalInfo.yourName')}</Text>
+                <Text style={dynamicStyles.userRole}>{t('profile.passenger')}</Text>
             </View>
 
             {/* Badges Section */}
@@ -443,11 +443,11 @@ export default function PassengerProfile() {
             </View>
 
             {/* Account Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:account')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile.account')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
-                    title={t('profile:personalInfo')}
+                    title={t('personalInfo.personalInformation')}
                     onPress={handlePersonalInfo}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -455,7 +455,7 @@ export default function PassengerProfile() {
                         <View style={dynamicStyles.iconContainer}>
                             <Ionicons name="car-outline" size={20} color={theme.text} />
                         </View>
-                        <Text style={dynamicStyles.menuItemText}>{t('profile:switchToDriverProfile')}</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile.switchToDriverProfile')}</Text>
                     </View>
                     <Pressable onPress={handleSwitchToDriver}>
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
@@ -463,21 +463,21 @@ export default function PassengerProfile() {
                 </View>
             </View>
 
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:wallet')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile.wallet')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="wallet-outline"
-                    title={t('profile:My Wallet')}
+                    title={t('profile.myWallet')}
                     onPress={handleWallet}
                 />
             </View>
 
             {/* Saved Places Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:savedPlaces')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile.savedPlaces')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
-                    title={t('profile:addHomeAddress')}
+                    title={t('profile.addHomeAddress')}
                     onPress={handleAddHomeAddress}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -485,7 +485,7 @@ export default function PassengerProfile() {
                         <View style={dynamicStyles.iconContainer}>
                             <Ionicons name="briefcase-outline" size={20} color={theme.text} />
                         </View>
-                        <Text style={dynamicStyles.menuItemText}>{t('profile:addWorkAddress')}</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('profile.addWorkAddress')}</Text>
                     </View>
                     <Pressable onPress={handleAddWorkAddress}>
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
@@ -495,16 +495,16 @@ export default function PassengerProfile() {
 
             {/* Feedback History Section */}
             <Text style={dynamicStyles.sectionHeader}>
-                {t('profile:recentFeedback')}
+                {t('profile.recentFeedback')}
                 {recentFeedback && recentFeedback.length > 0 && (
-                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} {t('profile:reviews')}</Text>
+                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} {t('profile.reviews')}</Text>
                 )}
             </Text>
             <View style={dynamicStyles.section}>
                 {recentFeedback && recentFeedback.length > 0 ? (
                     <View style={dynamicStyles.feedbackPreview}>
                         <View style={dynamicStyles.feedbackPreviewHeader}>
-                            <Text style={dynamicStyles.feedbackPreviewTitle}>{t('profile:latestReview')}</Text>
+                            <Text style={dynamicStyles.feedbackPreviewTitle}>{t('profile.latestReview')}</Text>
                             <Text style={dynamicStyles.feedbackPreviewRating}>
                                 ⭐ {recentFeedback[0].rating}/5
                             </Text>
@@ -516,7 +516,7 @@ export default function PassengerProfile() {
                         )}
                         <MenuItemComponent
                             icon="chatbubble-ellipses-outline"
-                            title={t('profile:viewAllFeedback')}
+                            title={t('profile.viewAllFeedback')}
                             onPress={handleViewFeedback}
                             showArrow={true}
                         />
@@ -524,7 +524,7 @@ export default function PassengerProfile() {
                 ) : (
                     <MenuItemComponent
                         icon="chatbubble-ellipses-outline"
-                        title={t('profile:noFeedbackYet')}
+                        title={t('profile.noFeedbackYet')}
                         onPress={handleViewFeedback}
                         showArrow={true}
                     />
@@ -532,11 +532,11 @@ export default function PassengerProfile() {
             </View>
 
             {/* Settings Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:settings')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile.settings')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="log-out-outline"
-                    title={t('profile:logOut')}
+                    title={t('profile.logOut')}
                     onPress={handleSignout}
                     isDestructive={true}
                 />

@@ -49,7 +49,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   visible = true,
 }) => {
   const { theme, isDark } = useTheme();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
   const [userPreference, setUserPreference] = useState<'shortest_time' | 'fewest_transfers' | 'most_reliable'>('shortest_time');
 
@@ -69,13 +69,13 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   const getPreferenceLabel = (preference: string): string => {
     switch (preference) {
       case 'shortest_time':
-        return translate('journeyPreview.fastestRoute');
+        return t('journeyPreview.fastestRoute');
       case 'fewest_transfers':
-        return translate('journeyPreview.fewestTransfers');
+        return t('journeyPreview.fewestTransfers');
       case 'most_reliable':
-        return translate('journeyPreview.mostReliable');
+        return t('journeyPreview.mostReliable');
       default:
-        return translate('journeyPreview.unknown');
+        return t('journeyPreview.unknown');
     }
   };
 
@@ -94,13 +94,13 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 
   const handleConfirm = () => {
     if (options.length === 0) {
-      Alert.alert(translate('common.error'), translate('journeyPreview.noJourneyOptions'));
+      Alert.alert(t('common.error'), t('journeyPreview.noJourneyOptions'));
       return;
     }
 
     const selectedOption = options[selectedOptionIndex];
     if (!selectedOption) {
-      Alert.alert(translate('common.error'), translate('journeyPreview.selectJourneyOption'));
+      Alert.alert(t('common.error'), t('journeyPreview.selectJourneyOption'));
       return;
     }
 
@@ -206,9 +206,9 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
       <Text style={dynamicStyles.preferenceTitle}>Optimize for:</Text>
       <View style={dynamicStyles.preferenceButtons}>
         {[
-          { key: 'shortest_time', label: translate('journeyPreview.speed'), icon: 'time-outline' },
-          { key: 'fewest_transfers', label: translate('journeyPreview.transfers'), icon: 'swap-horizontal-outline' },
-          { key: 'most_reliable', label: translate('journeyPreview.reliability'), icon: 'shield-checkmark-outline' },
+          { key: 'shortest_time', label: t('journeyPreview.speed'), icon: 'time-outline' },
+          { key: 'fewest_transfers', label: t('journeyPreview.transfers'), icon: 'swap-horizontal-outline' },
+          { key: 'most_reliable', label: t('journeyPreview.reliability'), icon: 'shield-checkmark-outline' },
         ].map((pref) => (
           <TouchableOpacity
             key={pref.key}

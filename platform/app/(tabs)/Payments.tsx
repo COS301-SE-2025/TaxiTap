@@ -12,7 +12,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const userId = user?.id;
   const [amountPaid, setAmountPaid] = useState("");
   const [showAmountInput, setShowAmountInput] = useState(false);
@@ -123,19 +123,19 @@ export default function PaymentConfirmation() {
     return (
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.heading}>Enter Payment Amount</Text>
+          <Text style={styles.heading}>{t('payment.enterPaymentAmount')}</Text>
           
           <View style={styles.fareInfo}>
-            <Text style={styles.fareLabel}>Trip Fare:</Text>
+            <Text style={styles.fareLabel}>{t('payment.tripFare')}:</Text>
             <Text style={styles.fareAmount}>R{fare}</Text>
           </View>
 
           <Text style={styles.instructionText}>
-            How much did you pay the driver?
+            {t('payment.howMuchDidYouPay')}
           </Text>
 
           <TextInput
-            placeholder={translate("payment.enterAmountPaid")}
+            placeholder={t("payment.enterAmountPaid")}
             keyboardType="numeric"
             style={styles.amountInput}
             value={amountPaid}
@@ -151,7 +151,7 @@ export default function PaymentConfirmation() {
               disabled={processing}
             >
               <Ionicons name="arrow-back" size={20} color="#666" />
-              <Text style={[styles.buttonText, { color: "#666" }]}>Back</Text>
+              <Text style={[styles.buttonText, { color: "#666" }]}>{t('common.back')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -160,7 +160,7 @@ export default function PaymentConfirmation() {
               disabled={processing}
             >
               <Text style={styles.buttonText}>
-                {processing ? translate("payment.processing") : translate("payment.confirmPayment")}
+                {processing ? t("payment.processing") : t("payment.confirmPayment")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -172,25 +172,25 @@ export default function PaymentConfirmation() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.heading}>Trip Payment</Text>
+        <Text style={styles.heading}>{t('payment.tripPayment')}</Text>
 
         <View style={styles.tripDetails}>
           <View style={styles.infoRow}>
             <Ionicons name="person" size={20} color="#2B2B2B" />
-            <Text style={styles.infoText}>Driver: {driverName}</Text>
+            <Text style={styles.infoText}>{t('payment.driver')}: {driverName}</Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons name="car-outline" size={20} color="#2B2B2B" />
-            <Text style={styles.infoText}>License: {licensePlate}</Text>
+            <Text style={styles.infoText}>{t('payment.license')}: {licensePlate}</Text>
           </View>
           <View style={styles.fareDisplay}>
-            <Text style={styles.fareLabel}>Total Fare:</Text>
+            <Text style={styles.fareLabel}>{t('payment.totalFare')}:</Text>
             <Text style={styles.fareAmount}>R{fare}</Text>
           </View>
         </View>
 
         <Text style={styles.questionText}>
-          Did you pay the driver for this trip?
+          {t('payment.didYouPayDriver')}
         </Text>
 
         <View style={styles.paymentButtons}>
@@ -200,7 +200,7 @@ export default function PaymentConfirmation() {
             disabled={processing}
           >
             <Ionicons name="close-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Not Paid</Text>
+            <Text style={styles.buttonText}>{t('payment.notPaid')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -209,12 +209,12 @@ export default function PaymentConfirmation() {
             disabled={processing}
           >
             <Ionicons name="checkmark-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Paid</Text>
+            <Text style={styles.buttonText}>{t('payment.paid')}</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.noteText}>
-          {processing ? translate("payment.processing") : translate("payment.selectPaymentStatus")}
+          {processing ? t("payment.processing") : t("payment.selectPaymentStatus")}
         </Text>
       </View>
     </View>

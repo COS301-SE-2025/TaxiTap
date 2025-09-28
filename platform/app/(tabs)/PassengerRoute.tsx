@@ -340,7 +340,7 @@ export default function RouteSelectionScreen() {
    */
   const handleReserveSeat = async (route: RouteData) => {
     if (!route.destinationCoords) {
-      showGlobalError("Error", "Route coordinates not available", {
+      showGlobalError(t('common.error'), t('error.routeCoordinatesNotAvailable'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -396,7 +396,7 @@ export default function RouteSelectionScreen() {
     }
 
     // If we get here, the search took too long
-    showGlobalError("Error", "Taxi search is taking longer than expected. Please try again.", {
+    showGlobalError(t('common.error'), t('error.taxiSearchTakingLong'), {
       duration: 4000,
       position: 'top',
       animation: 'slide-down',
@@ -455,7 +455,7 @@ export default function RouteSelectionScreen() {
       });
     } catch (err) {
       console.error("Failed to store route:", err);
-      showGlobalError("Error", "Failed to reserve seat. Please try again.", {
+      showGlobalError(t('common.error'), t('error.failedToReserveSeat'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -470,7 +470,7 @@ export default function RouteSelectionScreen() {
    */
   const handleRouteSelect = async (route: RouteData) => {
     if (!route.destinationCoords) {
-      showGlobalError("Error", "Route coordinates not available", {
+      showGlobalError(t('common.error'), t('error.routeCoordinatesNotAvailable'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',

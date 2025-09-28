@@ -15,7 +15,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 export default function AddWorkAddress() {
     const { t } = useLanguage();
     const [address, setAddress] = useState('');
-    const [nickname, setNickname] = useState(t('address.work'));
+    const [nickname, setNickname] = useState('');
     const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +25,11 @@ export default function AddWorkAddress() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
+
+    // Initialize nickname with translated text
+    useEffect(() => {
+        setNickname(t('address.work'));
+    }, [t]);
 
     // Query user data from Convex
     const convexUser = useQuery(

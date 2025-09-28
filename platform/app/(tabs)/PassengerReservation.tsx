@@ -337,12 +337,12 @@ export default function SeatReserved() {
 				setCurrentLocation({
 					latitude: currentLat,
 					longitude: currentLng,
-					name: getParamAsString(params.currentName, 'Pickup Location')
+					name: getParamAsString(params.currentName, t('passengerReservation.pickupLocation'))
 				});
 				setDestination({
 					latitude: destLat,
 					longitude: destLng,
-					name: getParamAsString(params.destinationName, 'Destination')
+					name: getParamAsString(params.destinationName, t('passengerReservation.destination'))
 				});
 			}
 		}
@@ -356,7 +356,7 @@ export default function SeatReserved() {
 			setCurrentLocation({
 				latitude: streamedLocation.latitude,
 				longitude: streamedLocation.longitude,
-				name: "Your Current Location"
+				name: t('passengerReservation.yourCurrentLocation')
 			});
 		}
 		
@@ -535,7 +535,7 @@ export default function SeatReserved() {
 						const phoneLiveLocation = {
 							latitude: streamedLocation.latitude,
 							longitude: streamedLocation.longitude,
-							name: "Your Current Location"
+							name: t('passengerReservation.yourCurrentLocation')
 						};
 						// currentLocation is the pickup origin point
 						getRoute(phoneLiveLocation, currentLocation);
@@ -858,8 +858,8 @@ export default function SeatReserved() {
 				licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
 				fare: taxiInfo?.fare?.toString() || '0',
 				rideId: taxiInfo?.rideId,
-				startName: currentLocation?.name || 'Current Location',
-				endName: destination?.name || 'Destination',
+				startName: currentLocation?.name || t('location.currentLocation'),
+				endName: destination?.name || t('passengerReservation.destination'),
 				driverId: driverId || '',
 			},
 		});
@@ -904,8 +904,8 @@ export default function SeatReserved() {
 									pathname: '/SubmitFeedback',
 									params: {
 										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
-										startName: currentLocation?.name || 'Current Location',
-										endName: destination?.name || 'Destination',
+										startName: currentLocation?.name || t('location.currentLocation'),
+										endName: destination?.name || t('passengerReservation.destination'),
 										passengerId: user.id,
 										driverId: driverId || '',
 									},
@@ -939,8 +939,8 @@ export default function SeatReserved() {
 									pathname: '/PaymentsConfirm',
 									params: {
 										rideId: taxiInfo.rideDocId || taxiInfo.rideId,
-										startName: currentLocation?.name || 'Current Location',
-										endName: destination?.name || 'Destination',
+										startName: currentLocation?.name || t('location.currentLocation'),
+										endName: destination?.name || t('passengerReservation.destination'),
 										passengerId: user.id,
 										driverId: driverId || '',
 										fare: result.fare.toString(),
@@ -1020,9 +1020,9 @@ export default function SeatReserved() {
 	// Get destination text based on map mode
 	const getDestinationText = () => {
 		if (mapMode === 'to_driver') {
-			return 'Driver Location';
+			return t('passengerReservation.driverLocation');
 		}
-		return destination?.name || "Destination";
+		return destination?.name || t('passengerReservation.destination');
 	};
 
 	// Get map markers based on mode - CORRECTED MARKER LOGIC
@@ -1038,7 +1038,7 @@ export default function SeatReserved() {
 							<Marker
 								key="pickup-origin"
 								coordinate={currentLocation}
-								title="Pickup Location"
+								title={t('passengerReservation.pickupLocation')}
 								pinColor="blue"
 							/>,
 							<Marker
@@ -1071,7 +1071,7 @@ export default function SeatReserved() {
 							<Marker
 								key="pickup-origin"
 								coordinate={currentLocation}
-								title="Pickup Location"
+								title={t('passengerReservation.pickupLocation')}
 								pinColor="blue"
 							/>
 						);
@@ -1085,7 +1085,7 @@ export default function SeatReserved() {
 							<Marker
 								key="pickup-origin"
 								coordinate={currentLocation}
-								title="Pickup Location"
+								title={t('passengerReservation.pickupLocation')}
 								pinColor="blue"
 							/>,
 							<Marker
@@ -1109,11 +1109,11 @@ export default function SeatReserved() {
 	const getMapModeText = () => {
 		switch (mapMode) {
 			case 'initial':
-				return 'To Destination';
+				return t('passengerReservation.toDestination');
 			case 'to_driver':
-				return 'To Driver';
+				return t('passengerReservation.toDriver');
 			case 'to_destination':
-				return 'To Destination';
+				return t('passengerReservation.toDestination');
 			default:
 				return '';
 		}

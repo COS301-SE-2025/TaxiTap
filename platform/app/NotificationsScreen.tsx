@@ -25,7 +25,7 @@ interface Notification {
 
 const NotificationsScreen = () => {
   const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {
@@ -56,9 +56,9 @@ const NotificationsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t('notifications.notifications')}</Text>
         <TouchableOpacity onPress={markAllAsRead}>
-          <Text style={styles.markAllRead}>Mark All Read</Text>
+          <Text style={styles.markAllRead}>{t('notifications.markAllRead')}</Text>
         </TouchableOpacity>
       </View>
       
@@ -71,7 +71,7 @@ const NotificationsScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
+            <Text style={styles.emptyText}>{t('notifications.noNotifications')}</Text>
           </View>
         }
       />

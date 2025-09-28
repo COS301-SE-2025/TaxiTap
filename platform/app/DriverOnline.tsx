@@ -75,11 +75,11 @@ export default function DriverOnline({
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const userId = user?.id;
   
   // Set default route if not provided
-  const displayRoute = currentRoute || translate("driverOnline.notSet");
+  const displayRoute = currentRoute || t("driverOnline.notSet");
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -107,7 +107,7 @@ export default function DriverOnline({
           const result = await getOrCreateDriverPin({ driverId: user.id as Id<"taxiTap_users"> });
           setDriverPinData(result);
         } catch (e) {
-          console.error(translate("driverOnline.failedToGetDriverPin"), e);
+          console.error(t("driverOnline.failedToGetDriverPin"), e);
         }
       })();
     }
@@ -175,7 +175,7 @@ export default function DriverOnline({
         const currentLoc: LocationData = {
           latitude,
           longitude,
-          name: placeName || translate("driverOnline.unknownLocation"),
+          name: placeName || t("driverOnline.unknownLocation"),
         };
 
         setCurrentLocation(currentLoc);
@@ -248,7 +248,7 @@ export default function DriverOnline({
       const newLocation: LocationData = {
         latitude: streamedLocation.latitude,
         longitude: streamedLocation.longitude,
-        name: translate("driverOnline.currentLocation"),
+        name: t("driverOnline.currentLocation"),
       };
       setCurrentLocation(newLocation);
 
@@ -274,7 +274,7 @@ export default function DriverOnline({
     if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
       shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
-        title: translate("driverOnline.newRideRequest"),
+        title: t("driverOnline.newRideRequest"),
         message: rideRequest.message,
         position: 'top',
         animation: 'slide-down',
@@ -282,19 +282,19 @@ export default function DriverOnline({
         type: 'info',
         actions: [
           {
-            label: translate("driverOnline.decline"),
+            label: t("driverOnline.decline"),
             style: 'destructive',
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                showGlobalError(translate("common.error"), translate("driverOnline.failedToDeclineRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(t("common.error"), t("driverOnline.failedToDeclineRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
           },
           {
-            label: translate("driverOnline.accept"),
+            label: t("driverOnline.accept"),
             style: 'default',
             onPress: async () => {
               try {
@@ -312,7 +312,7 @@ export default function DriverOnline({
                 
                 markAsRead(rideRequest._id);
               } catch (error) {
-                showGlobalError(translate("common.error"), translate("driverOnline.failedToAcceptRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(t("common.error"), t("driverOnline.failedToAcceptRide"), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
             },
           },
@@ -743,7 +743,7 @@ export default function DriverOnline({
           <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
             <Icon name="menu" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Driver Online</Text>
+          <Text style={styles.headerTitle}>{t('driver.driverOnline')}</Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -764,23 +764,23 @@ export default function DriverOnline({
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Today's Earnings</Text>
+            <Text style={styles.statLabel}>{t('driver.todaysEarnings')}</Text>
             <Text style={[styles.statValue, styles.earningsValue]}>
               R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Available Seats</Text>
+            <Text style={styles.statLabel}>{t('driver.availableSeats')}</Text>
             <Text style={styles.statValue}>
               {taxiInfo?.capacity?.toString() ?? "0"}
             </Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Current Route</Text>
+            <Text style={styles.statLabel}>{t('driver.currentRoute')}</Text>
             <Text style={[styles.statValue, { fontSize: 12, textAlign: 'center' }]}>
-              {driverRoute?.name ?? "Not Assigned"}
+              {driverRoute?.name ?? t('driver.notAssigned')}
             </Text>
           </View>
         </View>
@@ -788,9 +788,9 @@ export default function DriverOnline({
         {/* Seat Control */}
         <View style={styles.seatControlContainer}>
           <View style={styles.seatCard}>
-            <Text style={styles.seatTitle}>Seat Management</Text>
+            <Text style={styles.seatTitle}>{t('driver.seatManagement')}</Text>
             <Text style={styles.seatSubtitle}>
-              Adjust available seats for passengers
+              {t('driver.adjustAvailableSeats')}
             </Text>
             
             <Text style={styles.seatDisplay}>
@@ -821,17 +821,17 @@ export default function DriverOnline({
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionButton, styles.emergencyButton]} onPress={handleEmergency}>
             <Icon name="warning" size={18} color="#EF4444" />
-            <Text style={styles.emergencyButtonText}>Emergency</Text>
+            <Text style={styles.emergencyButtonText}>{t('driver.emergency')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
             <Icon name="map" size={18} color={theme.primary} />
-            <Text style={styles.mapButtonText}>View Map</Text>
+            <Text style={styles.mapButtonText}>{t('driver.viewMap')}</Text>
           </TouchableOpacity>
         </View>
         
         <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
-          <Text style={styles.primaryButtonText}>View Statistics</Text>
+          <Text style={styles.primaryButtonText}>{t('driver.viewStatistics')}</Text>
         </TouchableOpacity>
       </View>
 

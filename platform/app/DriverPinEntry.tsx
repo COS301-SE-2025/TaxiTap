@@ -25,7 +25,7 @@ export default function DriverPinEntry() {
   const params = useLocalSearchParams();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
@@ -107,7 +107,7 @@ export default function DriverPinEntry() {
   // Function to get route from Google Directions API
   const getRoute = async (origin: { latitude: number; longitude: number }, dest: { latitude: number; longitude: number }) => {
     if (!GOOGLE_MAPS_API_KEY) {
-      console.error(translate('driverPin.googleMapsApiKeyNotConfigured'));
+      console.error(t('driverPin.googleMapsApiKeyNotConfigured'));
       return;
     }
 
@@ -135,13 +135,13 @@ export default function DriverPinEntry() {
         const route = data.routes[0];
         
         if (!route.overview_polyline || !route.overview_polyline.points) {
-          throw new Error(translate('driverPin.noPolylineDataInRoute'));
+          throw new Error(t('driverPin.noPolylineDataInRoute'));
         }
         
         const decodedCoords = decodePolyline(route.overview_polyline.points);
         setRouteCoordinates(decodedCoords);
       } else {
-        throw new Error(translate('driverPin.noRoutesFound'));
+        throw new Error(t('driverPin.noRoutesFound'));
       }
     } catch (error) {
       console.error('Error fetching route:', error);
@@ -159,7 +159,7 @@ export default function DriverPinEntry() {
 
   const handleStartRide = async () => {
     if (!user || !ride) {
-      Alert.alert(translate('common.error'), translate('driverPin.userOrRideInfoNotAvailable'));
+      Alert.alert(t('common.error'), t('driverPin.userOrRideInfoNotAvailable'));
       return;
     }
 
@@ -188,10 +188,10 @@ export default function DriverPinEntry() {
           await getRoute(origin, destination);
         }
       } else {
-        Alert.alert(translate('common.error'), translate('driverPin.failedToStartRide'));
+        Alert.alert(t('common.error'), t('driverPin.failedToStartRide'));
       }
     } catch (error: any) {
-      Alert.alert(translate('common.error'), translate('driverPin.failedToStartRide'));
+      Alert.alert(t('common.error'), t('driverPin.failedToStartRide'));
     }
   };
 
@@ -459,7 +459,7 @@ export default function DriverPinEntry() {
               >
                 <Marker
                   coordinate={startLocation}
-                  title={translate("driverPin.pickupLocation")}
+                  title={t("driverPin.pickupLocation")}
                   pinColor="blue"
                 />
                 <Marker

@@ -14,7 +14,7 @@ export default function HelpPage() {
   const { showInfo } = useAlertHelpers();
 
   const handleContactSupport = () => {
-    showInfo(t('help:support'), t('help:supportEmail'));
+    showInfo(t('help.support'), t('help.contactUs'));
   };
 
   const handleBackPress = () => {
@@ -182,30 +182,30 @@ export default function HelpPage() {
         showsVerticalScrollIndicator={false}
       >
         {/* User Manual Section */}
-        <Text style={dynamicStyles.sectionHeader}>{t('help:userManual')}</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('help.userManual')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="document-text-outline"
-            title={t('help:howToNavigateApp')}
-            subtitle={t('help:linkToManual')}
+            title={t('help.howToNavigateApp')}
+            subtitle={t('help.linkToManual')}
             onPress={() => Linking.openURL('https://drive.google.com/file/d/1jbRkhZWS7fsNdYvHlI6o9QoXA5lHsZj4/view?usp=drive_link')}
             isLink={true}
           />
         </View>
 
         {/* FAQ Section */}
-        <Text style={dynamicStyles.sectionHeader}>{t('help:frequentlyAskedQuestions')}</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('help.frequentlyAskedQuestions')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="swap-horizontal-outline"
-            title={t('help:howToSwitchRoles')}
-            subtitle={t('help:switchRolesAnswer')}
+            title={t('help.howToSwitchRoles')}
+            subtitle={t('help.switchRolesAnswer')}
             showArrow={false}
           />
           <MenuItemComponent
             icon="key-outline"
-            title={t('help:forgotPassword')}
-            subtitle={t('help:forgotPasswordAnswer')}
+            title={t('help.forgotPassword')}
+            subtitle={t('help.forgotPasswordAnswer')}
             showArrow={false}
           />
           <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -214,8 +214,8 @@ export default function HelpPage() {
                 <Ionicons name="help-circle-outline" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.textContainer}>
-                <Text style={dynamicStyles.menuItemText}>{t('help:howToContactSupport')}</Text>
-                <Text style={dynamicStyles.menuItemSubtitle}>{t('help:contactSupportAnswer')}</Text>
+                <Text style={dynamicStyles.menuItemText}>{t('help.howToContactSupport')}</Text>
+                <Text style={dynamicStyles.menuItemSubtitle}>{t('help.contactSupportAnswer')}</Text>
               </View>
             </View>
             <Pressable onPress={handleContactSupport}>

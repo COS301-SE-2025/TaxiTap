@@ -277,7 +277,7 @@ export default function SeatReserved() {
 					setCurrentLocation({
 						latitude: currentLat,
 						longitude: currentLng,
-						name: getParamAsString(params.currentName, "Current Location")
+						name: getParamAsString(params.currentName, t('location.currentLocation'))
 					});
 					setDestination({
 						latitude: destLat,
@@ -295,8 +295,8 @@ export default function SeatReserved() {
 	}, [useLiveLocation]);
 
 	const vehicleInfo = {
-		plate: getParamAsString(params.plate, "Unknown"),
-		time: getParamAsString(params.time, "Unknown"),
+		plate: getParamAsString(params.plate, t('routes.unknown')),
+		time: getParamAsString(params.time, t('routes.unknown')),
 		seats: getParamAsString(params.seats, "0"),
 		price: getParamAsString(params.price, "0"),
 		selectedVehicleId: getParamAsString(params.selectedVehicleId, ""),
@@ -1169,7 +1169,7 @@ export default function SeatReserved() {
 									>
 										<Marker
 											coordinate={currentLocation}
-											title="You are here"
+											title={t('location.youAreHere')}
 											pinColor="blue"
 										>
 										</Marker>
@@ -1220,7 +1220,7 @@ export default function SeatReserved() {
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								{t('driver.driverDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButton}>
 								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
@@ -1251,10 +1251,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo.driver.name || "Driver details not available"}
+										{taxiInfo.driver.name || t('driver.driverDetailsNotAvailable')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo.taxi?.model || "Vehicle details not available"}
+										{taxiInfo.taxi?.model || t('vehicle.vehicleDetailsNotAvailable')}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
@@ -1370,7 +1370,7 @@ export default function SeatReserved() {
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
 									<Text style={dynamicStyles.cancelButtonText}>
-										{"Cancel Request"}
+										{t('common.cancelRequest')}
 									</Text>
 								</TouchableOpacity>
 							)}
@@ -1384,7 +1384,7 @@ export default function SeatReserved() {
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
+											{t('common.cancelRequest')}
 										</Text>
 									</TouchableOpacity>
 								</>

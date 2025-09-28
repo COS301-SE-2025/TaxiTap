@@ -24,7 +24,7 @@ export default function SubmitFeedbackScreen() {
   const { user } = useUser();
   const router = useRouter();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
 
   const {
     rideId,
@@ -70,12 +70,12 @@ export default function SubmitFeedbackScreen() {
 
   const handleSubmit = async () => {
     if (!rating && !comment) {
-      showGlobalError(translate('feedback.noInput'), translate('feedback.provideRatingOrComment'), { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('feedback.noInput'), t('feedback.provideRatingOrComment'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     if (!rideId || !passengerId || !driverId || !startName || !endName) {
-      showGlobalError(translate('feedback.missingInfo'), translate('feedback.cannotSubmitFeedback'), { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('feedback.missingInfo'), t('feedback.cannotSubmitFeedback'), { duration: 5000, position: 'top', animation: 'slide-down' });
       return;
     }
 
@@ -107,13 +107,13 @@ export default function SubmitFeedbackScreen() {
           const nextLeg = legResult.nextLeg;
 
            showGlobalSuccess(
-             translate('feedback.legComplete', { legNumber: currentLegIndex + 1 }),
-             translate('feedback.readyForNextLeg', { nextLegNumber: currentLegIndex + 2 }),
+             t('feedback.legComplete', { legNumber: currentLegIndex + 1 }),
+             t('feedback.readyForNextLeg', { nextLegNumber: currentLegIndex + 2 }),
             {
               duration: 0,
               actions: [
                 {
-                  label: translate('feedback.continueToNextLeg'),
+                  label: t('feedback.continueToNextLeg'),
                   onPress: () => {
                     router.replace({
                       pathname: '/(tabs)/TaxiInformation',
@@ -137,7 +137,7 @@ export default function SubmitFeedbackScreen() {
                   style: 'default',
                 },
                 {
-                  label: translate('feedback.cancelJourney'),
+                  label: t('feedback.cancelJourney'),
                   onPress: () => router.replace('/HomeScreen'),
                   style: 'cancel',
                 },
@@ -148,12 +148,12 @@ export default function SubmitFeedbackScreen() {
         } else if (legResult.success && legResult.journeyComplete) {
           // Journey complete
            showGlobalSuccess(
-             translate('feedback.journeyComplete'),
-             translate('feedback.multiLegJourneyCompleted', { totalCost: legResult.totalActualCost?.toFixed(2) || '0.00' }),
+             t('feedback.journeyComplete'),
+             t('feedback.multiLegJourneyCompleted', { totalCost: legResult.totalActualCost?.toFixed(2) || '0.00' }),
             {
               duration: 0,
               actions: [
-                { label: translate('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
+                { label: t('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
               ],
             }
           );
@@ -164,16 +164,16 @@ export default function SubmitFeedbackScreen() {
       // Standard single ride completion
       setRating(0);
       setComment('');
-      showGlobalSuccess(translate('feedback.success'), translate('feedback.feedbackSubmittedSuccessfully'), {
+      showGlobalSuccess(t('feedback.success'), t('feedback.feedbackSubmittedSuccessfully'), {
         duration: 0,
         position: 'top',
         animation: 'slide-down',
         actions: [
-          { label: translate('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
+          { label: t('feedback.ok'), onPress: () => router.replace('/HomeScreen'), style: 'default' },
         ],
       });
     } catch (err: any) {
-      showGlobalError(translate('feedback.error'), err.message || translate('feedback.somethingWentWrong'), { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('feedback.error'), err.message || t('feedback.somethingWentWrong'), { duration: 5000, position: 'top', animation: 'slide-down' });
     }
   };
 
@@ -419,7 +419,7 @@ export default function SubmitFeedbackScreen() {
           </Pressable>
           
           <Text style={dynamicStyles.userName}>{name}</Text>
-          <Text style={dynamicStyles.userRole}>Passenger</Text>
+          <Text style={dynamicStyles.userRole}>{t('feedback.passenger')}</Text>
           
           {/* Ride Info Section - styled exactly like PassengerProfile */}
           <View style={dynamicStyles.rideInfoContainer}>
@@ -428,8 +428,8 @@ export default function SubmitFeedbackScreen() {
                 <Ionicons name="location-outline" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
-                <Text style={dynamicStyles.rideInfoLabel}>From</Text>
-                <Text style={dynamicStyles.rideInfoText}>{startName ?? 'N/A'}</Text>
+                <Text style={dynamicStyles.rideInfoLabel}>{t('common.from')}</Text>
+                <Text style={dynamicStyles.rideInfoText}>{startName ?? t('common.notAvailable')}</Text>
               </View>
             </View>
             <View style={[dynamicStyles.rideInfoRow, dynamicStyles.lastRideInfoRow]}>
@@ -437,18 +437,18 @@ export default function SubmitFeedbackScreen() {
                 <Ionicons name="location" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
-                <Text style={dynamicStyles.rideInfoLabel}>To</Text>
-                <Text style={dynamicStyles.rideInfoText}>{endName ?? 'N/A'}</Text>
+                <Text style={dynamicStyles.rideInfoLabel}>{t('common.to')}</Text>
+                <Text style={dynamicStyles.rideInfoText}>{endName ?? t('common.notAvailable')}</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Driver Feedback Section */}
-        <Text style={dynamicStyles.sectionHeader}>Rate Your Driver</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('feedback.rateYourDriver')}</Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.ratingSection}>
-            <Text style={dynamicStyles.ratingTitle}>How was your driver?</Text>
+            <Text style={dynamicStyles.ratingTitle}>{t('feedback.howWasYourDriver')}</Text>
             <View style={dynamicStyles.starsContainer}>
               {[1, 2, 3, 4, 5].map(star => (
                 <TouchableOpacity 
@@ -469,14 +469,14 @@ export default function SubmitFeedbackScreen() {
         </View>
 
         {/* Comment Section */}
-        <Text style={dynamicStyles.sectionHeader}>Share Your Feedback</Text>
+        <Text style={dynamicStyles.sectionHeader}>{t('feedback.shareYourFeedback')}</Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.commentSection}>
-            <Text style={dynamicStyles.commentTitle}>Tell us about your driver</Text>
+            <Text style={dynamicStyles.commentTitle}>{t('feedback.tellUsAboutYourDriver')}</Text>
             <TextInput
               value={comment}
               onChangeText={setComment}
-              placeholder="Share your thoughts about the driver..."
+              placeholder={t('feedback.shareThoughtsAboutDriver')}
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               style={dynamicStyles.commentInput}
               multiline
@@ -494,7 +494,7 @@ export default function SubmitFeedbackScreen() {
             style={dynamicStyles.submitButton}
             activeOpacity={0.9}
           >
-            <Text style={dynamicStyles.submitButtonText}>Submit Feedback</Text>
+            <Text style={dynamicStyles.submitButtonText}>{t('feedback.submitFeedback')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity

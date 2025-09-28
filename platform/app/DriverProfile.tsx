@@ -96,15 +96,15 @@ export default function DriverProfile() {
 
             if ((convexUser?.accountType || user.accountType) === 'driver') {
                 showGlobalAlert({
-                    title: 'First Time Switching to Passenger',
-                    message: 'This will upgrade your account to support both passenger and driver roles.',
+                    title: t('profile.firstTimeSwitchingToPassenger'),
+                    message: t('profile.firstTimeSwitchingMessage'),
                     type: 'info',
                     duration: 0,
                     position: 'top',
                     animation: 'slide-down',
                     actions: [
-                        { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                        { label: 'Continue', onPress: async () => {
+                        { label: t('common.cancel'), onPress: () => {}, style: 'cancel' },
+                        { label: t('common.continue'), onPress: async () => {
                             try {
                                 // Upgrade driver to both first
                                 await switchDriverToBoth({ 
@@ -121,10 +121,10 @@ export default function DriverProfile() {
                                 await updateAccountType('both');
                                 await updateUserRole('passenger');
                                 
-                                showGlobalSuccess('Success', 'Successfully switched to passenger mode!');
+                                showGlobalSuccess(t('common.success'), t('profile.successfullySwitchedToPassenger'));
                                 router.push('../HomeScreen');
                             } catch (error: any) {
-                                showGlobalError('Error', error.message || 'Failed to switch to passenger mode');
+                                showGlobalError(t('common.error'), error.message || t('profile.failedToSwitchToPassenger'));
                             }
                         }, style: 'default' },
                     ],
@@ -134,14 +134,14 @@ export default function DriverProfile() {
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
                     title: t('profile:switchProfile'),
-                    message: 'Are you sure you want to switch to the passenger profile?',
+                    message: t('profile.switchProfileMessage'),
                     type: 'info',
                     duration: 0,
                     position: 'top',
                     animation: 'slide-down',
                     actions: [
-                        { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                        { label: 'Yes', onPress: async () => {
+                        { label: t('common.cancel'), onPress: () => {}, style: 'cancel' },
+                        { label: t('common.yes'), onPress: async () => {
                             try {
                                 // Switch active role to passenger
                                 await switchActiveRole({ 
@@ -152,19 +152,19 @@ export default function DriverProfile() {
                                 // Update context
                                 await updateUserRole('passenger');
                                 
-                                showGlobalSuccess('Success', 'Switched to passenger mode!');
+                                showGlobalSuccess(t('common.success'), t('profile.switchedToPassenger'));
                                 router.push('../HomeScreen');
                             } catch (error: any) {
-                                showGlobalError('Error', error.message || 'Failed to switch to passenger mode');
+                                showGlobalError(t('common.error'), error.message || t('profile.failedToSwitchToPassenger'));
                             }
                         }, style: 'default' },
                     ],
                 });
             } else {
-                showGlobalError('Error', 'Invalid account type for switching to passenger mode');
+                showGlobalError(t('common.error'), t('profile.invalidAccountTypeForSwitching'));
             }
         } catch (error: any) {
-            showGlobalError('Error', 'An unexpected error occurred');
+            showGlobalError(t('common.error'), t('profile.unexpectedError'));
         }
     };
 
@@ -389,7 +389,7 @@ export default function DriverProfile() {
                 </View>
 
                 {/* Account Section */}
-                <Text style={dynamicStyles.sectionHeader}>Account</Text>
+                <Text style={dynamicStyles.sectionHeader}>{t('profile.account')}</Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="person-outline"
@@ -410,7 +410,7 @@ export default function DriverProfile() {
                 </View>
 
                 {/* Driver Services Section */}
-                <Text style={dynamicStyles.sectionHeader}>Driver Services</Text>
+                <Text style={dynamicStyles.sectionHeader}>{t('profile.driverServices')}</Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="car-outline"
@@ -427,7 +427,7 @@ export default function DriverProfile() {
                 {/* Driver Badges */}
                 {driverBadges && driverBadges.length > 0 && (
                     <>
-                        <Text style={dynamicStyles.sectionHeader}>Achievements</Text>
+                        <Text style={dynamicStyles.sectionHeader}>{t('profile.achievements')}</Text>
                         <View style={dynamicStyles.section}>
                             <View style={dynamicStyles.badgesContainer}>
                                 <View style={dynamicStyles.badgesRow}>
@@ -450,7 +450,7 @@ export default function DriverProfile() {
                 )}
 
                 {/* Settings Section */}
-                <Text style={dynamicStyles.sectionHeader}>Settings</Text>
+                <Text style={dynamicStyles.sectionHeader}>{t('profile.settings')}</Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="log-out-outline"

@@ -12,7 +12,7 @@ interface JourneyPaymentSummaryProps {
 
 export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSummaryProps) {
   const router = useRouter();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
 
   const journeyPaymentData = useQuery(api.functions.journeys.journeyStateManager.getJourneyState, {
     journeyId,
@@ -21,7 +21,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
   if (!journeyPaymentData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>{translate("journeyPayment.loadingPaymentSummary")}</Text>
+        <Text style={styles.loadingText}>{t("journeyPayment.loadingPaymentSummary")}</Text>
       </View>
     );
   }
@@ -64,7 +64,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
         </View>
         <View style={styles.overallStatus}>
           <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.overallStatus) }]}>
-            {journeyPaymentData.overallStatus === 'completed' ? translate("journeyPayment.allPaid") : translate("journeyPayment.pendingPayment")}
+            {journeyPaymentData.overallStatus === 'completed' ? t("journeyPayment.allPaid") : t("journeyPayment.pendingPayment")}
           </Text>
         </View>
       </View>

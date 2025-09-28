@@ -21,7 +21,7 @@ export default () => {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
     const { showError, showSuccess } = useAlertHelpers();
-    const { t: translate } = useLanguage();
+    const { t } = useLanguage();
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -41,25 +41,25 @@ export default () => {
 
     const handleRideAction = async (action: 'accept' | 'decline' | 'complete') => {
         if (!user?.id || !rideId) {
-            showError(translate('common.error'), translate('driverRequest.userOrRideDataNotAvailable'));
+            showError(t('common.error'), t('driverRequest.userOrRideDataNotAvailable'));
             return;
         }
 
         try {
             if (action === 'accept') {
                 await acceptRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess(translate('common.success'), translate('driverRequest.rideAccepted'));
+                showSuccess(t('common.success'), t('driverRequest.rideAccepted'));
             } else if (action === 'decline') {
                 await declineRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess(translate('common.success'), translate('driverRequest.rideDeclined'));
+                showSuccess(t('common.success'), t('driverRequest.rideDeclined'));
             } else if (action === 'complete') {
                 await completeRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess(translate('common.success'), translate('driverRequest.rideMarkedAsCompleted'));
+                showSuccess(t('common.success'), t('driverRequest.rideMarkedAsCompleted'));
             }
             
             router.back();
         } catch (err: any) {
-            showError(translate('common.error'), err.message || translate('driverRequest.failedToActionRide', { action }));
+            showError(t('common.error'), err.message || t('driverRequest.failedToActionRide', { action }));
         }
     };
     
@@ -295,7 +295,7 @@ export default () => {
                         >
                             <Marker
                                 coordinate={currentLocation}
-                                title={translate("driverRequest.youAreHere")}
+                                title={t("driverRequest.youAreHere")}
                                 pinColor="blue"
                             >
                             </Marker>

@@ -28,7 +28,7 @@ export default function PaymentErrorHandler({
   onDismiss,
 }: PaymentErrorHandlerProps) {
   const router = useRouter();
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const recoveryOptions = useQuery(api.functions.journeys.paymentRecovery.getPaymentRecoveryOptions, {
@@ -80,15 +80,15 @@ export default function PaymentErrorHandler({
   const getErrorTitle = () => {
     switch (error.type) {
       case 'network':
-        return translate('paymentError.connectionProblem');
+        return t('paymentError.connectionProblem');
       case 'validation':
-        return translate('paymentError.paymentInformationIssue');
+        return t('paymentError.paymentInformationIssue');
       case 'server':
-        return translate('paymentError.systemError');
+        return t('paymentError.systemError');
       case 'user_cancelled':
-        return translate('paymentError.paymentCancelled');
+        return t('paymentError.paymentCancelled');
       default:
-        return translate('paymentError.paymentFailed');
+        return t('paymentError.paymentFailed');
     }
   };
 
@@ -118,7 +118,7 @@ export default function PaymentErrorHandler({
       onRetry();
     } catch (err) {
       console.error('Recovery retry failed:', err);
-      Alert.alert(translate('common.error'), translate('paymentError.unableToRetryPayment'));
+      Alert.alert(t('common.error'), t('paymentError.unableToRetryPayment'));
     } finally {
       setIsProcessing(false);
     }
@@ -126,7 +126,7 @@ export default function PaymentErrorHandler({
 
   const handleCancelJourney = () => {
     Alert.alert(
-      translate('paymentError.cancelJourney'),
+      t('paymentError.cancelJourney'),
       'Are you sure you want to cancel your entire multi-leg journey? This cannot be undone.',
       [
         { text: 'No, Keep Journey', style: 'cancel' },
@@ -144,7 +144,7 @@ export default function PaymentErrorHandler({
               router.push('/HomeScreen');
             } catch (err) {
               console.error('Journey cancellation failed:', err);
-              Alert.alert(translate('common.error'), translate('paymentError.unableToCancelJourney'));
+              Alert.alert(t('common.error'), t('paymentError.unableToCancelJourney'));
             } finally {
               setIsProcessing(false);
             }
@@ -158,7 +158,7 @@ export default function PaymentErrorHandler({
     const supportInfo = recoveryOptions?.emergencyContact;
     if (supportInfo) {
       Alert.alert(
-        translate('paymentError.contactSupport'),
+        t('paymentError.contactSupport'),
         `Phone: ${supportInfo.phone}\nEmail: ${supportInfo.email}\n\nPlease mention your journey ID: ${journeyId}`,
         [
           { text: 'OK', style: 'default' },
