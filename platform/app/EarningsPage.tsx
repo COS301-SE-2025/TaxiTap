@@ -47,36 +47,67 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { currentLanguage } = useLanguage();
-  
-  // Hardcoded translations
-  const translations = {
-    en: {
-      weeklySummary: "Weekly Summary",
-      weeklyEarnings: "Weekly Earnings",
-      dailyBreakdown: "Daily Breakdown",
-      summary: "Summary",
-      hoursOnline: "Hours Online",
-      reservations: "Reservations",
-      avgPerHour: "Average per Hour",
-      loadingEarnings: "Loading earnings..."
-    },
-    zu: {
-      weeklySummary: "Isifinyezo Seviki",
-      weeklyEarnings: "Imali Yeviki",
-      dailyBreakdown: "Ukuhlukaniswa Kwemali Kwansuku",
-      summary: "Isifinyezo",
-      hoursOnline: "Amahora Okusebenza",
-      reservations: "Izibhukho",
-      avgPerHour: "Isilinganiso Ngehora",
-      loadingEarnings: "Kulayishwa imali..."
-    }
-  };
-  
-  const t = (key: string) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
-    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
-  };
 
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    activeRideStatus: {
+      en: "Active Ride Status",
+      zu: "Isimo Sohambo Esisebenzayo",
+      tn: "Maemo a Leeto le le Tsamayang",
+      af: "Aktiewe Ritstatus"
+    },
+    goOnline: {
+      en: "Go Online",
+      zu: "Iya Ku-inthanethi",
+      tn: "Tsamaya mo Inthaneteng",
+      af: "Gaan Aanlyn"
+    },
+    weeklyEarnings: {
+      en: "Weekly Earnings",
+      zu: "Imali Yeviki",
+      tn: "Ditshenyegelo tsa Beke",
+      af: "Weeklikse Verdienste"
+    },
+    dailyBreakdown: {
+      en: "Daily Breakdown",
+      zu: "Ukuhlukaniswa Kwansuku Zonke",
+      tn: "Kgaogano ya Letsatsi le Letsatsi",
+      af: "Daaglikse Uiteensetting"
+    },
+    summary: {
+      en: "Summary",
+      zu: "Isifinyezo",
+      tn: "Kakaretso",
+      af: "Opsomming"
+    },
+    hoursOnline: {
+      en: "Hours Online",
+      zu: "Amahora Ku-inthanethi",
+      tn: "Ditsi tsa mo Inthaneteng",
+      af: "Ure Aanlyn"
+    },
+    reservations: {
+      en: "Reservations",
+      zu: "Ukubhukisha",
+      tn: "Ditlhopho",
+      af: "Besprekings"
+    },
+    avgPerHour: {
+      en: "Avg Per Hour",
+      zu: "Isilinganiso Ngehora",
+      tn: "Bogare ba ka Sešupa",
+      af: "Gemiddeld Per Uur"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
+  
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
@@ -247,14 +278,14 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
           {/* Active Ride Status */}
           {user?.accountType === 'driver' && (
             <View style={dynamicStyles.card}>
-              <Text style={dynamicStyles.sectionTitle}>Active Ride Status</Text>
+              <Text style={dynamicStyles.sectionTitle}>{getTranslation('activeRideStatus')}</Text>
               <TouchableOpacity
                 style={dynamicStyles.activeRideButton}
                 onPress={() => navigation.navigate('DriverOnline' as never)}
                 activeOpacity={0.8}
               >
                 <Icon name="car" size={20} color="#FFFFFF" />
-                <Text style={dynamicStyles.activeRideButtonText}>Go Online</Text>
+                <Text style={dynamicStyles.activeRideButtonText}>{getTranslation('goOnline')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -262,12 +293,12 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
           {/* Earnings Card */}
           <View style={dynamicStyles.card}>
             <Text style={dynamicStyles.amount}>R{(todaysEarnings ?? currentWeek.earnings).toFixed(2)}</Text>
-            <Text style={dynamicStyles.label}>{t('weeklyEarnings')}</Text>
+            <Text style={dynamicStyles.label}>{getTranslation('weeklyEarnings')}</Text>
           </View>
 
           {/* Bar Chart */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>{t('dailyBreakdown')}</Text>
+            <Text style={dynamicStyles.sectionTitle}>{getTranslation('dailyBreakdown')}</Text>
             <View style={dynamicStyles.barsContainer}>
               {currentWeek.dailyData.map((day: any, index: any) => (
                 <View key={index} style={dynamicStyles.barWrapper}>
@@ -281,17 +312,17 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
           {/* Summary */}
           <View style={dynamicStyles.card}>
-            <Text style={dynamicStyles.sectionTitle}>{t('summary')}</Text>
+            <Text style={dynamicStyles.sectionTitle}>{getTranslation('summary')}</Text>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('hoursOnline')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{getTranslation('hoursOnline')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.hoursOnline}h</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('reservations')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{getTranslation('reservations')}</Text>
               <Text style={dynamicStyles.summaryValue}>{currentWeek.reservations}</Text>
             </View>
             <View style={dynamicStyles.summaryRow}>
-              <Text style={dynamicStyles.summaryLabel}>{t('avgPerHour')}</Text>
+              <Text style={dynamicStyles.summaryLabel}>{getTranslation('avgPerHour')}</Text>
               <Text style={dynamicStyles.summaryValue}>R{averagePerHour.toFixed(2)}</Text>
             </View>
           </View>

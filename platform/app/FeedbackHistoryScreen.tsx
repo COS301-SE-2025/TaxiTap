@@ -3,6 +3,7 @@ import { ScrollView, Text, View, SafeAreaView, StyleSheet, Pressable } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -11,9 +12,88 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function FeedbackHistoryScreen() {
   const { theme, isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    noFeedbackReceived: {
+      en: "You haven't received any feedback yet.",
+      zu: "Awukakutholi noma yikuphi ukubuyisela imibono.",
+      tn: "Ga o na le mabaka a a tserweng.",
+      af: "Jy het nog geen terugvoer ontvang nie."
+    },
+    noReviewsLeft: {
+      en: "You haven't left any reviews yet.",
+      zu: "Awukashiyi noma yikuphi ukubuyekela.",
+      tn: "Ga o na le dikgato tse o di tlogetseng.",
+      af: "Jy het nog geen resensies gelaat nie."
+    },
+    feedbackHelpsImprove: {
+      en: "Passenger feedback helps improve your service!",
+      zu: "Ukubuyisela imibono komhambi kusiza ukuthuthukisa isevisi yakho!",
+      tn: "Mabaka a moleledi a thusa go tokafatsa tshebeletso ya gago!",
+      af: "Passasierterugvoer help om jou diens te verbeter!"
+    },
+    yourFeedbackHelps: {
+      en: "Your feedback helps improve our service!",
+      zu: "Ukubuyisela imibono kwakho kusiza ukuthuthukisa isevisi yethu!",
+      tn: "Mabaka a gago a thusa go tokafatsa tshebeletso ya rona!",
+      af: "Jou terugvoer help om ons diens te verbeter!"
+    },
+    rating: {
+      en: "Rating:",
+      zu: "Isilinganiso:",
+      tn: "Tlhopho:",
+      af: "Gradering:"
+    },
+    comment: {
+      en: "Comment:",
+      zu: "Ukuphawula:",
+      tn: "Tlhaloso:",
+      af: "Kommentaar:"
+    },
+    passenger: {
+      en: "Passenger:",
+      zu: "Umhambi:",
+      tn: "Moleledi:",
+      af: "Passasier:"
+    },
+    driver: {
+      en: "Driver:",
+      zu: "Umshayeli:",
+      tn: "Mokgweetsi:",
+      af: "Bestuurder:"
+    },
+    from: {
+      en: "From:",
+      zu: "Kusuka:",
+      tn: "Go tswa:",
+      af: "Van:"
+    },
+    to: {
+      en: "To:",
+      zu: "Kuya:",
+      tn: "Go ya:",
+      af: "Na:"
+    },
+    notAvailable: {
+      en: "N/A",
+      zu: "Akukho",
+      tn: "Ga go na",
+      af: "N/V"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const feedbackList = useQuery(
     user?.role === 'driver' 
@@ -137,14 +217,14 @@ export default function FeedbackHistoryScreen() {
             <View style={dynamicStyles.emptyState}>
               <Text style={dynamicStyles.emptyStateText}>
                 {user.role === 'driver' 
-                  ? "You haven't received any feedback yet." 
-                  : "You haven't left any reviews yet."
+                  ? getTranslation('noFeedbackReceived')
+                  : getTranslation('noReviewsLeft')
                 }
               </Text>
               <Text style={dynamicStyles.emptyStateText}>
                 {user.role === 'driver' 
-                  ? "Passenger feedback helps improve your service!" 
-                  : "Your feedback helps improve our service!"
+                  ? getTranslation('feedbackHelpsImprove')
+                  : getTranslation('yourFeedbackHelps')
                 }
               </Text>
             </View>
@@ -159,29 +239,29 @@ export default function FeedbackHistoryScreen() {
               >
                 <View style={dynamicStyles.feedbackContent}>
                   {entry.rating > 0 && (
-                    <Text style={dynamicStyles.feedbackText}>⭐ Rating: {entry.rating}</Text>
+                    <Text style={dynamicStyles.feedbackText}>⭐ {getTranslation('rating')} {entry.rating}</Text>
                   )}
                   {entry.comment && (
-                    <Text style={dynamicStyles.feedbackText}>📝 Comment: {entry.comment}</Text>
+                    <Text style={dynamicStyles.feedbackText}>📝 {getTranslation('comment')} {entry.comment}</Text>
                   )}
                   {user.role === 'driver' ? (
                     // For drivers, show passenger name
                     entry.passengerName && (
-                      <Text style={dynamicStyles.feedbackSecondary}>Passenger: {entry.passengerName}</Text>
+                      <Text style={dynamicStyles.feedbackSecondary}>{getTranslation('passenger')} {entry.passengerName}</Text>
                     )
                   ) : (
                     // For passengers, show driver name
                     entry.driverName && (
-                      <Text style={dynamicStyles.feedbackSecondary}>Driver: {entry.driverName}</Text>
+                      <Text style={dynamicStyles.feedbackSecondary}>{getTranslation('driver')} {entry.driverName}</Text>
                     )
                   )}
                   {(entry.startLocation || entry.endLocation) && (
                     <View>
                       <Text style={dynamicStyles.feedbackSecondary}>
-                        From: {entry.startLocation || 'N/A'}
+                        {getTranslation('from')} {entry.startLocation || getTranslation('notAvailable')}
                       </Text>
                       <Text style={dynamicStyles.feedbackSecondary}>
-                        To: {entry.endLocation || 'N/A'}
+                        {getTranslation('to')} {entry.endLocation || getTranslation('notAvailable')}
                       </Text>
                     </View>
                   )}

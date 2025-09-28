@@ -5,9 +5,89 @@ import { api } from "@/convex/_generated/api";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Id } from "@/convex/_generated/dataModel";
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
+  const { currentLanguage } = useLanguage();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    noPassengerIdProvided: {
+      en: "No passenger ID provided",
+      zu: "Awukho i-ID yomhambi enikeziwe",
+      tn: "Ga go na ID ya moleledi e e neilweng",
+      af: "Geen passasier-ID verskaf nie"
+    },
+    loadingTransactions: {
+      en: "Loading transactions...",
+      zu: "Kulayishwa ukuhwebelana...",
+      tn: "Go tsena ditlhwatlhwa...",
+      af: "Laai transaksies..."
+    },
+    transactionHistory: {
+      en: "Transaction History",
+      zu: "Umlando Wokuhwebelana",
+      tn: "Histori ya Ditlhwatlhwa",
+      af: "Transaksiegeskiedenis"
+    },
+    noRecentTransactions: {
+      en: "No recent transactions",
+      zu: "Awukho ukuhwebelana kwakamuva",
+      tn: "Ga go na ditlhwatlhwa tsa maabane",
+      af: "Geen onlangse transaksies"
+    },
+    driver: {
+      en: "Driver:",
+      zu: "Umshayeli:",
+      tn: "Mokgweetsi:",
+      af: "Bestuurder:"
+    },
+    owes: {
+      en: "Owes:",
+      zu: "Ubanikwe:",
+      tn: "O tshwerwe:",
+      af: "Skuld:"
+    },
+    changeDue: {
+      en: "Change Due:",
+      zu: "Ushele Okufanele:",
+      tn: "Tsheko e e Tshwanetseng:",
+      af: "Wisselgeld Verskuldig:"
+    },
+    overpaidTrip: {
+      en: "Overpaid Trip",
+      zu: "Uhambo Olukhokhiwe Ngaphezulu",
+      tn: "Leeto le le Tshwerwe ka Nako e Ntsi",
+      af: "Oorbetaalde Rit"
+    },
+    exactPayment: {
+      en: "Exact Payment",
+      zu: "Inkokhelo Eqondile",
+      tn: "Tlhwatlhwa e e Tokafaditseng",
+      af: "Presiese Betaling"
+    },
+    underpaidTrip: {
+      en: "Underpaid Trip",
+      zu: "Uhambo Olukhokhiwe Ngaphansi",
+      tn: "Leeto le le Tshwerwe ka Nako e Nnye",
+      af: "Onderbetaalde Rit"
+    },
+    notPaid: {
+      en: "Not Paid",
+      zu: "Akukakhokhiwe",
+      tn: "Ga e Tshwerwe",
+      af: "Nie Betaal"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const transactions = useQuery(
     api.functions.users.wallet.getTransactionHistory,
@@ -15,16 +95,16 @@ const TransactionHistoryScreen = () => {
   );
 
   const paymentTypeLabels: Record<string, string> = {
-    overpaid: "Overpaid Trip",
-    exact: "Exact Payment",
-    underpaid: "Underpaid Trip",
-    not_paid: "Not Paid",
+    overpaid: getTranslation('overpaidTrip'),
+    exact: getTranslation('exactPayment'),
+    underpaid: getTranslation('underpaidTrip'),
+    not_paid: getTranslation('notPaid'),
   };
 
   if (!passengerId) {
     return (
       <View style={styles.center}>
-        <Text>No passenger ID provided</Text>
+        <Text>{getTranslation('noPassengerIdProvided')}</Text>
       </View>
     );
   }
@@ -32,17 +112,17 @@ const TransactionHistoryScreen = () => {
   if (!transactions) {
     return (
       <View style={styles.center}>
-        <Text>Loading transactions...</Text>
+        <Text>{getTranslation('loadingTransactions')}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.header}>Transaction History</Text>
+      <Text style={styles.header}>{getTranslation('transactionHistory')}</Text>
 
       {transactions.length === 0 && (
-        <Text style={styles.empty}>No recent transactions</Text>
+        <Text style={styles.empty}>{getTranslation('noRecentTransactions')}</Text>
       )}
 
       {transactions.map((tx) => (
@@ -85,17 +165,17 @@ const TransactionHistoryScreen = () => {
           
           {tx.driver && (
             <View style={[styles.row, { marginTop: 8 }]}>
-              <Text style={styles.driver}>Driver: {tx.driver.name}</Text>
+              <Text style={styles.driver}>{getTranslation('driver')} {tx.driver.name}</Text>
             </View>
           )}
 
           {(tx.amountOwed > 0 || tx.changeDue > 0) && (
             <View style={{ marginTop: 8 }}>
               {tx.amountOwed > 0 && (
-                <Text style={styles.owed}>Owes: R {tx.amountOwed.toFixed(2)}</Text>
+                <Text style={styles.owed}>{getTranslation('owes')} R {tx.amountOwed.toFixed(2)}</Text>
               )}
               {tx.changeDue > 0 && (
-                <Text style={styles.change}>Change Due: R {tx.changeDue.toFixed(2)}</Text>
+                <Text style={styles.change}>{getTranslation('changeDue')} R {tx.changeDue.toFixed(2)}</Text>
               )}
             </View>
           )}
