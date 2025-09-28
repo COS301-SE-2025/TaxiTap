@@ -1409,8 +1409,8 @@ export default function HomeScreen() {
       left: 0,
       right: 0,
       backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
+        ? 'rgba(30, 41, 59)' 
+        : 'rgba(255, 255, 255)',
       borderRadius: 16,
       maxHeight: 200,
       zIndex: 1000,
