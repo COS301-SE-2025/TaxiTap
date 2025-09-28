@@ -142,8 +142,158 @@ export default function RouteSelectionScreen() {
   const userId = user?.id || navId || '';
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    selectRoute: {
+      en: "Select Route",
+      zu: "Khetha Indlela",
+      tn: "Kgetha Leetong",
+      af: "Kies Roete"
+    },
+    searchRoutes: {
+      en: "Search Routes",
+      zu: "Sesha Izindlela",
+      tn: "Batla Diteetong",
+      af: "Soek Roetes"
+    },
+    availableRoutes: {
+      en: "Available Routes",
+      zu: "Izindlela Ezitholakalayo",
+      tn: "Diteetong tse di Leng",
+      af: "Beskikbare Roetes"
+    },
+    noRoutesMatching: {
+      en: "No routes match your search",
+      zu: "Awukho amanye amadlela afanayo nesakho",
+      tn: "Ga go na diteetong tse di tshwanang le patlisiso ya gago",
+      af: "Geen roetes stem ooreen met jou soektog nie"
+    },
+    noRoutesFound: {
+      en: "No routes available",
+      zu: "Awukho amanye amadlela atholakalayo",
+      tn: "Ga go na diteetong tse di leng",
+      af: "Geen roetes beskikbaar nie"
+    },
+    to: {
+      en: "to",
+      zu: "kuya",
+      tn: "go ya",
+      af: "na"
+    },
+    searchingForTaxis: {
+      en: "Searching for taxis...",
+      zu: "Kusesha amatekisi...",
+      tn: "Go batlwa ditekisi...",
+      af: "Soek taxis..."
+    },
+    taxisAvailable: {
+      en: "{count} taxis available",
+      zu: "Amatekisi angu-{count} atholakalayo",
+      tn: "Ditekisi tse {count} tse di leng",
+      af: "{count} taxis beskikbaar"
+    },
+    noTaxisAvailable: {
+      en: "No taxis available",
+      zu: "Awukho amatekisi atholakalayo",
+      tn: "Ga go na ditekisi tse di leng",
+      af: "Geen taxis beskikbaar nie"
+    },
+    reserveSeat: {
+      en: "Reserve Seat",
+      zu: "Bhuka Isihlalo",
+      tn: "Buka Setulo",
+      af: "Reserveer Sitplek"
+    },
+    routeStops: {
+      en: "Route Stops",
+      zu: "Amakamu Ezindlela",
+      tn: "Dikgabong tsa Leetong",
+      af: "Roete Haltes"
+    },
+    noStopsAvailable: {
+      en: "No stops available for this route",
+      zu: "Awukho amakamu atholakalayo kule ndlela",
+      tn: "Ga go na dikgabong tse di leng mo leetong le",
+      af: "Geen haltes beskikbaar vir hierdie roete nie"
+    },
+    notifyDriverMessage: {
+      en: "Please notify the driver of your destination",
+      zu: "Sicela uxwayise umshayeli ngendawo oya kuyo",
+      tn: "Ka kopo o tsebise mokgweetsi ka lefelo le o yang go lona",
+      af: "Lig asseblief die bestuurder van jou bestemming in kennis"
+    },
+    stops: {
+      en: "stops",
+      zu: "amakamu",
+      tn: "dikgabong",
+      af: "haltes"
+    },
+    gettingLocation: {
+      en: "Getting location...",
+      zu: "Kutholakala indawo...",
+      tn: "Go bona lefelo...",
+      af: "Kry ligging..."
+    },
+    page: {
+      en: "Page",
+      zu: "Ikhasi",
+      tn: "Tsebe",
+      af: "Bladsy"
+    },
+    of: {
+      en: "of",
+      zu: "kwe",
+      tn: "ya",
+      af: "van"
+    },
+    showing: {
+      en: "Showing",
+      zu: "Kuboniswa",
+      tn: "Go bontsha",
+      af: "Wys"
+    },
+    routes: {
+      en: "routes",
+      zu: "izindlela",
+      tn: "diteetong",
+      af: "roetes"
+    },
+    searchError: {
+      en: "Search Error",
+      zu: "Iphutha Lokusesha",
+      tn: "Phoso ya Patlisiso",
+      af: "Soek Fout"
+    },
+    unableToFindTaxis: {
+      en: "Unable to find taxis. Please try again.",
+      zu: "Akukwazi ukuthola amatekisi. Sicela uzame futhi.",
+      tn: "Ga go kgone go bona ditekisi. Ka kopo o leke gape.",
+      af: "Kon taxis vind nie. Probeer asseblief weer."
+    },
+    ok: {
+      en: "OK",
+      zu: "KULUNGILE",
+      tn: "GO SIAME",
+      af: "OK"
+    },
+    currentLocation: {
+      en: "Current Location",
+      zu: "Indawo Yamanje",
+      tn: "Lefelo la Jaanong",
+      af: "Huidige Ligging"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -186,13 +336,13 @@ export default function RouteSelectionScreen() {
   // Configure navigation header
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: t('booking:selectRoute'),
+      title: getTranslation('selectRoute'),
       headerStyle: {
         backgroundColor: theme.background,
       },
       headerTintColor: theme.text,
     });
-  }, [navigation, theme, t]);
+  }, [navigation, theme]);
 
   // Process routes with updated fare calculation and stop processing
   const processedRoutes = useMemo(() => {
@@ -499,7 +649,7 @@ export default function RouteSelectionScreen() {
         destinationName: route.destination,
         destinationLat: route.destinationCoords.latitude.toString(),
         destinationLng: route.destinationCoords.longitude.toString(),
-        currentName: t('common:currentLocation'),
+        currentName: getTranslation('currentLocation'),
         currentLat: '0',
         currentLng: '0',
         routeId: route.routeId,
@@ -583,9 +733,9 @@ export default function RouteSelectionScreen() {
       }));
       
       Alert.alert(
-        t('home:searchError'), 
-        t('home:unableToFindTaxis'),
-        [{ text: t('common:ok') }]
+        getTranslation('searchError'), 
+        getTranslation('unableToFindTaxis'),
+        [{ text: getTranslation('ok') }]
       );
     }
   };
@@ -894,14 +1044,14 @@ export default function RouteSelectionScreen() {
     if (!enrichedStops || enrichedStops.length === 0) {
       return (
         <View style={dynamicStyles.stopsContainer}>
-          <Text style={dynamicStyles.stopsTitle}>{t('routes:routeStops')}</Text>
+          <Text style={dynamicStyles.stopsTitle}>{getTranslation('routeStops')}</Text>
           <View style={dynamicStyles.emptyState}>
             <Icon name="information-circle-outline" size={48} color={theme.textSecondary} />
             <Text style={dynamicStyles.emptyStateText}>
-              {t('routes:noStopsAvailable')}
+              {getTranslation('noStopsAvailable')}
             </Text>
             <Text style={[dynamicStyles.emptyStateText, { fontSize: 14, marginTop: 8 }]}>
-              {t('routes:notifyDriverMessage')}
+              {getTranslation('notifyDriverMessage')}
             </Text>
           </View>
         </View>
@@ -910,7 +1060,7 @@ export default function RouteSelectionScreen() {
 
     return (
       <View style={dynamicStyles.stopsContainer}>
-        <Text style={dynamicStyles.stopsTitle}>{t('routes:routeStops')}</Text>
+        <Text style={dynamicStyles.stopsTitle}>{getTranslation('routeStops')}</Text>
         {enrichedStops.map((stop: any, stopIndex: number) => (
           <View key={stop.id} style={dynamicStyles.stopItem}>
             <View style={[
@@ -943,10 +1093,10 @@ export default function RouteSelectionScreen() {
     const enrichedStops = useQuery(api.functions.routes.displayRoutes.getEnrichedStopsForRoute, { routeId });
     
     if (!enrichedStops || enrichedStops.length === 0) {
-      return <Text style={dynamicStyles.routeInfoText}>0 {t('routes:stops')}</Text>;
+      return <Text style={dynamicStyles.routeInfoText}>0 {getTranslation('stops')}</Text>;
     }
     
-    return <Text style={dynamicStyles.routeInfoText}>{enrichedStops.length} {t('routes:stops')}</Text>;
+    return <Text style={dynamicStyles.routeInfoText}>{enrichedStops.length} {getTranslation('stops')}</Text>;
   };
 
   // ============================================================================
@@ -960,7 +1110,7 @@ export default function RouteSelectionScreen() {
         <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
           <LoadingSpinner size="large" />
           <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
-            {t('home:gettingLocation')}
+            {getTranslation('gettingLocation')}
           </Text>
         </View>
       </SafeAreaView>
@@ -975,13 +1125,13 @@ export default function RouteSelectionScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Search Section */}
-        <Text style={dynamicStyles.sectionHeader}>{t('routes:searchRoutes')}</Text>
+        <Text style={dynamicStyles.sectionHeader}>{getTranslation('searchRoutes')}</Text>
         <View style={dynamicStyles.searchSection}>
           <View style={dynamicStyles.searchInputContainer}>
             <Icon name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
             <TextInput
               style={dynamicStyles.searchInput}
-              placeholder={t('routes:searchRoutes')}
+              placeholder={getTranslation('searchRoutes')}
               placeholderTextColor={theme.textSecondary}
               value={searchTerm}
               onChangeText={setSearchTerm}
@@ -991,7 +1141,7 @@ export default function RouteSelectionScreen() {
 
         {/* Available Routes Section */}
         <Text style={dynamicStyles.sectionHeader}>
-          {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
+          {getTranslation('availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
         </Text>
 
         {/* Routes List or Empty State */}
@@ -1001,8 +1151,8 @@ export default function RouteSelectionScreen() {
               <Icon name="map-outline" size={64} color={theme.textSecondary} />
               <Text style={dynamicStyles.emptyStateText}>
                 {searchTerm
-                  ? t('routes:noRoutesMatching')
-                  : t('routes:noRoutesFound')}
+                  ? getTranslation('noRoutesMatching')
+                  : getTranslation('noRoutesFound')}
               </Text>
             </View>
           </View>
@@ -1019,7 +1169,7 @@ export default function RouteSelectionScreen() {
                 {/* Route Header */}
                                  <View style={dynamicStyles.routeTitle}>
                    <Text style={dynamicStyles.routeTitleText}>
-                     {route.start} {t('routes:to')} {route.destination}
+                     {route.start} {getTranslation('to')} {route.destination}
                    </Text>
                  </View>
 
@@ -1041,7 +1191,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={theme.primary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: theme.primary }]}>
-                      {t('routes:searchingForTaxis')}
+                      {getTranslation('searchingForTaxis')}
                     </Text>
                   </View>
                 )}
@@ -1049,7 +1199,7 @@ export default function RouteSelectionScreen() {
                   <View style={dynamicStyles.routeInfoItem}>
                     <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
                     <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
-                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', getRouteSearchStatus(route.routeId).availableTaxis.length.toString()) : t('routes:noTaxisAvailable')}
+                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? getTranslation('taxisAvailable').replace('{count}', getRouteSearchStatus(route.routeId).availableTaxis.length.toString()) : getTranslation('noTaxisAvailable')}
                     </Text>
                   </View>
                 )}
@@ -1067,12 +1217,12 @@ export default function RouteSelectionScreen() {
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
                         <Text style={dynamicStyles.reserveButtonText}>
-                          {t('routes:searchingForTaxis')}
+                          {getTranslation('searchingForTaxis')}
                         </Text>
                       </View>
                     ) : (
                       <Text style={dynamicStyles.reserveButtonText}>
-                        {t('routes:reserveSeat')}
+                        {getTranslation('reserveSeat')}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -1104,10 +1254,10 @@ export default function RouteSelectionScreen() {
             {/* Page Information */}
             <View style={dynamicStyles.paginationInfo}>
               <Text style={dynamicStyles.paginationText}>
-                {t('routes:page')} {currentPage} {t('routes:of')} {totalPages}
+                {getTranslation('page')} {currentPage} {getTranslation('of')} {totalPages}
               </Text>
               <Text style={dynamicStyles.paginationSubText}>
-                {t('routes:showing')} {startIndex + 1}-{Math.min(endIndex, filteredRoutes.length)} {t('routes:of')} {filteredRoutes.length} {t('routes:routes')}
+                {getTranslation('showing')} {startIndex + 1}-{Math.min(endIndex, filteredRoutes.length)} {getTranslation('of')} {filteredRoutes.length} {getTranslation('routes')}
               </Text>
             </View>
 

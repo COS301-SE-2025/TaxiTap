@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
@@ -11,9 +12,52 @@ import { useMapContext } from '../../contexts/MapContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const { clearMapContext } = useMapContext();
   const userId = user?.id;
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    payments: {
+      en: "Payments",
+      zu: "Izinkokhelo",
+      tn: "Ditlhwatlhwa",
+      af: "Betalings"
+    },
+    driver: {
+      en: "Driver:",
+      zu: "Umshayeli:",
+      tn: "Mokgweetsi:",
+      af: "Bestuurder:"
+    },
+    licensePlate: {
+      en: "License Plate:",
+      zu: "Iphepha lelayisense:",
+      tn: "Phepha ya laesense:",
+      af: "Kentekenplaat:"
+    },
+    paid: {
+      en: "Paid",
+      zu: "Kukhokhiwe",
+      tn: "E tshwerwe",
+      af: "Betaal"
+    },
+    notPaid: {
+      en: "Not Paid",
+      zu: "Akukakhokhiwe",
+      tn: "Ga e tshwerwe",
+      af: "Nie Betaal"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const { 
     driverName, 
@@ -127,27 +171,27 @@ export default function PaymentConfirmation() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.heading}>Payments</Text>
+        <Text style={styles.heading}>{getTranslation('payments')}</Text>
 
         <View style={styles.infoRow}>
           <Ionicons name="person" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>Driver: {driverName}</Text>
+          <Text style={[styles.paymentText, styles.infoText]}>{getTranslation('driver')} {driverName}</Text>
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="card-outline" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>License Plate: {licensePlate}</Text>
+          <Text style={[styles.paymentText, styles.infoText]}>{getTranslation('licensePlate')} {licensePlate}</Text>
         </View>
         <Text style={styles.amount}>R{(fare ?? 0)}</Text>
 
         <View style={styles.buttonRow}>
           <TouchableOpacity style={[styles.button, styles.paid]} onPress={handlePaid}>
             <Ionicons name="checkmark" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Paid</Text>
+            <Text style={styles.buttonText}>{getTranslation('paid')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.notPaid]} onPress={handleNotPaid}>
             <Ionicons name="close" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Not Paid</Text>
+            <Text style={styles.buttonText}>{getTranslation('notPaid')}</Text>
           </TouchableOpacity>
         </View>
       </View>
