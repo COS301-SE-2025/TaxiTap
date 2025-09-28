@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert, Pressable } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -880,13 +880,40 @@ export default function SeatReserved() {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
+		header: {
+			paddingHorizontal: 20,
+			paddingTop: 50,
+			paddingBottom: 16,
+			backgroundColor: theme.background,
+			borderBottomWidth: 1,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+		},
+		headerRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+		},
+		backButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 16,
+		},
+		headerTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: theme.text,
+			flex: 1,
+		},
 		scrollView: {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
 		loadingContainer: {
-			flex: 1, 
-			justifyContent: 'center', 
+			flex: 1,
+			justifyContent: 'center',
 			alignItems: 'center'
 		},
 		loadingText: {
@@ -900,78 +927,108 @@ export default function SeatReserved() {
 			alignItems: "center",
 		},
 		arrivalTimeBox: {
-			backgroundColor: isDark ? theme.surface : "#121212",
-			borderRadius: 30,
-			paddingVertical: 16,
-			paddingHorizontal: 20,
+			backgroundColor: theme.card,
+			borderRadius: 16,
+			paddingVertical: 12,
+			paddingHorizontal: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		arrivalTimeText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 			textAlign: "center",
 		},
 		routeLoadingText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 11,
+			color: theme.textSecondary,
+			fontSize: 12,
 			fontStyle: 'italic',
 			textAlign: "center",
 			marginTop: 4,
 		},
 		bottomSection: {
 			alignItems: "center",
-			backgroundColor: theme.surface,
-			borderRadius: 30,
-			paddingTop: 47,
-			paddingBottom: 60,
+			backgroundColor: theme.card,
+			borderTopLeftRadius: 24,
+			borderTopRightRadius: 24,
+			paddingTop: 24,
+			paddingBottom: 24,
+			paddingHorizontal: 20,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderBottomWidth: 0,
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
+					shadowOffset: { width: 0, height: -2 },
+					shadowRadius: 8,
+				},
+				android: {
+					elevation: 4,
+				},
+			}),
 		},
 		driverDetailsHeader: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 33,
+			marginBottom: 20,
 			width: '100%',
 		},
 		driverDetailsTitle: {
-			color: theme.textSecondary,
+			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
+			fontWeight: "600",
 			flex: 1,
 		},
 		contactButton: {
-			width: 35,
-			height: 35,
-			backgroundColor: isDark ? theme.primary : "#121212",
-			borderRadius: 17.5,
+			width: 36,
+			height: 36,
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
+			borderRadius: 18,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 5,
+			marginLeft: 8,
 		},
 		driverInfoSection: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 36,
+			marginBottom: 24,
 			width: '100%',
-			paddingHorizontal: 15,
 		},
 		driverAvatar: {
 			width: 60,
 			height: 60,
-			backgroundColor: isDark ? theme.primary : "#121212",
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
 			borderRadius: 30,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 11,
+			marginRight: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		driverName: {
 			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
-			marginBottom: 1,
+			fontWeight: "600",
+			marginBottom: 4,
 		},
 		driverVehicle: {
 			color: theme.textSecondary,
-			fontSize: 12,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		ratingText: {
 			color: theme.text,
@@ -981,41 +1038,47 @@ export default function SeatReserved() {
 		},
 		licensePlateSection: {
 			flexDirection: "row",
-			marginBottom: 26,
+			marginBottom: 20,
 			width: '100%',
-			paddingHorizontal: 35,
 			justifyContent: 'space-between',
+			backgroundColor: theme.background,
+			borderRadius: 12,
+			padding: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		licensePlateLabel: {
 			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 		},
 		locationBox: {
 			flexDirection: "row",
 			alignItems: "center",
-			backgroundColor: isDark ? theme.surface : "#ECD9C3",
-			borderColor: isDark ? theme.border : "#D4A57D",
-			borderRadius: 20,
+			backgroundColor: theme.background,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderRadius: 16,
 			borderWidth: 1,
-			paddingVertical: 11,
-			paddingHorizontal: 13,
-			marginBottom: 36,
-			width: '90%',
-			alignSelf: 'center',
-			shadowColor: theme.shadow,
-			shadowOpacity: isDark ? 0.3 : 0.15,
-			shadowOffset: {
-				width: 0,
-				height: 4
-			},
-			shadowRadius: 4,
-			elevation: 4,
+			paddingVertical: 16,
+			paddingHorizontal: 16,
+			marginBottom: 24,
+			width: '100%',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		locationIndicator: {
 			marginRight: 10,
@@ -1057,27 +1120,30 @@ export default function SeatReserved() {
 			flex: 1,
 		},
 		currentLocationText: {
-			color: isDark ? theme.primary : "#A66400",
-			fontSize: 14,
-			fontWeight: "bold",
-			marginBottom: 17,
+			color: theme.text,
+			fontSize: 15,
+			fontWeight: "600",
+			marginBottom: 16,
+			lineHeight: 20,
 		},
 		locationSeparator: {
 			height: 1,
-			backgroundColor: isDark ? theme.border : "#D4A57D",
-			marginBottom: 19,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			marginBottom: 16,
 			marginHorizontal: 2,
 		},
 		destinationText: {
 			color: theme.text,
-			fontSize: 14,
-			fontWeight: "bold",
+			fontSize: 15,
+			fontWeight: "600",
 			marginLeft: 2,
+			lineHeight: 20,
 		},
 		actionButtonsContainer: {
 			width: '100%',
 			alignItems: 'center',
-			marginTop: 10,
+			marginTop: 16,
+			paddingHorizontal: 0,
 		},
 		// PIN entry styles
 		pinEntryOverlay: {
@@ -1176,27 +1242,50 @@ export default function SeatReserved() {
 		startRideButton: {
 			alignItems: "center",
 			backgroundColor: theme.primary,
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
-			marginBottom: 15,
+			borderRadius: 12,
+			paddingVertical: 16,
+			width: '100%',
+			marginBottom: 12,
+			...Platform.select({
+				ios: {
+					shadowColor: theme.primary,
+					shadowOpacity: 0.3,
+					shadowOffset: { width: 0, height: 4 },
+					shadowRadius: 8,
+				},
+				android: {
+					elevation: 4,
+				},
+			}),
 		},
 		startRideButtonText: {
 			color: isDark ? "#121212" : "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			fontSize: 16,
+			fontWeight: "600",
 		},
 		cancelButton: {
 			alignItems: "center",
 			backgroundColor: isDark ? "#FF4444" : "#FF6B6B",
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
+			borderRadius: 12,
+			paddingVertical: 16,
+			width: '100%',
+			marginBottom: 8,
+			...Platform.select({
+				ios: {
+					shadowColor: '#FF4444',
+					shadowOpacity: 0.2,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		cancelButtonText: {
 			color: "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			fontSize: 16,
+			fontWeight: "600",
 		},
 	});
 
@@ -1235,6 +1324,18 @@ export default function SeatReserved() {
 
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
+			{/* Header */}
+			<View style={dynamicStyles.header}>
+				<View style={dynamicStyles.headerRow}>
+					<Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+						<Icon name="arrow-back" size={20} color={theme.text} />
+					</Pressable>
+					<Text style={dynamicStyles.headerTitle}>
+						Ride in Progress
+					</Text>
+				</View>
+			</View>
+
 			<ScrollView style={dynamicStyles.scrollView}>
 				<View>
 					{/* Map Section with Route - Add error boundary */}
@@ -1342,16 +1443,15 @@ export default function SeatReserved() {
 					<View style={dynamicStyles.bottomSection}>
 						
 						<View style={dynamicStyles.driverDetailsHeader}>
-							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								Driver Details
 							</Text>
-							<View style={dynamicStyles.contactButton}>
-								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
-							<View style={[dynamicStyles.contactButton, { marginRight: 10 }]}>
-								<Icon name="chatbubble" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="call" size={16} color={theme.primary} />
+							</TouchableOpacity>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="chatbubble" size={16} color={theme.primary} />
+							</TouchableOpacity>
 						</View>
 						
 						{taxiInfo === undefined ? (
