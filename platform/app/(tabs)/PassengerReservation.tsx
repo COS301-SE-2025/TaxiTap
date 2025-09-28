@@ -1591,6 +1591,11 @@ export default function SeatReserved() {
 		},
 	});
 
+	const driverRating = useQuery(
+		api.functions.feedback.averageRating.getAverageRating,
+		taxiInfo?.driver?.userId ? { driverId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
+	);
+
 	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
 		return (
@@ -1711,25 +1716,28 @@ export default function SeatReserved() {
 										{taxiInfo.taxi?.model || "Vehicle details not available"} • {taxiInfo.taxi?.licensePlate || vehicleInfo.plate || "Plate not available"}
 									</Text>
 									<View style={dynamicStyles.driverRating}>
-									<Text style={dynamicStyles.ratingText}>
-										{taxiInfo.driver?.rating ? taxiInfo.driver.rating.toFixed(1) : 'N/A'}
-									</Text>
-									<View style={{ flexDirection: 'row' }}>
-										{taxiInfo.driver?.rating ? [1, 2, 3, 4, 5].map((star, index) => {
-											const rating = taxiInfo.driver?.rating ?? 0;
-											const full = rating >= star;
-											const half = rating >= star - 0.5 && !full;
+										<Text style={dynamicStyles.ratingText}>
+											{typeof driverRating === "number" && driverRating > 0
+											? driverRating.toFixed(1)
+											: "No ratings"}
+										</Text>
+										<View style={{ flexDirection: 'row' }}>
+											{typeof driverRating === "number" && driverRating > 0
+											? [1, 2, 3, 4, 5].map((star, index) => {
+												const full = driverRating >= star;
+												const half = driverRating >= star - 0.5 && driverRating < star;
 
 												return (
 													<FontAwesome
-														key={index}
-														name={full ? "star" : half ? "star-half-full" : "star-o"}
-														size={12}
-														color="#FFD700"
-														style={{ marginRight: 1 }}
+													key={index}
+													name={full ? "star" : half ? "star-half-full" : "star-o"}
+													size={12}
+													color="#FFD700"
+													style={{ marginRight: 1 }}
 													/>
 												);
-											}) : null}
+												})
+											: null}
 										</View>
 									</View>
 								</View>
@@ -1741,7 +1749,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={dynamicStyles.driverDetails}>
 									<Text style={dynamicStyles.driverName}>
-{t('home:waitingForDriver')}
+										{t('home:waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.
