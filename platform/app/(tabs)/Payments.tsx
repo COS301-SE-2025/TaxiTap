@@ -67,7 +67,7 @@ export default function PaymentConfirmation() {
         journeyId,
         legIndex,
         totalLegs,
-        routeName,
+        routeName
       }
     });
   };
