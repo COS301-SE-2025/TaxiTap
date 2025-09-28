@@ -32,9 +32,69 @@ interface Passenger {
 export default function WaitingPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        loading: {
+            en: "Loading...",
+            zu: "Kulayishwa...",
+            tn: "Go tsena...",
+            af: "Laai..."
+        },
+        waitingPayments: {
+            en: "Waiting Payments",
+            zu: "Izinkokhelo Ezilinde",
+            tn: "Ditlhwatlhwa tse di Emeng",
+            af: "Wagende Betalings"
+        },
+        paymentsPendingResponse: {
+            en: "payments pending response",
+            zu: "izinkokhelo ezilinde impendulo",
+            tn: "ditlhwatlhwa tse di emeng karabo",
+            af: "betalings wagende antwoord"
+        },
+        paymentPendingResponse: {
+            en: "payment pending response",
+            zu: "inkokhelo elinde impendulo",
+            tn: "tefo e emeng karabo",
+            af: "betaling wagende antwoord"
+        },
+        pending: {
+            en: "Pending",
+            zu: "Kulinde",
+            tn: "E eme",
+            af: "Wagende"
+        },
+        fare: {
+            en: "Fare:",
+            zu: "Imali:",
+            tn: "Tefo:",
+            af: "Tarief:"
+        },
+        noWaitingPayments: {
+            en: "No Waiting Payments",
+            zu: "Awukho Izinkokhelo Ezilinde",
+            tn: "Ga go na Ditlhwatlhwa tse di Emeng",
+            af: "Geen Wagende Betalings Nie"
+        },
+        noWaitingPaymentsMessage: {
+            en: "All passengers have responded to their payment requests.",
+            zu: "Bonke abagibeli baphendulile ezicelweni zabo zenkokhelo.",
+            tn: "Baleleledi botlhe ba arabe dikopo tsa ditlhwatlhwa tsa bone.",
+            af: "Alle passasiers het op hul betaling versoeke gereageer."
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -50,7 +110,7 @@ export default function WaitingPayments() {
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+                        <Text style={dynamicStyles.headerSubtitle}>{getTranslation('loading')}</Text>
                     </View>
                     <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                         <LoadingSpinner size="large" />
@@ -86,7 +146,7 @@ export default function WaitingPayments() {
             >
                 <View style={dynamicStyles.headerSection}>
                     <Text style={dynamicStyles.headerSubtitle}>
-                        {waitingPayments.length} payment{waitingPayments.length !== 1 ? 's' : ''} pending response
+                        {waitingPayments.length} {waitingPayments.length !== 1 ? getTranslation('paymentsPendingResponse') : getTranslation('paymentPendingResponse')}
                     </Text>
                 </View>
 
@@ -117,7 +177,7 @@ export default function WaitingPayments() {
                                     )}
                                 </View>
                                 <View style={[dynamicStyles.statusBadge, dynamicStyles.statusWaiting]}>
-                                    <Text style={dynamicStyles.statusText}>Pending</Text>
+                                    <Text style={dynamicStyles.statusText}>{getTranslation('pending')}</Text>
                                 </View>
                             </View>
                             
@@ -125,7 +185,7 @@ export default function WaitingPayments() {
                                 <View style={dynamicStyles.detailRow}>
                                     <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                     <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
-                                        Fare: R{p.fare.toFixed(2)}
+                                        {getTranslation('fare')} R{p.fare.toFixed(2)}
                                     </Text>
                                 </View>
                             </View>
