@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert, Pressable } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert, Pressable, Dimensions } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -23,6 +23,16 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
+	const navigation = useNavigation();
+
+	// Hide header and tab bar like TaxiInformation page
+	React.useLayoutEffect(() => {
+		navigation.setOptions({
+			headerShown: false,
+			tabBarStyle: { display: 'none' }
+		});
+	}, [navigation]);
+
 	// IMMEDIATE DEBUG - This should show up in logs right away
 	console.log('🟢 SeatReserved component loaded - checking for multi-leg params');
 
@@ -75,10 +85,13 @@ export default function SeatReserved() {
 	});
 
 	// Context hooks need to be declared before any queries that use them
-	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
 	const { t } = useLanguage();
+
+	// Screen dimensions for responsive design (matching TaxiInformation)
+	const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+	const isSmallScreen = screenWidth < 375;
 	const {
 		currentLocation,
 		destination,
@@ -881,9 +894,9 @@ export default function SeatReserved() {
 			backgroundColor: theme.background,
 		},
 		header: {
-			paddingHorizontal: 20,
-			paddingTop: 50,
-			paddingBottom: 16,
+			paddingHorizontal: isSmallScreen ? 16 : 20,
+			paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+			paddingBottom: 20,
 			backgroundColor: theme.background,
 			borderBottomWidth: 1,
 			borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
@@ -964,8 +977,8 @@ export default function SeatReserved() {
 			borderTopLeftRadius: 24,
 			borderTopRightRadius: 24,
 			paddingTop: 24,
-			paddingBottom: 24,
-			paddingHorizontal: 20,
+			paddingBottom: 100, // Add more bottom padding to account for fixed button positioning
+			paddingHorizontal: isSmallScreen ? 16 : 20,
 			borderWidth: 1,
 			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 			borderBottomWidth: 0,
@@ -1145,6 +1158,13 @@ export default function SeatReserved() {
 			marginTop: 16,
 			paddingHorizontal: 0,
 		},
+		// Add button container for better positioning like TaxiInformation
+		buttonContainer: {
+			position: 'absolute',
+			bottom: 80,
+			left: 24,
+			right: 24,
+		},
 		// PIN entry styles
 		pinEntryOverlay: {
 			position: 'absolute',
@@ -1240,52 +1260,52 @@ export default function SeatReserved() {
 			fontSize: 16,
 		},
 		startRideButton: {
-			alignItems: "center",
-			backgroundColor: theme.primary,
-			borderRadius: 12,
-			paddingVertical: 16,
+			backgroundColor: '#F59E0B',
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: '#D97706',
 			width: '100%',
 			marginBottom: 12,
-			...Platform.select({
-				ios: {
-					shadowColor: theme.primary,
-					shadowOpacity: 0.3,
-					shadowOffset: { width: 0, height: 4 },
-					shadowRadius: 8,
-				},
-				android: {
-					elevation: 4,
-				},
-			}),
 		},
 		startRideButtonText: {
-			color: isDark ? "#121212" : "#FFFFFF",
-			fontSize: 16,
-			fontWeight: "600",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		cancelButton: {
-			alignItems: "center",
 			backgroundColor: isDark ? "#FF4444" : "#FF6B6B",
-			borderRadius: 12,
-			paddingVertical: 16,
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: isDark ? "#CC3333" : "#FF5555",
 			width: '100%',
 			marginBottom: 8,
+			// Cross-platform shadow handling to match TaxiInformation
 			...Platform.select({
 				ios: {
-					shadowColor: '#FF4444',
-					shadowOpacity: 0.2,
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
 					shadowOffset: { width: 0, height: 2 },
 					shadowRadius: 4,
 				},
 				android: {
-					elevation: 2,
+					elevation: 3,
 				},
 			}),
 		},
 		cancelButtonText: {
-			color: "#FFFFFF",
-			fontSize: 16,
-			fontWeight: "600",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 	});
 
@@ -1336,7 +1356,10 @@ export default function SeatReserved() {
 				</View>
 			</View>
 
-			<ScrollView style={dynamicStyles.scrollView}>
+			<ScrollView 
+				style={dynamicStyles.scrollView}
+				contentContainerStyle={{ paddingBottom: rideStatus === 'requested' ? 100 : 20 }}
+				showsVerticalScrollIndicator={false}>
 				<View>
 					{/* Map Section with Route - Add error boundary */}
 					<View style={{ height: 300, position: 'relative' }}>
@@ -1586,10 +1609,12 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{/* Action Buttons */}
-						<View style={dynamicStyles.actionButtonsContainer}>
-							{/* Before ride is accepted: show only Cancel Request */}
-							{rideStatus === 'requested' && (
+						{/* Action Buttons - Inline for accepted status, fixed for requested status */}
+						{rideStatus === 'accepted' && (
+							<View style={dynamicStyles.actionButtonsContainer}>
+								<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
+									Driver will show you their PIN to verify and start the ride
+								</Text>
 								<TouchableOpacity 
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
@@ -1597,67 +1622,66 @@ export default function SeatReserved() {
 										{"Cancel Request"}
 									</Text>
 								</TouchableOpacity>
-							)}
-							{/* When ride is accepted: show message and Cancel Request */}
-							{rideStatus === 'accepted' && (
-								<>
-									<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
-										Driver will show you their PIN to verify and start the ride
+							</View>
+						)}
+						{/* Only show End Ride when ride is started or in progress */}
+						{(rideStatus === 'started' || rideStatus === 'in_progress') && (
+							<View style={dynamicStyles.actionButtonsContainer}>
+								<TouchableOpacity 
+									style={dynamicStyles.cancelButton} 
+									onPress={handleEndRide}>
+									<Text style={dynamicStyles.cancelButtonText}>
+										{"End Ride"}
 									</Text>
-									<TouchableOpacity 
-										style={dynamicStyles.cancelButton} 
-										onPress={handleCancelRequest}>
-										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
+								</TouchableOpacity>
+								
+								{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
+								{(() => {
+									const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+									const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
+
+									console.log('🔍 SeatReserved BUTTON DEBUG:', {
+										isMultiLeg,
+										legIndex,
+										totalLegs: params.totalLegs,
+										shouldShow: isMultiLeg && legIndex === 0,
+										params: {
+											isMultiLeg: params.isMultiLeg,
+											legIndex: params.legIndex,
+											totalLegs: params.totalLegs
+										}
+									});
+
+									// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
+									return isMultiLeg && legIndex === 0;
+								})() && (
+									<TouchableOpacity
+										style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
+										onPress={handleContinueToNextLeg}>
+										<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
+											{"Continue to Next Leg"}
 										</Text>
 									</TouchableOpacity>
-								</>
-							)}
-							{/* Only show End Ride when ride is started or in progress */}
-							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
-								<>
-									<TouchableOpacity 
-										style={dynamicStyles.cancelButton} 
-										onPress={handleEndRide}>
-										<Text style={dynamicStyles.cancelButtonText}>
-											{"End Ride"}
-										</Text>
-									</TouchableOpacity>
-									
-									{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
-									{(() => {
-										const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
-										const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
-
-										console.log('🔍 SeatReserved BUTTON DEBUG:', {
-											isMultiLeg,
-											legIndex,
-											totalLegs: params.totalLegs,
-											shouldShow: isMultiLeg && legIndex === 0,
-											params: {
-												isMultiLeg: params.isMultiLeg,
-												legIndex: params.legIndex,
-												totalLegs: params.totalLegs
-											}
-										});
-
-										// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
-										return isMultiLeg && legIndex === 0;
-									})() && (
-										<TouchableOpacity
-											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
-											onPress={handleContinueToNextLeg}>
-											<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
-												{"Continue to Next Leg"}
-											</Text>
-										</TouchableOpacity>
-									)}
-								</>
-							)}
-						</View>
+								)}
+							</View>
+						)}
 					</View>
 				</View>
 			</ScrollView>
+			
+			{/* Fixed Cancel Request Button - Only show when ride is requested */}
+			{rideStatus === 'requested' && (
+				<View style={dynamicStyles.buttonContainer}>
+					<TouchableOpacity 
+						style={dynamicStyles.cancelButton} 
+						onPress={handleCancelRequest}
+						activeOpacity={0.8}>
+						<Text style={dynamicStyles.cancelButtonText}>
+							Cancel Request
+						</Text>
+					</TouchableOpacity>
+				</View>
+			)}
 			
 			{/* PIN Entry Modal */}
 			{showPinEntry && (

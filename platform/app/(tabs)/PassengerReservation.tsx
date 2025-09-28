@@ -213,6 +213,16 @@ const darkMapStyle = [
 ];
 
 export default function SeatReserved() {
+	const navigation = useNavigation();
+
+	// Hide header and tab bar like TaxiInformation page
+	React.useLayoutEffect(() => {
+		navigation.setOptions({
+			headerShown: false,
+			tabBarStyle: { display: 'none' }
+		});
+	}, [navigation]);
+
 	// IMMEDIATE DEBUG - This should show up in logs right away
 	console.log('🟢 PassengerReservation component loaded - checking for multi-leg params');
 
@@ -279,7 +289,6 @@ export default function SeatReserved() {
 			rideId: params.rideId
 		});
 	}, [params.isMultiLeg, params.totalLegs, params.legIndex, params.journeyId, params.rideId]);
-	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
 	const { t } = useLanguage();
@@ -364,11 +373,6 @@ export default function SeatReserved() {
 		checkInterval: 30,
 	});
 
-	useLayoutEffect(() => {
-		navigation.setOptions({
-			headerShown: false
-		});
-	}, [navigation]);
 
 	function getParamAsString(param: string | string[] | undefined, fallback: string = ''): string {
 		if (Array.isArray(param)) {
@@ -1503,56 +1507,75 @@ export default function SeatReserved() {
 			alignItems: 'center',
 		},
 		startRideButton: {
-			alignItems: "center",
-			backgroundColor: "#4CAF50",
-			borderRadius: 25,
-			paddingVertical: 15,
+			backgroundColor: '#F59E0B',
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: '#D97706',
 			width: '100%',
 			marginBottom: 15,
 		},
 		startRideButtonText: {
-			color: "#FFFFFF",
+			color: '#FFFFFF',
 			fontSize: 18,
-			fontWeight: "600",
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		endRideButton: {
-			alignItems: "center",
-			backgroundColor: "#81C784", // Lighter green
-			borderRadius: 25,
-			paddingVertical: 15,
+			backgroundColor: "#4CAF50",
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: "#45A049",
 			width: '100%',
 		},
 		endRideButtonText: {
-			color: "#FFFFFF",
+			color: '#FFFFFF',
 			fontSize: 18,
-			fontWeight: "600",
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		cancelButton: {
-			alignItems: "center",
 			backgroundColor: "#F44336",
-			borderRadius: 25,
-			paddingVertical: 15,
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: "#D32F2F",
 			width: '100%',
 		},
 		cancelButtonText: {
-			color: "#FFFFFF",
+			color: '#FFFFFF',
 			fontSize: 18,
-			fontWeight: "600",
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		frontPassengerButton: {
-			alignItems: "center",
 			backgroundColor: "#007AFF",
-			borderRadius: 25,
-			paddingVertical: 15,
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: "#0056CC",
 			width: '100%',
 			marginBottom: 15,
 			flexDirection: 'row',
-			justifyContent: 'center',
 		},
 		frontPassengerButtonText: {
-			color: "#FF9500",
-			fontSize: 16,
-			fontWeight: "600",
+			color: "#FFFFFF",
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 			marginLeft: 8,
 		},
 		// REMOVED: Duplicate floatingLocationButton - keeping only the one on the map
@@ -1560,14 +1583,11 @@ export default function SeatReserved() {
 			position: 'absolute',
 			bottom: 20,
 			right: 20,
-			backgroundColor: "#FF9500", // FIXED: Back to original orange color
+			backgroundColor: "#FF9500",
 			borderRadius: 25,
 			padding: 12,
-			shadowColor: "#000",
-			shadowOpacity: 0.2,
-			shadowOffset: { width: 0, height: 2 },
-			shadowRadius: 4,
-			elevation: 4,
+			borderWidth: 2,
+			borderColor: "#E6850E",
 		},
 	});
 

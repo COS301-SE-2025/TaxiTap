@@ -6,7 +6,7 @@ import {
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -16,6 +16,16 @@ import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelper
 import { useMapContext } from '../../contexts/MapContext';
 
 export default function SubmitFeedbackScreen() {
+  const navigation = useNavigation();
+
+  // Hide header and tab bar like TaxiInformation page
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+      tabBarStyle: { display: 'none' }
+    });
+  }, [navigation]);
+
   const [name, setName] = useState('');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -393,10 +403,9 @@ export default function SubmitFeedbackScreen() {
       marginTop: 8,
     },
     submitButton: {
-      backgroundColor: '#f90',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
+      backgroundColor: '#F59E0B',
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 56,
@@ -405,26 +414,27 @@ export default function SubmitFeedbackScreen() {
     },
     submitButtonText: {
       color: '#FFFFFF',
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
     skipButton: {
       backgroundColor: isDark 
         ? 'rgba(255,255,255,0.1)' 
         : 'rgba(0,0,0,0.05)',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      borderWidth: 2,
+      borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
       minHeight: 56,
     },
     skipButtonText: {
       color: theme.text,
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
   });
 

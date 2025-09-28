@@ -3,13 +3,23 @@ import { useMutation } from "convex/react";
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from '../../contexts/UserContext';
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMapContext } from '../../contexts/MapContext';
 
 export default function PaymentConfirmation() {
+  const navigation = useNavigation();
+
+  // Hide header and tab bar like TaxiInformation page
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+      tabBarStyle: { display: 'none' }
+    });
+  }, [navigation]);
+
   const { user } = useUser();
   const router = useRouter();
   const { clearMapContext } = useMapContext();
@@ -214,21 +224,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 28,
+    paddingVertical: 18,
     flex: 1,
     justifyContent: "center",
+    minHeight: 56,
+    borderWidth: 2,
   },
   paid: {
     backgroundColor: "#2ECC71",
+    borderColor: "#27AE60",
   },
   notPaid: {
     backgroundColor: "#E74C3C",
+    borderColor: "#C0392B",
   },
   buttonText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });

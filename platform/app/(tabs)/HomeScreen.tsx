@@ -208,6 +208,7 @@ export default function HomeScreen() {
   const [availableTaxis, setAvailableTaxis] = useState<any[]>([]);
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
+  const hasSuccessfulResults = useRef(false);
 
   // Enhanced state to trigger taxi search
   const [taxiSearchParams, setTaxiSearchParams] = useState<{
@@ -359,6 +360,7 @@ export default function HomeScreen() {
 
   // NEW: Handle origin suggestion selection
   const handleOriginSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    Keyboard.dismiss();
     setJustSelectedOrigin(true);
     setShowOriginSuggestions(false);
     setOriginSuggestions([]);
@@ -385,6 +387,7 @@ export default function HomeScreen() {
 
   // NEW: Handle destination suggestion selection
   const handleDestinationSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    Keyboard.dismiss();
     setJustSelectedDestination(true);
     setShowDestinationSuggestions(false);
     setDestinationSuggestions([]);
@@ -421,6 +424,13 @@ export default function HomeScreen() {
       maxResults: 10
     } : "skip"
   );
+
+  // Debug: Log when taxiSearchParams changes
+  useEffect(() => {
+    if (taxiSearchParams) {
+      console.log('🔧 taxiSearchParams updated, query should execute:', taxiSearchParams);
+    }
+  }, [taxiSearchParams]);
 
   // Query for multi-leg journey options - only runs when direct routes fail
   const multiLegSearchResult = useQuery(
@@ -688,6 +698,7 @@ export default function HomeScreen() {
       setJustSelectedDestination(false);
       setShowOriginSuggestions(false);
       setShowDestinationSuggestions(false);
+      hasSuccessfulResults.current = false;
 
       // Reset location loading state to ensure fresh location detection
       setIsLoadingCurrentLocation(true);
@@ -745,12 +756,22 @@ export default function HomeScreen() {
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!userId) {
+      console.log('⚠️ No userId found, skipping taxi search');
+      setIsSearchingTaxis(false);
       return;
     }
 
+    // Prevent duplicate searches if one is already in progress
+    if (isSearchingTaxis) {
+      console.log('⚠️ Taxi search already in progress, skipping duplicate search');
+      return;
+    }
+
+    console.log('🔍 Starting taxi search for:', { origin: origin.name, dest: dest.name, userId });
     setAvailableTaxis([]);
     setRouteMatchResults(null);
     setIsSearchingTaxis(true);
+    hasSuccessfulResults.current = false;
     
     try {
       setTaxiSearchParams({
@@ -760,7 +781,38 @@ export default function HomeScreen() {
         destinationLng: dest.longitude,
       });
       
+      // Fallback timeout in case the query doesn't respond
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Taxi search timeout, checking if we should reset state');
+        // Only reset if we don't already have successful results
+        if (!hasSuccessfulResults.current) {
+          console.log('⏰ No existing results, forcing stop of loading state');
+          setIsSearchingTaxis(false);
+          setIsSearchingMultiLeg(false);
+          setIsLoadingRoute(false);
+          setRouteMatchResults({ success: false, availableTaxis: [], message: 'Search timeout' });
+          showGlobalError(
+            t('home:searchError'), 
+            'Search took too long. Please try again.',
+            {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
+        } else {
+          console.log('⏰ Existing results found, just stopping loading state without reset');
+          setIsSearchingTaxis(false);
+          setIsSearchingMultiLeg(false);
+          setIsLoadingRoute(false);
+        }
+      }, 5000); // 5 second timeout
+      
+      // Store timeout ID for cleanup
+      (window as any).taxiSearchTimeout = timeoutId;
+      
     } catch (error) {
+      console.error('❌ Error in taxi search:', error);
       setIsSearchingTaxis(false);
       Alert.alert(
         t('home:searchError'), 
@@ -775,11 +827,21 @@ export default function HomeScreen() {
   // Handle taxi search results
   useEffect(() => {
     if (taxiSearchResult) {
+      console.log('🚖 Taxi search result received:', taxiSearchResult);
+      
+      // Clear timeout since we got a response
+      if ((window as any).taxiSearchTimeout) {
+        clearTimeout((window as any).taxiSearchTimeout);
+        (window as any).taxiSearchTimeout = null;
+      }
+      
       setIsSearchingTaxis(false);
 
       if (taxiSearchResult.success && taxiSearchResult.availableTaxis.length > 0) {
+        console.log(`✅ Found ${taxiSearchResult.availableTaxis.length} available taxis`);
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
+        hasSuccessfulResults.current = true;
       } else {
         // No direct routes found - trigger multi-leg journey search
         console.log('🔄 No direct routes found, searching for multi-leg options...');
@@ -871,6 +933,7 @@ export default function HomeScreen() {
   const handleDestinationSubmit = async () => {
     if (!destinationAddress.trim()) return;
     
+    console.log('📝 Destination submit pressed:', destinationAddress);
     setShowDestinationSuggestions(false);
     setDestinationSuggestions([]);
     setIsGeocodingDestination(true);
@@ -879,6 +942,7 @@ export default function HomeScreen() {
     setIsGeocodingDestination(false);
 
     if (result) {
+      console.log('📍 Geocoded destination:', result);
       const uniqueRouteId = `manual-${result.latitude.toFixed(5)}-${result.longitude.toFixed(5)}`;
       
       const destinationWithUserName = {
@@ -890,6 +954,14 @@ export default function HomeScreen() {
       setSelectedRouteId(uniqueRouteId);
       
       await storeManualDestination(uniqueRouteId, destinationWithUserName);
+      
+      // Force trigger route calculation if we have origin
+      if (origin) {
+        console.log('🚀 Manually triggering route calculation');
+        getRoute(origin, destinationWithUserName);
+      }
+    } else {
+      console.log('❌ Failed to geocode destination');
     }
   };
 
@@ -1262,22 +1334,6 @@ export default function HomeScreen() {
       marginBottom: keyboardVisible ? 20 : 32,
       width: '100%',
       alignSelf: 'center',
-      // Cross-platform shadow handling
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.shadow,
-          shadowOpacity: isDark ? 0.4 : 0.15,
-          shadowOffset: { width: 0, height: 6 },
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 3,
-          shadowColor: theme.shadow,
-          shadowOpacity: isDark ? 0.25 : 0.1,
-          shadowOffset: { width: 0, height: 3 },
-          shadowRadius: 6,
-        },
-      }),
     },
     locationIndicator: {
       marginRight: 16,
@@ -1295,11 +1351,6 @@ export default function HomeScreen() {
       marginBottom: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.primary,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 3,
     },
     currentLocationDot: {
       width: 12,
@@ -1371,11 +1422,6 @@ export default function HomeScreen() {
       borderRadius: 16,
       maxHeight: 200,
       zIndex: 1000,
-      elevation: 12,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.5 : 0.2,
-      shadowOffset: { width: 0, height: 8 },
-      shadowRadius: 12,
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.4)' 
@@ -1447,11 +1493,6 @@ export default function HomeScreen() {
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
     },
     searchResultsText: {
       fontSize: 15,
@@ -1510,11 +1551,6 @@ export default function HomeScreen() {
       paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: 0.4,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 12,
-      elevation: 8,
       minHeight: 56,
       borderWidth: 2,
       borderColor: availableTaxis.length > 0 ? '#D97706' : 'transparent',
@@ -1568,105 +1604,99 @@ export default function HomeScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={dynamicStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-    >
-
-      
-      {isLoadingCurrentLocation ? (
-        <View style={[dynamicStyles.map, { 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          backgroundColor: isDark 
-            ? 'rgba(30, 41, 59, 0.1)' 
-            : 'rgba(255, 255, 255, 0.1)'
-        }]}>
-          <View style={{
-            backgroundColor: isDark 
-              ? 'rgba(30, 41, 59, 0.9)' 
-              : 'rgba(255, 255, 255, 0.9)',
-            borderRadius: 24,
-            padding: 32,
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: isDark 
-              ? 'rgba(71, 85, 105, 0.3)' 
-              : 'rgba(226, 232, 240, 0.8)',
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowOffset: { width: 0, height: 8 },
-            shadowRadius: 16,
-            elevation: 8,
-          }}>
-            <LoadingSpinner />
-            <Text style={{ 
-              color: theme.text, 
-              marginTop: 16, 
-              fontSize: 16, 
-              fontWeight: '600',
-              letterSpacing: -0.2
-            }}>
-              {t('home:gettingLocation')}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <MapView
-          ref={mapRef}
-          style={dynamicStyles.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={getInitialRegion()}
-          customMapStyle={isDark ? darkMapStyle : []}
-        >
-          {origin && 
-            typeof origin.latitude === 'number' &&
-            typeof origin.longitude === 'number' && (
-              <Marker coordinate={origin} title="Origin" pinColor="blue" />
-            )}
-
-          {destination &&
-            typeof destination.latitude === 'number' &&
-            typeof destination.longitude === 'number' && (
-              <Marker coordinate={destination} title={destination.name} pinColor="orange" />
-            )}
-          
-          {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
-            .filter(driver => 
-              typeof driver.latitude === 'number' && 
-              typeof driver.longitude === 'number'
-            )
-            .map((driver, index) => (
-              <Marker
-                key={`${driver._id}_${availableTaxis.length > 0 ? 'available' : 'nearby'}_${index}`}
-                coordinate={{
-                  latitude: driver.latitude,
-                  longitude: driver.longitude,
-                }}
-                title={driver.name || "Available Driver"}
-              >
-                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="car" size={36} color="green" />
-                </View>
-              </Marker>
-            ))}
-
-          {routeLoaded && routeCoordinates.length > 0 && (
-            <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
-          )}
-        </MapView>
-      )}
-
-      <ScrollView 
-        style={dynamicStyles.bottomSheet}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ 
-          paddingBottom: keyboardVisible ? 20 : 100,
-          flexGrow: 1 
-        }}
+    <View style={dynamicStyles.container}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
+        {isLoadingCurrentLocation ? (
+          <View style={[dynamicStyles.map, { 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            backgroundColor: isDark 
+              ? 'rgba(30, 41, 59, 0.1)' 
+              : 'rgba(255, 255, 255, 0.1)'
+          }]}>
+            <View style={{
+              backgroundColor: isDark 
+                ? 'rgba(30, 41, 59, 0.9)' 
+                : 'rgba(255, 255, 255, 0.9)',
+              borderRadius: 24,
+              padding: 32,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: isDark 
+                ? 'rgba(71, 85, 105, 0.3)' 
+                : 'rgba(226, 232, 240, 0.8)',
+            }}>
+              <LoadingSpinner />
+              <Text style={{ 
+                color: theme.text, 
+                marginTop: 16, 
+                fontSize: 16, 
+                fontWeight: '600',
+                letterSpacing: -0.2
+              }}>
+                {t('home:gettingLocation')}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <MapView
+            ref={mapRef}
+            style={dynamicStyles.map}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={getInitialRegion()}
+            customMapStyle={isDark ? darkMapStyle : []}
+          >
+            {origin && 
+              typeof origin.latitude === 'number' &&
+              typeof origin.longitude === 'number' && (
+                <Marker coordinate={origin} title="Origin" pinColor="blue" />
+              )}
+
+            {destination &&
+              typeof destination.latitude === 'number' &&
+              typeof destination.longitude === 'number' && (
+                <Marker coordinate={destination} title={destination.name} pinColor="orange" />
+              )}
+            
+            {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
+              .filter(driver => 
+                typeof driver.latitude === 'number' && 
+                typeof driver.longitude === 'number'
+              )
+              .map((driver, index) => (
+                <Marker
+                  key={`${driver._id}_${availableTaxis.length > 0 ? 'available' : 'nearby'}_${index}`}
+                  coordinate={{
+                    latitude: driver.latitude,
+                    longitude: driver.longitude,
+                  }}
+                  title={driver.name || "Available Driver"}
+                >
+                  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="car" size={36} color="green" />
+                  </View>
+                </Marker>
+              ))}
+
+            {routeLoaded && routeCoordinates.length > 0 && (
+              <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
+            )}
+          </MapView>
+        )}
+
+        <ScrollView 
+          style={dynamicStyles.bottomSheet}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ 
+            paddingBottom: keyboardVisible ? 20 : 100,
+            flexGrow: 1 
+          }}
+        >
         <View style={dynamicStyles.locationBox}>
           <View style={dynamicStyles.locationIndicator}>
             <View style={dynamicStyles.currentLocationCircle}>
@@ -1720,7 +1750,7 @@ export default function HomeScreen() {
               )}
 
               {/* Origin Suggestions */}
-              {showOriginSuggestions && originSuggestions.length > 0 && (
+              {showOriginSuggestions && originSuggestions.length > 0 && !routeLoaded && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
                     style={dynamicStyles.suggestionScrollView}
@@ -1798,15 +1828,7 @@ export default function HomeScreen() {
                   {t('home:loadingRoute')}
                 </Text>
               )}
-              {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { 
-                  color: '#10B981', 
-                  fontWeight: '600',
-                  fontSize: 13
-                }]}>
-                  {t('home:routeLoaded')}
-                </Text>
-              )}
+              {/* Route loaded text removed - no longer needed */}
               {isSearchingTaxis && (
                 <Text style={[dynamicStyles.routeLoadingText, { 
                   color: '#3B82F6', 
@@ -1818,7 +1840,7 @@ export default function HomeScreen() {
               )}
 
               {/* Destination Suggestions */}
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+              {showDestinationSuggestions && destinationSuggestions.length > 0 && !routeLoaded && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
                     style={dynamicStyles.suggestionScrollView}
@@ -1992,7 +2014,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {!keyboardVisible && !routeLoaded && (
+        {!keyboardVisible && (!routeLoaded || (routeLoaded && availableTaxis.length === 0 && !isSearchingTaxis && !isSearchingMultiLeg)) && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
               Recently Used Routes
@@ -2104,39 +2126,39 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Reserve a Seat Button */}
-      {routeLoaded && !isLoadingRoute && !keyboardVisible && (
+      {(() => {
+        const shouldShowButton = routeLoaded && !isLoadingRoute && !keyboardVisible && !isSearchingTaxis && !isSearchingMultiLeg;
+        return shouldShowButton;
+      })() && (
         <Animated.View style={{ opacity: buttonOpacity }}>
           <TouchableOpacity 
             style={dynamicStyles.reserveButton} 
             onPress={handleReserveSeat}
             activeOpacity={0.9}
           >
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {isSearchingTaxis ? (
-                <Icon name="search" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              ) : (
-                <Icon name="location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              )}
-              <Text style={dynamicStyles.reserveButtonText}>
-                {isSearchingTaxis 
-                  ? t('home:findingTaxis')
-                  : availableTaxis.length > 0 
-                    ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
-                    : t('home:reserveSeat')
-                }
-              </Text>
-            </View>
-            {isSearchingTaxis && (
-              <Text style={dynamicStyles.reserveButtonSubtext}>
-                {t('home:searchingDrivers')}
-              </Text>
-            )}
+            <Text style={dynamicStyles.reserveButtonText}>
+              {t('home:reserveSeat')}
+            </Text>
           </TouchableOpacity>
         </Animated.View>
+      )}
+      </KeyboardAvoidingView>
+
+      {/* Loading Overlay - Same as login loading screen */}
+      {(() => {
+        const shouldShowLoading = isLoadingRoute || isSearchingTaxis || isSearchingMultiLeg;
+        return shouldShowLoading;
+      })() && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1000,
+        }}>
+          <LoadingSpinner />
+        </View>
       )}
 
       {/* Multi-leg journey preview overlay */}
@@ -2161,7 +2183,7 @@ export default function HomeScreen() {
           />
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

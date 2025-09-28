@@ -9,6 +9,7 @@ import {
   Linking,
   Pressable,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -26,9 +27,21 @@ import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers
 export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
+
+  // Hide header and tab bar like FeedbackHistoryScreen
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+      tabBarStyle: { display: 'none' }
+    });
+  }, [navigation]);
   const { user } = useUser();
   const { t } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+  // Screen dimensions for responsive design
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
 
   // Get route parameters
   const {
@@ -505,9 +518,9 @@ export default function TaxiInformation() {
       backgroundColor: theme.background,
     },
     header: {
-      paddingHorizontal: 20,
-      paddingTop: 50,
-      paddingBottom: 16,
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+      paddingBottom: 20,
       backgroundColor: theme.background,
       borderBottomWidth: 1,
       borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
@@ -736,39 +749,26 @@ export default function TaxiInformation() {
       lineHeight: 20,
     },
     bookButtonContainer: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      paddingBottom: Platform.OS === 'ios' ? 32 : 20,
-      backgroundColor: theme.background,
-      borderTopWidth: 1,
-      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      position: 'absolute',
+      bottom: 80,
+      left: 24,
+      right: 24,
     },
     bookButton: {
-      backgroundColor: '#FF9900',
-      borderRadius: 30,
-      paddingVertical: 16,
-      paddingHorizontal: 55,
-      minHeight: 48,
+      backgroundColor: '#F59E0B',
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      // Cross-platform shadow for button
-      ...Platform.select({
-        ios: {
-          shadowColor: '#FF9900',
-          shadowOpacity: 0.3,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 4,
-        },
-      }),
+      minHeight: 56,
+      borderWidth: 2,
+      borderColor: '#D97706',
     },
     bookButtonText: {
-      color: '#000000',
+      color: '#FFFFFF',
       fontSize: 18,
-      fontWeight: '600',
-      textAlign: 'center',
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
     routeInfoCard: {
       backgroundColor: theme.card,
