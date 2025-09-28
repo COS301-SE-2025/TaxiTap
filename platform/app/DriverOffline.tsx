@@ -320,7 +320,7 @@ export default function DriverOffline({
   ];
 
   const getRouteDisplayString = () => {
-  if (!assignedRoute) return t('driver:notSet');
+  if (!assignedRoute) return getTranslation('notSet');
 
   if (assignedRoute.stops && assignedRoute.stops.length >= 2) {
     const start = assignedRoute.stops[0].name;
@@ -335,11 +335,11 @@ export default function DriverOffline({
   const quickActions: QuickActionType[] = [
     {
     icon: "location-outline",
-    title: t('driver:assignedRoute'),
+    title: getTranslation('assignedRoute'),
     value: getRouteDisplayString(),
-    subtitle: getRouteDisplayString() === t('driver:notSet') 
-      ? t('driver:noRouteAssigned') 
-      : t('driver:currentRoute'),
+    subtitle: getRouteDisplayString() === getTranslation('notSet') 
+      ? getTranslation('noRouteAssigned') 
+      : getTranslation('currentRoute'),
     color: "#F59E0B",
     onPress: () => router.push('/SetRoute'),
   },
