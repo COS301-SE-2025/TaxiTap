@@ -162,24 +162,30 @@ export default function DriverOffline({
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
-  // Get route display string from database
   const getRouteDisplayString = () => {
-    if (!assignedRoute) return t('driver:notSet');
-    const { start, destination } = parseRouteName(assignedRoute.name);
+  if (!assignedRoute) return t('driver:notSet');
+
+  if (assignedRoute.stops && assignedRoute.stops.length >= 2) {
+    const start = assignedRoute.stops[0].name;
+    const destination = assignedRoute.stops[assignedRoute.stops.length - 1].name;
     return `${start} → ${destination}`;
-  };
+  }
+
+  const { start, destination } = parseRouteName(assignedRoute.name);
+  return `${start} → ${destination}`;
+};
 
   const quickActions: QuickActionType[] = [
     {
-      icon: "location-outline",
-      title: t('driver:assignedRoute'),
-      value: getRouteDisplayString(),
-      subtitle: getRouteDisplayString() === t('driver:notSet') 
-        ? t('driver:noRouteAssigned') 
-        : t('driver:currentRoute'),
-      color: "#F59E0B",
-      onPress: () => router.push('/SetRoute'),
-    },
+    icon: "location-outline",
+    title: t('driver:assignedRoute'),
+    value: getRouteDisplayString(),
+    subtitle: getRouteDisplayString() === t('driver:notSet') 
+      ? t('driver:noRouteAssigned') 
+      : t('driver:currentRoute'),
+    color: "#F59E0B",
+    onPress: () => router.push('/SetRoute'),
+  },
     {
       icon: "people-outline",
       title: t('common:availableSeats'),
@@ -258,6 +264,7 @@ export default function DriverOffline({
       fontWeight: '700',
       color: theme.text,
       letterSpacing: -0.5,
+      paddingLeft: 10,
     },
     headerRight: {
       flexDirection: 'row',
@@ -636,9 +643,6 @@ export default function DriverOffline({
           <View style={dynamicStyles.headerRight}>
             <View style={dynamicStyles.statusContainer}>
               <View style={dynamicStyles.statusDot} />
-              {showFullStatus && (
-                <Text style={dynamicStyles.statusText}>{t('driver:offline')}</Text>
-              )}
             </View>
             
             <TouchableOpacity
