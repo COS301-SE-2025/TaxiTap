@@ -25,8 +25,176 @@ export default function PersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        error: {
+            en: "Error",
+            zu: "Iphutha",
+            tn: "Phoso",
+            af: "Fout"
+        },
+        failedToUploadImage: {
+            en: "Failed to upload image",
+            zu: "Kuhlulekile ukulayisha isithombe",
+            tn: "Go hlolekile go tsaya seswantšho",
+            af: "Kon prent nie oplaai nie"
+        },
+        userNotLoaded: {
+            en: "User not loaded",
+            zu: "Umsebenzisi akakalungi",
+            tn: "Mosebedisi ga a na",
+            af: "Gebruiker nie gelaai nie"
+        },
+        nameRequired: {
+            en: "Name is required",
+            zu: "Igama liyadingeka",
+            tn: "Leina le tlhoka",
+            af: "Naam word benodig"
+        },
+        phoneNumberRequired: {
+            en: "Phone number is required",
+            zu: "Inombolo yocingo iyadingeka",
+            tn: "Nomoro ya mogala e tlhoka",
+            af: "Telefoon nommer word benodig"
+        },
+        success: {
+            en: "Success",
+            zu: "Impumelelo",
+            tn: "Katlego",
+            af: "Sukses"
+        },
+        changesSavedSuccessfully: {
+            en: "Changes saved successfully",
+            zu: "Izinguquko zigcinwe ngempumelelo",
+            tn: "Diphetogo di bolokilwe ka katlego",
+            af: "Veranderinge suksesvol gestoor"
+        },
+        ok: {
+            en: "OK",
+            zu: "KULUNGILE",
+            tn: "GO SIAME",
+            af: "OK"
+        },
+        failedToSaveChanges: {
+            en: "Failed to save changes",
+            zu: "Kuhlulekile ukugcina izinguquko",
+            tn: "Go hlolekile go boloka diphetogo",
+            af: "Kon veranderinge nie stoor nie"
+        },
+        personalInformation: {
+            en: "Personal Information",
+            zu: "Ulwazi Lwomuntu",
+            tn: "Tshedimosetso ya Motho",
+            af: "Persoonlike Inligting"
+        },
+        basicInformation: {
+            en: "Basic Information",
+            zu: "Ulwazi Oluyisisekelo",
+            tn: "Tshedimosetso ya Motheo",
+            af: "Basiese Inligting"
+        },
+        name: {
+            en: "Name",
+            zu: "Igama",
+            tn: "Leina",
+            af: "Naam"
+        },
+        namePlaceholder: {
+            en: "Enter your full name",
+            zu: "Faka igama lakho eligcwele",
+            tn: "Kenya leina la gago le le tletseng",
+            af: "Voer jou volledige naam in"
+        },
+        phoneNumber: {
+            en: "Phone Number",
+            zu: "Inombolo Yocingo",
+            tn: "Nomoro ya Mogala",
+            af: "Telefoon Nommer"
+        },
+        phoneNumberPlaceholder: {
+            en: "Enter your phone number",
+            zu: "Faka inombolo yakho yocingo",
+            tn: "Kenya nomoro ya gago ya mogala",
+            af: "Voer jou telefoon nommer in"
+        },
+        email: {
+            en: "Email",
+            zu: "I-imeyili",
+            tn: "Imeile",
+            af: "E-pos"
+        },
+        emailPlaceholder: {
+            en: "Enter your email address",
+            zu: "Faka ikheli lakho le-imeyili",
+            tn: "Kenya aterese ya gago ya imeile",
+            af: "Voer jou e-pos adres in"
+        },
+        emergencyContactText: {
+            en: "Emergency Contact",
+            zu: "Othintana Ngezimo Eziphuthumayo",
+            tn: "Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak"
+        },
+        emergencyContactName: {
+            en: "Emergency Contact Name",
+            zu: "Igama Lomuntu Othintana Ngezimo Eziphuthumayo",
+            tn: "Leina la Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak Naam"
+        },
+        emergencyContactNamePlaceholder: {
+            en: "Enter emergency contact name",
+            zu: "Faka igama lomuntu othintana ngezimo eziphuthumayo",
+            tn: "Kenya leina la mogokanyi wa tshoganetso",
+            af: "Voer nood kontak naam in"
+        },
+        emergencyContactPhone: {
+            en: "Emergency Contact Phone",
+            zu: "Ucingo Lomuntu Othintana Ngezimo Eziphuthumayo",
+            tn: "Mogala wa Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak Telefoon"
+        },
+        emergencyContactPhonePlaceholder: {
+            en: "Enter emergency contact phone",
+            zu: "Faka ucingo lomuntu othintana ngezimo eziphuthumayo",
+            tn: "Kenya mogala wa mogokanyi wa tshoganetso",
+            af: "Voer nood kontak telefoon in"
+        },
+        emergencyContactRelationship: {
+            en: "Relationship",
+            zu: "Ubudlelwano",
+            tn: "Kamano",
+            af: "Verhouding"
+        },
+        emergencyContactRelationshipPlaceholder: {
+            en: "e.g., Parent, Spouse, Friend",
+            zu: "isb., Umzali, Umngane, Umngane",
+            tn: "mohlala, Motsadi, Motsadi, Tsala",
+            af: "bv., Ouer, Gade, Vriend"
+        },
+        saving: {
+            en: "Saving...",
+            zu: "Kugcinwa...",
+            tn: "Go boloka...",
+            af: "Stoor..."
+        },
+        saveChanges: {
+            en: "Save Changes",
+            zu: "Gcina Izinguquko",
+            tn: "Boloka Diphetogo",
+            af: "Stoor Veranderinge"
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -72,7 +240,7 @@ export default function PersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            showGlobalError('Error', 'Failed to upload image', {
+            showGlobalError(getTranslation('error'), getTranslation('failedToUploadImage'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -82,7 +250,7 @@ export default function PersonalInfoEdit() {
 
     const handleSave = async () => {
         if (!user) {
-            showGlobalError('Error', 'User not loaded', {
+            showGlobalError(getTranslation('error'), getTranslation('userNotLoaded'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -90,7 +258,7 @@ export default function PersonalInfoEdit() {
             return;
         }
         if (!name.trim()) {
-            showGlobalError('Error', 'Name is required', {
+            showGlobalError(getTranslation('error'), getTranslation('nameRequired'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -98,7 +266,7 @@ export default function PersonalInfoEdit() {
             return;
         }
         if (!phoneNumber.trim()) {
-            showGlobalError('Error', 'Phone number is required', {
+            showGlobalError(getTranslation('error'), getTranslation('phoneNumberRequired'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -130,13 +298,13 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess(getTranslation('success'), getTranslation('changesSavedSuccessfully'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
               actions: [
                 {
-                  label: 'OK',
+                  label: getTranslation('ok'),
                   onPress: () => router.back(),
                   style: 'default',
                 },
@@ -144,7 +312,7 @@ export default function PersonalInfoEdit() {
             });
         } catch (error: any) {
             console.error('Update error:', error);
-            showGlobalError('Error', error.message || 'Failed to save changes', {
+            showGlobalError(getTranslation('error'), error.message || getTranslation('failedToSaveChanges'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -291,7 +459,7 @@ export default function PersonalInfoEdit() {
                     <Pressable style={dynamicStyles.backButton} onPress={() => router.push('../PassengerProfile')}>
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>{t('personalInfo:personalInformation')}</Text>
+                    <Text style={dynamicStyles.headerTitle}>{getTranslation('personalInformation')}</Text>
                 </View>
 
                 {/* Profile Photo Section */}
@@ -316,38 +484,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
-                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:basicInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{getTranslation('basicInformation')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('name')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder={t('personalInfo:namePlaceholder')}
+                            placeholder={getTranslation('namePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:phoneNumber')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            placeholder={t('personalInfo:phoneNumberPlaceholder')}
+                            placeholder={getTranslation('phoneNumberPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:email')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder={t('personalInfo:emailPlaceholder')}
+                            placeholder={getTranslation('emailPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -356,38 +524,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact */}
-                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:emergencyContactText')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{getTranslation('emergencyContactText')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder={t('personalInfo:emergencyContactNamePlaceholder')}
+                            placeholder={getTranslation('emergencyContactNamePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactPhone')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactPhone}
                             onChangeText={setEmergencyContactPhone}
-                            placeholder={t('personalInfo:emergencyContactPhonePlaceholder')}
+                            placeholder={getTranslation('emergencyContactPhonePlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactRelationship')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder={t('personalInfo:emergencyContactRelationshipPlaceholder')}
+                            placeholder={getTranslation('emergencyContactRelationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -400,7 +568,7 @@ export default function PersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? t('personalInfo:saving') : t('personalInfo:saveChanges')}
+                        {isLoading ? getTranslation('saving') : getTranslation('saveChanges')}
                     </Text>
                 </Pressable>
             </ScrollView>
