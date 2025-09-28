@@ -282,7 +282,7 @@ export default function SeatReserved() {
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
 	const { 
 		currentLocation,
 		destination,
@@ -297,6 +297,96 @@ export default function SeatReserved() {
 		getCachedRoute,
 		setCachedRoute
 	} = useMapContext();
+
+	// Supported languages type
+	type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+	// Hardcoded translations for all UI text
+	const translations: Record<string, Record<SupportedLanguage, string>> = {
+		unknown: {
+			en: "Unknown",
+			zu: "Akwaziwa",
+			tn: "Ga e Itseweng",
+			af: "Onbekend"
+		},
+		waitingForDriver: {
+			en: "Waiting for driver",
+			zu: "Silinde umshayeli",
+			tn: "Re emetse mokgweetsi",
+			af: "Wag vir bestuurder"
+		},
+		calculating: {
+			en: "Calculating",
+			zu: "Kubalwa",
+			tn: "Go balwa",
+			af: "Bereken"
+		},
+		rideStarted: {
+			en: "Ride Started",
+			zu: "Uhambo Luqalile",
+			tn: "Leeto le Simolotse",
+			af: "Rit Begin"
+		},
+		ok: {
+			en: "OK",
+			zu: "KULUNGILE",
+			tn: "GO SIAME",
+			af: "OK"
+		},
+		rideDeclined: {
+			en: "Ride Declined",
+			zu: "Uhambo Lwenqatshwe",
+			tn: "Leeto le Tlhaotswe",
+			af: "Rit Geweier"
+		},
+		rideDeclinedMessage: {
+			en: "The driver has declined your ride request",
+			zu: "Umshayeli wenqatshe isicelo sakho sohambo",
+			tn: "Mokgweetsi o tlhaotse kopo ya gago ya leeto",
+			af: "Die bestuurder het jou ritversoek geweier"
+		},
+		rideCancelled: {
+			en: "Ride Cancelled",
+			zu: "Uhambo Luqedwe",
+			tn: "Leeto le Tlhopholotswe",
+			af: "Rit Gekanselleer"
+		},
+		loadingRoute: {
+			en: "Loading route...",
+			zu: "Kulayishwa umzila...",
+			tn: "Go tsena tsela...",
+			af: "Laai roete..."
+		},
+		driverDetails: {
+			en: "Driver Details",
+			zu: "Imininingwane Yomshayeli",
+			tn: "Mabaka a Mokgweetsi",
+			af: "Bestuurderbesonderhede"
+		},
+		cancelRequest: {
+			en: "Cancel Request",
+			zu: "Khansela Isicelo",
+			tn: "Tlhopholotsa Kopo",
+			af: "Kanselleer Versoek"
+		},
+		verifyPin: {
+			en: "Verify PIN",
+			zu: "Qinisekisa I-PIN",
+			tn: "Tlatsa PIN",
+			af: "Verifieer PIN"
+		},
+		endRide: {
+			en: "End Ride",
+			zu: "Qeda Uhambo",
+			tn: "Fetsa Leeto",
+			af: "Eindig Rit"
+		}
+	} as const;
+
+	// Type-safe translation getter
+	const getTranslation = (key: keyof typeof translations) => {
+		return translations[key][currentLanguage as SupportedLanguage];
+	};
 	const { notifications, markAsRead } = useNotifications();
 	const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
 
@@ -437,8 +527,8 @@ export default function SeatReserved() {
 	}, [useLiveLocation, streamedLocation, currentLocation, destination]);
 
 	const vehicleInfo = {
-		plate: getParamAsString(params.plate, t('passengerReservation:unknown')),
-		time: getParamAsString(params.time, t('passengerReservation:unknown')),
+		plate: getParamAsString(params.plate, getTranslation('unknown')),
+		time: getParamAsString(params.time, getTranslation('unknown')),
 		seats: getParamAsString(params.seats, "0"),
 		price: getParamAsString(params.price, "0"),
 		selectedVehicleId: getParamAsString(params.selectedVehicleId, ""),
@@ -764,17 +854,17 @@ export default function SeatReserved() {
 	const getDisplayTime = (): string => {
 		// Note: Driver location tracking not implemented in current structure
 		// Fall back to the original time parameter or show appropriate message
-		if (vehicleInfo.time && vehicleInfo.time !== t('passengerReservation:unknown')) {
+		if (vehicleInfo.time && vehicleInfo.time !== getTranslation('unknown')) {
 			return vehicleInfo.time;
 		}
 		
 		// Show different messages based on ride status
 		if (rideStatus === 'requested') {
-			return t('home:waitingForDriver');
+			return getTranslation('waitingForDriver');
 		} else if (rideStatus === 'accepted') {
 			return 'Driver assigned';
 		} else {
-			return t('home:calculating');
+			return getTranslation('calculating');
 		}
 	};
 
@@ -789,13 +879,13 @@ export default function SeatReserved() {
 			processedNotificationsRef.current.add(rideStarted._id);
 
 			showGlobalAlert({
-				title: t('passengerReservation:rideStarted'),
+				title: getTranslation('rideStarted'),
 				message: rideStarted.message,
 				type: 'success',
 				duration: 0,
 				actions: [
 					{
-						label: t('passengerReservation:ok'),
+						label: getTranslation('ok'),
 						onPress: () => {
 							markAsRead(rideStarted._id);
 							if (!currentLocation || !destination) {
@@ -821,13 +911,13 @@ export default function SeatReserved() {
 			processedNotificationsRef.current.add(rideDeclined._id);
 			
 			showGlobalError(
-				t('passengerReservation:rideDeclined'),
-				rideDeclined.message || t('passengerReservation:rideDeclinedMessage'),
+				getTranslation('rideDeclined'),
+				rideDeclined.message || getTranslation('rideDeclinedMessage'),
 				{
 					duration: 0,
 					actions: [
 						{
-							label: t('passengerReservation:ok'),
+							label: getTranslation('ok'),
 							onPress: () => {
 								markAsRead(rideDeclined._id);
 								router.push('/HomeScreen');
@@ -840,7 +930,7 @@ export default function SeatReserved() {
 				}
 			);
 		}
-	}, [notifications, markAsRead, router, t, currentLocation, destination, showGlobalAlert, showGlobalError]);
+	}, [notifications, markAsRead, router, currentLocation, destination, showGlobalAlert, showGlobalError]);
 
 	useEffect(() => {
 		// Don't show error alerts if the ride has ended or if we've already shown the alert
@@ -850,7 +940,7 @@ export default function SeatReserved() {
 		if (taxiInfo === null) {
 			console.log('No active reservation found - ride likely completed successfully');
 		}
-	}, [hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError, taxiInfo]);
+	}, [hasShownDeclinedAlert, rideJustEnded, router, showGlobalError, taxiInfo]);
 
 	// FIXED: Debounced proximity monitoring with ref tracking
 	const startProximityMonitoring = useCallback(() => {
@@ -1079,7 +1169,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			showGlobalAlert({
 				title: 'Success',
-				message: t('home:rideCancelled'),
+				message: getTranslation('rideCancelled'),
 				type: 'success',
 				duration: 3000,
 				position: 'top',
@@ -1621,7 +1711,7 @@ export default function SeatReserved() {
 								</Text>
 								{isLoadingRoute && (
 									<Text style={dynamicStyles.routeLoadingText}>
-										{t('passengerReservation:loadingRoute')}
+										{getTranslation('loadingRoute')}
 									</Text>
 								)}
 							</View>
@@ -1651,7 +1741,7 @@ export default function SeatReserved() {
 						{/* Driver Details Header */}
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{t('passengerReservation:driverDetails')}
+								{getTranslation('driverDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButtons}>
 								<TouchableOpacity style={dynamicStyles.contactButton} onPress={handleCall}>
@@ -1721,7 +1811,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={dynamicStyles.driverDetails}>
 									<Text style={dynamicStyles.driverName}>
-{t('home:waitingForDriver')}
+{getTranslation('waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.
@@ -1797,7 +1887,7 @@ export default function SeatReserved() {
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{t('passengerReservation:cancelRequest')}
+											{getTranslation('cancelRequest')}
 										</Text>
 									</TouchableOpacity>
 								)}
@@ -1809,14 +1899,14 @@ export default function SeatReserved() {
 											style={dynamicStyles.startRideButton} 
 											onPress={handleStartRide}>
 											<Text style={dynamicStyles.startRideButtonText}>
-												{t('passengerReservation:verifyPin')}
+												{getTranslation('verifyPin')}
 											</Text>
 										</TouchableOpacity>
 										<TouchableOpacity 
 											style={dynamicStyles.cancelButton} 
 											onPress={handleCancelRequest}>
 											<Text style={dynamicStyles.cancelButtonText}>
-												{t('passengerReservation:cancelRequest')}
+												{getTranslation('cancelRequest')}
 											</Text>
 										</TouchableOpacity>
 									</>
@@ -1829,7 +1919,7 @@ export default function SeatReserved() {
 											style={dynamicStyles.endRideButton} 
 											onPress={handleEndRide}>
 											<Text style={dynamicStyles.endRideButtonText}>
-												{t('passengerReservation:endRide')}
+												{getTranslation('endRide')}
 											</Text>
 										</TouchableOpacity>
 										
