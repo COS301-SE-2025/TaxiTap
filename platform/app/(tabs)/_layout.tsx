@@ -177,6 +177,7 @@ const TabNavigation: React.FC = () => {
         name="Wallet"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
 
@@ -242,6 +243,7 @@ const TabNavigation: React.FC = () => {
         name="PersonalInfoEdit"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
 
