@@ -152,6 +152,7 @@ export default function TaxiInformation() {
           vehicleModel: taxi.vehicleModel,
           distanceToOrigin: taxi.distanceToOrigin,
           routeInfo: taxi.routeInfo,
+          averageRating: taxi.averageRating ?? taxi.routeInfo?.calculatedRating ?? 0,
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
           displayDistance: `${taxi.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
           routeName: taxi.routeInfo.routeName,
@@ -452,65 +453,86 @@ export default function TaxiInformation() {
     }
   };
 
-
-  // Simplified taxi card
   const renderTaxiCard = (taxi: any, index: number) => {
     const isEnhanced = taxi.routeInfo;
     const isSelected = selectedTaxi?._id === taxi._id;
 
-   return (
-     <TouchableOpacity
-       key={taxi._id || index}
-       style={[
-         dynamicStyles.taxiCard,
-         isSelected && dynamicStyles.selectedTaxiCard
-       ]}
-       onPress={() => handleTaxiSelect(taxi)}
-       activeOpacity={0.7}
-     >
-       <View style={dynamicStyles.cardContent}>
-         {/* Left side - Driver info */}
-         <View style={dynamicStyles.driverInfo}>
-           <Text style={dynamicStyles.driverName}>
-             {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
-           </Text>
-           <Text style={dynamicStyles.vehicleInfo}>
-             {taxi.vehicleModel}
-           </Text>
-           {isEnhanced && (
-             <View style={dynamicStyles.distanceContainer}>
-               <Ionicons name="location" size={12} color={theme.textSecondary} />
-               <Text style={dynamicStyles.distanceText}>
-                 {taxi.distanceToOrigin.toFixed(1)}km away
-               </Text>
-             </View>
-           )}
-         </View>
+    const driverRating = taxi.averageRating ?? 0;
 
-         {/* Right side - Actions */}
-         <View style={dynamicStyles.cardActions}>
-           <View style={dynamicStyles.selectionIndicator}>
-             <Ionicons
-               name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-               size={20}
-               color={isSelected ? theme.primary : theme.textSecondary}
-             />
-           </View>
+    return (
+      <TouchableOpacity
+        key={taxi._id || index}
+        style={[
+          dynamicStyles.taxiCard,
+          isSelected && dynamicStyles.selectedTaxiCard
+        ]}
+        onPress={() => handleTaxiSelect(taxi)}
+        activeOpacity={0.7}
+      >
+        <View style={dynamicStyles.cardContent}>
+          {/* Left side - Driver info */}
+          <View style={dynamicStyles.driverInfo}>
+            <Text style={dynamicStyles.driverName}>
+              {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
+            </Text>
 
-           {taxi.phoneNumber && (
-             <TouchableOpacity
-               style={dynamicStyles.callButton}
-               onPress={() => handleCallDriver(taxi.phoneNumber)}
-               activeOpacity={0.8}
-             >
-               <Ionicons name="call" size={16} color={theme.primary} />
-             </TouchableOpacity>
-           )}
-         </View>
-       </View>
-     </TouchableOpacity>
-   );
- };
+            {/* Driver Rating */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              {driverRating > 0 ? [1, 2, 3, 4, 5].map((star) => {
+                const full = driverRating >= star;
+                const half = driverRating >= star - 0.5 && driverRating < star;
+                return (
+                  <Icon
+                    key={star}
+                    name={full ? "star" : half ? "star-half" : "star-outline"}
+                    size={12}
+                    color="#FFD700"
+                    style={{ marginRight: 2 }}
+                  />
+                );
+              }) : (
+                <Text style={{ fontSize: 12, color: theme.textSecondary }}>No ratings</Text>
+              )}
+            </View>
+
+            <Text style={dynamicStyles.vehicleInfo}>
+              {taxi.vehicleModel}
+            </Text>
+
+            {isEnhanced && (
+              <View style={dynamicStyles.distanceContainer}>
+                <Ionicons name="location" size={12} color={theme.textSecondary} />
+                <Text style={dynamicStyles.distanceText}>
+                  {taxi.distanceToOrigin.toFixed(1)}km away
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Right side - Actions */}
+          <View style={dynamicStyles.cardActions}>
+            <View style={dynamicStyles.selectionIndicator}>
+              <Ionicons
+                name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                size={20}
+                color={isSelected ? theme.primary : theme.textSecondary}
+              />
+            </View>
+
+            {taxi.phoneNumber && (
+              <TouchableOpacity
+                style={dynamicStyles.callButton}
+                onPress={() => handleCallDriver(taxi.phoneNumber)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="call" size={16} color={theme.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const dynamicStyles = StyleSheet.create({
     container: {
