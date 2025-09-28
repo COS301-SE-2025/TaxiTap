@@ -27,8 +27,158 @@ export default function TaxiInformation() {
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    km: {
+      en: "km",
+      zu: "km",
+      tn: "km",
+      af: "km"
+    },
+    away: {
+      en: "away",
+      zu: "kude",
+      tn: "kgakala",
+      af: "weg"
+    },
+    rideRequestSent: {
+      en: "Ride Request Sent",
+      zu: "Isicelo Sohambo Sithunyelwe",
+      tn: "Kopo ya Leetong e Romilwe",
+      af: "Rit Versoek Gestuur"
+    },
+    rideRequestMessage: {
+      en: "Ride request sent to {name}",
+      zu: "Isicelo sohambo sithunyelwe ku-{name}",
+      tn: "Kopo ya leetong e romilwe go {name}",
+      af: "Rit versoek gestuur na {name}"
+    },
+    ok: {
+      en: "OK",
+      zu: "KULUNGILE",
+      tn: "GO SIAME",
+      af: "OK"
+    },
+    driver: {
+      en: "Driver",
+      zu: "Umshayeli",
+      tn: "Mokgweetsi",
+      af: "Bestuurder"
+    },
+    vehicleInfoNotAvailable: {
+      en: "Vehicle info not available",
+      zu: "Ulwazi lwemoto alukho",
+      tn: "Tshedimosetso ya koloi ga e na",
+      af: "Voertuig inligting nie beskikbaar nie"
+    },
+    registrationNotAvailable: {
+      en: "Registration not available",
+      zu: "Ukubhaliswa akukho",
+      tn: "Tseno ga e na",
+      af: "Registrasie nie beskikbaar nie"
+    },
+    route: {
+      en: "Route:",
+      zu: "Indlela:",
+      tn: "Leetong:",
+      af: "Roete:"
+    },
+    distance: {
+      en: "Distance:",
+      zu: "Ibanga:",
+      tn: "Sebaka:",
+      af: "Afstand:"
+    },
+    pickupNear: {
+      en: "Pickup near:",
+      zu: "Ukuthatha eduze:",
+      tn: "Go tsaya kgakala:",
+      af: "Afhaal naby:"
+    },
+    dropOffNear: {
+      en: "Drop-off near:",
+      zu: "Ukulahla eduze:",
+      tn: "Go lahla kgakala:",
+      af: "Afset naby:"
+    },
+    callDriver: {
+      en: "Call Driver",
+      zu: "Shayela Umshayeli",
+      tn: "Opelela Mokgweetsi",
+      af: "Bel Bestuurder"
+    },
+    availableTaxis: {
+      en: "Available Taxis",
+      zu: "Amatekisi Atholakalayo",
+      tn: "Ditekisi tse di Leng",
+      af: "Beskikbare Taxis"
+    },
+    currentLocation: {
+      en: "Current Location",
+      zu: "Indawo Yamanje",
+      tn: "Lefelo la Jaanong",
+      af: "Huidige Ligging"
+    },
+    findingAvailableTaxis: {
+      en: "Finding available taxis...",
+      zu: "Kufunwa amatekisi atholakalayo...",
+      tn: "Go batlwa ditekisi tse di leng...",
+      af: "Vind beskikbare taxis..."
+    },
+    foundTaxisOnRoutes: {
+      en: "Found {count} taxis on routes",
+      zu: "Kutholakele amatekisi angu-{count} ezindleleni",
+      tn: "Go fitlhetswe ditekisi tse {count} mo leetong",
+      af: "Gevind {count} taxis op roetes"
+    },
+    onMatchingRoutes: {
+      en: "on {count} matching routes",
+      zu: "ezindleleni ezingu-{count} ezifanayo",
+      tn: "mo leetong le {count} le le tshwanang",
+      af: "op {count} ooreenstemmende roetes"
+    },
+    noAvailableTaxis: {
+      en: "No Available Taxis",
+      zu: "Awukho Amatekisi Atholakalayo",
+      tn: "Ga go na Ditekisi tse di Leng",
+      af: "Geen Beskikbare Taxis Nie"
+    },
+    noTaxisMessage: {
+      en: "No taxis are currently available on this route.",
+      zu: "Awukho amatekisi atholakalayo okwamanje kule ndlela.",
+      tn: "Ga go na ditekisi tse di leng ka nako e mo leetong le.",
+      af: "Geen taxis is tans beskikbaar op hierdie roete nie."
+    },
+    tryAdjustingLocation: {
+      en: "Try adjusting your location or try again later.",
+      zu: "Zama ukulungisa indawo yakho noma uzame futhi kamuva.",
+      tn: "Leka go fetola lefelo la gago kgotsa o leke gape morago.",
+      af: "Probeer jou ligging aan te pas of probeer later weer."
+    },
+    bookingRide: {
+      en: "Booking Ride",
+      zu: "Kubhuka Uhambo",
+      tn: "Go Buka Leetong",
+      af: "Besig om Rit te Bespreek"
+    },
+    bookRideWith: {
+      en: "Book Ride with {name}",
+      zu: "Bhuka Uhambo no-{name}",
+      tn: "Buka Leetong le {name}",
+      af: "Bespreek Rit met {name}"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   // Get route parameters
   const {
@@ -140,7 +290,7 @@ export default function TaxiInformation() {
           distanceToOrigin: taxi.distanceToOrigin,
           routeInfo: taxi.routeInfo,
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
-          displayDistance: `${taxi.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
+          displayDistance: `${taxi.distanceToOrigin}${getTranslation('km')} ${getTranslation('away')}`,
           routeName: taxi.routeInfo.routeName,
           fare: taxi.routeInfo.calculatedFare,
         })) || [];
@@ -155,7 +305,7 @@ export default function TaxiInformation() {
       console.log('⚠️ No enhanced data received, falling back to original query');
       setIsLoadingTaxis(false);
     }
-  }, [routeMatchDataString, t]);
+  }, [routeMatchDataString]);
 
   // Fallback query for backward compatibility
   const shouldUseOriginalQuery = !routeMatchDataString;
@@ -223,7 +373,7 @@ export default function TaxiInformation() {
           distanceToOrigin: driver.distanceToOrigin,
           routeInfo: driver.routeInfo,
           displayName: `${driver.name} - ${driver.vehicleModel}`,
-          displayDistance: `${driver.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
+          displayDistance: `${driver.distanceToOrigin}${getTranslation('km')} ${getTranslation('away')}`,
           routeName: driver.routeInfo.routeName,
           fare: driver.routeInfo.calculatedFare,
         }));
@@ -240,7 +390,7 @@ export default function TaxiInformation() {
       
       setIsLoadingTaxis(false);
     }
-  }, [nextLegInfo, isMultiLegJourney, routeMatchDataString, t]);
+  }, [nextLegInfo, isMultiLegJourney, routeMatchDataString]);
 
   // Animation for book button
   useEffect(() => {
@@ -360,15 +510,15 @@ export default function TaxiInformation() {
         showGlobalSuccess(
           isMultiLegJourney
             ? `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`
-            : t('taxiInfo:rideRequestSent'),
+            : getTranslation('rideRequestSent'),
           isMultiLegJourney
             ? `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`
-            : t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
+            : getTranslation('rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
             actions: [
               {
-                label: t('common:ok'),
+                label: getTranslation('ok'),
                 onPress: () => {
                   const navigationParams = {
                     currentLat: effectiveCurrentLat,
@@ -460,7 +610,7 @@ export default function TaxiInformation() {
           <View style={dynamicStyles.taxiHeader}>
             <View style={dynamicStyles.nameAndFareRow}>
               <Text style={dynamicStyles.taxiName}>
-                {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
+                {taxi.name || `${getTranslation('driver')} ${index + 1}`}
               </Text>
               {isEnhanced && (
                 <View style={dynamicStyles.fareDisplay}>
@@ -472,7 +622,7 @@ export default function TaxiInformation() {
             {isEnhanced && (
               <View style={dynamicStyles.distanceBadge}>
                 <Text style={dynamicStyles.distanceText}>
-                  {taxi.distanceToOrigin.toFixed(1)}{t('taxiInfo:km')}
+                  {taxi.distanceToOrigin.toFixed(1)}{getTranslation('km')}
                 </Text>
               </View>
             )}
@@ -482,14 +632,14 @@ export default function TaxiInformation() {
             <View style={dynamicStyles.detailRow}>
               <Icon name="car" size={18} color={theme.textSecondary} />
               <Text style={dynamicStyles.taxiDetailText}>
-                {taxi.vehicleModel || t('taxiInfo:vehicleInfoNotAvailable')}
+                {taxi.vehicleModel || getTranslation('vehicleInfoNotAvailable')}
               </Text>
             </View>
             
             <View style={dynamicStyles.detailRow}>
               <Icon name="card" size={18} color={theme.textSecondary} />
               <Text style={dynamicStyles.taxiDetailText}>
-                {taxi.vehicleRegistration || t('taxiInfo:registrationNotAvailable')}
+                {taxi.vehicleRegistration || getTranslation('registrationNotAvailable')}
               </Text>
             </View>
             
@@ -498,14 +648,14 @@ export default function TaxiInformation() {
                 <View style={dynamicStyles.detailRow}>
                   <Icon name="navigate" size={18} color={theme.primary} />
                   <Text style={dynamicStyles.routeInfoText}>
-                    {t('taxiInfo:route')} {taxi.routeInfo.routeName}
+                    {getTranslation('route')} {taxi.routeInfo.routeName}
                   </Text>
                 </View>
                 
                 <View style={dynamicStyles.detailRow}>
                   <Icon name="speedometer" size={18} color={theme.textSecondary} />
                   <Text style={dynamicStyles.routeInfoText}>
-                    {t('taxiInfo:distance')} {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}{t('taxiInfo:km')}
+                    {getTranslation('distance')} {(taxi.routeInfo.passengerDisplacement || 0).toFixed(1)}{getTranslation('km')}
                   </Text>
                 </View>
                 
@@ -513,8 +663,8 @@ export default function TaxiInformation() {
                   <View style={dynamicStyles.detailRow}>
                     <Icon name="location" size={18} color={theme.textSecondary} />
                     <Text style={dynamicStyles.stopInfoText}>
-                      {t('taxiInfo:pickupNear')} {taxi.routeInfo.closestStartStop.name}
-                      ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}{t('taxiInfo:km')})
+                      {getTranslation('pickupNear')} {taxi.routeInfo.closestStartStop.name}
+                      ({(taxi.routeInfo.closestStartStop.distanceFromOrigin || 0).toFixed(1)}{getTranslation('km')})
                     </Text>
                   </View>
                 )}
@@ -523,8 +673,8 @@ export default function TaxiInformation() {
                   <View style={dynamicStyles.detailRow}>
                     <Icon name="flag" size={18} color={theme.textSecondary} />
                     <Text style={dynamicStyles.stopInfoText}>
-                      {t('taxiInfo:dropOffNear')} {taxi.routeInfo.closestEndStop.name}
-                      ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}{t('taxiInfo:km')})
+                      {getTranslation('dropOffNear')} {taxi.routeInfo.closestEndStop.name}
+                      ({(taxi.routeInfo.closestEndStop.distanceFromDestination || 0).toFixed(1)}{getTranslation('km')})
                     </Text>
                   </View>
                 )}
@@ -537,7 +687,7 @@ export default function TaxiInformation() {
                 onPress={() => handleCallDriver(taxi.phoneNumber)}
               >
                 <Icon name="call" size={18} color={theme.primary} />
-                <Text style={dynamicStyles.callButtonText}>{t('taxiInfo:callDriver')}</Text>
+                <Text style={dynamicStyles.callButtonText}>{getTranslation('callDriver')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -834,11 +984,11 @@ export default function TaxiInformation() {
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
           <Text style={dynamicStyles.headerTitle2}>
-            {t('taxiInfo:availableTaxis')}
+            {getTranslation('availableTaxis')}
           </Text>
         </View>
         <Text style={dynamicStyles.headerSubtitle}>
-          {currentName && currentName !== 'Current Location' ? currentName : t('common:currentLocation')}
+          {currentName && currentName !== 'Current Location' ? currentName : getTranslation('currentLocation')}
           {' → '}
           {destinationName}
         </Text>
@@ -900,7 +1050,7 @@ export default function TaxiInformation() {
           {isLoadingTaxis ? (
             <View style={dynamicStyles.loadingContainer}>
               <LoadingSpinner size="large" />
-              <Text style={dynamicStyles.loadingText}>{t('taxiInfo:findingAvailableTaxis')}</Text>
+              <Text style={dynamicStyles.loadingText}>{getTranslation('findingAvailableTaxis')}</Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (
             <>
@@ -909,10 +1059,10 @@ export default function TaxiInformation() {
               {routeMatchData && (
                 <View style={dynamicStyles.matchSummaryCard}>
                   <Text style={dynamicStyles.matchSummaryTitle}>
-                    {t('taxiInfo:foundTaxisOnRoutes').replace('{count}', routeMatchData.availableTaxis.length.toString())}
+                    {getTranslation('foundTaxisOnRoutes').replace('{count}', routeMatchData.availableTaxis.length.toString())}
                   </Text>
                   <Text style={dynamicStyles.matchSummaryText}>
-                    {t('taxiInfo:onMatchingRoutes').replace('{count}', routeMatchData.matchingRoutes.length.toString())}
+                    {getTranslation('onMatchingRoutes').replace('{count}', routeMatchData.matchingRoutes.length.toString())}
                   </Text>
                   {estimatedFare && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
@@ -930,9 +1080,9 @@ export default function TaxiInformation() {
             </>
           ) : (
             <View style={dynamicStyles.noTaxisContainer}>
-              <Text style={dynamicStyles.noTaxisTitle}>{t('taxiInfo:noAvailableTaxis')}</Text>
+              <Text style={dynamicStyles.noTaxisTitle}>{getTranslation('noAvailableTaxis')}</Text>
               <Text style={dynamicStyles.noTaxisText}>
-                {routeMatchData?.message || t('taxiInfo:noTaxisMessage')}
+                {routeMatchData?.message || getTranslation('noTaxisMessage')}
               </Text>
               
               {/* Multi-leg journey specific message and cancel option */}
@@ -957,7 +1107,7 @@ export default function TaxiInformation() {
                 </>
               ) : (
                 <Text style={dynamicStyles.noTaxisSubtext}>
-                  {t('taxiInfo:tryAdjustingLocation')}
+                  {getTranslation('tryAdjustingLocation')}
                 </Text>
               )}
             </View>
@@ -980,8 +1130,8 @@ export default function TaxiInformation() {
           >
             <Text style={dynamicStyles.bookButtonText}>
               {isBooking 
-                ? t('taxiInfo:bookingRide') 
-                : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)
+                ? getTranslation('bookingRide') 
+                : getTranslation('bookRideWith').replace('{name}', selectedTaxi.name)
               }
             </Text>
           </TouchableOpacity>
