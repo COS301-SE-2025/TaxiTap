@@ -10,11 +10,95 @@ export default function HelpPage() {
   const router = useRouter();
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showInfo } = useAlertHelpers();
 
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    support: {
+      en: "Support",
+      zu: "Ukusekela",
+      tn: "Tshegetso",
+      af: "Ondersteuning"
+    },
+    supportEmail: {
+      en: "support@taxitap.com",
+      zu: "support@taxitap.com",
+      tn: "support@taxitap.com",
+      af: "support@taxitap.com"
+    },
+    userManual: {
+      en: "User Manual",
+      zu: "Incwadi Yomsebenzisi",
+      tn: "Buka ya Modirisi",
+      af: "Gebruikershandleiding"
+    },
+    howToNavigateApp: {
+      en: "How to Navigate the App",
+      zu: "Indlela Yokuhamba Kwenhlelo",
+      tn: "Mokgwa wa go Tsamaya mo Apping",
+      af: "Hoe om die App te Navigeer"
+    },
+    linkToManual: {
+      en: "Complete guide to using Taxi Tap",
+      zu: "Umhlahlandlela ophelele wokusebenzisa i-Taxi Tap",
+      tn: "Tataiso e e Phelele ya go Dirisa Taxi Tap",
+      af: "Volledige gids vir die gebruik van Taxi Tap"
+    },
+    frequentlyAskedQuestions: {
+      en: "Frequently Asked Questions",
+      zu: "Imibuzo Evame Ukubuzwa",
+      tn: "Dipotso tse di Botswang ka Nako e Ntsi",
+      af: "Gereelde Vrae"
+    },
+    howToSwitchRoles: {
+      en: "How do I switch between passenger and driver?",
+      zu: "Ngishintshela kanjani phakathi komhambi nomshayeli?",
+      tn: "Ke ka fetogela jang gare ga moleledi le mokgweetsi?",
+      af: "Hoe skakel ek tussen passasier en bestuurder?"
+    },
+    switchRolesAnswer: {
+      en: "Go to your profile and tap 'Switch Profile'",
+      zu: "Iya kuphrofayili yakho bese uthepha 'Shintsha Iphrofayili'",
+      tn: "Tsamaya go profaele ya gago mme o tlhase 'Fetola Profaele'",
+      af: "Gaan na jou profiel en tik 'Skakel Profiel'"
+    },
+    forgotPassword: {
+      en: "I forgot my password",
+      zu: "Ngikhohlwe iphasiwedi yami",
+      tn: "Ke lebetse leleme la me la sephiri",
+      af: "Ek het my wagwoord vergeet"
+    },
+    forgotPasswordAnswer: {
+      en: "Contact support to reset your password",
+      zu: "Thintana nosizo ukuze ubuyisele iphasiwedi yakho",
+      tn: "Bua le tshegetso go fetola leleme la gago la sephiri",
+      af: "Kontak ondersteuning om jou wagwoord te herstel"
+    },
+    howToContactSupport: {
+      en: "How do I contact support?",
+      zu: "Ngithintana kanjani nosizo?",
+      tn: "Ke ka bua jang le tshegetso?",
+      af: "Hoe kontak ek ondersteuning?"
+    },
+    contactSupportAnswer: {
+      en: "Email us at support@taxitap.com",
+      zu: "Sithumelele i-imeyili ku-support@taxitap.com",
+      tn: "Re romelle email go support@taxitap.com",
+      af: "Stuur vir ons 'n e-pos na support@taxitap.com"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
+
   const handleContactSupport = () => {
-    showInfo(t('help:support'), t('help:supportEmail'));
+    showInfo(getTranslation('support'), getTranslation('supportEmail'));
   };
 
   const handleBackPress = () => {
@@ -182,30 +266,30 @@ export default function HelpPage() {
         showsVerticalScrollIndicator={false}
       >
         {/* User Manual Section */}
-        <Text style={dynamicStyles.sectionHeader}>{t('help:userManual')}</Text>
+        <Text style={dynamicStyles.sectionHeader}>{getTranslation('userManual')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="document-text-outline"
-            title={t('help:howToNavigateApp')}
-            subtitle={t('help:linkToManual')}
+            title={getTranslation('howToNavigateApp')}
+            subtitle={getTranslation('linkToManual')}
             onPress={() => Linking.openURL('https://drive.google.com/file/d/1jbRkhZWS7fsNdYvHlI6o9QoXA5lHsZj4/view?usp=drive_link')}
             isLink={true}
           />
         </View>
 
         {/* FAQ Section */}
-        <Text style={dynamicStyles.sectionHeader}>{t('help:frequentlyAskedQuestions')}</Text>
+        <Text style={dynamicStyles.sectionHeader}>{getTranslation('frequentlyAskedQuestions')}</Text>
         <View style={dynamicStyles.section}>
           <MenuItemComponent
             icon="swap-horizontal-outline"
-            title={t('help:howToSwitchRoles')}
-            subtitle={t('help:switchRolesAnswer')}
+            title={getTranslation('howToSwitchRoles')}
+            subtitle={getTranslation('switchRolesAnswer')}
             showArrow={false}
           />
           <MenuItemComponent
             icon="key-outline"
-            title={t('help:forgotPassword')}
-            subtitle={t('help:forgotPasswordAnswer')}
+            title={getTranslation('forgotPassword')}
+            subtitle={getTranslation('forgotPasswordAnswer')}
             showArrow={false}
           />
           <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -214,8 +298,8 @@ export default function HelpPage() {
                 <Ionicons name="help-circle-outline" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.textContainer}>
-                <Text style={dynamicStyles.menuItemText}>{t('help:howToContactSupport')}</Text>
-                <Text style={dynamicStyles.menuItemSubtitle}>{t('help:contactSupportAnswer')}</Text>
+                <Text style={dynamicStyles.menuItemText}>{getTranslation('howToContactSupport')}</Text>
+                <Text style={dynamicStyles.menuItemSubtitle}>{getTranslation('contactSupportAnswer')}</Text>
               </View>
             </View>
             <Pressable onPress={handleContactSupport}>
