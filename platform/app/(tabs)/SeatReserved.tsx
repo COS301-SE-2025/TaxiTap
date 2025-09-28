@@ -78,7 +78,249 @@ export default function SeatReserved() {
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
+	type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+	const translations: Record<string, Record<SupportedLanguage, string>> = {
+		error: {
+			en: 'Error',
+			zu: 'Iphutha',
+			tn: 'Phoso',
+			af: 'Fout'
+		},
+		missingRideOrUserInfo: {
+			en: 'Missing ride or user information.',
+			zu: 'Ulwazi lwe-ride noma lomsebenzisi alutholakali.',
+			tn: 'Tshedimosetso ya leeto kgotsa ya mošomi ga e bonale.',
+			af: 'Rit of gebruiker inligting ontbreek.'
+		},
+		success: {
+			en: 'Success',
+			zu: 'Impumelelo',
+			tn: 'Katlego',
+			af: 'Sukses'
+		},
+		driverVerified: {
+			en: 'Driver verified! Ride started.',
+			zu: 'Umqhubi uqinisekisiwe! Uhambo luqalile.',
+			tn: 'Moferefere o neetswe! Leeto le simolotse.',
+			af: 'Bestuurder geverifieer! Rit begin.'
+		},
+		invalidPin: {
+			en: 'Invalid PIN',
+			zu: 'I-PIN engalungile',
+			tn: 'PIN e e sa siamang',
+			af: 'Ongeldige PIN'
+		},
+		checkWithDriverAndTryAgain: {
+			en: 'Please check with the driver and try again.',
+			zu: 'Sicela uhlole nomqhubi bese uzama futhi.',
+			tn: 'Ka kopa o tlhatlhobe le moferefere mme o leke gape.',
+			af: 'Kontroleer asseblief met die bestuurder en probeer weer.'
+		},
+		failedToVerifyPin: {
+			en: 'Failed to verify PIN. Please try again.',
+			zu: 'Kuhlulekile ukuqinisekisa i-PIN. Sicela uzame futhi.',
+			tn: 'Go hlolekile go neetsa PIN. Ka kopa o leke gape.',
+			af: 'Kon nie PIN verifieer nie. Probeer asseblief weer.'
+		},
+		rideEnded: {
+			en: 'Ride Ended',
+			zu: 'Uhambo luphelile',
+			tn: 'Leeto le fedile',
+			af: 'Rit beëindig'
+		},
+		fare: {
+			en: 'Fare',
+			zu: 'Imali',
+			tn: 'Tefo',
+			af: 'Tarief'
+		},
+		noRideOrUserInfoAvailable: {
+			en: 'No ride or user information available.',
+			zu: 'Alukho ulwazi lwe-ride noma lomsebenzisi olutholakalayo.',
+			tn: 'Ga go na tshedimosetso ya leeto kgotsa ya mošomi e e lego gona.',
+			af: 'Geen rit of gebruiker inligting beskikbaar nie.'
+		},
+		failedToEndRide: {
+			en: 'Failed to end ride. Please try again.',
+			zu: 'Kuhlulekile ukuqeda uhambo. Sicela uzame futhi.',
+			tn: 'Go hlolekile go fetsa leeto. Ka kopa o leke gape.',
+			af: 'Kon nie rit beëindig nie. Probeer asseblief weer.'
+		},
+		failedToContinueToNextLeg: {
+			en: 'Failed to continue to next leg. Please try again.',
+			zu: 'Kuhlulekile ukuqhubeka ngelegi elandelayo. Sicela uzame futhi.',
+			tn: 'Go hlolekile go tswela pele ka leoto le le latelang. Ka kopa o leke gape.',
+			af: 'Kon nie na volgende been voortgaan nie. Probeer asseblief weer.'
+		},
+		failedToCancelRide: {
+			en: 'Failed to cancel ride.',
+			zu: 'Kuhlulekile ukukhansela uhambo.',
+			tn: 'Go hlolekile go tlogela leeto.',
+			af: 'Kon nie rit kanselleer nie.'
+		},
+		rideCancelled: {
+			en: 'Ride cancelled',
+			zu: 'Uhambo lukhanseliwe',
+			tn: 'Leeto le tlogotse',
+			af: 'Rit gekanselleer'
+		},
+		mapTemporarilyUnavailable: {
+			en: 'Map temporarily unavailable',
+			zu: 'Imephu ayitholakali okwesikhashana',
+			tn: 'Mepu ga e bonale ka nako e potlana',
+			af: 'Kaart tydelik nie beskikbaar nie'
+		},
+		mapError: {
+			en: 'Map error - please retry',
+			zu: 'Iphutha le-mephu - sicela uzame futhi',
+			tn: 'Phoso ya mepu - ka kopa o leke gape',
+			af: 'Kaart fout - probeer asseblief weer'
+		},
+		retry: {
+			en: 'Retry',
+			zu: 'Zama futhi',
+			tn: 'Leka gape',
+			af: 'Probeer weer'
+		},
+		loadingRoute: {
+			en: 'Loading route...',
+			zu: 'Ilayisha indlela...',
+			tn: 'E tsaya tsela...',
+			af: 'Laai roete...'
+		},
+		driverDetails: {
+			en: 'Driver Details',
+			zu: 'Imininingwane Yomqhubi',
+			tn: 'Tshedimosetso ya Moferefere',
+			af: 'Bestuurder Besonderhede'
+		},
+		loadingRideInformation: {
+			en: 'Loading ride information...',
+			zu: 'Ilayisha ulwazi lwe-ride...',
+			tn: 'E tsaya tshedimosetso ya leeto...',
+			af: 'Laai rit inligting...'
+		},
+		pleaseWaitWhileWeFetchRideDetails: {
+			en: 'Please wait while we fetch your ride details',
+			zu: 'Sicela ulinde ngenkathi sithatha imininingwane yakho ye-ride',
+			tn: 'Ka kopa o eme fa re tsaya tshedimosetso ya leeto la gago',
+			af: 'Wag asseblief terwyl ons jou rit besonderhede haal'
+		},
+		driverDetailsNotAvailable: {
+			en: 'Driver details not available',
+			zu: 'Imininingwane yomqhubi ayitholakali',
+			tn: 'Tshedimosetso ya moferefere ga e bonale',
+			af: 'Bestuurder besonderhede nie beskikbaar nie'
+		},
+		vehicleDetailsNotAvailable: {
+			en: 'Vehicle details not available',
+			zu: 'Imininingwane yemoto ayitholakali',
+			tn: 'Tshedimosetso ya koloi ga e bonale',
+			af: 'Voertuig besonderhede nie beskikbaar nie'
+		},
+		waitingForDriver: {
+			en: 'Waiting for driver',
+			zu: 'Silinde umqhubi',
+			tn: 'Re emetse moferefere',
+			af: 'Wag vir bestuurder'
+		},
+		rideRequestSent: {
+			en: 'Your ride request has been sent. A driver will be assigned soon.',
+			zu: 'Isicelo sakho se-ride sithunyelwe. Umqhubi uzokwabiwa maduze.',
+			tn: 'Kopo ya gago ya leeto e rometse. Moferefere o tla abelwa ka nako e potlana.',
+			af: 'Jou rit versoek is gestuur. \'n Bestuurder sal binnekort toegewys word.'
+		},
+		noActiveReservationFound: {
+			en: 'No active reservation found',
+			zu: 'Alukho ukubhukwa okusebenzayo okutholakele',
+			tn: 'Ga go na tsebo e e tsamayang e e bonweng',
+			af: 'Geen aktiewe bespreking gevind nie'
+		},
+		pleaseBookRideToSeeDriverDetails: {
+			en: 'Please book a ride to see driver details',
+			zu: 'Sicela ubhuke uhambo ukuze ubone imininingwane yomqhubi',
+			tn: 'Ka kopa o booke leeto gore o bone tshedimosetso ya moferefere',
+			af: 'Boek asseblief \'n rit om bestuurder besonderhede te sien'
+		},
+		cancelRequest: {
+			en: 'Cancel Request',
+			zu: 'Khansela Isicelo',
+			tn: 'Tlogela Kopo',
+			af: 'Kanselleer Versoek'
+		},
+		driverWillShowPin: {
+			en: 'Driver will show you their PIN to verify and start the ride',
+			zu: 'Umqhubi uzokukhombisa i-PIN yakhe ukuze uqinisekise futhi uqale uhambo',
+			tn: 'Moferefere o tla go bontsha PIN ya gagwe gore a neetse mme a simolotse leeto',
+			af: 'Bestuurder sal jou hul PIN wys om te verifieer en die rit te begin'
+		},
+		endRide: {
+			en: 'End Ride',
+			zu: 'Qeda Uhambo',
+			tn: 'Fetsa Leeto',
+			af: 'Beëindig Rit'
+		},
+		continueToNextLeg: {
+			en: 'Continue to Next Leg',
+			zu: 'Qhubeka Ngelegi Elandelayo',
+			tn: 'Tswela Pele ka Leoto le le Latelang',
+			af: 'Gaan Voort na Volgende Been'
+		},
+		enterDriversPin: {
+			en: 'Enter Driver\'s PIN',
+			zu: 'Faka I-PIN Yomqhubi',
+			tn: 'Kenya PIN ya Moferefere',
+			af: 'Voer Bestuurder se PIN in'
+		},
+		askDriverToShowPin: {
+			en: 'Ask the driver to show you their verification PIN',
+			zu: 'Cela umqhubi akukhombise i-PIN yakhe yokuqinisekisa',
+			tn: 'Kopa moferefere gore a go bontshe PIN ya gagwe ya go neetsa',
+			af: 'Vra die bestuurder om jou hul verifikasie PIN te wys'
+		},
+		verifying: {
+			en: 'Verifying...',
+			zu: 'Iqinisekisa...',
+			tn: 'E neetsa...',
+			af: 'Verifieer...'
+		},
+		cancel: {
+			en: 'Cancel',
+			zu: 'Khansela',
+			tn: 'Tlogela',
+			af: 'Kanselleer'
+		},
+		youAreHere: {
+			en: 'You are here',
+			zu: 'Ulapha',
+			tn: 'O fa',
+			af: 'Jy is hier'
+		},
+		rideStarted: {
+			en: 'Ride Started',
+			zu: 'Uhambo Luqalile',
+			tn: 'Leeto Le Simolotse',
+			af: 'Rit Begin'
+		},
+		rideDeclined: {
+			en: 'Ride Declined',
+			zu: 'Uhambo Lukhanyelwe',
+			tn: 'Leeto Le Ganyetswe',
+			af: 'Rit Afgekeur'
+		},
+		rideRequestDeclined: {
+			en: 'Your ride request was declined.',
+			zu: 'Isicelo sakho se-ride sikhanyelwe.',
+			tn: 'Kopo ya gago ya leeto e ganyetswe.',
+			af: 'Jou rit versoek is afgekeur.'
+		}
+	} as const;
+
+	const getTranslation = (key: keyof typeof translations) => {
+		return translations[key][currentLanguage as SupportedLanguage];
+	};
 	const {
 		currentLocation,
 		destination,
@@ -581,7 +823,7 @@ export default function SeatReserved() {
 
 	const verifyPinCode = async (enteredPin: string) => {
 		if (!user || !taxiInfo?.rideId || !driverId) {
-			Alert.alert('Error', 'Missing ride or user information.');
+			Alert.alert(getTranslation('error'), getTranslation('missingRideOrUserInfo'));
 			return;
 		}
 
@@ -595,15 +837,15 @@ export default function SeatReserved() {
 			});
 
 			if (result.success) {
-				Alert.alert('Success', 'Driver verified! Ride started.');
+				Alert.alert(getTranslation('success'), getTranslation('driverVerified'));
 				setShowPinEntry(false);
 				// The ride status should now change to 'in_progress' via the backend
 			} else {
-				Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+				Alert.alert(getTranslation('invalidPin'), getTranslation('checkWithDriverAndTryAgain'));
 				setPin(['', '', '', '']);
 			}
 		} catch (error: any) {
-			Alert.alert('Error', 'Failed to verify PIN. Please try again.');
+			Alert.alert(getTranslation('error'), getTranslation('failedToVerifyPin'));
 			setPin(['', '', '', '']);
 		} finally {
 			setIsVerifying(false);
@@ -655,7 +897,7 @@ export default function SeatReserved() {
 		);
 		if (rideStarted) {
 			Alert.alert(
-				'Ride Started',
+				getTranslation('rideStarted'),
 				rideStarted.message,
 				[
 					{
@@ -679,8 +921,8 @@ export default function SeatReserved() {
 		);
 		if (rideDeclined) {
 			Alert.alert(
-				'Ride Declined',
-				rideDeclined.message || 'Your ride request was declined.',
+				getTranslation('rideDeclined'),
+				rideDeclined.message || getTranslation('rideRequestDeclined'),
 				[
 					{
 						text: 'OK',
@@ -707,7 +949,7 @@ export default function SeatReserved() {
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(getTranslation('error'), getTranslation('noRideOrUserInfoAvailable'));
 			return;
 		}
 		
@@ -732,7 +974,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			console.log('🔄 Seat availability updated');
 			
-			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			Alert.alert(getTranslation('rideEnded'), `${getTranslation('fare')}: R${result.fare}`);
 			
 			if (!currentLocation || !destination) {
 				console.log('⚠️ Missing location data, cannot navigate to feedback');
@@ -763,13 +1005,13 @@ export default function SeatReserved() {
 			setIsEndingRide(false);
 			setRideJustEnded(false);
 			console.error('❌ Error ending ride:', error);
-			Alert.alert('Error', error?.message || 'Failed to end ride. Please try again.');
+			Alert.alert(getTranslation('error'), error?.message || getTranslation('failedToEndRide'));
 		}
 	};
 
 	const handleContinueToNextLeg = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(getTranslation('error'), getTranslation('noRideOrUserInfoAvailable'));
 			return;
 		}
 		
@@ -849,13 +1091,13 @@ export default function SeatReserved() {
 			setIsEndingRide(false);
 			setRideJustEnded(false);
 			console.error('❌ Error continuing to next leg:', error);
-			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
+			Alert.alert(getTranslation('error'), error?.message || getTranslation('failedToContinueToNextLeg'));
 		}
 	};
 
 	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(getTranslation('error'), getTranslation('noRideOrUserInfoAvailable'));
 			return;
 		}
 		try {
@@ -864,12 +1106,12 @@ export default function SeatReserved() {
 			
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert(t('home:success'), t('home:rideCancelled'));
+			Alert.alert(getTranslation('success'), getTranslation('rideCancelled'));
 			router.push('/HomeScreen');
 		} catch (error: any) {
 			// Reset the flag if there's an error
 			setRideJustEnded(false);
-			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
+			Alert.alert(getTranslation('error'), error?.message || getTranslation('failedToCancelRide'));
 		}
 	};
 
@@ -1215,7 +1457,7 @@ export default function SeatReserved() {
 						}}
 						style={{ padding: 10, backgroundColor: theme.primary, borderRadius: 5 }}
 					>
-						<Text style={{ color: 'white' }}>Retry</Text>
+						<Text style={{ color: 'white' }}>{getTranslation('retry')}</Text>
 					</TouchableOpacity>
 				</View>
 			</SafeAreaView>
@@ -1255,7 +1497,7 @@ export default function SeatReserved() {
 									console.warn('Invalid coordinates for map rendering:', { currentLocation, destination });
 									return (
 										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+											<Text style={{ color: theme.text }}>{getTranslation('mapTemporarilyUnavailable')}</Text>
 										</View>
 									);
 								}
@@ -1271,7 +1513,7 @@ export default function SeatReserved() {
 									console.warn('Invalid region calculation');
 									return (
 										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+											<Text style={{ color: theme.text }}>{getTranslation('mapTemporarilyUnavailable')}</Text>
 										</View>
 									);
 								}
@@ -1293,7 +1535,7 @@ export default function SeatReserved() {
 									>
 										<Marker
 											coordinate={currentLocation}
-											title="You are here"
+											title={getTranslation('youAreHere')}
 											pinColor="blue"
 										>
 										</Marker>
@@ -1318,7 +1560,7 @@ export default function SeatReserved() {
 								handleError(error as Error);
 								return (
 									<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-										<Text style={{ color: theme.text }}>Map error - please retry</Text>
+										<Text style={{ color: theme.text }}>{getTranslation('mapError')}</Text>
 									</View>
 								);
 							}
@@ -1332,7 +1574,7 @@ export default function SeatReserved() {
 								</Text>
 								{isLoadingRoute && (
 									<Text style={dynamicStyles.routeLoadingText}>
-										Loading route...
+										{getTranslation('loadingRoute')}
 									</Text>
 								)}
 							</View>
@@ -1344,7 +1586,7 @@ export default function SeatReserved() {
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								{getTranslation('driverDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButton}>
 								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
@@ -1361,10 +1603,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										Loading ride information...
+										{getTranslation('loadingRideInformation')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										Please wait while we fetch your ride details
+										{getTranslation('pleaseWaitWhileWeFetchRideDetails')}
 									</Text>
 								</View>
 							</View>
@@ -1375,10 +1617,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo.driver.name || "Driver details not available"}
+										{taxiInfo.driver.name || getTranslation('driverDetailsNotAvailable')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo.taxi?.model || "Vehicle details not available"}
+										{taxiInfo.taxi?.model || getTranslation('vehicleDetailsNotAvailable')}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
@@ -1432,10 +1674,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-{t('home:waitingForDriver')}
+										{getTranslation('waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										Your ride request has been sent. A driver will be assigned soon.
+										{getTranslation('rideRequestSent')}
 									</Text>
 								</View>
 							</View>
@@ -1446,10 +1688,10 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										No active reservation found
+										{getTranslation('noActiveReservationFound')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										Please book a ride to see driver details
+										{getTranslation('pleaseBookRideToSeeDriverDetails')}
 									</Text>
 								</View>
 							</View>
@@ -1494,7 +1736,7 @@ export default function SeatReserved() {
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
 									<Text style={dynamicStyles.cancelButtonText}>
-										{"Cancel Request"}
+										{getTranslation('cancelRequest')}
 									</Text>
 								</TouchableOpacity>
 							)}
@@ -1502,13 +1744,13 @@ export default function SeatReserved() {
 							{rideStatus === 'accepted' && (
 								<>
 									<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
-										Driver will show you their PIN to verify and start the ride
+										{getTranslation('driverWillShowPin')}
 									</Text>
 									<TouchableOpacity 
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
+											{getTranslation('cancelRequest')}
 										</Text>
 									</TouchableOpacity>
 								</>
@@ -1520,7 +1762,7 @@ export default function SeatReserved() {
 										style={dynamicStyles.cancelButton} 
 										onPress={handleEndRide}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{"End Ride"}
+											{getTranslation('endRide')}
 										</Text>
 									</TouchableOpacity>
 									
@@ -1548,7 +1790,7 @@ export default function SeatReserved() {
 											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
 											onPress={handleContinueToNextLeg}>
 											<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
-												{"Continue to Next Leg"}
+												{getTranslation('continueToNextLeg')}
 											</Text>
 										</TouchableOpacity>
 									)}
@@ -1565,9 +1807,9 @@ export default function SeatReserved() {
 					<View style={dynamicStyles.pinEntryContainer}>
 						<View style={dynamicStyles.pinEntryHeader}>
 							<Icon name="shield-checkmark" size={32} color={theme.primary} />
-							<Text style={dynamicStyles.pinEntryTitle}>Enter Driver's PIN</Text>
+							<Text style={dynamicStyles.pinEntryTitle}>{getTranslation('enterDriversPin')}</Text>
 							<Text style={dynamicStyles.pinEntrySubtitle}>
-								Ask the driver to show you their verification PIN
+								{getTranslation('askDriverToShowPin')}
 							</Text>
 						</View>
 
@@ -1586,7 +1828,7 @@ export default function SeatReserved() {
 						{renderNumberPad()}
 
 						{isVerifying && (
-							<Text style={dynamicStyles.verifyingText}>Verifying...</Text>
+							<Text style={dynamicStyles.verifyingText}>{getTranslation('verifying')}</Text>
 						)}
 
 						<TouchableOpacity
@@ -1594,7 +1836,7 @@ export default function SeatReserved() {
 							onPress={() => setShowPinEntry(false)}
 							activeOpacity={0.7}
 						>
-							<Text style={dynamicStyles.pinCancelButtonText}>Cancel</Text>
+							<Text style={dynamicStyles.pinCancelButtonText}>{getTranslation('cancel')}</Text>
 						</TouchableOpacity>
 					</View>
 				</View>
