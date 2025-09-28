@@ -715,8 +715,21 @@ export default function HomeScreen() {
   );
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: t('navigation:home') });
-  }, [navigation, t]);
+    if (showMultiLegPreview) {
+      // Hide header and tab bar when MultiLeg preview is open
+      navigation.setOptions({ 
+        headerShown: false,
+        tabBarStyle: { display: 'none' }
+      });
+    } else {
+      // Show header and tab bar normally
+      navigation.setOptions({ 
+        title: t('navigation:home'),
+        headerShown: true,
+        tabBarStyle: undefined
+      });
+    }
+  }, [navigation, t, showMultiLegPreview]);
 
   // Geocoding function (fallback for manual entry)
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
@@ -2119,7 +2132,7 @@ export default function HomeScreen() {
 
       {/* Reserve a Seat Button */}
       {(() => {
-        const shouldShowButton = routeLoaded && !isLoadingRoute && !keyboardVisible && !isSearchingTaxis && !isSearchingMultiLeg;
+        const shouldShowButton = routeLoaded && !isLoadingRoute && !keyboardVisible && !isSearchingTaxis && !isSearchingMultiLeg && availableTaxis.length > 0;
         return shouldShowButton;
       })() && (
         <Animated.View style={{ opacity: buttonOpacity }}>
@@ -2153,7 +2166,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Multi-leg journey preview overlay */}
+      {/* Multi-leg journey preview overlay - Fullscreen */}
       {showMultiLegPreview && (
         <View style={{
           position: 'absolute',
@@ -2161,11 +2174,9 @@ export default function HomeScreen() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: theme.background,
           zIndex: 1000,
-          justifyContent: 'center',
-          alignItems: 'center',
-          paddingHorizontal: 20,
+          flex: 1,
         }}>
           <MultiLegJourneyPreview
             journeyOptions={multiLegOptions}
