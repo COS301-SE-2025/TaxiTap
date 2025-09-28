@@ -8,7 +8,7 @@ import dark from '../../assets/images/icon-dark.png';
 import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -80,7 +80,40 @@ const HeaderRightButtons: React.FC = () => {
 
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
+
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    home: {
+      en: 'Home',
+      zu: 'Ikhaya',
+      tn: 'Gae',
+      af: 'Huis'
+    },
+    routes: {
+      en: 'Routes',
+      zu: 'Izindlela',
+      tn: 'Ditsela',
+      af: 'Roetes'
+    },
+    profile: {
+      en: 'Profile',
+      zu: 'Iphrofayili',
+      tn: 'Profaele',
+      af: 'Profiel'
+    },
+    help: {
+      en: 'Help',
+      zu: 'Usizo',
+      tn: 'Thuso',
+      af: 'Hulp'
+    }
+  } as const;
+
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   return (
     <Tabs
@@ -129,7 +162,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HomeScreen"
         options={{
-          title: t('navigation:home'),
+          title: getTranslation('home'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="home" size={24} color={color} />
           ),
@@ -139,7 +172,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerRoute"
         options={{
-          title: t('navigation:routes'),
+          title: getTranslation('routes'),
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="map" size={24} color={color} />
           ),
@@ -149,7 +182,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerProfile"
         options={{
-          title: t('navigation:profile'),
+          title: getTranslation('profile'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="user" size={24} color={color} />
           ),
@@ -159,7 +192,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HelpPage"
         options={{
-          title: t('navigation:help'),
+          title: getTranslation('help'),
           tabBarIcon: ({ color }) => (
             <FontAwesome name="question-circle" size={24} color={color} />
           ),
@@ -255,8 +288,47 @@ const TabNavigation: React.FC = () => {
 
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
-  const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    rideDeclined: {
+      en: 'Ride Declined',
+      zu: 'Uhambo Lukhanyelwe',
+      tn: 'Leeto Le Ganyetswe',
+      af: 'Rit Afgekeur'
+    },
+    rideDeclinedMessage: {
+      en: 'Your ride request was declined.',
+      zu: 'Isicelo sakho se-ride sikhanyelwe.',
+      tn: 'Kopo ya gago ya leeto e ganyetswe.',
+      af: 'Jou rit versoek is afgekeur.'
+    },
+    ok: {
+      en: 'OK',
+      zu: 'KULUNGILE',
+      tn: 'GO SIAME',
+      af: 'OK'
+    },
+    rideAccepted: {
+      en: 'Ride Accepted',
+      zu: 'Uhambo Lwamukelwe',
+      tn: 'Leeto Le Amogetswe',
+      af: 'Rit Aanvaar'
+    },
+    rideCancelled: {
+      en: 'Ride Cancelled',
+      zu: 'Uhambo Lukhanseliwe',
+      tn: 'Leeto Le Tlogotse',
+      af: 'Rit Gekanselleer'
+    }
+  } as const;
+
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   // Safely get map context
   let currentLocation: any = undefined;
@@ -286,13 +358,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideDeclined._id); // Mark as processed
 
       showGlobalError(
-        t('notifications:rideDeclined'),
-        rideDeclined.message || t('notifications:rideDeclinedMessage'),
+        getTranslation('rideDeclined'),
+        rideDeclined.message || getTranslation('rideDeclinedMessage'),
         {
           duration: 0,
           actions: [
             {
-              label: t('notifications:ok'),
+              label: getTranslation('ok'),
               onPress: () => {
                 markAsRead(rideDeclined._id);
                 router.push('./HomeScreen');
@@ -323,13 +395,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideAccepted._id);// Mark as processed
 
       showGlobalSuccess(
-        t('notifications:rideAccepted'),
+        getTranslation('rideAccepted'),
         rideAccepted.message,
         {
           duration: 0,
           actions: [
             {
-              label: t('notifications:ok'),
+              label: getTranslation('ok'),
               onPress: () => {
                 markAsRead(rideAccepted._id);
                 router.push({
@@ -369,13 +441,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideCancelled._id);// Mark as processed
 
       showGlobalAlert({
-        title: t('notifications:rideCancelled'),
+        title: getTranslation('rideCancelled'),
         message: rideCancelled.message,
         type: 'warning',
         duration: 0,
         actions: [
           {
-            label: t('notifications:ok'),
+            label: getTranslation('ok'),
             onPress: () => markAsRead(rideCancelled._id),
             style: 'default',
           },

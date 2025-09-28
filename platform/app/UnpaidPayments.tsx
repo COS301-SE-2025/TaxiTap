@@ -12,9 +12,57 @@ import { useRouter, useNavigation } from 'expo-router';
 export default function UnpaidPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        loading: {
+            en: "Loading...",
+            zu: "Kulayishwa...",
+            tn: "Go tsena...",
+            af: "Laai..."
+        },
+        allUsersHavePaid: {
+            en: "All users have paid",
+            zu: "Bonke abasebenzisi bakhokhile",
+            tn: "Bamodirisi botlhe ba tshwerwe",
+            af: "Alle gebruikers het betaal"
+        },
+        unpaid: {
+            en: "Unpaid",
+            zu: "Akukhokhiwe",
+            tn: "Ga e tshwerwe",
+            af: "Nie Betaal Nie"
+        },
+        fare: {
+            en: "Fare:",
+            zu: "Imali:",
+            tn: "Tefo:",
+            af: "Tarief:"
+        },
+        noUnpaidPayments: {
+            en: "No Unpaid Payments",
+            zu: "Awukho Izinkokhelo Ezingakhokhiwe",
+            tn: "Ga go na Ditlhwatlhwa tse di sa Tshwerweng",
+            af: "Geen Onbetaalde Betalings Nie"
+        },
+        noUnpaidPaymentsMessage: {
+            en: "All passengers have completed their payments.",
+            zu: "Bonke abagibeli baphothulile izinkokhelo zabo.",
+            tn: "Baleleledi botlhe ba fedile ditlhwatlhwa tsa bone.",
+            af: "Alle passasiers het hul betalings voltooi."
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -30,7 +78,7 @@ export default function UnpaidPayments() {
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>Loading...</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>{getTranslation('loading')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -44,7 +92,7 @@ export default function UnpaidPayments() {
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>All users have paid</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>{getTranslation('allUsersHavePaid')}</Text>
                     </View>
                     <View style={styles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
@@ -81,7 +129,7 @@ export default function UnpaidPayments() {
                                         </Text>
                                     </View>
                                     <View style={[styles.statusBadge, styles.statusUnpaid]}>
-                                        <Text style={styles.statusText}>Unpaid</Text>
+                                        <Text style={styles.statusText}>{getTranslation('unpaid')}</Text>
                                     </View>
                                 </View>
                                 
@@ -89,7 +137,7 @@ export default function UnpaidPayments() {
                                     <View style={styles.detailRow}>
                                         <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                         <Text style={[styles.detailText, { color: theme.text }]}>
-                                            Fare: R{p.fare.toFixed(2)}
+                                            {getTranslation('fare')} R{p.fare.toFixed(2)}
                                         </Text>
                                     </View>
                                     <View style={styles.detailRow}>
