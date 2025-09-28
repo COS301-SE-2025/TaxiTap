@@ -24,7 +24,7 @@ import { AlertOverlay } from '../components/AlertOverlay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
 import '../src/i18n/i18n';
-import { LanguageProvider } from '../contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -86,6 +86,103 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
   const { user, loading } = useUser();
+  const { currentLanguage } = useLanguage();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    driverProfile: {
+      en: "Driver Profile",
+      zu: "Iphrofayili Yomshayeli",
+      tn: "Profaele ya Mokgweetsi",
+      af: "Bestuurder Profiel"
+    },
+    driverPersonalInformation: {
+      en: "Driver Personal Information",
+      zu: "Ulwazi Lwakho Lomshayeli",
+      tn: "Tshedimosetso ya Mokgweetsi",
+      af: "Bestuurder Persoonlike Inligting"
+    },
+    myTaxiAndRoute: {
+      en: "My Taxi & Route",
+      zu: "Itekisi Yami Nendlela",
+      tn: "Tekisi ya Me le Leetong",
+      af: "My Taxi & Roete"
+    },
+    earnings: {
+      en: "Earnings",
+      zu: "Imali Etholwayo",
+      tn: "Ditlhwatlhwa",
+      af: "Verdienste"
+    },
+    setRoute: {
+      en: "Set Route",
+      zu: "Setha Indlela",
+      tn: "Beakanya Leetong",
+      af: "Stel Roete"
+    },
+    passengerInfo: {
+      en: "Passenger Info",
+      zu: "Ulwazi Lomhambi",
+      tn: "Tshedimosetso ya Moleledi",
+      af: "Passasier Inligting"
+    },
+    vehicleDetails: {
+      en: "Vehicle Details",
+      zu: "Imininingwane Yemoto",
+      tn: "Mabaka a Koloi",
+      af: "Voertuigbesonderhede"
+    },
+    notifications: {
+      en: "Notifications",
+      zu: "Izaziso",
+      tn: "Ditsebiso",
+      af: "Kennisgewings"
+    },
+    helpPage: {
+      en: "Help Page",
+      zu: "Ikhasi Losizo",
+      tn: "Tsebe ya Tshegetso",
+      af: "Hulp Bladsy"
+    },
+    dashboard: {
+      en: "Dashboard",
+      zu: "I-Dashboard",
+      tn: "Dashboard",
+      af: "Dashboard"
+    },
+    activeRides: {
+      en: "Active Rides",
+      zu: "Ohambo Olusebenzayo",
+      tn: "Ditlhwatlhwa tse di Tsamayang",
+      af: "Aktiewe Ritte"
+    },
+    feedback: {
+      en: "Feedback",
+      zu: "Ukubuyisela Imibono",
+      tn: "Mabaka",
+      af: "Terugvoer"
+    },
+    unpaidRides: {
+      en: "Unpaid Rides",
+      zu: "Ohambo Olungakhokhiwe",
+      tn: "Ditlhwatlhwa tse di sa Tshwerweng",
+      af: "Onbetaalde Ritte"
+    },
+    waitingPayments: {
+      en: "Waiting Payments",
+      zu: "Izinkokhelo Ezilinde",
+      tn: "Ditlhwatlhwa tse di Emeng",
+      af: "Wagende Betalings"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
   
   // Configure Android Navigation Bar so it does not overlap content
   useEffect(() => {
@@ -157,7 +254,7 @@ function RootLayoutNav() {
           <Stack.Screen
             name="DriverProfile"
             options={{
-              title: "Driver Profile",
+              title: getTranslation('driverProfile'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -173,7 +270,7 @@ function RootLayoutNav() {
           <Stack.Screen
             name="DriverEdit"
             options={{
-              title: "Driver Personal Information",
+              title: getTranslation('driverPersonalInformation'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -190,7 +287,7 @@ function RootLayoutNav() {
             name="DriverRequestPage"
             options={{
               headerShown: true,
-              title: "My Taxi & Route",
+              title: getTranslation('myTaxiAndRoute'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -207,7 +304,7 @@ function RootLayoutNav() {
             name="EarningsPage"
             options={{
               headerShown: true,
-              title: "Earnings",
+              title: getTranslation('earnings'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -224,7 +321,7 @@ function RootLayoutNav() {
             name="SetRoute"
             options={{
               headerShown: true,
-              title: "Set Route",
+              title: getTranslation('setRoute'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -276,7 +373,7 @@ function RootLayoutNav() {
             name="DriverPassengerInfo"
             options={{
               headerShown: true,
-              title: "Passenger Info"
+              title: getTranslation('passengerInfo')
             }}
           />
           
@@ -284,7 +381,7 @@ function RootLayoutNav() {
             name="VehicleDriver"
             options={{
               headerShown: true,
-              title: "Vehicle Details",
+              title: getTranslation('vehicleDetails'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -301,7 +398,7 @@ function RootLayoutNav() {
             name="NotificationsScreen"
             options={{
               headerShown: true,
-              title: "Notifications" 
+              title: getTranslation('notifications') 
             }}
           />
           
@@ -309,7 +406,7 @@ function RootLayoutNav() {
             name="HelpPage"
             options={{
               headerShown: true,
-              title: "Help Page",
+              title: getTranslation('helpPage'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -326,7 +423,7 @@ function RootLayoutNav() {
             name="StatsPage"
             options={{
               headerShown: true,
-              title: "Dashboard",
+              title: getTranslation('dashboard'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -343,7 +440,7 @@ function RootLayoutNav() {
             name="ActiveRides"
             options={{
               headerShown: true,
-              title: "Active Rides",
+              title: getTranslation('activeRides'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -360,7 +457,7 @@ function RootLayoutNav() {
             name="FeedbackHistoryScreen"
             options={{
               headerShown: true,
-              title: "Feedback",
+              title: getTranslation('feedback'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -377,7 +474,7 @@ function RootLayoutNav() {
             name="UnpaidPayments"
             options={{
               headerShown: true,
-              title: "Unpaid Rides",
+              title: getTranslation('unpaidRides'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -394,7 +491,7 @@ function RootLayoutNav() {
             name="WaitingPayments"
             options={{
               headerShown: true,
-              title: "Waiting Payments",
+              title: getTranslation('waitingPayments'),
               headerStyle: {
                 backgroundColor: theme.surface,
               },
