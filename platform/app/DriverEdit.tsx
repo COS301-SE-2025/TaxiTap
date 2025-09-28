@@ -30,73 +30,184 @@ export default function DriverPersonalInfoEdit() {
     const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     
-    // Hardcoded translations
-    const translations = {
-        en: {
-            driverPersonalInfo: "Driver Personal Info",
-            editingDriverProfile: "Editing Driver Profile",
-            basicInformation: "Basic Information",
-            fullName: "Full Name",
-            enterFullName: "Enter your full name",
-            phoneNumber: "Phone Number",
-            enterPhoneNumber: "Enter your phone number",
-            email: "Email",
-            enterEmail: "Enter your email",
-            emergencyContact: "Emergency Contact",
-            emergencyContactName: "Emergency Contact Name",
-            enterEmergencyContactName: "Enter emergency contact name",
-            emergencyContactPhone: "Emergency Contact Phone",
-            enterEmergencyContactNumber: "Enter emergency contact number",
-            emergencyContactRelationship: "Relationship",
-            relationshipPlaceholder: "e.g., Spouse, Parent, Friend",
-            changePhoto: "Change Photo",
-            saveChanges: "Save Changes",
-            cancel: "Cancel",
-            loading: "Loading...",
-            error: "Error",
-            userNotFound: "User not found",
-            nameRequired: "Name is required",
-            phoneNumberRequired: "Phone number is required",
-            changesSaved: "Changes saved successfully!",
-            failedToSaveChanges: "Failed to save changes",
-            ok: "OK",
-            saving: "Saving..."
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        driverPersonalInfo: {
+            en: "Driver Personal Info",
+            zu: "Ulwazi Lwakho Lomshayeli",
+            tn: "Tshedimosetso ya Mokgweetsi",
+            af: "Bestuurder Persoonlike Inligting"
         },
-        zu: {
-            driverPersonalInfo: "Ulwazi Lwakho Lomshayeli",
-            editingDriverProfile: "Kuhlelwa Iphrofayili Yomshayeli",
-            basicInformation: "Ulwazi Oluyisisekelo",
-            fullName: "Igama Eligcwele",
-            enterFullName: "Faka igama lakho eligcwele",
-            phoneNumber: "Inombolo Yefoni",
-            enterPhoneNumber: "Faka inombolo yakho yefoni",
-            email: "I-imeyili",
-            enterEmail: "Faka i-imeyili yakho",
-            emergencyContact: "Uxhumano Lwesimo Esiphuthumayo",
-            emergencyContactName: "Igama Lomuntu Oxhumana Naye Esimweni Esiphuthumayo",
-            enterEmergencyContactName: "Faka igama lomuntu oxhumana naye esimweni esiphuthumayo",
-            emergencyContactPhone: "Inombolo Yefoni Yomuntu Oxhumana Naye Esimweni Esiphuthumayo",
-            enterEmergencyContactNumber: "Faka inombolo yefoni yomuntu oxhumana naye esimweni esiphuthumayo",
-            emergencyContactRelationship: "Ubuhlobo",
-            relationshipPlaceholder: "isb., Umngane Wokuganana, Umzali, Umngane",
-            changePhoto: "Shintsha Isithombe",
-            saveChanges: "Londoloza Izinguquko",
-            cancel: "Khansela",
-            loading: "Kulayishwa...",
-            error: "Iphutha",
-            userNotFound: "Umsebenzisi akalayishwanga",
-            nameRequired: "Igama liyadingeka",
-            phoneNumberRequired: "Inombolo yefoni iyadingeka",
-            changesSaved: "Izinguquko zilondoloziwe ngempumelelo!",
-            failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
-            ok: "Kulungile",
-            saving: "Kulondoloziwa..."
+        editingDriverProfile: {
+            en: "Editing Driver Profile",
+            zu: "Kuhlelwa Iphrofayili Yomshayeli",
+            tn: "Go Fetola Profaele ya Mokgweetsi",
+            af: "Besig om Bestuurder Profiel te Wysig"
+        },
+        basicInformation: {
+            en: "Basic Information",
+            zu: "Ulwazi Oluyisisekelo",
+            tn: "Tshedimosetso ya Motheo",
+            af: "Basiese Inligting"
+        },
+        fullName: {
+            en: "Full Name",
+            zu: "Igama Eligcwele",
+            tn: "Leina le le Tletseng",
+            af: "Volle Naam"
+        },
+        enterFullName: {
+            en: "Enter your full name",
+            zu: "Faka igama lakho eligcwele",
+            tn: "Kenya leina la gago le le tletseng",
+            af: "Voer jou volle naam in"
+        },
+        phoneNumber: {
+            en: "Phone Number",
+            zu: "Inombolo Yefoni",
+            tn: "Nomoro ya Mogala",
+            af: "Telefoon Nommer"
+        },
+        enterPhoneNumber: {
+            en: "Enter your phone number",
+            zu: "Faka inombolo yakho yefoni",
+            tn: "Kenya nomoro ya gago ya mogala",
+            af: "Voer jou telefoon nommer in"
+        },
+        email: {
+            en: "Email",
+            zu: "I-imeyili",
+            tn: "Imeile",
+            af: "E-pos"
+        },
+        enterEmail: {
+            en: "Enter your email",
+            zu: "Faka i-imeyili yakho",
+            tn: "Kenya imeile ya gago",
+            af: "Voer jou e-pos in"
+        },
+        emergencyContact: {
+            en: "Emergency Contact",
+            zu: "Uxhumano Lwesimo Esiphuthumayo",
+            tn: "Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak"
+        },
+        emergencyContactName: {
+            en: "Emergency Contact Name",
+            zu: "Igama Lomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            tn: "Leina la Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak Naam"
+        },
+        enterEmergencyContactName: {
+            en: "Enter emergency contact name",
+            zu: "Faka igama lomuntu oxhumana naye esimweni esiphuthumayo",
+            tn: "Kenya leina la mogokanyi wa tshoganetso",
+            af: "Voer nood kontak naam in"
+        },
+        emergencyContactPhone: {
+            en: "Emergency Contact Phone",
+            zu: "Inombolo Yefoni Yomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            tn: "Nomoro ya Mogala ya Mogokanyi wa Tshoganetso",
+            af: "Nood Kontak Telefoon"
+        },
+        enterEmergencyContactNumber: {
+            en: "Enter emergency contact number",
+            zu: "Faka inombolo yefoni yomuntu oxhumana naye esimweni esiphuthumayo",
+            tn: "Kenya nomoro ya mogala ya mogokanyi wa tshoganetso",
+            af: "Voer nood kontak telefoon in"
+        },
+        emergencyContactRelationship: {
+            en: "Relationship",
+            zu: "Ubuhlobo",
+            tn: "Kamano",
+            af: "Verhouding"
+        },
+        relationshipPlaceholder: {
+            en: "e.g., Spouse, Parent, Friend",
+            zu: "isb., Umngane Wokuganana, Umzali, Umngane",
+            tn: "mohlala, Motsadi, Motsadi, Tsala",
+            af: "bv., Gade, Ouer, Vriend"
+        },
+        changePhoto: {
+            en: "Change Photo",
+            zu: "Shintsha Isithombe",
+            tn: "Fetola Seswantšho",
+            af: "Verander Foto"
+        },
+        saveChanges: {
+            en: "Save Changes",
+            zu: "Londoloza Izinguquko",
+            tn: "Boloka Diphetogo",
+            af: "Stoor Veranderinge"
+        },
+        cancel: {
+            en: "Cancel",
+            zu: "Khansela",
+            tn: "Tlhokomolola",
+            af: "Kanselleer"
+        },
+        loading: {
+            en: "Loading...",
+            zu: "Kulayishwa...",
+            tn: "Go tsena...",
+            af: "Laai..."
+        },
+        error: {
+            en: "Error",
+            zu: "Iphutha",
+            tn: "Phoso",
+            af: "Fout"
+        },
+        userNotFound: {
+            en: "User not found",
+            zu: "Umsebenzisi akatholakali",
+            tn: "Mosebedisi ga a bonwe",
+            af: "Gebruiker nie gevind nie"
+        },
+        nameRequired: {
+            en: "Name is required",
+            zu: "Igama liyadingeka",
+            tn: "Leina le tlhoka",
+            af: "Naam word benodig"
+        },
+        phoneNumberRequired: {
+            en: "Phone number is required",
+            zu: "Inombolo yefoni iyadingeka",
+            tn: "Nomoro ya mogala e tlhoka",
+            af: "Telefoon nommer word benodig"
+        },
+        changesSaved: {
+            en: "Changes saved successfully!",
+            zu: "Izinguquko zilondoloziwe ngempumelelo!",
+            tn: "Diphetogo di bolokilwe ka katlego!",
+            af: "Veranderinge suksesvol gestoor!"
+        },
+        failedToSaveChanges: {
+            en: "Failed to save changes",
+            zu: "Kuhlulekile ukulondoloza izinguquko",
+            tn: "Go hlolekile go boloka diphetogo",
+            af: "Kon veranderinge nie stoor nie"
+        },
+        ok: {
+            en: "OK",
+            zu: "KULUNGILE",
+            tn: "GO SIAME",
+            af: "OK"
+        },
+        saving: {
+            en: "Saving...",
+            zu: "Kugcinwa...",
+            tn: "Go boloka...",
+            af: "Stoor..."
         }
-    };
-    
-    const t = (key: string) => {
-        const lang = currentLanguage === 'zu' ? 'zu' : 'en';
-        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
     };
 
     // Initialize form data from user context
@@ -148,7 +259,7 @@ export default function DriverPersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            showGlobalError('Error', 'Failed to upload image', {
+            showGlobalError(getTranslation('error'), 'Failed to upload image', {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -158,7 +269,7 @@ export default function DriverPersonalInfoEdit() {
 
     const handleSave = async () => {
         if (!user?.id) {
-            showGlobalError('Error', 'User not loaded', {
+            showGlobalError(getTranslation('error'), getTranslation('userNotFound'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -168,7 +279,7 @@ export default function DriverPersonalInfoEdit() {
 
         // Validation
         if (!name.trim()) {
-            showGlobalError('Error', 'Name is required', {
+            showGlobalError(getTranslation('error'), getTranslation('nameRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -177,7 +288,7 @@ export default function DriverPersonalInfoEdit() {
         }
 
         if (!number.trim()) {
-            showGlobalError('Error', 'Phone number is required', {
+            showGlobalError(getTranslation('error'), getTranslation('phoneNumberRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -213,13 +324,13 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess('Success', getTranslation('changesSaved'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: 'OK',
+                        label: getTranslation('ok'),
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -228,7 +339,7 @@ export default function DriverPersonalInfoEdit() {
 
         } catch (error: any) {
             console.error('Update error:', error);
-            showGlobalError('Error', error.message || 'Failed to save changes', {
+            showGlobalError(getTranslation('error'), error.message || getTranslation('failedToSaveChanges'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -383,38 +494,38 @@ export default function DriverPersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
-                <Text style={dynamicStyles.sectionTitle}>{t('basicInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{getTranslation('basicInformation')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('fullName')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('fullName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder={t('enterFullName')}
+                            placeholder={getTranslation('enterFullName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('phoneNumber')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={number}
                             onChangeText={setNumber}
-                            placeholder={t('enterPhoneNumber')}
+                            placeholder={getTranslation('enterPhoneNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('email')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder={t('enterEmail')}
+                            placeholder={getTranslation('enterEmail')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -423,38 +534,38 @@ export default function DriverPersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('emergencyContact')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{getTranslation('emergencyContact')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('emergencyContactName')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder={t('enterEmergencyContactName')}
+                            placeholder={getTranslation('enterEmergencyContactName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('emergencyContactPhone')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactNumber}
                             onChangeText={setEmergencyContactNumber}
-                            placeholder={t('enterEmergencyContactNumber')}
+                            placeholder={getTranslation('enterEmergencyContactNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('emergencyContactRelationship')}</Text>
+                        <Text style={dynamicStyles.label}>{getTranslation('emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder={t('relationshipPlaceholder')}
+                            placeholder={getTranslation('relationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -467,7 +578,7 @@ export default function DriverPersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? t('saving') : t('saveChanges')}
+                        {isLoading ? getTranslation('saving') : getTranslation('saveChanges')}
                     </Text>
                 </Pressable>
             </ScrollView>

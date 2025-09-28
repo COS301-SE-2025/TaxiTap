@@ -13,11 +13,41 @@ export default function DriverHomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [todaysEarnings] = useState(0.00); 
   const { user, updateUserRole } = useUser();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
   const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
   const startWorkSession = useMutation(api.functions.work_sessions.startWorkSession.startWorkSession);
   const endWorkSession = useMutation(api.functions.work_sessions.endWorkSession.endWorkSession);
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    failedToGoOnline: {
+      en: "Failed to go online",
+      zu: "Kuhlulekile ukuya ku-inthanethi",
+      tn: "Ga go atlegile go ya mo intaneteng",
+      af: "Kon nie aanlyn gaan nie"
+    },
+    failedToGoOffline: {
+      en: "Failed to go offline",
+      zu: "Kuhlulekile ukuya ku-offline",
+      tn: "Ga go atlegile go ya mo offline",
+      af: "Kon nie aflyn gaan nie"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const handleGoOnline = async () => {
     try {
@@ -37,8 +67,8 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(true);
     } catch (err: any) {
-      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOnline'));
-      showGlobalError('Error', err.message || 'Failed to go online as driver.', {
+      Alert.alert(getTranslation('error'), err.message || getTranslation('failedToGoOnline'));
+      showGlobalError(getTranslation('error'), err.message || 'Failed to go online as driver.', {
         duration: 5000,
         position: 'top',
         animation: 'slide-down',
@@ -55,8 +85,8 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(false);
     } catch (err: any) {
-      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOffline'));
-      showGlobalError('Error', err.message || 'Failed to go offline.', {
+      Alert.alert(getTranslation('error'), err.message || getTranslation('failedToGoOffline'));
+      showGlobalError(getTranslation('error'), err.message || 'Failed to go offline.', {
         duration: 5000,
         position: 'top',
         animation: 'slide-down',
