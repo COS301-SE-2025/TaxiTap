@@ -1,7 +1,8 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[a4paper,12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{xcolor}
@@ -9,14 +10,6 @@
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{tcolorbox}
-
-% Page setup
-\geometry{margin=1in}
-\pagestyle{fancy}
-\fancyhf{}
-\rhead{TaxiTap Installation Manual}
-\lhead{Version 1.0}
-\cfoot{\thepage}
 
 % Neutral colors
 \definecolor{lightgray}{rgb}{0.95,0.95,0.95}
@@ -37,37 +30,22 @@
     showstringspaces=false,
     tabsize=2
 }
-\lstset{style=mystyle}
 
-% Title formatting
-\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
-
-% Hyperref setup
-\hypersetup{
-    colorlinks=true,
-    linkcolor=linkblue,
-    urlcolor=linkblue
-}
+\title{Technical Installation Manual\\Taxi Tap by Git It Done}
+\date{}
 
 \begin{document}
 
-\begin{titlepage}
-    \centering
-    \vspace*{2cm}
-    
-    {\Huge\bfseries TaxiTap \par}
-    \vspace{1cm}
-    {\Large Technical Installation Manual\par}
-    \vspace{0.5cm}
-    {\large Revolutionizing South Africa's Minibus Taxi Industry\par}
-    
-    \vspace{2cm}
-    \vfill
-    
-    {\large Version 1.0\par}
-    {\large\today\par}
-\end{titlepage}
+\maketitle
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
+\newpage
 
 \tableofcontents
 \newpage
