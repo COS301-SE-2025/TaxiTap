@@ -176,7 +176,7 @@ function RootLayoutNav() {
           <Stack.Screen
             name="DriverEdit"
             options={{
-              title: "Driver Personal Information",
+              title: "Ulwazi Lomshayeli",
               headerStyle: {
                 backgroundColor: theme.surface,
               },

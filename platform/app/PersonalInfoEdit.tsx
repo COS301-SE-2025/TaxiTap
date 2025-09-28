@@ -308,7 +308,7 @@ export default function PersonalInfoEdit() {
                     <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
                         <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>Personal Information</Text>
+                    <Text style={dynamicStyles.headerTitle}>Ulwazi Lwakho</Text>
                 </View>
             </View>
 
