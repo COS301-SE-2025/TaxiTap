@@ -227,10 +227,11 @@ routes: defineTable({
     })),
     fare: v.number(),
     estimatedDuration: v.number(),
-    estimatedDistance: v.optional(v.number()), // Added estimated distance field
+    estimatedDistance: v.optional(v.number()),
     isActive: v.boolean(),
     taxiAssociation: v.string(),
-    taxiAssociationRegistrationNumber: v.string()
+    taxiAssociationRegistrationNumber: v.string(),
+    reliability: v.optional(v.float64()),
   }).index("by_route_id", ["routeId"]),
 
   routeStops: defineTable({
