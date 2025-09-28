@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, Pressable, Platform, Dimensions } from "react-native";
 import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { api } from "../convex/_generated/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Id } from "@/convex/_generated/dataModel";
-import { useTheme } from "../../contexts/ThemeContext";
+import { Id } from "../convex/_generated/dataModel";
+import { useTheme } from "../contexts/ThemeContext";
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
@@ -168,7 +168,7 @@ const TransactionHistoryScreen = () => {
         {/* Header */}
         <View style={dynamicStyles.header}>
           <View style={dynamicStyles.headerRow}>
-            <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
+            <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
             <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
@@ -188,7 +188,7 @@ const TransactionHistoryScreen = () => {
         {/* Header */}
         <View style={dynamicStyles.header}>
           <View style={dynamicStyles.headerRow}>
-            <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
+            <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
             <Text style={dynamicStyles.headerTitle}>My Wallet</Text>

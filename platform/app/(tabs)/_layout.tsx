@@ -173,13 +173,6 @@ const TabNavigation: React.FC = () => {
         }}
       />
 
-      <Tabs.Screen
-        name="Wallet"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
 
       <Tabs.Screen
         name="index"
@@ -223,29 +216,7 @@ const TabNavigation: React.FC = () => {
         }}
       />
 
-      <Tabs.Screen
-        name="AddHomeAddress"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
 
-      <Tabs.Screen
-        name="AddWorkAddress"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
-
-      <Tabs.Screen
-        name="PersonalInfoEdit"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
 
       <Tabs.Screen
         name="PaymentsConfirm"

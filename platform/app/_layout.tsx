@@ -364,6 +364,34 @@ function RootLayoutNav() {
           />
 
           <Stack.Screen
+            name="PersonalInfoEdit"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="AddHomeAddress"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="AddWorkAddress"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="Wallet"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
             name="UnpaidPayments"
             options={{
               headerShown: true,

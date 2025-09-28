@@ -3,14 +3,14 @@ import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView,
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { useUser } from '../../contexts/UserContext';
-import { Id } from '../../convex/_generated/dataModel';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useAlertHelpers } from '../../components/AlertHelpers';
+import { api } from '../convex/_generated/api';
+import { useUser } from '../contexts/UserContext';
+import { Id } from '../convex/_generated/dataModel';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 import * as Location from 'expo-location';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function AddWorkAddress() {
     const [address, setAddress] = useState('');
@@ -406,7 +406,7 @@ export default function AddWorkAddress() {
             {/* Header */}
             <View style={dynamicStyles.header}>
                 <View style={dynamicStyles.headerRow}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
                         <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>

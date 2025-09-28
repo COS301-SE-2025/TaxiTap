@@ -135,15 +135,15 @@ export default function PassengerProfile() {
     };
 
     const handlePersonalInfo = () => {
-        router.push('../PersonalInfoEdit');
+        router.push('/PersonalInfoEdit');
     };
 
     const handleAddHomeAddress = () => {
-        router.push('../AddHomeAddress');
+        router.push('/AddHomeAddress');
     };
 
     const handleAddWorkAddress = () => {
-        router.push('../AddWorkAddress');
+        router.push('/AddWorkAddress');
     };
 
     const handleViewFeedback = () => {
