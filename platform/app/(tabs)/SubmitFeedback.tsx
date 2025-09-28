@@ -14,6 +14,7 @@ import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Id } from '../../convex/_generated/dataModel';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMapContext } from '../../contexts/MapContext';
+import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
 
 export default function SubmitFeedbackScreen() {
   const navigation = useNavigation();
@@ -36,6 +37,17 @@ export default function SubmitFeedbackScreen() {
   const router = useRouter();
   const { clearMapContext } = useMapContext();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+  
+  // Safe access to MultiLegJourneyProvider with fallback
+  let clearJourneyCache: (() => Promise<void>) | undefined;
+  try {
+    const multiLegJourneyContext = useMultiLegJourney();
+    clearJourneyCache = multiLegJourneyContext.clearJourneyCache;
+  } catch (error) {
+    // Provider not available, provide a no-op fallback
+    console.warn('MultiLegJourneyProvider not available, using fallback');
+    clearJourneyCache = async () => {};
+  }
 
   const {
     rideId,
@@ -159,14 +171,29 @@ export default function SubmitFeedbackScreen() {
           );
           return;
         } else if (legResult.success && legResult.journeyComplete) {
-          // Journey complete
+          // Journey complete - clear all states before navigating home
           showGlobalSuccess(
             'Journey Complete!',
             `Multi-leg journey completed successfully! Total cost: R${legResult.totalActualCost?.toFixed(2) || '0.00'}`,
             {
               duration: 0,
               actions: [
-                { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
+                { 
+                  label: 'OK', 
+                  onPress: async () => {
+                    // Clear all journey and map states
+                    console.log('🧹 Clearing multi-leg journey states after completion');
+                    clearMapContext();
+                    await clearJourneyCache();
+                    console.log('✅ Multi-leg journey cache cleared successfully');
+                    
+                    // Add a small delay to ensure cache clearing propagates before navigation
+                    setTimeout(() => {
+                      router.replace('/HomeScreen');
+                    }, 100);
+                  }, 
+                  style: 'default' 
+                },
               ],
             }
           );
@@ -543,7 +570,7 @@ export default function SubmitFeedbackScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={() => {
+            onPress={async () => {
               // Check if this is a continue to next leg flow
               if (continueToNext === 'true' && journeyId && legIndex) {
                 // Navigate to TaxiInformation for next leg
@@ -559,8 +586,23 @@ export default function SubmitFeedbackScreen() {
                   },
                 });
               } else {
-                // Standard skip feedback flow
-                router.replace('/HomeScreen');
+                // Standard skip feedback flow - clear states for multi-leg journeys
+                if (isMultiLegJourney && journeyId) {
+                  // For multi-leg journeys, always clear states to prevent loading screen hanging
+                  // This covers cases where the journey might be completed but state check fails
+                  console.log('🧹 Clearing multi-leg journey states on skip feedback');
+                  clearMapContext();
+                  await clearJourneyCache();
+                  console.log('✅ Multi-leg journey cache cleared successfully');
+                  
+                  // Add a small delay to ensure cache clearing propagates before navigation
+                  setTimeout(() => {
+                    router.replace('/HomeScreen');
+                  }, 100);
+                } else {
+                  // For non-multi-leg journeys, navigate immediately
+                  router.replace('/HomeScreen');
+                }
               }
             }}
             style={dynamicStyles.skipButton}

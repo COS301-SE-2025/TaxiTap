@@ -43,7 +43,7 @@ export default function PaymentConfirmation() {
     journeyId,
     legIndex,
     totalLegs,
-    routeName
+    routeName,
   } = useLocalSearchParams();
 
   // Use the new payment handler mutation

@@ -121,6 +121,12 @@ export default function SeatReserved() {
 		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
 	);
 
+	// Get driver rating
+	const driverRating = useQuery(
+		api.functions.feedback.averageRating.getAverageRating,
+		taxiInfo?.driver?.userId ? { driverId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
+	);
+
 	// Helper to determine ride status - declared immediately after taxiInfo to ensure it's available for all useEffects
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 
@@ -1509,23 +1515,27 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 									<Text style={dynamicStyles.ratingText}>
-										{(taxiInfo?.driver?.rating ?? 0).toFixed(1)}
+										{typeof driverRating === "number" && driverRating > 0
+											? driverRating.toFixed(1)
+											: "No ratings"}
 									</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-										{[1, 2, 3, 4, 5].map((star, index) => {
-											const full = (taxiInfo?.driver?.rating ?? 0) >= star;
-											const half = (taxiInfo?.driver?.rating ?? 0) >= star - 0.5 && !full;
+										{typeof driverRating === "number" && driverRating > 0
+											? [1, 2, 3, 4, 5].map((star, index) => {
+												const full = driverRating >= star;
+												const half = driverRating >= star - 0.5 && driverRating < star;
 
-											return (
-												<FontAwesome
-													key={index}
-													name={full ? "star" : half ? "star-half-full" : "star-o"}
-													size={12}
-													color={theme.primary}
-													style={{ marginRight: 1 }}
-												/>
-											);
-										})}
+												return (
+													<FontAwesome
+														key={index}
+														name={full ? "star" : half ? "star-half-full" : "star-o"}
+														size={12}
+														color="#FFD700"
+														style={{ marginRight: 1 }}
+													/>
+												);
+											})
+											: null}
 									</View>
 								</View>
 								

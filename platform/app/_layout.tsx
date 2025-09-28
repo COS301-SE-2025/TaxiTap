@@ -25,6 +25,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
 import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
+import { MultiLegJourneyProvider } from '../contexts/MultiLegJourneyContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -67,12 +68,14 @@ export default function RootLayout() {
             <UserProvider>
               <MapProvider>
                 <RouteProvider>
-                  <AlertProvider>
-                    <NotificationProvider>
-                      <RootLayoutNav />
-                      <AlertOverlay />
-                    </NotificationProvider>
-                  </AlertProvider>
+                  <MultiLegJourneyProvider>
+                    <AlertProvider>
+                      <NotificationProvider>
+                        <RootLayoutNav />
+                        <AlertOverlay />
+                      </NotificationProvider>
+                    </AlertProvider>
+                  </MultiLegJourneyProvider>
                 </RouteProvider>
               </MapProvider>
             </UserProvider>
