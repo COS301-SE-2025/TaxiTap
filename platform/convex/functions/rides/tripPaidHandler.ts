@@ -28,10 +28,44 @@ export const tripPaidHandler = async (
   await ctx.db.patch(ride._id, {
     tripPaid: paid,
     paymentConfirmedAt: Date.now(),
-    amountPaid: amountPaid ?? undefined,   
-    paymentType,                           
+    amountPaid: amountPaid ?? undefined,
+    paymentType,
   });
-  
+
+  // Update the corresponding trip record for driver statistics
+  if (ride.tripId) {
+    try {
+      const trip = await ctx.db.get(ride.tripId);
+      if (trip) {
+        // Update the trip fare based on payment status and amount
+        let tripFare = trip.fare;
+
+        if (paid && amountPaid !== null) {
+          // If payment confirmed with specific amount, use that amount
+          tripFare = amountPaid;
+        } else if (paid && ride.finalFare !== undefined) {
+          // If payment confirmed but no amount specified, use finalFare
+          tripFare = ride.finalFare;
+        } else if (paid && ride.estimatedFare !== undefined) {
+          // If payment confirmed but no finalFare, use estimatedFare
+          tripFare = ride.estimatedFare;
+        } else if (!paid) {
+          // If payment not confirmed, set fare to 0 for driver statistics
+          tripFare = 0;
+        }
+
+        await ctx.db.patch(ride.tripId, {
+          fare: tripFare,
+        });
+
+        console.log(`Updated trip ${ride.tripId} fare to ${tripFare} based on payment status: ${paid}`);
+      }
+    } catch (error) {
+      console.error('Error updating trip record:', error);
+      // Don't fail the payment confirmation if trip update fails
+    }
+  }
+
   // Check and award Trusted Payer badge if payment was confirmed
   if (paid) {
     try {

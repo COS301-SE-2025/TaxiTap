@@ -23,6 +23,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
 import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
+import { Badge } from '../../components/Badge';
 
 export default function TaxiInformation() {
   const navigation = useNavigation();
@@ -248,11 +249,31 @@ export default function TaxiInformation() {
   // Next leg information query - only runs when continuing to next leg
   const nextLegInfo = useQuery(
     api.functions.journeys.getNextLegInfo.getNextLegInfo,
-    (isMultiLegJourney && journeyId) ? { 
+    (isMultiLegJourney && journeyId) ? {
       journeyId: journeyId,
       currentLegIndex: currentLegIndex - 1 // We're looking for the next leg after the just completed one
     } : "skip"
   );
+
+  // Get driver ratings and badges for all available taxis
+  // We need to call hooks for a fixed number of drivers (max 10) to avoid hook count changes
+  const maxDrivers = 10;
+  const driverQueries = Array.from({ length: maxDrivers }, (_, index) => {
+    const taxi = nearbyTaxis[index];
+    const driverId = taxi?.userId as Id<"taxiTap_users"> | undefined;
+
+    const rating = useQuery(
+      api.functions.feedback.averageRating.getAverageRating,
+      driverId ? { driverId } : "skip"
+    );
+
+    const badges = useQuery(
+      api.functions.badges.getDriverBadges.getDriverBadges,
+      driverId ? { driverId } : "skip"
+    );
+
+    return { rating, badges, driverId };
+  });
 
 
   // Process enhanced data from HomeScreen
@@ -323,6 +344,7 @@ export default function TaxiInformation() {
       setIsLoadingTaxis(false);
     }
   }, [fallbackNearbyTaxis, shouldUseOriginalQuery]);
+
 
   // Handle next leg information for multi-leg journeys
   useEffect(() => {
@@ -582,11 +604,9 @@ export default function TaxiInformation() {
     }
   };
 
-  const renderTaxiCard = (taxi: any, index: number) => {
+  const renderTaxiCard = (taxi: any, index: number, driverRating: number | undefined, driverBadges: any[] | undefined) => {
     const isEnhanced = taxi.routeInfo;
     const isSelected = selectedTaxi?._id === taxi._id;
-
-    const driverRating = taxi.averageRating ?? 0;
 
     return (
       <TouchableOpacity
@@ -607,7 +627,7 @@ export default function TaxiInformation() {
 
             {/* Driver Rating */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              {driverRating > 0 ? [1, 2, 3, 4, 5].map((star) => {
+              {driverRating && driverRating > 0 ? [1, 2, 3, 4, 5].map((star) => {
                 const full = driverRating >= star;
                 const half = driverRating >= star - 0.5 && driverRating < star;
                 return (
@@ -623,6 +643,39 @@ export default function TaxiInformation() {
                 <Text style={{ fontSize: 12, color: theme.textSecondary }}>No ratings</Text>
               )}
             </View>
+
+            {/* Driver Badges */}
+            {driverBadges && driverBadges.length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 }}>
+                {driverBadges.slice(0, 3).map((badge, badgeIndex) => (
+                  <Badge
+                    key={badgeIndex}
+                    badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
+                    name={badge.name}
+                    description={badge.description}
+                    icon={badge.icon}
+                    color={badge.color}
+                    size="small"
+                    showDescription={false}
+                  />
+                ))}
+                {driverBadges.length > 3 && (
+                  <View style={{
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: 12,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    marginHorizontal: 2,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Text style={{ fontSize: 10, color: theme.textSecondary, fontWeight: '600' }}>
+                      +{driverBadges.length - 3}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
 
             <Text style={dynamicStyles.vehicleInfo}>
               {taxi.vehicleModel}
@@ -1079,7 +1132,10 @@ export default function TaxiInformation() {
               </Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (
-            nearbyTaxis.map((taxi, index) => renderTaxiCard(taxi, index))
+            nearbyTaxis.map((taxi, index) => {
+              const driverQuery = driverQueries[index];
+              return renderTaxiCard(taxi, index, driverQuery?.rating, driverQuery?.badges);
+            })
           ) : (
             <View style={dynamicStyles.noTaxisContainer}>
               <Ionicons

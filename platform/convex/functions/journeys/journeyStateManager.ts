@@ -165,6 +165,8 @@ export const completeLegWithPayment = mutation({
     }
 
     const now = Date.now();
+    const completedLeg = journey.legs[legIndex];
+
     const updatedLegs = journey.legs.map((leg, index) => {
       if (index === legIndex) {
         return {
@@ -181,8 +183,69 @@ export const completeLegWithPayment = mutation({
       .filter(leg => leg.actualCost !== undefined)
       .reduce((sum, leg) => sum + (leg.actualCost || 0), 0);
 
+    // Update the corresponding ride and trip records for driver statistics
+    if (completedLeg.rideId) {
+      try {
+        const ride = await ctx.db.get(completedLeg.rideId);
+        if (ride) {
+          // Verify that payment has been confirmed before completing the leg
+          if (ride.tripPaid !== true) {
+            console.warn(`🚨 Payment not confirmed for ride ${ride.rideId}, leg ${legIndex}. Auto-confirming payment.`);
+            // Auto-confirm payment if actualCost is provided (coming from feedback submission)
+            if (actualCost > 0) {
+              console.log(`💳 Auto-confirming payment: ${actualCost} for ride ${ride.rideId}`);
+              await ctx.db.patch(completedLeg.rideId, {
+                tripPaid: true,
+                amountPaid: actualCost,
+                paymentType: "exact",
+                paymentConfirmedAt: now,
+              });
+              console.log(`✅ Payment auto-confirmed for ride ${ride.rideId}`);
+            } else {
+              throw new Error("Payment must be confirmed before completing this leg of the journey. Please use the payment confirmation screen first.");
+            }
+          }
+
+          // Use the actual payment amount from the ride record, not the passed actualCost
+          const actualPaymentAmount = ride.amountPaid || actualCost;
+
+          // Update ride with final cost information
+          await ctx.db.patch(completedLeg.rideId, {
+            finalFare: actualPaymentAmount,
+            paymentConfirmedAt: now,
+          });
+
+          // Update the corresponding trip record for driver statistics
+          if (ride.tripId) {
+            const trip = await ctx.db.get(ride.tripId);
+            if (trip) {
+              await ctx.db.patch(ride.tripId, {
+                fare: actualPaymentAmount,
+                endTime: now,
+              });
+              console.log(`Updated multi-leg trip ${ride.tripId} fare to ${actualPaymentAmount} for leg ${legIndex + 1}`);
+            }
+          }
+
+          // Update the actualCost to match the payment amount for consistency
+          actualCost = actualPaymentAmount;
+        }
+      } catch (error) {
+        console.error(`Error updating trip record for multi-leg journey leg ${legIndex}:`, error);
+        throw error; // Re-throw payment verification errors
+      }
+    }
+
     const isLastLeg = legIndex === journey.totalLegs - 1;
     const isJourneyComplete = isLastLeg;
+
+    console.log(`🔍 Journey completion check:`, {
+      legIndex,
+      totalLegs: journey.totalLegs,
+      isLastLeg,
+      isJourneyComplete,
+      journeyId
+    });
 
     await ctx.db.patch(journey._id, {
       legs: updatedLegs,
@@ -203,6 +266,11 @@ export const completeLegWithPayment = mutation({
     // Return information about next leg if journey continues
     if (!isJourneyComplete && legIndex + 1 < journey.totalLegs) {
       const nextLeg = journey.legs[legIndex + 1];
+      console.log(`🔄 Journey continues - returning next leg info:`, {
+        journeyComplete: false,
+        nextLegIndex: legIndex + 1,
+        nextLegRouteName: nextLeg.routeName
+      });
       return {
         success: true,
         journeyComplete: false,
@@ -214,6 +282,11 @@ export const completeLegWithPayment = mutation({
       };
     }
 
+    console.log(`🏁 Journey complete - returning completion result:`, {
+      journeyComplete: true,
+      totalActualCost,
+      journeyId
+    });
     return {
       success: true,
       journeyComplete: true,

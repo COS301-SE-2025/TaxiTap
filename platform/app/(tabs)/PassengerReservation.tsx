@@ -1043,19 +1043,56 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			// Check if payment has been confirmed BEFORE trying to end the ride
+			const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+			if (!hasAlreadyPaid) {
+				// Payment not confirmed - redirect to payment screen
+				router.push({
+					pathname: '/Payments',
+					params: {
+						driverName: taxiInfo.driver?.name || 'Unknown',
+						licensePlate: taxiInfo.plate || 'Unknown',
+						fare: taxiInfo.fare?.toString() || '0',
+						rideId: taxiInfo.rideId,
+						startName: taxiInfo.startLocation?.address || 'Start Location',
+						endName: taxiInfo.endLocation?.address || 'Destination',
+						driverId: taxiInfo.driver?.userId || '',
+						passengerId: user?.id || '',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+					}
+				});
+				return;
+			}
+
 			// Set this FIRST to prevent the error alert from triggering
 			setRideJustEnded(true);
 			setHasShownDeclinedAlert(true); // Also set this to prevent any error alerts
-			
+
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			
+
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-
-			// Check if payment has already been confirmed (tripPaid === true)
-			const hasAlreadyPaid = taxiInfo.tripPaid === true;
 
 			if (hasAlreadyPaid) {
 				// User has already paid, go directly to feedback
@@ -1076,6 +1113,12 @@ export default function SeatReserved() {
 										endName: destination?.name || 'Destination',
 										passengerId: user.id,
 										driverId: driverId || '',
+										actualFare: result.fare.toString(),
+										isMultiLeg: params.isMultiLeg,
+										journeyId: params.journeyId,
+										legIndex: params.legIndex,
+										totalLegs: params.totalLegs,
+										routeName: params.routeName,
 									},
 								});
 							},
@@ -1114,6 +1157,24 @@ export default function SeatReserved() {
 										fare: result.fare.toString(),
 										driverName: taxiInfo?.driver?.name || 'Unknown Driver',
 										licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+										// Location parameters
+										currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+										currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+										currentName: params.currentName,
+										destinationLat: params.destinationLat || destination?.latitude?.toString(),
+										destinationLng: params.destinationLng || destination?.longitude?.toString(),
+										destinationName: params.destinationName,
+										// Route parameters
+										routeId: params.routeId,
+										estimatedFare: params.estimatedFare,
+										availableTaxisCount: params.availableTaxisCount,
+										routeMatchData: params.routeMatchData,
+										// Multi-leg journey parameters
+										isMultiLeg: params.isMultiLeg,
+										journeyId: params.journeyId,
+										legIndex: params.legIndex,
+										totalLegs: params.totalLegs,
+										routeName: params.routeName,
 									},
 								});
 							},
@@ -1185,28 +1246,65 @@ export default function SeatReserved() {
 		
 		try {
 			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
-			
+
+			// Check if payment has been confirmed BEFORE trying to end the ride
+			const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+			if (!hasAlreadyPaid) {
+				// Payment not confirmed - redirect to payment screen for this leg
+				router.push({
+					pathname: '/Payments',
+					params: {
+						driverName: taxiInfo.driver?.name || 'Unknown',
+						licensePlate: taxiInfo.plate || 'Unknown',
+						fare: taxiInfo.fare?.toString() || '0',
+						rideId: taxiInfo.rideId,
+						startName: taxiInfo.startLocation?.address || 'Start Location',
+						endName: taxiInfo.endLocation?.address || 'Destination',
+						driverId: taxiInfo.driver?.userId || '',
+						passengerId: user?.id || '',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+					}
+				});
+				return;
+			}
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
+
 			console.log('💰 Trip ended, fare calculated:', result);
-			
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			console.log('✅ Ride ended successfully');
-			
+
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			console.log('🔄 Seat availability updated');
-			
+
 			if (!currentLocation || !destination) {
 				console.log('⚠️ Missing location data, cannot navigate to next leg');
 				return;
 			}
-			
-			// Check if payment is required
-			const hasAlreadyPaid = taxiInfo.tripPaid === true;
 			
 			if (hasAlreadyPaid) {
 				// User has already paid, go directly to feedback then TaxiInformation
@@ -1240,6 +1338,19 @@ export default function SeatReserved() {
 						fare: result.fare.toString(),
 						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
 						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
 						isMultiLeg: params.isMultiLeg,
 						journeyId: params.journeyId,
 						legIndex: params.legIndex,

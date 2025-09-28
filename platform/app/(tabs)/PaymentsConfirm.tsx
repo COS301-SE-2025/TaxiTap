@@ -26,12 +26,25 @@ export default function PaymentConfirmation() {
     endName,
     driverId,
     passengerId,
+    // Location parameters
+    currentLat,
+    currentLng,
+    currentName,
+    destinationLat,
+    destinationLng,
+    destinationName,
+    // Route parameters
+    routeId,
+    estimatedFare,
+    availableTaxisCount,
+    routeMatchData,
     // Multi-leg journey parameters
     journeyId,
     legIndex,
     totalLegs,
     isMultiLeg,
-    continueToNext
+    continueToNext,
+    routeName
   } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
   const { clearMapContext } = useMapContext();
@@ -179,11 +192,29 @@ export default function PaymentConfirmation() {
                   endName: endName as string,
                   passengerId: passengerId as string || userId as string,
                   driverId: driverId as string,
+                  actualFare: fare as string,
+                  // Location parameters
+                  currentLat: currentLat as string,
+                  currentLng: currentLng as string,
+                  currentName: currentName as string,
+                  destinationLat: destinationLat as string,
+                  destinationLng: destinationLng as string,
+                  destinationName: destinationName as string,
+                  // Driver/taxi parameters
+                  driverName: driverName as string,
+                  licensePlate: licensePlate as string,
+                  fare: fare as string,
+                  estimatedFare: estimatedFare as string,
+                  // Route parameters
+                  routeId: routeId as string,
+                  availableTaxisCount: availableTaxisCount as string,
+                  routeMatchData: routeMatchData as string,
+                  // Multi-leg journey parameters
                   isMultiLeg: 'true',
                   journeyId: journeyId as string,
                   legIndex: legIndex as string,
                   totalLegs: totalLegs as string,
-                  routeName: '',
+                  routeName: routeName as string || '',
                   continueToNext: 'true',
                 },
               });
@@ -204,10 +235,29 @@ export default function PaymentConfirmation() {
                 endName: endName as string,
                 passengerId: passengerId as string || userId as string,
                 driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters
                 isMultiLeg: 'true',
                 journeyId: journeyId as string,
                 legIndex: legIndex as string,
                 totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
               },
             });
           }
@@ -237,10 +287,29 @@ export default function PaymentConfirmation() {
                 endName: endName as string,
                 passengerId: passengerId as string || userId as string,
                 driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters
                 isMultiLeg: isMultiLeg as string,
                 journeyId: journeyId as string,
                 legIndex: legIndex as string,
                 totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
                 continueToNext: 'true',
               },
             });
@@ -254,6 +323,29 @@ export default function PaymentConfirmation() {
                 endName: endName as string,
                 passengerId: passengerId as string || userId as string,
                 driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters (for single-leg rides, these will be undefined)
+                isMultiLeg: isMultiLeg as string,
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
               },
             });
           }
@@ -334,6 +426,29 @@ export default function PaymentConfirmation() {
                   endName: endName as string,
                   passengerId: passengerId as string || userId as string,
                   driverId: driverId as string,
+                  actualFare: fare as string,
+                  // Location parameters
+                  currentLat: currentLat as string,
+                  currentLng: currentLng as string,
+                  currentName: currentName as string,
+                  destinationLat: destinationLat as string,
+                  destinationLng: destinationLng as string,
+                  destinationName: destinationName as string,
+                  // Driver/taxi parameters
+                  driverName: driverName as string,
+                  licensePlate: licensePlate as string,
+                  fare: fare as string,
+                  estimatedFare: estimatedFare as string,
+                  // Route parameters
+                  routeId: routeId as string,
+                  availableTaxisCount: availableTaxisCount as string,
+                  routeMatchData: routeMatchData as string,
+                  // Multi-leg journey parameters (for single-leg rides, these will be undefined)
+                  isMultiLeg: isMultiLeg as string,
+                  journeyId: journeyId as string,
+                  legIndex: legIndex as string,
+                  totalLegs: totalLegs as string,
+                  routeName: routeName as string || '',
                 },
               });
             },
