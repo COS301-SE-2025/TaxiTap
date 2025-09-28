@@ -8,6 +8,7 @@ import {
   Modal,
   StatusBar,
   SafeAreaView,
+  Pressable,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
@@ -362,6 +363,11 @@ export default function DriverOnline({
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
+  const activeTrips = useQuery(
+      api.functions.rides.getActiveTrips.getActiveTrips,
+      user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+    
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -417,12 +423,11 @@ export default function DriverOnline({
       marginRight: 4,
     },
     offlineButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: '#EF4444',
+      height: 52,
+      borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: '#EF4444',
     },
     
     // Main Content
@@ -458,11 +463,6 @@ export default function DriverOnline({
       fontWeight: '700',
       color: theme.text,
     },
-    earningsValue: {
-      color: '#22C55E',
-    },
-    
-    // Seat Control
     seatControlContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -568,6 +568,7 @@ export default function DriverOnline({
       borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
+      marginBottom: 20,
     },
     primaryButtonText: {
       color: '#FFFFFF',
@@ -748,37 +749,25 @@ export default function DriverOnline({
               <Icon name="information-circle-outline" size={16} color={theme.primary} />
             </TouchableOpacity>
           )}
-          
-          <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
-            <Icon name="power" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.mainContent}>
         {/* Stats */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Today's Earnings</Text>
-            <Text style={[styles.statValue, styles.earningsValue]}>
-              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
-            </Text>
-          </View>
+          <Pressable style={styles.statCard} onPress={() => router.push("/ActiveRides")}>
+            <Text style={styles.statLabel}>Active Rides</Text>
+            <Text style={styles.statValue}>{activeTrips?.activeCount || 0}</Text>
+          </Pressable>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Available Seats</Text>
-            <Text style={styles.statValue}>
-              {taxiInfo?.capacity?.toString() ?? "0"}
-            </Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Current Route</Text>
-            <Text style={[styles.statValue, { fontSize: 12, textAlign: 'center' }]}>
-              {driverRoute?.name ?? "Not Assigned"}
-            </Text>
-          </View>
+          <Pressable style={styles.statCard} onPress={() => router.push("/UnpaidPayments")}>
+            <Text style={styles.statLabel}>Unpaid Accounts</Text>
+            <Text style={styles.statValue}>{activeTrips?.unpaidCount || 0}</Text>
+          </Pressable>
         </View>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
+          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        </TouchableOpacity>
 
         {/* Seat Control */}
         <View style={styles.seatControlContainer}>
@@ -824,9 +813,8 @@ export default function DriverOnline({
             <Text style={styles.mapButtonText}>View Map</Text>
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
-          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
+          <Icon name="power" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 

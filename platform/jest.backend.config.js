@@ -31,5 +31,5 @@ module.exports = {
   moduleNameMapper: {
     '^../../_generated/server$': '<rootDir>/tests/mocks/convex-server.ts',
     '^convex/values$': '<rootDir>/tests/mocks/convex-values.ts'
-  }
+  },
 };
