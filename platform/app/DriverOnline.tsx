@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import * as Location from 'expo-location';
 import { useNavigation, useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useMutation, useQuery } from 'convex/react';
@@ -72,6 +73,7 @@ export default function DriverOnline({
 
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const { user } = useUser();
   const userId = user?.id;
@@ -87,6 +89,162 @@ export default function DriverOnline({
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
   const { showGlobalAlert, showGlobalError, showGlobalSuccess } = useAlertHelpers();
+  
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    newRideRequest: {
+      en: "New Ride Request",
+      zu: "Isicelo Esisha Sohambo",
+      tn: "Kopo e Ntsha ya Leetong",
+      af: "Nuwe Rit Versoek"
+    },
+    decline: {
+      en: "Decline",
+      zu: "Yenqaba",
+      tn: "Gana",
+      af: "Wys Af"
+    },
+    accept: {
+      en: "Accept",
+      zu: "Yamukela",
+      tn: "Amohela",
+      af: "Aanvaar"
+    },
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    failedToDeclineRide: {
+      en: "Failed to decline ride.",
+      zu: "Kuhlulekile ukuyenqaba uhambo.",
+      tn: "Ga go atlege go gana leetong.",
+      af: "Kon nie rit afwys nie."
+    },
+    failedToAcceptRide: {
+      en: "Failed to accept ride.",
+      zu: "Kuhlulekile ukuyamukela uhambo.",
+      tn: "Ga go atlege go amohela leetong.",
+      af: "Kon nie rit aanvaar nie."
+    },
+    emergencyAlertSent: {
+      en: "Emergency Alert Sent",
+      zu: "Isaziso Sephutha Sithunyelwe",
+      tn: "Tsebiso ya Tshoganetso e Romilwe",
+      af: "Noodsaak Waarskuwing Gestuur"
+    },
+    emergencyServicesContacted: {
+      en: "Emergency services contacted.",
+      zu: "Izinsiza zezimo eziphuthumayo zixhumene.",
+      tn: "Ditshebeletso tsa tshoganetso di kgokagantswe.",
+      af: "Nooddienste gekontak."
+    },
+    profile: {
+      en: "Profile",
+      zu: "Iphrofayili",
+      tn: "Profaele",
+      af: "Profiel"
+    },
+    earnings: {
+      en: "Earnings",
+      zu: "Imali Etholwayo",
+      tn: "Ditlhwatlhwa",
+      af: "Verdienste"
+    },
+    loadingLocation: {
+      en: "Loading location...",
+      zu: "Kulayishwa indawo...",
+      tn: "Go tsena lefelo...",
+      af: "Laai ligging..."
+    },
+    driverOnline: {
+      en: "Driver Online",
+      zu: "Umshayeli Okuxhumekile",
+      tn: "Mokgweetsi a Tsamaya",
+      af: "Bestuurder Aanlyn"
+    },
+    goOffline: {
+      en: "Go Offline",
+      zu: "Hamba Ngaphandle Kwe-inthanethi",
+      tn: "Tsamaya ka ntle ga Marang-rang",
+      af: "Gaan Aflyn"
+    },
+    todaysEarnings: {
+      en: "Today's Earnings",
+      zu: "Imali Yosuku",
+      tn: "Ditlhwatlhwa tsa Lehono",
+      af: "Vandag se Verdienste"
+    },
+    currentRoute: {
+      en: "Current Route",
+      zu: "Indlela Yamanje",
+      tn: "Leetong la Jaanong",
+      af: "Huidige Roete"
+    },
+    notAssigned: {
+      en: "Not Assigned",
+      zu: "Akubekelwanga",
+      tn: "Ga le Beakanyetswe",
+      af: "Nie Toegewys Nie"
+    },
+    viewMap: {
+      en: "View Map",
+      zu: "Buka Imephu",
+      tn: "Bona Mepu",
+      af: "Bekyk Kaart"
+    },
+    yourLocation: {
+      en: "Your Location",
+      zu: "Indawo Yakho",
+      tn: "Lefelo la Gago",
+      af: "Jou Ligging"
+    },
+    stop: {
+      en: "Stop",
+      zu: "Misa",
+      tn: "Ema",
+      af: "Stop"
+    },
+    on: {
+      en: "on",
+      zu: "ku",
+      tn: "mo",
+      af: "op"
+    },
+    yourDriverPin: {
+      en: "Your Driver PIN",
+      zu: "I-PIN Yakho Yomshayeli",
+      tn: "PIN ya Gago ya Mokgweetsi",
+      af: "Jou Bestuurder PIN"
+    },
+    notSet: {
+      en: "Not Set",
+      zu: "Akusethiwe",
+      tn: "Ga e Beakanywe",
+      af: "Nie Gestel Nie"
+    },
+    unknownLocation: {
+      en: "Unknown Location",
+      zu: "Indawo Engaziwa",
+      tn: "Lefelo le sa Itseweng",
+      af: "Onbekende Ligging"
+    },
+    currentLocation: {
+      en: "Current Location",
+      zu: "Indawo Yamanje",
+      tn: "Lefelo la Jaanong",
+      af: "Huidige Ligging"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
   
   const { location: streamedLocation, error: locationStreamError } = useThrottledLocationStreaming(userId || '', role, true);
   
@@ -170,7 +328,7 @@ export default function DriverOnline({
         const currentLoc: LocationData = {
           latitude,
           longitude,
-          name: placeName || 'Unknown Location',
+          name: placeName || getTranslation('unknownLocation'),
         };
 
         setCurrentLocation(currentLoc);
@@ -243,7 +401,7 @@ export default function DriverOnline({
       const newLocation: LocationData = {
         latitude: streamedLocation.latitude,
         longitude: streamedLocation.longitude,
-        name: 'Current Location',
+        name: getTranslation('currentLocation'),
       };
       setCurrentLocation(newLocation);
 
@@ -269,7 +427,7 @@ export default function DriverOnline({
     if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
       shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
-        title: "New Ride Request",
+        title: getTranslation('newRideRequest'),
         message: rideRequest.message,
         position: 'top',
         animation: 'slide-down',
@@ -277,19 +435,19 @@ export default function DriverOnline({
         type: 'info',
         actions: [
           {
-            label: 'Decline',
+            label: getTranslation('decline'),
             style: 'destructive',
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(getTranslation('error'), getTranslation('failedToDeclineRide'), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
           },
           {
-            label: 'Accept',
+            label: getTranslation('accept'),
             style: 'default',
             onPress: async () => {
               try {
@@ -307,7 +465,7 @@ export default function DriverOnline({
                 
                 markAsRead(rideRequest._id);
               } catch (error) {
-                showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(getTranslation('error'), getTranslation('failedToAcceptRide'), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
             },
           },
@@ -329,7 +487,7 @@ export default function DriverOnline({
           label: 'Yes, Get Help',
           style: 'destructive',
           onPress: () => {
-            showGlobalSuccess('Emergency Alert Sent', 'Emergency services contacted.', { position: 'top', animation: 'slide-down', duration: 3000 });
+            showGlobalSuccess(getTranslation('emergencyAlertSent'), getTranslation('emergencyServicesContacted'), { position: 'top', animation: 'slide-down', duration: 3000 });
           },
         },
         { label: 'Cancel', style: 'cancel', onPress: () => {} },
@@ -356,8 +514,8 @@ export default function DriverOnline({
   };
 
   const menuItems = [
-    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
+    { icon: "person", title: getTranslation('profile'), onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: getTranslation('earnings'), onPress: () => router.push('/EarningsPage') },
     { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
@@ -722,7 +880,7 @@ export default function DriverOnline({
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading location...</Text>
+          <Text style={styles.loadingText}>{getTranslation('loadingLocation')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -738,7 +896,7 @@ export default function DriverOnline({
           <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
             <Icon name="menu" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Driver Online</Text>
+          <Text style={styles.headerTitle}>{getTranslation('driverOnline')}</Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -759,7 +917,7 @@ export default function DriverOnline({
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Today's Earnings</Text>
+            <Text style={styles.statLabel}>{getTranslation('todaysEarnings')}</Text>
             <Text style={[styles.statValue, styles.earningsValue]}>
               R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
@@ -773,9 +931,9 @@ export default function DriverOnline({
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Current Route</Text>
+            <Text style={styles.statLabel}>{getTranslation('currentRoute')}</Text>
             <Text style={[styles.statValue, { fontSize: 12, textAlign: 'center' }]}>
-              {driverRoute?.name ?? "Not Assigned"}
+              {driverRoute?.name ?? getTranslation('notAssigned')}
             </Text>
           </View>
         </View>
@@ -821,7 +979,7 @@ export default function DriverOnline({
           
           <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
             <Icon name="map" size={18} color={theme.primary} />
-            <Text style={styles.mapButtonText}>View Map</Text>
+            <Text style={styles.mapButtonText}>{getTranslation('viewMap')}</Text>
           </TouchableOpacity>
         </View>
         
@@ -853,7 +1011,7 @@ export default function DriverOnline({
                 latitude: currentLocation.latitude,
                 longitude: currentLocation.longitude,
               }}
-              title="Your Location"
+              title={getTranslation('yourLocation')}
               pinColor="blue"
             />
 
@@ -878,7 +1036,7 @@ export default function DriverOnline({
                       longitude: stop.coordinates[1],
                     }}
                     title={stop.name}
-                    description={`Stop ${stop.order + 1} on ${driverRoute.name}`}
+                    description={`${getTranslation('stop')} ${stop.order + 1} ${getTranslation('on')} ${driverRoute.name}`}
                     pinColor={index === 0 ? 'green' : index === driverRoute.stops.length - 1 ? 'red' : 'orange'}
                   />
                 ))}
@@ -954,7 +1112,7 @@ export default function DriverOnline({
         >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.pinModal}>
-              <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
+              <Text style={styles.pinModalTitle}>{getTranslation('yourDriverPin')}</Text>
               
               <View style={styles.pinDisplay}>
                 {driverPin.split('').map((digit, index) => (
