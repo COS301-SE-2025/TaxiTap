@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface JourneyPaymentSummaryProps {
   journeyId: string;
@@ -11,6 +12,103 @@ interface JourneyPaymentSummaryProps {
 
 export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSummaryProps) {
   const router = useRouter();
+  const { currentLanguage } = useLanguage();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    loadingPaymentSummary: {
+      en: "Loading payment summary...",
+      zu: "Kulayishwa isifinyezo senkokhelo...",
+      tn: "Go tsena kakaretso ya ditlhwatlhwa...",
+      af: "Laai betaling opsomming..."
+    },
+    multiLegJourneyPaymentSummary: {
+      en: "Multi-Leg Journey Payment Summary",
+      zu: "Isifinyezo Senkokhelo Yohambo Olunamagxolo Amanyana",
+      tn: "Kakaretso ya Ditlhwatlhwa tsa Leetong le le Nang le Magare a a Fetang a Le Mongwe",
+      af: "Multi-Been Rit Betaling Opsomming"
+    },
+    allPaid: {
+      en: "All Paid",
+      zu: "Konke Kukhokhiwe",
+      tn: "Tsotlhe di Tshwerwe",
+      af: "Alles Betaal"
+    },
+    pendingPayment: {
+      en: "Pending Payment",
+      zu: "Inkokhelo Kulinde",
+      tn: "Tefo e Eme",
+      af: "Hangende Betaling"
+    },
+    paymentProgress: {
+      en: "Payment Progress",
+      zu: "Inqubekela Phambili Yenkokhelo",
+      tn: "Tswelopele ya Ditlhwatlhwa",
+      af: "Betaling Vordering"
+    },
+    legsPaid: {
+      en: "legs paid",
+      zu: "amagxolo akhokhiwe",
+      tn: "magare a a tshwerweng",
+      af: "bene betaal"
+    },
+    paymentTotals: {
+      en: "Payment Totals",
+      zu: "Izibalo Zenkokhelo",
+      tn: "Palogotlhe ya Ditlhwatlhwa",
+      af: "Betaling Totale"
+    },
+    estimatedTotal: {
+      en: "Estimated Total:",
+      zu: "Isamba Esilinganisiwe:",
+      tn: "Palogotlhe e e Akanyetsweng:",
+      af: "Geskatte Totaal:"
+    },
+    amountPaid: {
+      en: "Amount Paid:",
+      zu: "Inani Elikhokhiwe:",
+      tn: "Tefo e e Tshwerweng:",
+      af: "Bedrag Betaal:"
+    },
+    remainingAmount: {
+      en: "Remaining Amount:",
+      zu: "Inani Elisele:",
+      tn: "Tefo e e Setseng:",
+      af: "Resterende Bedrag:"
+    },
+    journeyLegs: {
+      en: "Journey Legs",
+      zu: "Amagxolo Ohambo",
+      tn: "Magare a Leetong",
+      af: "Rit Bene"
+    },
+    paymentRequiredToContinue: {
+      en: "Payment required to continue",
+      zu: "Inkokhelo iyadingeka ukuze uqhubeke",
+      tn: "Tefo e tlhokega go tswelela",
+      af: "Betaling vereis om voort te gaan"
+    },
+    journeyComplete: {
+      en: "Journey Complete",
+      zu: "Uhambo Luphele",
+      tn: "Leetong le Fetile",
+      af: "Rit Voltooi"
+    },
+    continueJourney: {
+      en: "Continue Journey",
+      zu: "Qhubeka Nohambo",
+      tn: "Tswelela Leetong",
+      af: "Voortgaan Rit"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const journeyPaymentData = useQuery(api.functions.journeys.journeyStateManager.getJourneyState, {
     journeyId,
@@ -19,7 +117,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
   if (!journeyPaymentData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading payment summary...</Text>
+        <Text style={styles.loadingText}>{getTranslation('loadingPaymentSummary')}</Text>
       </View>
     );
   }
@@ -55,21 +153,21 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
       {/* Journey Header */}
       <View style={styles.headerCard}>
         <View style={styles.headerInfo}>
-          <Text style={styles.journeyTitle}>Multi-Leg Journey Payment Summary</Text>
+          <Text style={styles.journeyTitle}>{getTranslation('multiLegJourneyPaymentSummary')}</Text>
           <Text style={styles.journeyRoute}>
             {journeyPaymentData.originLocation.address} → {journeyPaymentData.finalDestination.address}
           </Text>
         </View>
         <View style={styles.overallStatus}>
           <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.status) }]}>
-            {journeyPaymentData.status === 'completed' ? 'All Paid' : 'Pending Payment'}
+            {journeyPaymentData.status === 'completed' ? getTranslation('allPaid') : getTranslation('pendingPayment')}
           </Text>
         </View>
       </View>
 
       {/* Payment Progress */}
       <View style={styles.progressCard}>
-        <Text style={styles.progressTitle}>Payment Progress</Text>
+        <Text style={styles.progressTitle}>{getTranslation('paymentProgress')}</Text>
         <View style={styles.progressBar}>
           <View
             style={[
@@ -79,26 +177,26 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
           />
         </View>
         <Text style={styles.progressText}>
-          {journeyPaymentData.legs.filter((leg: any) => leg.status === 'completed').length} of {journeyPaymentData.totalLegs} legs paid
+          {journeyPaymentData.legs.filter((leg: any) => leg.status === 'completed').length} of {journeyPaymentData.totalLegs} {getTranslation('legsPaid')}
         </Text>
       </View>
 
       {/* Payment Totals */}
       <View style={styles.totalsCard}>
-        <Text style={styles.totalsTitle}>Payment Totals</Text>
+        <Text style={styles.totalsTitle}>{getTranslation('paymentTotals')}</Text>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Estimated Total:</Text>
+          <Text style={styles.totalLabel}>{getTranslation('estimatedTotal')}</Text>
           <Text style={styles.totalAmount}>R{journeyPaymentData.totalEstimatedCost.toFixed(2)}</Text>
         </View>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Amount Paid:</Text>
+          <Text style={styles.totalLabel}>{getTranslation('amountPaid')}</Text>
           <Text style={[styles.totalAmount, { color: '#2ECC71' }]}>
             R{(journeyPaymentData.totalActualCost || 0).toFixed(2)}
           </Text>
         </View>
         {journeyPaymentData.legs.filter((leg: any) => leg.status !== 'completed').length > 0 && (
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Remaining:</Text>
+            <Text style={styles.totalLabel}>{getTranslation('remainingAmount')}</Text>
             <Text style={[styles.totalAmount, { color: '#FF9900' }]}>
               R{(journeyPaymentData.totalEstimatedCost - (journeyPaymentData.totalActualCost || 0)).toFixed(2)}
             </Text>
@@ -108,7 +206,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
 
       {/* Individual Leg Details */}
       <View style={styles.legsCard}>
-        <Text style={styles.legsTitle}>Leg Details</Text>
+        <Text style={styles.legsTitle}>{getTranslation('journeyLegs')}</Text>
         {journeyPaymentData.legs.map((leg: any, index: number) => (
           <View key={index} style={styles.legItem}>
             <View style={styles.legHeader}>
@@ -133,7 +231,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
             )}
 
             {leg.paymentStatus === 'pending' && (
-              <Text style={styles.legPendingText}>Payment required to continue</Text>
+              <Text style={styles.legPendingText}>{getTranslation('paymentRequiredToContinue')}</Text>
             )}
           </View>
         ))}
@@ -147,7 +245,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
             onPress={() => router.push('/HomeScreen')}
           >
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>Journey Complete</Text>
+            <Text style={styles.actionButtonText}>{getTranslation('journeyComplete')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -155,7 +253,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
             onPress={() => router.push('/HomeScreen')}
           >
             <Ionicons name="arrow-forward" size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>Continue Journey</Text>
+            <Text style={styles.actionButtonText}>{getTranslation('continueJourney')}</Text>
           </TouchableOpacity>
         )}
 

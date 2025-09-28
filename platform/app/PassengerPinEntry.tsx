@@ -23,11 +23,125 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 export default function PassengerPinEntry() {
   const { user } = useUser();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const params = useLocalSearchParams();
   
   const [pin, setPin] = useState(['', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    failedToProcessPinInput: {
+      en: "Failed to process PIN input. Please try again.",
+      zu: "Kuhlulekile ukucubungula okokufaka kwe-PIN. Sicela uzame futhi.",
+      tn: "Ga go atlege go rarabolola tseno ya PIN. Re kopa o leke gape.",
+      af: "Kon nie PIN-invoer verwerk nie. Probeer asseblief weer."
+    },
+    failedToProcessBackspace: {
+      en: "Failed to process backspace. Please try again.",
+      zu: "Kuhlulekile ukucubungula ukubuyela emuva. Sicela uzame futhi.",
+      tn: "Ga go atlege go rarabolola go boela morago. Re kopa o leke gape.",
+      af: "Kon nie terugspasie verwerk nie. Probeer asseblief weer."
+    },
+    missingRideOrUserInfo: {
+      en: "Missing ride or user information.",
+      zu: "Ulwazi lohambo noma lomsebenzisi alukho.",
+      tn: "Tshedimosetso ya leetong kgotsa ya modirisi ga e na.",
+      af: "Ontbrekende rit of gebruiker inligting."
+    },
+    invalidPin: {
+      en: "Invalid PIN",
+      zu: "I-PIN Engalungile",
+      tn: "PIN e sa Tshwaneng",
+      af: "Ongeldige PIN"
+    },
+    enterValidFourDigitPin: {
+      en: "Please enter a valid 4-digit PIN.",
+      zu: "Sicela ufake i-PIN engu-4 engalungile.",
+      tn: "Re kopa o tsenye PIN e e tshwanang ya dinomoro tse 4.",
+      af: "Voer asseblief 'n geldige 4-syfer PIN in."
+    },
+    unknownDriver: {
+      en: "Unknown Driver",
+      zu: "Umshayeli Ongaziwa",
+      tn: "Mokgweetsi o sa Itseweng",
+      af: "Onbekende Bestuurder"
+    },
+    navigationError: {
+      en: "Navigation Error",
+      zu: "Iphutha Lokuhamba",
+      tn: "Phoso ya Go Tsamaya",
+      af: "Navigasie Fout"
+    },
+    failedToNavigateToPayments: {
+      en: "Failed to navigate to payments. Please try again.",
+      zu: "Kuhlulekile ukuhamba ukuya ezinkokhelweni. Sicela uzame futhi.",
+      tn: "Ga go atlege go tsamaya go ya ditlhwatlhwa. Re kopa o leke gape.",
+      af: "Kon nie na betalings navigeer nie. Probeer asseblief weer."
+    },
+    checkWithDriverAndTryAgain: {
+      en: "Please check with the driver and try again.",
+      zu: "Sicela uhlole nomshayeli bese uzama futhi.",
+      tn: "Re kopa o tlhatlhobe le mokgweetsi mme o leke gape.",
+      af: "Kontroleer asseblief met die bestuurder en probeer weer."
+    },
+    failedToVerifyPin: {
+      en: "Failed to verify PIN. Please try again.",
+      zu: "Kuhlulekile ukuqinisekisa i-PIN. Sicela uzame futhi.",
+      tn: "Ga go atlege go tlhomamisa PIN. Re kopa o leke gape.",
+      af: "Kon nie PIN verifieer nie. Probeer asseblief weer."
+    },
+    missingRideInformation: {
+      en: "Missing ride information. Please go back and try again.",
+      zu: "Ulwazi lohambo alukho. Sicela ubuyele emuva bese uzama futhi.",
+      tn: "Tshedimosetso ya leetong ga e na. Re kopa o boele morago mme o leke gape.",
+      af: "Ontbrekende rit inligting. Gaan asseblief terug en probeer weer."
+    },
+    verifyingPin: {
+      en: "Verifying PIN...",
+      zu: "Kuqinisekiswa i-PIN...",
+      tn: "Go tlhomamisiwa PIN...",
+      af: "PIN word geverifieer..."
+    },
+    verifyDriverPin: {
+      en: "Verify Driver PIN",
+      zu: "Qinisekisa I-PIN Yomshayeli",
+      tn: "Tlhomamisa PIN ya Mokgweetsi",
+      af: "Verifieer Bestuurder PIN"
+    },
+    enterDriversPin: {
+      en: "Enter Driver's PIN",
+      zu: "Faka I-PIN Yomshayeli",
+      tn: "Tsenya PIN ya Mokgweetsi",
+      af: "Voer Bestuurder PIN in"
+    },
+    askDriverToShowPin: {
+      en: "Ask the driver to show you their verification PIN to start the ride",
+      zu: "Cela umshayeli ukuthi akukhombise i-PIN yakhe yokuqinisekisa ukuze uqale uhambo",
+      tn: "Kopa mokgweetsi gore a go bontshe PIN ya gagwe ya tlhomamiso go simolola leetong",
+      af: "Vra die bestuurder om jou hul verifikasie PIN te wys om die rit te begin"
+    },
+    loadingPinDisplay: {
+      en: "Loading PIN display...",
+      zu: "Kulayishwa ukubonisa i-PIN...",
+      tn: "Go tsena pontsho ya PIN...",
+      af: "PIN vertoning word gelaai..."
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   // Reset PIN if it gets corrupted
   useEffect(() => {
@@ -97,7 +211,7 @@ export default function PassengerPinEntry() {
       }
     } catch (error) {
       console.error('PIN input error:', error);
-      Alert.alert('Error', 'Failed to process PIN input. Please try again.');
+      Alert.alert(getTranslation('error'), getTranslation('failedToProcessPinInput'));
       // Reset PIN state on error
       setPin(['', '', '', '']);
     }
@@ -124,7 +238,7 @@ export default function PassengerPinEntry() {
       }
     } catch (error) {
       console.error('Backspace error:', error);
-      Alert.alert('Error', 'Failed to process backspace. Please try again.');
+      Alert.alert(getTranslation('error'), getTranslation('failedToProcessBackspace'));
       // Reset PIN state on error
       setPin(['', '', '', '']);
     }
@@ -133,13 +247,13 @@ export default function PassengerPinEntry() {
   // Verify PIN
   const handleVerifyPin = async (enteredPin: string) => {
     if (!user || !rideId || !driverId) {
-      Alert.alert('Error', 'Missing ride or user information.');
+      Alert.alert(getTranslation('error'), getTranslation('missingRideOrUserInfo'));
       return;
     }
 
     // Validate PIN format
     if (!enteredPin || enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
+      Alert.alert(getTranslation('invalidPin'), getTranslation('enterValidFourDigitPin'));
       return;
     }
 
@@ -158,7 +272,7 @@ export default function PassengerPinEntry() {
           await router.push({
             pathname: '/Payments',
             params: {
-              driverName: driverName || 'Unknown Driver',
+              driverName: driverName || getTranslation('unknownDriver'),
               licensePlate: licensePlate || 'Unknown Plate',
               fare: fare || '0',
               rideId: rideId,
@@ -182,15 +296,15 @@ export default function PassengerPinEntry() {
           });
         } catch (navError) {
           console.error('Navigation error:', navError);
-          Alert.alert('Navigation Error', 'Failed to navigate to payments. Please try again.');
+          Alert.alert(getTranslation('navigationError'), getTranslation('failedToNavigateToPayments'));
         }
       } else {
-        Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+        Alert.alert(getTranslation('invalidPin'), getTranslation('checkWithDriverAndTryAgain'));
         setPin(['', '', '', '']);
       }
     } catch (error: any) {
       console.error('PIN verification error:', error);
-      Alert.alert('Error', error?.message || 'Failed to verify PIN. Please try again.');
+      Alert.alert(getTranslation('error'), error?.message || getTranslation('failedToVerifyPin'));
       setPin(['', '', '', '']);
     } finally {
       setIsVerifying(false);
@@ -265,7 +379,7 @@ export default function PassengerPinEntry() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme?.background || '#FFFFFF' }]}>
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>Missing ride information. Please go back and try again.</Text>
+          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>{getTranslation('missingRideInformation')}</Text>
           <TouchableOpacity 
             style={[styles.cancelButton, { marginTop: 20 }]}
             onPress={() => router.back()}
@@ -297,7 +411,7 @@ export default function PassengerPinEntry() {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingSpinner size="large" />
           <Text style={{ marginTop: 20, color: theme.text, fontSize: 16 }}>
-            Verifying PIN...
+            {getTranslation('verifyingPin')}
           </Text>
         </View>
       </SafeAreaView>
@@ -323,7 +437,7 @@ export default function PassengerPinEntry() {
             <Icon name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Verify Driver PIN
+            {getTranslation('verifyDriverPin')}
           </Text>
           <View style={styles.placeholder} />
         </View> */}
@@ -333,10 +447,10 @@ export default function PassengerPinEntry() {
           <View style={styles.infoSection}>
             <Icon name="shield-checkmark" size={60} color={theme.primary} />
             <Text style={[styles.title, { color: theme.text }]}>
-              Enter Driver's PIN
+              {getTranslation('enterDriversPin')}
             </Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Ask the driver to show you their verification PIN to start the ride
+              {getTranslation('askDriverToShowPin')}
             </Text>
           </View>
 
@@ -361,7 +475,7 @@ export default function PassengerPinEntry() {
               ))
             ) : (
               <Text style={[styles.loadingText, { color: theme.text }]}>
-                Loading PIN display...
+                {getTranslation('loadingPinDisplay')}
               </Text>
             )}
           </View>
@@ -384,7 +498,7 @@ export default function PassengerPinEntry() {
           {isVerifying && (
             <View style={styles.loadingContainer}>
               <Text style={[styles.loadingText, { color: theme.text }]}>
-                Verifying PIN...
+                {getTranslation('verifyingPin')}
               </Text>
             </View>
           )}
