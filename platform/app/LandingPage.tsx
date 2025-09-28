@@ -31,7 +31,7 @@ const GlobeIcon = ({ size = 24, color = "#FFFFFF" }) => (
 
 export default () => {
 	const navigation = useNavigation<any>();
-	const { t, currentLanguage, changeLanguage } = useLanguage();
+	const { currentLanguage, changeLanguage } = useLanguage();
 	const [showLanguageModal, setShowLanguageModal] = useState(false);
 
 	// Helper function to get text based on language
@@ -42,11 +42,42 @@ export default () => {
 		return en;
 	};
 
-	// Get current language label
-	const getCurrentLanguageLabel = () => {
-		const current = languageOptions.find(lang => lang.value === currentLanguage);
-		return current?.label || 'English';
+	// Hardcoded translations for all UI text
+	const translations = {
+		changeLanguage: {
+			en: "Change language",
+			zu: "Shintsha ulimi",
+			tn: "Fetola puo",
+			af: "Verander taal"
+		},
+		getStartedWithTaxiTap: {
+			en: "Get started with Taxi Tap",
+			zu: "Qalisa nge-Taxi Tap",
+			tn: "A re simolole ka Taxi Tap",
+			af: "Begin met Taxi Tap"
+		},
+		signInToExistingAccount: {
+			en: "Sign in to existing account",
+			zu: "Ngena ku-akhawunti ekhona",
+			tn: "Tsena mo akhaonteng e e leng teng",
+			af: "Teken in by bestaande rekening"
+		},
+		selectLanguage: {
+			en: "Select Language",
+			zu: "Khetha Ulimi",
+			tn: "Tlhopha Puo",
+			af: "Kies Taal"
+		}
+	} as const;
+
+	// Type-safe translation getter
+	const languageKeys = ['en', 'zu', 'tn', 'af'] as const;
+	type LanguageKey = typeof languageKeys[number];
+
+	const getTranslation = (key: keyof typeof translations) => {
+		return translations[key][currentLanguage as LanguageKey];
 	};
+
 
 	return (
 		<View style={styles.container}>
@@ -55,7 +86,7 @@ export default () => {
 				style={styles.languageButton}
 				onPress={() => setShowLanguageModal(true)}
 				accessible={true}
-				accessibilityLabel="Change language"
+				accessibilityLabel={getTranslation('changeLanguage')}
 				accessibilityRole="button">
 				<GlobeIcon size={24} color="#FFFFFF" />
 				<Text style={styles.languageButtonText}>
@@ -121,7 +152,7 @@ export default () => {
 						style={styles.getStartedButton} 
 						onPress={() => navigation.navigate('SignUp')}
 						accessible={true}
-						accessibilityLabel={getText("Get started with Taxi Tap", "Qalisa nge-Taxi Tap", "A re simolole ka Taxi Tap", "Begin met Taxi Tap")}
+						accessibilityLabel={getTranslation('getStartedWithTaxiTap')}
 						accessibilityRole="button">
 						<Text style={styles.getStartedText}>
 							{getText("Let's get started", "Ake siqale", "A re simolole", "Kom ons begin")}
@@ -134,7 +165,7 @@ export default () => {
 					<TouchableOpacity
 						onPress={() => navigation.navigate('Login')}
 						accessible={true}
-						accessibilityLabel={getText("Sign in to existing account", "Ngena ku-akhawunti ekhona", "Tsena mo akhaonteng e e leng teng", "Teken in by bestaande rekening")}
+						accessibilityLabel={getTranslation('signInToExistingAccount')}
 						accessibilityRole="button">
 						<Text style={styles.signInText}>
 							<Text style={styles.signInTextWhite}>
@@ -161,7 +192,7 @@ export default () => {
 					<View style={styles.modalContent}>
 						<View style={styles.modalHeader}>
 							<Text style={styles.modalTitle}>
-								{getText("Select Language", "Khetha Ulimi", "Tlhopha Puo", "Kies Taal")}
+								{getTranslation('selectLanguage')}
 							</Text>
 							<TouchableOpacity
 								onPress={() => setShowLanguageModal(false)}

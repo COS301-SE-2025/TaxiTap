@@ -4,22 +4,118 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
-import { useTranslation } from 'react-i18next';
 
 export default () => {
     const params = useLocalSearchParams();
     const navigation = useNavigation();
     const { theme, isDark } = useTheme();
+    const { currentLanguage } = useLanguage();
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
     const { showError, showSuccess } = useAlertHelpers();
-    const { t } = useTranslation();
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        error: {
+            en: "Error",
+            zu: "Iphutha",
+            tn: "Phoso",
+            af: "Fout"
+        },
+        userOrRideDataNotAvailable: {
+            en: "User or ride data is not available.",
+            zu: "Ulwazi lomsebenzisi noma lohambo alutholakali.",
+            tn: "Tshedimosetso ya modirisi kgotsa ya leeto ga e bonwe.",
+            af: "Gebruiker- of ritdata is nie beskikbaar nie."
+        },
+        success: {
+            en: "Success",
+            zu: "Impumelelo",
+            tn: "Katlego",
+            af: "Sukses"
+        },
+        rideAccepted: {
+            en: "Ride accepted! The passenger has been notified.",
+            zu: "Uhambo lwamukelwe! Umhambi uxwayisiwe.",
+            tn: "Leeto le amogetswe! Moleledi o tsebisiwa.",
+            af: "Rit aanvaar! Die passasier is in kennis gestel."
+        },
+        rideDeclined: {
+            en: "Ride declined.",
+            zu: "Uhambo lwenqatshwe.",
+            tn: "Leeto le tlhaotswe.",
+            af: "Rit geweier."
+        },
+        rideMarkedAsCompleted: {
+            en: "Ride marked as completed!",
+            zu: "Uhambo lubhalwe njengolugcwele!",
+            tn: "Leeto le ngwadilwe jaaka le feletseng!",
+            af: "Rit gemerk as voltooi!"
+        },
+        failedToActionRide: {
+            en: "Failed to {action} ride. Please try again.",
+            zu: "Kuhlulekile uku{action} uhambo. Sicela uzame futhi.",
+            tn: "Ga go atlege go {action} leeto. Ka kopo leka gape.",
+            af: "Kon nie {action} rit nie. Probeer asseblief weer."
+        },
+        rideNotFound: {
+            en: "Ride not found.",
+            zu: "Uhambo alutholakali.",
+            tn: "Leeto ga le bonwe.",
+            af: "Rit nie gevind nie."
+        },
+        accept: {
+            en: "Accept",
+            zu: "Amukela",
+            tn: "Amogele",
+            af: "Aanvaar"
+        },
+        decline: {
+            en: "Decline",
+            zu: "Nqaba",
+            tn: "Tlhopholotsa",
+            af: "Wys Af"
+        },
+        completeRide: {
+            en: "Complete Ride",
+            zu: "Qeda Uhambo",
+            tn: "Fetsa Leeto",
+            af: "Voltooi Rit"
+        },
+        rideCompleted: {
+            en: "Ride Completed",
+            zu: "Uhambo Luqedwe",
+            tn: "Leeto le Fetswe",
+            af: "Rit Voltooi"
+        },
+        rideCancelled: {
+            en: "Ride Cancelled",
+            zu: "Uhambo Luqedwe",
+            tn: "Leeto le Tlhopholotswe",
+            af: "Rit Gekanselleer"
+        },
+        youAreHere: {
+            en: "You are here",
+            zu: "Ulapha",
+            tn: "O mo go",
+            af: "Jy is hier"
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -39,25 +135,25 @@ export default () => {
 
     const handleRideAction = async (action: 'accept' | 'decline' | 'complete') => {
         if (!user?.id || !rideId) {
-            showError('Error', 'User or ride data is not available.');
+            showError(getTranslation('error'), getTranslation('userOrRideDataNotAvailable'));
             return;
         }
 
         try {
             if (action === 'accept') {
                 await acceptRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride accepted! The passenger has been notified.');
+                showSuccess(getTranslation('success'), getTranslation('rideAccepted'));
             } else if (action === 'decline') {
                 await declineRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride declined.');
+                showSuccess(getTranslation('success'), getTranslation('rideDeclined'));
             } else if (action === 'complete') {
                 await completeRide({ rideId, driverId: user.id as Id<"taxiTap_users"> });
-                showSuccess('Success', 'Ride marked as completed!');
+                showSuccess(getTranslation('success'), getTranslation('rideMarkedAsCompleted'));
             }
             
             router.back();
         } catch (err: any) {
-            showError('Error', err.message || `Failed to ${action} ride. Please try again.`);
+            showError(getTranslation('error'), err.message || getTranslation('failedToActionRide').replace('{action}', action));
         }
     };
     
@@ -226,7 +322,7 @@ export default () => {
         return (
             <SafeAreaView style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Icon name="alert-circle-outline" size={40} color={theme.textSecondary} />
-                <Text style={{ color: theme.text, marginTop: 10, fontSize: 16 }}>Ride not found.</Text>
+                <Text style={{ color: theme.text, marginTop: 10, fontSize: 16 }}>{getTranslation('rideNotFound')}</Text>
             </SafeAreaView>
         );
     }
@@ -251,23 +347,23 @@ export default () => {
                 return (
                     <>
                         <TouchableOpacity style={dynamicStyles.acceptButton} onPress={() => handleRideAction('accept')}>
-                            <Text style={dynamicStyles.acceptButtonText}>Accept</Text>
+                            <Text style={dynamicStyles.acceptButtonText}>{getTranslation('accept')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={dynamicStyles.declineButton} onPress={() => handleRideAction('decline')}>
-                            <Text style={dynamicStyles.declineButtonText}>Decline</Text>
+                            <Text style={dynamicStyles.declineButtonText}>{getTranslation('decline')}</Text>
                         </TouchableOpacity>
                     </>
                 );
             case 'accepted':
                 return (
                     <TouchableOpacity style={dynamicStyles.completeButton} onPress={() => handleRideAction('complete')}>
-                        <Text style={dynamicStyles.completeButtonText}>Complete Ride</Text>
+                        <Text style={dynamicStyles.completeButtonText}>{getTranslation('completeRide')}</Text>
                     </TouchableOpacity>
                 );
             case 'completed':
-                return <Text style={dynamicStyles.statusText}>Ride Completed</Text>;
+                return <Text style={dynamicStyles.statusText}>{getTranslation('rideCompleted')}</Text>;
             case 'cancelled':
-                return <Text style={dynamicStyles.statusText}>{t('home:rideCancelled')}</Text>;
+                return <Text style={dynamicStyles.statusText}>{getTranslation('rideCancelled')}</Text>;
             default:
                 return null;
         }
@@ -293,7 +389,7 @@ export default () => {
                         >
                             <Marker
                                 coordinate={currentLocation}
-                                title="You are here"
+                                title={getTranslation('youAreHere')}
                                 pinColor="blue"
                             >
                             </Marker>
