@@ -556,15 +556,16 @@ export default function HomeScreen() {
   }, [detectedLocation, currentLocation]);
 
   // Auto-set origin to current location when detected
+  // But prevent this during the initial focus when we're clearing states
   useEffect(() => {
-    if (detectedLocation && !origin) {
+    if (detectedLocation && !origin && !isFirstLoad) {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
         name: t('common:currentLocation')
       });
     }
-  }, [detectedLocation, origin]);
+  }, [detectedLocation, origin, isFirstLoad]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -700,6 +701,9 @@ export default function HomeScreen() {
       setShowDestinationSuggestions(false);
       hasSuccessfulResults.current = false;
 
+      // CRITICAL: Also reset loading route state to prevent hanging loading screen
+      setIsLoadingRoute(false);
+
       // Reset location loading state to ensure fresh location detection
       setIsLoadingCurrentLocation(true);
       setDetectedLocation(null);
@@ -707,7 +711,7 @@ export default function HomeScreen() {
       if (isFirstLoad) {
         setIsFirstLoad(false);
       }
-    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates, isFirstLoad])
+    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates, setIsLoadingRoute, isFirstLoad])
   );
 
   useLayoutEffect(() => {
@@ -791,15 +795,7 @@ export default function HomeScreen() {
           setIsSearchingMultiLeg(false);
           setIsLoadingRoute(false);
           setRouteMatchResults({ success: false, availableTaxis: [], message: 'Search timeout' });
-          showGlobalError(
-            t('home:searchError'), 
-            'Search took too long. Please try again.',
-            {
-              duration: 4000,
-              position: 'top',
-              animation: 'slide-down',
-            }
-          );
+          console.log('⏰ Search timeout: Search took too long. Please try again.');
         } else {
           console.log('⏰ Existing results found, just stopping loading state without reset');
           setIsSearchingTaxis(false);
@@ -814,11 +810,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('❌ Error in taxi search:', error);
       setIsSearchingTaxis(false);
-      Alert.alert(
-        t('home:searchError'), 
-        t('home:unableToFindTaxis'),
-        [{ text: t('common:ok') }]
-      );
+      console.log('❌ Search error: Unable to find taxis');
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }

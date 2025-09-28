@@ -1,14 +1,17 @@
 import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from "@expo/vector-icons";
 import { useUser } from '../../contexts/UserContext';
 import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
+import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
+import { useMapContext } from '../../contexts/MapContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
@@ -31,9 +34,27 @@ export default function PaymentConfirmation() {
     continueToNext
   } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
+  const { clearMapContext } = useMapContext();
+  
+  // Safe access to MultiLegJourneyProvider with fallback
+  let clearJourneyCache: (() => Promise<void>) | undefined;
+  try {
+    const multiLegJourneyContext = useMultiLegJourney();
+    clearJourneyCache = multiLegJourneyContext.clearJourneyCache;
+  } catch (error) {
+    // Provider not available, provide a no-op fallback
+    console.warn('MultiLegJourneyProvider not available, using fallback');
+    clearJourneyCache = async () => {};
+  }
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
   const processLegPayment = useMutation(api.functions.journeys.journeyStateManager.completeLegWithPayment);
+
+  // Get driver rating
+  const driverRating = useQuery(
+    api.functions.feedback.averageRating.getAverageRating,
+    driverId ? { driverId: driverId as Id<"taxiTap_users"> } : "skip"
+  );
 
   const handlePaid = async () => {
     try {
@@ -55,7 +76,7 @@ export default function PaymentConfirmation() {
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
 
-        setTimeout(() => {
+        setTimeout(async () => {
           if (!result.journeyComplete) {
             // Check if this is a continue to next leg flow
             if (continueToNext === 'true') {
@@ -78,6 +99,9 @@ export default function PaymentConfirmation() {
               });
             } else {
               // Navigate back to journey progress or next leg preparation
+              // Clear states since this is likely an incomplete journey being abandoned
+              clearMapContext();
+              await clearJourneyCache();
               router.push('/HomeScreen');
             }
           } else {
@@ -184,7 +208,11 @@ export default function PaymentConfirmation() {
             },
             {
               label: 'Cancel Journey',
-              onPress: () => router.push('/HomeScreen'),
+              onPress: async () => {
+                clearMapContext();
+                await clearJourneyCache();
+                router.push('/HomeScreen');
+              },
               style: 'cancel',
             }
           ],
@@ -223,7 +251,10 @@ export default function PaymentConfirmation() {
           },
           {
             label: 'Skip Feedback',
-            onPress: () => router.push('/HomeScreen'),
+            onPress: async () => {
+              clearMapContext();
+              router.push('/HomeScreen');
+            },
             style: 'cancel',
           }
         ],
@@ -264,7 +295,34 @@ export default function PaymentConfirmation() {
         <View style={[styles.card, styles.tripDetails]}>
           <View style={styles.detailRow}>
             <Ionicons name="person" size={18} color="#2B2B2B" />
-            <Text style={styles.detailText}>Driver: {driverName}</Text>
+            <View style={styles.driverInfoContainer}>
+              <Text style={styles.detailText}>Driver: {driverName}</Text>
+              <View style={styles.driverRating}>
+                <Text style={styles.ratingText}>
+                  {typeof driverRating === "number" && driverRating > 0
+                    ? driverRating.toFixed(1)
+                    : "No ratings"}
+                </Text>
+                <View style={styles.starsContainer}>
+                  {typeof driverRating === "number" && driverRating > 0
+                    ? [1, 2, 3, 4, 5].map((star, index) => {
+                        const full = driverRating >= star;
+                        const half = driverRating >= star - 0.5 && driverRating < star;
+
+                        return (
+                          <FontAwesome
+                            key={index}
+                            name={full ? "star" : half ? "star-half-full" : "star-o"}
+                            size={12}
+                            color="#FFD700"
+                            style={{ marginRight: 1 }}
+                          />
+                        );
+                      })
+                    : null}
+                </View>
+              </View>
+            </View>
           </View>
           <View style={styles.detailRow}>
             <Ionicons name="car-outline" size={18} color="#2B2B2B" />
@@ -347,6 +405,21 @@ const styles = StyleSheet.create({
   tripDetails: {},
   detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 8 },
   detailText: { fontSize: 16, fontWeight: "500", color: "#2B2B2B" },
+  driverInfoContainer: { flex: 1 },
+  driverRating: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 4 
+  },
+  ratingText: { 
+    fontSize: 12, 
+    fontWeight: "500", 
+    color: "#2B2B2B", 
+    marginRight: 4 
+  },
+  starsContainer: { 
+    flexDirection: 'row' 
+  },
   fareInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
