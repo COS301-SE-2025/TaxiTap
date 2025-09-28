@@ -7,9 +7,48 @@ import { useNavigation, useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function PaymentConfirmation() {
   const navigation = useNavigation();
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      enterAmountPaid: "Enter amount paid",
+      processing: "Processing...",
+      confirmPayment: "Confirm Payment",
+      selectPaymentStatus: "Select your payment status to continue",
+      paymentError: "Payment error:"
+    },
+    tn: {
+      enterAmountPaid: "Tsenya madi a a lefileng",
+      processing: "Go Tsamaiswa...",
+      confirmPayment: "Tiisetsa Tefo",
+      selectPaymentStatus: "Kgetha boemo jwa tefo ya gago go tswela pele",
+      paymentError: "Phoso ya tefo:"
+    },
+    zu: {
+      enterAmountPaid: "Faka imali ekhokhiwe",
+      processing: "Kulungiswa...",
+      confirmPayment: "Qinisekisa Inkokhelo",
+      selectPaymentStatus: "Khetha isimo senkokhelo yakho ukuze uqhubeke",
+      paymentError: "Iphutha lenkokhelo:"
+    },
+    af: {
+      enterAmountPaid: "Voer bedrag betaal in",
+      processing: "Verwerk...",
+      confirmPayment: "Bevestig Betaling",
+      selectPaymentStatus: "Kies jou betaling status om voort te gaan",
+      paymentError: "Betaling fout:"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -89,7 +128,7 @@ export default function PaymentConfirmation() {
       // Navigate directly after successful payment update
       navigateToReservation();
     } catch (error) {
-      console.error("Payment error:", error);
+      console.error(t('paymentError'), error);
       // Navigate even on error to avoid getting stuck
       navigateToReservation();
     } finally {
@@ -124,7 +163,7 @@ export default function PaymentConfirmation() {
       showPaymentResult(result.paymentType, result.changeDue, expectedFare);
       setShowAmountInput(false);
     } catch (error) {
-      console.error("Payment error:", error);
+      console.error(t('paymentError'), error);
       // Navigate even on error to avoid getting stuck
       navigateToReservation();
       setProcessing(false);
@@ -152,7 +191,7 @@ export default function PaymentConfirmation() {
           </Text>
 
           <TextInput
-            placeholder="Enter amount paid"
+            placeholder={t('enterAmountPaid')}
             keyboardType="numeric"
             style={styles.amountInput}
             value={amountPaid}
@@ -177,7 +216,7 @@ export default function PaymentConfirmation() {
               disabled={processing}
             >
               <Text style={styles.buttonText}>
-                {processing ? "Processing..." : "Confirm Payment"}
+                {processing ? t('processing') : t('confirmPayment')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -231,7 +270,7 @@ export default function PaymentConfirmation() {
         </View>
 
         <Text style={styles.noteText}>
-          {processing ? "Processing..." : "Select your payment status to continue"}
+          {processing ? t('processing') : t('selectPaymentStatus')}
         </Text>
       </View>
     </View>

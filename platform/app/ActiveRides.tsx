@@ -33,7 +33,44 @@ interface Passenger {
 export default function ActiveRides() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
+
+    // Hardcoded translations
+    const translations = {
+        en: {
+            paid: "Paid",
+            unpaid: "Unpaid",
+            pending: "Pending",
+            removeFront: "Remove Front",
+            setAsFront: "Set as Front"
+        },
+        tn: {
+            paid: "E Lefilwe",
+            unpaid: "E sa Lefileng",
+            pending: "E Emeng",
+            removeFront: "Tlosa Pele",
+            setAsFront: "Bea Pele"
+        },
+        zu: {
+            paid: "Ikhokhiwe",
+            unpaid: "Engakhokhile",
+            pending: "Elindile",
+            removeFront: "Susa Ngaphambili",
+            setAsFront: "Beka Ngaphambili"
+        },
+        af: {
+            paid: "Betaal",
+            unpaid: "Onbetaald",
+            pending: "Hangend",
+            removeFront: "Verwyder Voor",
+            setAsFront: "Stel as Voor"
+        }
+    };
+
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const router = useRouter();
     const navigation = useNavigation();
     const [loadingFrontPassenger, setLoadingFrontPassenger] = useState<string | null>(null);
@@ -138,9 +175,9 @@ export default function ActiveRides() {
                                         dynamicStyles.statusWaiting
                                     ]}>
                                         <Text style={dynamicStyles.statusText}>
-                                            {p.tripPaid === true ? "Paid" :
-                                             p.tripPaid === false ? "Unpaid" :
-                                             "Pending"}
+                                            {p.tripPaid === true ? t('paid') :
+                                             p.tripPaid === false ? t('unpaid') :
+                                             t('pending')}
                                         </Text>
                                     </View>
                                     {p.isFrontPassenger && (
@@ -187,7 +224,7 @@ export default function ActiveRides() {
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
                                             ]}>
-                                                {p.isFrontPassenger ? 'Remove Front' : 'Set as Front'}
+                                                {p.isFrontPassenger ? t('removeFront') : t('setAsFront')}
                                             </Text>
                                         </View>
                                     )}

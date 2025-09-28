@@ -32,9 +32,54 @@ interface Passenger {
 export default function WaitingPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            loading: "Loading...",
+            allUsersResponded: "All users have responded",
+            noPendingPayments: "No pending payments",
+            paymentsPendingResponse: "payment{s} pending response",
+            pending: "Pending",
+            fare: "Fare",
+            requested: "Requested"
+        },
+        tn: {
+            loading: "Go Layishwa...",
+            allUsersResponded: "Batho botlhe ba araba",
+            noPendingPayments: "Ga go na tefo tse di emeng",
+            paymentsPendingResponse: "tefo{s} e emeng go araba",
+            pending: "E Emeng",
+            fare: "Tefo",
+            requested: "Go Kopilwe"
+        },
+        zu: {
+            loading: "Kulayishwa...",
+            allUsersResponded: "Bonke abasebenzisi bayiphendile",
+            noPendingPayments: "Awukho izinkokhelo ezilindile",
+            paymentsPendingResponse: "inkokhelo{s} elindile impendulo",
+            pending: "Elindile",
+            fare: "Imali",
+            requested: "Kuceliwe"
+        },
+        af: {
+            loading: "Laai...",
+            allUsersResponded: "Alle gebruikers het geantwoord",
+            noPendingPayments: "Geen hangende betalings nie",
+            paymentsPendingResponse: "betaling{s} hangende antwoord",
+            pending: "Hangend",
+            fare: "Tarief",
+            requested: "Versoek"
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -50,7 +95,7 @@ export default function WaitingPayments() {
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+                        <Text style={dynamicStyles.headerSubtitle}>{t('loading')}</Text>
                     </View>
                     <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                         <LoadingSpinner size="large" />
@@ -67,11 +112,11 @@ export default function WaitingPayments() {
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>All users have responded</Text>
+                        <Text style={dynamicStyles.headerSubtitle}>{t('allUsersResponded')}</Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No pending payments</Text>
+                        <Text style={dynamicStyles.emptyStateText}>{t('noPendingPayments')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -86,7 +131,7 @@ export default function WaitingPayments() {
             >
                 <View style={dynamicStyles.headerSection}>
                     <Text style={dynamicStyles.headerSubtitle}>
-                        {waitingPayments.length} payment{waitingPayments.length !== 1 ? 's' : ''} pending response
+                        {waitingPayments.length} {t('paymentsPendingResponse').replace('{s}', waitingPayments.length !== 1 ? 's' : '')}
                     </Text>
                 </View>
 
@@ -117,7 +162,7 @@ export default function WaitingPayments() {
                                     )}
                                 </View>
                                 <View style={[dynamicStyles.statusBadge, dynamicStyles.statusWaiting]}>
-                                    <Text style={dynamicStyles.statusText}>Pending</Text>
+                                    <Text style={dynamicStyles.statusText}>{t('pending')}</Text>
                                 </View>
                             </View>
                             
@@ -125,7 +170,7 @@ export default function WaitingPayments() {
                                 <View style={dynamicStyles.detailRow}>
                                     <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                     <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
-                                        Fare: R{p.fare.toFixed(2)}
+                                        {t('fare')}: R{p.fare.toFixed(2)}
                                     </Text>
                                 </View>
                             </View>

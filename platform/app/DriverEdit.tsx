@@ -60,7 +60,41 @@ export default function DriverPersonalInfoEdit() {
             changesSaved: "Changes saved successfully!",
             failedToSaveChanges: "Failed to save changes",
             ok: "OK",
-            saving: "Saving..."
+            saving: "Saving...",
+            failedToUploadImage: "Failed to upload image",
+            userNotLoaded: "User not loaded"
+        },
+        tn: {
+            driverPersonalInfo: "Tshedimosetso ya Botho ya Mokgweetsi",
+            editingDriverProfile: "Go Hlopha Profaile ya Mokgweetsi",
+            basicInformation: "Tshedimosetso e e Tlhokomelwang",
+            fullName: "Leina Le Feletseng",
+            enterFullName: "Tsenya leina la gago le feletseng",
+            phoneNumber: "Nomoro ya Tsela",
+            enterPhoneNumber: "Tsenya nomoro ya gago ya tsela",
+            email: "Imeile",
+            enterEmail: "Tsenya imeile ya gago",
+            emergencyContact: "Kgokagano ya Tshoganetso",
+            emergencyContactName: "Leina la Kgokagano ya Tshoganetso",
+            enterEmergencyContactName: "Tsenya leina la kgokagano ya tshoganetso",
+            emergencyContactPhone: "Nomoro ya Tsela ya Kgokagano ya Tshoganetso",
+            enterEmergencyContactNumber: "Tsenya nomoro ya tsela ya kgokagano ya tshoganetso",
+            emergencyContactRelationship: "Kgokagano",
+            relationshipPlaceholder: "mme., Mongwadi, Motswadi, Tsala",
+            changePhoto: "Fetola Setshwantsho",
+            saveChanges: "Boloka Diphetogo",
+            cancel: "Khansela",
+            loading: "Go Layishwa...",
+            error: "Phoso",
+            userNotFound: "Mosebenzisi ga a bonwe",
+            nameRequired: "Leina le tlhoka",
+            phoneNumberRequired: "Nomoro ya tsela e tlhoka",
+            changesSaved: "Diphetogo di bolokilwe ka katlego!",
+            failedToSaveChanges: "Go hlolekile go boloka diphetogo",
+            ok: "Sentle",
+            saving: "Go Bolokwa...",
+            failedToUploadImage: "Go hlolekile go tsaya setshwantsho",
+            userNotLoaded: "Mosebenzisi ga a layishwe"
         },
         zu: {
             driverPersonalInfo: "Ulwazi Lwakho Lomshayeli",
@@ -90,12 +124,46 @@ export default function DriverPersonalInfoEdit() {
             changesSaved: "Izinguquko zilondoloziwe ngempumelelo!",
             failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
             ok: "Kulungile",
-            saving: "Kulondoloziwa..."
+            saving: "Kulondoloziwa...",
+            failedToUploadImage: "Kuhlulekile ukulayisha isithombe",
+            userNotLoaded: "Umsebenzisi akalayishwanga"
+        },
+        af: {
+            driverPersonalInfo: "Bestuurder Persoonlike Inligting",
+            editingDriverProfile: "Redigeer Bestuurder Profiel",
+            basicInformation: "Basiese Inligting",
+            fullName: "Volle Naam",
+            enterFullName: "Voer jou volle naam in",
+            phoneNumber: "Telefoonnommer",
+            enterPhoneNumber: "Voer jou telefoonnommer in",
+            email: "E-pos",
+            enterEmail: "Voer jou e-pos in",
+            emergencyContact: "Noodkontak",
+            emergencyContactName: "Noodkontak Naam",
+            enterEmergencyContactName: "Voer noodkontak naam in",
+            emergencyContactPhone: "Noodkontak Telefoonnommer",
+            enterEmergencyContactNumber: "Voer noodkontak telefoonnommer in",
+            emergencyContactRelationship: "Verhouding",
+            relationshipPlaceholder: "bv., Gade, Ouer, Vriend",
+            changePhoto: "Verander Foto",
+            saveChanges: "Stoor Veranderinge",
+            cancel: "Kanselleer",
+            loading: "Laai...",
+            error: "Fout",
+            userNotFound: "Gebruiker nie gevind nie",
+            nameRequired: "Naam word vereis",
+            phoneNumberRequired: "Telefoonnommer word vereis",
+            changesSaved: "Veranderinge suksesvol gestoor!",
+            failedToSaveChanges: "Kon nie veranderinge stoor nie",
+            ok: "OK",
+            saving: "Stoor...",
+            failedToUploadImage: "Kon nie beeld oplaai nie",
+            userNotLoaded: "Gebruiker nie gelaai nie"
         }
     };
     
     const t = (key: string) => {
-        const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
         return translations[lang][key as keyof typeof translations[typeof lang]] || key;
     };
 
@@ -148,7 +216,7 @@ export default function DriverPersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            showGlobalError('Error', 'Failed to upload image', {
+            showGlobalError(t('error'), t('failedToUploadImage'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -158,7 +226,7 @@ export default function DriverPersonalInfoEdit() {
 
     const handleSave = async () => {
         if (!user?.id) {
-            showGlobalError('Error', 'User not loaded', {
+            showGlobalError(t('error'), t('userNotLoaded'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -168,7 +236,7 @@ export default function DriverPersonalInfoEdit() {
 
         // Validation
         if (!name.trim()) {
-            showGlobalError('Error', 'Name is required', {
+            showGlobalError(t('error'), t('nameRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -177,7 +245,7 @@ export default function DriverPersonalInfoEdit() {
         }
 
         if (!number.trim()) {
-            showGlobalError('Error', 'Phone number is required', {
+            showGlobalError(t('error'), t('phoneNumberRequired'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -213,13 +281,13 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess(t('ok'), t('changesSaved'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: 'OK',
+                        label: t('ok'),
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -228,7 +296,7 @@ export default function DriverPersonalInfoEdit() {
 
         } catch (error: any) {
             console.error('Update error:', error);
-            showGlobalError('Error', error.message || 'Failed to save changes', {
+            showGlobalError(t('error'), error.message || t('failedToSaveChanges'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',

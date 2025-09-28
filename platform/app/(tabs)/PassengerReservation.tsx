@@ -19,6 +19,70 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
 
+// Hardcoded translations
+const translations = {
+  en: {
+    unknown: "Unknown",
+    waitingForDriver: "Waiting for driver...",
+    calculating: "Calculating...",
+    rideStarted: "Ride Started",
+    ok: "OK",
+    rideDeclined: "Ride Declined",
+    rideDeclinedMessage: "The driver has declined your ride request.",
+    rideCancelled: "Ride cancelled",
+    loadingRoute: "Loading route...",
+    driverDetails: "Driver Details",
+    cancelRequest: "Cancel Request",
+    verifyPin: "Verify PIN",
+    endRide: "End Ride"
+  },
+  tn: {
+    unknown: "E sa Itseweng",
+    waitingForDriver: "Go emela mokgweetsi...",
+    calculating: "Go Balwa...",
+    rideStarted: "Leeto le Simolotswe",
+    ok: "Sentle",
+    rideDeclined: "Leeto le Gannwe",
+    rideDeclinedMessage: "Mokgweetsi o ganne kopo ya gago ya leeto.",
+    rideCancelled: "Leeto le khanselwe",
+    loadingRoute: "Go layishwa tsela...",
+    driverDetails: "Tshedimosetso ya Mokgweetsi",
+    cancelRequest: "Khansela Kopo",
+    verifyPin: "Tiisetsa PIN",
+    endRide: "Fetsa Leeto"
+  },
+  zu: {
+    unknown: "Okungaziwa",
+    waitingForDriver: "Kulindele umshayeli...",
+    calculating: "Kubalwa...",
+    rideStarted: "Uhambo Luqalisiwe",
+    ok: "Kulungile",
+    rideDeclined: "Uhambo Lukhanseliwe",
+    rideDeclinedMessage: "Umshayeli ukhanselile isicelo sakho sohambo.",
+    rideCancelled: "Uhambo lukhanseliwe",
+    loadingRoute: "Kulayishwa indlela...",
+    driverDetails: "Imininingwane Yomshayeli",
+    cancelRequest: "Khansela Isicelo",
+    verifyPin: "Qinisekisa I-PIN",
+    endRide: "Qeda Uhambo"
+  },
+  af: {
+    unknown: "Onbekend",
+    waitingForDriver: "Wag vir bestuurder...",
+    calculating: "Bereken...",
+    rideStarted: "Rit Begin",
+    ok: "OK",
+    rideDeclined: "Rit Geweier",
+    rideDeclinedMessage: "Die bestuurder het jou rit versoek geweier.",
+    rideCancelled: "Rit gekanselleer",
+    loadingRoute: "Laai roete...",
+    driverDetails: "Bestuurder Besonderhede",
+    cancelRequest: "Kanselleer Versoek",
+    verifyPin: "Verifieer PIN",
+    endRide: "Eindig Rit"
+  }
+};
+
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
   ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
@@ -291,7 +355,12 @@ export default function SeatReserved() {
 	}, [params.isMultiLeg, params.totalLegs, params.legIndex, params.journeyId, params.rideId]);
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
+
+	const t = (key: string) => {
+		const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+		return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+	};
 	const { 
 		currentLocation,
 		destination,
@@ -441,8 +510,8 @@ export default function SeatReserved() {
 	}, [useLiveLocation, streamedLocation, currentLocation, destination]);
 
 	const vehicleInfo = {
-		plate: getParamAsString(params.plate, t('passengerReservation:unknown')),
-		time: getParamAsString(params.time, t('passengerReservation:unknown')),
+		plate: getParamAsString(params.plate, t('unknown')),
+		time: getParamAsString(params.time, t('unknown')),
 		seats: getParamAsString(params.seats, "0"),
 		price: getParamAsString(params.price, "0"),
 		selectedVehicleId: getParamAsString(params.selectedVehicleId, ""),
@@ -768,17 +837,17 @@ export default function SeatReserved() {
 	const getDisplayTime = (): string => {
 		// Note: Driver location tracking not implemented in current structure
 		// Fall back to the original time parameter or show appropriate message
-		if (vehicleInfo.time && vehicleInfo.time !== t('passengerReservation:unknown')) {
+		if (vehicleInfo.time && vehicleInfo.time !== t('unknown')) {
 			return vehicleInfo.time;
 		}
 		
 		// Show different messages based on ride status
 		if (rideStatus === 'requested') {
-			return t('home:waitingForDriver');
+			return t('waitingForDriver');
 		} else if (rideStatus === 'accepted') {
 			return 'Driver assigned';
 		} else {
-			return t('home:calculating');
+			return t('calculating');
 		}
 	};
 
@@ -793,13 +862,13 @@ export default function SeatReserved() {
 			processedNotificationsRef.current.add(rideStarted._id);
 
 			showGlobalAlert({
-				title: t('passengerReservation:rideStarted'),
+				title: t('rideStarted'),
 				message: rideStarted.message,
 				type: 'success',
 				duration: 0,
 				actions: [
 					{
-						label: t('passengerReservation:ok'),
+						label: t('ok'),
 						onPress: () => {
 							markAsRead(rideStarted._id);
 							if (!currentLocation || !destination) {
@@ -825,13 +894,13 @@ export default function SeatReserved() {
 			processedNotificationsRef.current.add(rideDeclined._id);
 			
 			showGlobalError(
-				t('passengerReservation:rideDeclined'),
-				rideDeclined.message || t('passengerReservation:rideDeclinedMessage'),
+				t('rideDeclined'),
+				rideDeclined.message || t('rideDeclinedMessage'),
 				{
 					duration: 0,
 					actions: [
 						{
-							label: t('passengerReservation:ok'),
+							label: t('ok'),
 							onPress: () => {
 								markAsRead(rideDeclined._id);
 								router.push('/HomeScreen');
@@ -1083,7 +1152,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			showGlobalAlert({
 				title: 'Success',
-				message: t('home:rideCancelled'),
+				message: t('rideCancelled'),
 				type: 'success',
 				duration: 3000,
 				position: 'top',
@@ -1646,7 +1715,7 @@ export default function SeatReserved() {
 								</Text>
 								{isLoadingRoute && (
 									<Text style={dynamicStyles.routeLoadingText}>
-										{t('passengerReservation:loadingRoute')}
+										{t('loadingRoute')}
 									</Text>
 								)}
 							</View>
@@ -1676,7 +1745,7 @@ export default function SeatReserved() {
 						{/* Driver Details Header */}
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{t('passengerReservation:driverDetails')}
+								{t('driverDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButtons}>
 								<TouchableOpacity style={dynamicStyles.contactButton} onPress={handleCall}>
@@ -1749,7 +1818,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={dynamicStyles.driverDetails}>
 									<Text style={dynamicStyles.driverName}>
-										{t('home:waitingForDriver')}
+										{t('waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.
@@ -1825,7 +1894,7 @@ export default function SeatReserved() {
 										style={dynamicStyles.cancelButton} 
 										onPress={handleCancelRequest}>
 										<Text style={dynamicStyles.cancelButtonText}>
-											{t('passengerReservation:cancelRequest')}
+											{t('cancelRequest')}
 										</Text>
 									</TouchableOpacity>
 								)}
@@ -1837,14 +1906,14 @@ export default function SeatReserved() {
 											style={dynamicStyles.startRideButton} 
 											onPress={handleStartRide}>
 											<Text style={dynamicStyles.startRideButtonText}>
-												{t('passengerReservation:verifyPin')}
+												{t('verifyPin')}
 											</Text>
 										</TouchableOpacity>
 										<TouchableOpacity 
 											style={dynamicStyles.cancelButton} 
 											onPress={handleCancelRequest}>
 											<Text style={dynamicStyles.cancelButtonText}>
-												{t('passengerReservation:cancelRequest')}
+												{t('cancelRequest')}
 											</Text>
 										</TouchableOpacity>
 									</>
@@ -1857,7 +1926,7 @@ export default function SeatReserved() {
 											style={dynamicStyles.endRideButton} 
 											onPress={handleEndRide}>
 											<Text style={dynamicStyles.endRideButtonText}>
-												{t('passengerReservation:endRide')}
+												{t('endRide')}
 											</Text>
 										</TouchableOpacity>
 										

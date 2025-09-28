@@ -17,13 +17,59 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DriverPinEntry() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      error: "Error",
+      userOrRideNotAvailable: "User or ride information not available.",
+      failedToStartRide: "Failed to start ride. Please try again.",
+      pickupLocation: "Pickup Location",
+      destination: "Destination",
+      passenger: "Passenger",
+      unknown: "Unknown"
+    },
+    tn: {
+      error: "Phoso",
+      userOrRideNotAvailable: "Tshedimosetso ya mosebenzisi kgotsa leeto ga e leng teng.",
+      failedToStartRide: "Go hlolekile go simolola leeto. Ka kopo leka gape.",
+      pickupLocation: "Lefelo la Go Nna",
+      destination: "Mafelo a go ya",
+      passenger: "Mopalami",
+      unknown: "E sa Itseweng"
+    },
+    zu: {
+      error: "Iphutha",
+      userOrRideNotAvailable: "Ulwazi lomsebenzisi noma lohambo alutholakali.",
+      failedToStartRide: "Kuhlulekile ukuqala uhambo. Sicela uzame futhi.",
+      pickupLocation: "Indawo Yokuthatha",
+      destination: "Indawo Eyihloswe",
+      passenger: "Umgibeli",
+      unknown: "Okungaziwa"
+    },
+    af: {
+      error: "Fout",
+      userOrRideNotAvailable: "Gebruiker of rit inligting nie beskikbaar nie.",
+      failedToStartRide: "Kon nie rit begin nie. Probeer asseblief weer.",
+      pickupLocation: "Ophaal Ligging",
+      destination: "Bestemming",
+      passenger: "Passasier",
+      unknown: "Onbekend"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
@@ -157,7 +203,7 @@ export default function DriverPinEntry() {
 
   const handleStartRide = async () => {
     if (!user || !ride) {
-      Alert.alert('Error', 'User or ride information not available.');
+      Alert.alert(t('error'), t('userOrRideNotAvailable'));
       return;
     }
 
@@ -186,7 +232,7 @@ export default function DriverPinEntry() {
           await getRoute(origin, destination);
         }
       } else {
-        Alert.alert('Error', 'Failed to start ride. Please try again.');
+        Alert.alert(t('error'), t('failedToStartRide'));
       }
     } catch (error: any) {
       Alert.alert('Error', 'Failed to start ride. Please try again.');
@@ -457,12 +503,12 @@ export default function DriverPinEntry() {
               >
                 <Marker
                   coordinate={startLocation}
-                  title="Pickup Location"
+                  title={t('pickupLocation')}
                   pinColor="blue"
                 />
                 <Marker
                   coordinate={endLocation}
-                  title="Destination"
+                  title={t('destination')}
                   pinColor="orange"
                 />
                 {routeCoordinates.length > 0 && (
@@ -514,7 +560,7 @@ export default function DriverPinEntry() {
 
           {passenger && (
             <Text style={dynamicStyles.passengerName}>
-              Passenger: {passenger.name || 'Unknown'}
+              {t('passenger')}: {passenger.name || t('unknown')}
             </Text>
           )}
 

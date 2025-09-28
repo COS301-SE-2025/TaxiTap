@@ -35,6 +35,55 @@ export default function NotificationsScreen() {
   const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
   
+  // Hardcoded translations
+  const translations = {
+    en: {
+      notifications: "Notifications",
+      markAllRead: "Mark All Read",
+      noNotificationsYet: "No Notifications Yet",
+      noNotificationsMessage: "You'll receive notifications here when there are updates about your rides, bookings, and account activity.",
+      yourNotifications: "Your Notifications",
+      unread: "Unread",
+      page: "Page",
+      of: "of"
+    },
+    tn: {
+      notifications: "Ditsebiso",
+      markAllRead: "Tlhaela Tsotlhe di Balwe",
+      noNotificationsYet: "Ga go na Ditsebiso Go Fitlha Jaanong",
+      noNotificationsMessage: "O tla amogela ditsebiso mo go fa go na le diphetogo ka diteko tsa gago, diboka, le ditiro tsa akhaonto ya gago.",
+      yourNotifications: "Ditsebiso tsa Gago",
+      unread: "E sa Balweng",
+      page: "Tsebe",
+      of: "ya"
+    },
+    zu: {
+      notifications: "Izaziso",
+      markAllRead: "Maka Konke Kufundwe",
+      noNotificationsYet: "Awukho Izaziso Okwamanje",
+      noNotificationsMessage: "Uzothola izaziso lapha uma kukhona izinguquko ngemihambo yakho, ukubhuka, nokusebenza kwe-akhawunti yakho.",
+      yourNotifications: "Izaziso Zakho",
+      unread: "Engafundwanga",
+      page: "Ikhasi",
+      of: "we"
+    },
+    af: {
+      notifications: "Kennisgewings",
+      markAllRead: "Merk Alles as Gelees",
+      noNotificationsYet: "Nog Geen Kennisgewings Nie",
+      noNotificationsMessage: "Jy sal kennisgewings hier ontvang wanneer daar opdaterings is oor jou ritte, besprekings en rekening aktiwiteit.",
+      yourNotifications: "Jou Kennisgewings",
+      unread: "Ongelees",
+      page: "Bladsy",
+      of: "van"
+    }
+  };
+  
+  const t = (key: string) => {
+    // Default to English for now since we don't have language context here
+    return translations.en[key as keyof typeof translations.en] || key;
+  };
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -342,11 +391,11 @@ export default function NotificationsScreen() {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>Notifications</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('notifications')}</Text>
           </View>
           {notifications.length > 0 && (
             <Pressable style={dynamicStyles.markAllButton} onPress={markAllAsRead}>
-              <Text style={dynamicStyles.markAllButtonText}>Mark All Read</Text>
+              <Text style={dynamicStyles.markAllButtonText}>{t('markAllRead')}</Text>
             </Pressable>
           )}
         </View>
@@ -374,16 +423,16 @@ export default function NotificationsScreen() {
                 />
               </View>
               <Text style={dynamicStyles.emptyStateText}>
-                No Notifications Yet
+                {t('noNotificationsYet')}
               </Text>
               <Text style={dynamicStyles.emptyStateSubtext}>
-                You'll receive notifications here when there are updates about your rides, bookings, and account activity.
+                {t('noNotificationsMessage')}
               </Text>
             </View>
           ) : (
             <>
               <Text style={dynamicStyles.sectionTitle}>
-                Your Notifications ({notifications.length})
+                {t('yourNotifications')} ({notifications.length})
               </Text>
               
               {paginatedNotifications.map((notification: any, index: number) => (
@@ -453,7 +502,7 @@ export default function NotificationsScreen() {
                       <View style={[dynamicStyles.detailItem, dynamicStyles.unreadIndicator]}>
                         <View style={dynamicStyles.unreadDot} />
                         <Text style={[dynamicStyles.detailText, { color: theme.primary }]}>
-                          Unread
+                          {t('unread')}
                         </Text>
                       </View>
                     )}
@@ -480,7 +529,7 @@ export default function NotificationsScreen() {
           </Pressable>
           
           <Text style={dynamicStyles.paginationInfo}>
-            Page {currentPage} of {totalPages}
+            {t('page')} {currentPage} {t('of')} {totalPages}
           </Text>
           
           <Pressable

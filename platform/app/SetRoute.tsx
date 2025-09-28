@@ -123,6 +123,30 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       assigningRoute: "Assigning Route...",
       ok: "OK"
     },
+    tn: {
+      yourAssignedRoute: "Tsela ya Gago e e Boletsweng",
+      yourAssignedRouteMessage: "O na le tsela e e boletsweng. Tlhanya go simolola go e dirisa.",
+      currentRoute: "Tsela ya Jaanong",
+      activateRoute: "Simolola Tsela",
+      getYourRoute: "Nna Tsela ya Gago",
+      routeAssignment: "Go Boletsa Tsela",
+      selectTaxiAssociation: "Kgetha Mokgatlho wa Ditekisi",
+      selectTaxiAssociationMessage: "Kgetha mokgatlho wa gago wa ditekisi go nna tsela e e boletsweng mo letsatsing.",
+      selectTaxiAssociationFirst: "Kgetha Mokgatlho wa Ditekisi Pele",
+      selectTaxiAssociationFirstMessage: "Ka kopo kgetha mokgatlho wa gago wa ditekisi go nna tsela ya gago e e boletsweng.",
+      userNotFound: "Mosebenzisi ga a Bonwe",
+      userNotFoundMessage: "Ka kopo tsena gape go tswela pele.",
+      noRouteAssigned: "Ga go na tsela e e ka boletsweng ka nako e",
+      assignmentFailed: "Go Boletsa go Hlolekile",
+      assignmentFailedMessage: "Ga go kgonege go boletsa tsela. Ka kopo leka gape.",
+      routeAssignedSuccessfully: "Tsela e Boletswe ka Katlego!",
+      routeAssignedMessage: "O boletswe go:\n\n{route}\n\nMokgatlho: {association}\n\nLena ke tsela ya gago e e tsamayang jaanong.",
+      routeActivated: "Tsela e Simolotswe!",
+      routeActivatedMessage: "Tsela ya gago e tsamaya jaanong:\n\n{route}",
+      getMyRoute: "Nna Tsela ya Me",
+      assigningRoute: "Go Boletsa Tsela...",
+      ok: "Sentle"
+    },
     zu: {
       yourAssignedRoute: "Indlela Yakho Ebekelwe",
       yourAssignedRouteMessage: "Lena indlela yakho ebekelwe yaphelele. Yenza isebenze ukuze uqale ukuthola abagibeli.",
@@ -146,11 +170,35 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       getMyRoute: "Thola Indlela Yami",
       assigningRoute: "Kubekwa Indlela...",
       ok: "Kulungile"
+    },
+    af: {
+      yourAssignedRoute: "Jou Toegewysde Roete",
+      yourAssignedRouteMessage: "Jy het reeds 'n roete toegewys. Tik aktiveer om dit te begin gebruik.",
+      currentRoute: "Huidige Roete",
+      activateRoute: "Aktiveer Roete",
+      getYourRoute: "Kry Jou Roete",
+      routeAssignment: "Roete Toewysing",
+      selectTaxiAssociation: "Kies Taxi Vereniging",
+      selectTaxiAssociationMessage: "Kies jou taxi vereniging om 'n roete vir vandag toegewys te word.",
+      selectTaxiAssociationFirst: "Kies Taxi Vereniging Eers",
+      selectTaxiAssociationFirstMessage: "Kies asseblief 'n taxi vereniging om jou roete toewysing te kry.",
+      userNotFound: "Gebruiker Nie Gevind Nie",
+      userNotFoundMessage: "Teken asseblief weer in om voort te gaan.",
+      noRouteAssigned: "Geen roete kon op hierdie tyd toegewys word nie",
+      assignmentFailed: "Toewysing Misluk",
+      assignmentFailedMessage: "Kon nie roete toewys nie. Probeer asseblief weer.",
+      routeAssignedSuccessfully: "Roete Suksesvol Toegewys!",
+      routeAssignedMessage: "Jy is toegewys aan:\n\n{route}\n\nVereniging: {association}\n\nDit is nou jou aktiewe roete.",
+      routeActivated: "Roete Geaktiveer!",
+      routeActivatedMessage: "Jou roete is nou aktief:\n\n{route}",
+      getMyRoute: "Kry My Roete",
+      assigningRoute: "Wys Roete Toe...",
+      ok: "OK"
     }
   };
   
   const t = (key: string, params?: any) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
     const translation = translations[lang][key as keyof typeof translations[typeof lang]];
     if (translation && params) {
       return Object.keys(params).reduce((str, param) => {

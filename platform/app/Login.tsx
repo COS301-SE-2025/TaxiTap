@@ -27,14 +27,79 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
-  const { t, currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      error: "Error",
+      pleaseFillAllFields: "Please fill all fields",
+      invalidNumber: "Invalid number format",
+      loginError: "Login Error",
+      alreadyLoggedIn: "You are already logged in on another device. Please log out first.",
+      incorrectCredentials: "Phone number or password incorrect",
+      unexpectedError: "An unexpected error occurred",
+      phoneNumber: "Phone Number",
+      password: "Password",
+      enterPassword: "Enter your password",
+      forgotPassword: "Forgot Password?",
+      login: "Login"
+    },
+    tn: {
+      error: "Phoso",
+      pleaseFillAllFields: "Ka kopo tlatlhele mafelo otlhe",
+      invalidNumber: "Foromo ya nomoro e e sa siamang",
+      loginError: "Phoso ya Go Tsena",
+      alreadyLoggedIn: "O tsene ka tsela e nngwe. Ka kopo tswa pele.",
+      incorrectCredentials: "Nomoro ya tsela kgotsa phetogo e e sa siamang",
+      unexpectedError: "Phoso e e sa lebelelwang e dirile",
+      phoneNumber: "Nomoro ya Tsela",
+      password: "Phetogo",
+      enterPassword: "Tsenya phetogo ya gago",
+      forgotPassword: "O Lebalegile Phetogo?",
+      login: "Kena"
+    },
+    zu: {
+      error: "Iphutha",
+      pleaseFillAllFields: "Sicela ugcwalise wonke amasimu",
+      invalidNumber: "Ifomethi yenombolo engalungile",
+      loginError: "Iphutha Lokungena",
+      alreadyLoggedIn: "Usungene kwesinye isisetshenziswa. Sicela uphume kuqala.",
+      incorrectCredentials: "Inombolo yefoni noma iphasiwedi engalungile",
+      unexpectedError: "Kwenzeke iphutha elingalindelekile",
+      phoneNumber: "Inombolo Yefoni",
+      password: "Iphasiwedi",
+      enterPassword: "Faka iphasiwedi yakho",
+      forgotPassword: "Ukhohlwe Iphasiwedi?",
+      login: "Ngena"
+    },
+    af: {
+      error: "Fout",
+      pleaseFillAllFields: "Vul asseblief alle velde in",
+      invalidNumber: "Ongeldige nommerformaat",
+      loginError: "Inteken Fout",
+      alreadyLoggedIn: "Jy is reeds ingeteken op 'n ander toestel. Teken asseblief eers uit.",
+      incorrectCredentials: "Telefoonnommer of wagwoord verkeerd",
+      unexpectedError: "'n Onverwagte fout het voorgekom",
+      phoneNumber: "Telefoonnommer",
+      password: "Wagwoord",
+      enterPassword: "Voer jou wagwoord in",
+      forgotPassword: "Wagwoord Vergeet?",
+      login: "Teken In"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   const handleLogin = async () => {
     const deviceId = await getDeviceId();
 
     if (!number || !password) {
-      showGlobalError('Error', 'Please fill all fields', {
+      showGlobalError(t('error'), t('pleaseFillAllFields'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -44,7 +109,7 @@ export default function Login() {
 
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showGlobalError('Error', 'Invalid number format', {
+      showGlobalError(t('error'), t('invalidNumber'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -61,13 +126,13 @@ export default function Login() {
 
       if (!result.success) {
         if (result.reason === "Already logged in on another device") {
-          showGlobalError('Login Error', 'You are already logged in on another device. Please log out first.', {
+          showGlobalError(t('loginError'), t('alreadyLoggedIn'), {
             duration: 5000,
             position: 'top',
             animation: 'slide-down',
           });
         } else {
-          showGlobalError('Login Error', 'Phone number or password incorrect', {
+          showGlobalError(t('loginError'), t('incorrectCredentials'), {
             duration: 4000,
             position: 'top',
             animation: 'slide-down',
@@ -90,7 +155,7 @@ export default function Login() {
         });
       }
     } catch (err) {
-      showGlobalError('Error', 'An unexpected error occurred', {
+      showGlobalError(t('error'), t('unexpectedError'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -129,7 +194,7 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:phoneNumber')}
+              {t('phoneNumber')}
           </Text>
 
           <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -167,7 +232,7 @@ export default function Login() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:password')}
+              {t('password')}
           </Text>
 
           <View
@@ -184,7 +249,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('auth:password')}
+              placeholder={t('enterPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -203,7 +268,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -220,7 +285,7 @@ export default function Login() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              {t('auth:login')}
+              {t('login')}
             </Text>
           </Pressable>
         </View>

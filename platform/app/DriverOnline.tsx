@@ -25,7 +25,7 @@ import { Id } from '../convex/_generated/dataModel';
 import { decode } from '@mapbox/polyline';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 import { useAlertHelpers } from '../components/AlertHelpers';
-import { AlertType } from '@/contexts/AlertContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DriverOnlineProps {
   onGoOffline: () => void;
@@ -63,9 +63,146 @@ interface DriverRoute {
 export default function DriverOnline({ 
   onGoOffline, 
   todaysEarnings,
-  currentRoute = "Not Set",
+  currentRoute,
 }: DriverOnlineProps) {
   const { width, height } = Dimensions.get('window');
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      notSet: "Not Set",
+      unknownLocation: "Unknown Location",
+      currentLocation: "Current Location",
+      newRideRequest: "New Ride Request",
+      decline: "Decline",
+      error: "Error",
+      failedToDeclineRide: "Failed to decline ride.",
+      accept: "Accept",
+      failedToAcceptRide: "Failed to accept ride.",
+      emergencyAlert: "Emergency Alert",
+      emergencyMessage: "This will contact emergency services (112)",
+      yesGetHelp: "Yes, Get Help",
+      emergencyAlertSent: "Emergency Alert Sent",
+      emergencyServicesContacted: "Emergency services contacted.",
+      cancel: "Cancel",
+      profile: "Profile",
+      earnings: "Earnings",
+      menu: "Menu",
+      feedback: "Feedback",
+      help: "Help",
+      loadingLocation: "Loading location...",
+      driverOnline: "Driver Online",
+      activeRides: "Active Rides",
+      unpaidAccounts: "Unpaid Accounts",
+      viewStatistics: "View Statistics",
+      seatManagement: "Seat Management",
+      adjustSeatsSubtitle: "Adjust available seats for passengers",
+      emergency: "Emergency",
+      viewMap: "View Map"
+    },
+    tn: {
+      notSet: "Ga e Beelwe",
+      unknownLocation: "Lefelo le e sa Itseweng",
+      currentLocation: "Lefelo la Jaanong",
+      newRideRequest: "Kopo e Ntsha ya Leeto",
+      decline: "Gana",
+      error: "Phoso",
+      failedToDeclineRide: "Go hlolekile go gana leeto.",
+      accept: "Amohela",
+      failedToAcceptRide: "Go hlolekile go amohela leeto.",
+      emergencyAlert: "Tsebiso ya Tshoganetso",
+      emergencyMessage: "Seno se tla kgokagana le ditirelo tsa tshoganetso (112)",
+      yesGetHelp: "Ee, Nna Thuso",
+      emergencyAlertSent: "Tsebiso ya Tshoganetso e Romilwe",
+      emergencyServicesContacted: "Ditirelo tsa tshoganetso di kgokaganne.",
+      cancel: "Khansela",
+      profile: "Profaile",
+      earnings: "Madi",
+      menu: "Menu",
+      feedback: "Maikutlo",
+      help: "Tshegetso",
+      loadingLocation: "Go layishwa lefelo...",
+      driverOnline: "Mokgweetsi ka Tsela",
+      activeRides: "Dileto tse di Tshwereng",
+      unpaidAccounts: "Dikhaonte tse di sa Lefilweng",
+      viewStatistics: "Bona Dipalopalo",
+      seatManagement: "Tsamaiso ya Dithulo",
+      adjustSeatsSubtitle: "Fetola dithulo tse di leng teng tsa bapalami",
+      emergency: "Tshoganetso",
+      viewMap: "Bona Mapa"
+    },
+    zu: {
+      notSet: "Akusethiwe",
+      unknownLocation: "Indawo Engaziwa",
+      currentLocation: "Indawo Yamanje",
+      newRideRequest: "Isicelo Esisha Sohambo",
+      decline: "Yenqaba",
+      error: "Iphutha",
+      failedToDeclineRide: "Kuhlulekile ukuyenqaba uhambo.",
+      accept: "Amukela",
+      failedToAcceptRide: "Kuhlulekile ukwamukela uhambo.",
+      emergencyAlert: "Isaziso Sesimo Esiphuthumayo",
+      emergencyMessage: "Lokhu kuzoxhumana nezinsiza zesimo esiphuthumayo (112)",
+      yesGetHelp: "Yebo, Thola Usizo",
+      emergencyAlertSent: "Isaziso Sesimo Esiphuthumayo Sithunyelwe",
+      emergencyServicesContacted: "Izinsiza zesimo esiphuthumayo zixhumene.",
+      cancel: "Khansela",
+      profile: "Iphrofayili",
+      earnings: "Imali",
+      menu: "I-Menu",
+      feedback: "Impendulo",
+      help: "Usizo",
+      loadingLocation: "Kulayishwa indawo...",
+      driverOnline: "Umshayeli Ku-inthanethi",
+      activeRides: "Ohambo Abasebenzayo",
+      unpaidAccounts: "Ama-Akhawunti Angakhokhiwe",
+      viewStatistics: "Bona Izibalo",
+      seatManagement: "Ukuphatha Izihlalo",
+      adjustSeatsSubtitle: "Lungisa izihlalo ezitholakalayo zabagibeli",
+      emergency: "Isimo Esiphuthumayo",
+      viewMap: "Bona I-Map"
+    },
+    af: {
+      notSet: "Nie Gestel Nie",
+      unknownLocation: "Onbekende Ligging",
+      currentLocation: "Huidige Ligging",
+      newRideRequest: "Nuwe Rit Versoek",
+      decline: "Wys Af",
+      error: "Fout",
+      failedToDeclineRide: "Kon nie rit wys af nie.",
+      accept: "Aanvaar",
+      failedToAcceptRide: "Kon nie rit aanvaar nie.",
+      emergencyAlert: "Nood Kennisgewing",
+      emergencyMessage: "Dit sal nooddienste kontak (112)",
+      yesGetHelp: "Ja, Kry Hulp",
+      emergencyAlertSent: "Nood Kennisgewing Gestuur",
+      emergencyServicesContacted: "Nooddienste gekontak.",
+      cancel: "Kanselleer",
+      profile: "Profiel",
+      earnings: "Verdienste",
+      menu: "Menu",
+      feedback: "Terugvoer",
+      help: "Hulp",
+      loadingLocation: "Laai ligging...",
+      driverOnline: "Bestuurder Aanlyn",
+      activeRides: "Aktiewe Ritte",
+      unpaidAccounts: "Onbetaalde Rekeninge",
+      viewStatistics: "Bekyk Statistieke",
+      seatManagement: "Sitplek Bestuur",
+      adjustSeatsSubtitle: "Stel beskikbare sitplekke vir passasiers",
+      emergency: "Noodgeval",
+      viewMap: "Bekyk Kaart"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
+
+  // Set default value for currentRoute if not provided
+  const routeDisplay = currentRoute || t('notSet');
 
   const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
   const updateSeats = useMutation(api.functions.taxis.updateAvailableSeatsDirectly.updateAvailableSeatsDirectly);
@@ -171,7 +308,7 @@ export default function DriverOnline({
         const currentLoc: LocationData = {
           latitude,
           longitude,
-          name: placeName || 'Unknown Location',
+          name: placeName || t('unknownLocation'),
         };
 
         setCurrentLocation(currentLoc);
@@ -244,7 +381,7 @@ export default function DriverOnline({
       const newLocation: LocationData = {
         latitude: streamedLocation.latitude,
         longitude: streamedLocation.longitude,
-        name: 'Current Location',
+        name: t('currentLocation'),
       };
       setCurrentLocation(newLocation);
 
@@ -270,7 +407,7 @@ export default function DriverOnline({
     if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
       shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
-        title: "New Ride Request",
+        title: t('newRideRequest'),
         message: rideRequest.message,
         position: 'top',
         animation: 'slide-down',
@@ -278,19 +415,19 @@ export default function DriverOnline({
         type: 'info',
         actions: [
           {
-            label: 'Decline',
+            label: t('decline'),
             style: 'destructive',
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(t('error'), t('failedToDeclineRide'), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
               markAsRead(rideRequest._id);
             },
           },
           {
-            label: 'Accept',
+            label: t('accept'),
             style: 'default',
             onPress: async () => {
               try {
@@ -308,7 +445,7 @@ export default function DriverOnline({
                 
                 markAsRead(rideRequest._id);
               } catch (error) {
-                showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(t('error'), t('failedToAcceptRide'), { position: 'top', animation: 'slide-down', duration: 5000 });
               }
             },
           },
@@ -319,21 +456,21 @@ export default function DriverOnline({
 
   const handleEmergency = () => {
     showGlobalAlert({
-      title: 'Emergency Alert',
-      message: 'This will contact emergency services (112)',
+      title: t('emergencyAlert'),
+      message: t('emergencyMessage'),
       type: 'Emergency Alert' as AlertType,
       position: 'top',
       animation: 'slide-down',
       duration: 0,
       actions: [
         {
-          label: 'Yes, Get Help',
+          label: t('yesGetHelp'),
           style: 'destructive',
           onPress: () => {
-            showGlobalSuccess('Emergency Alert Sent', 'Emergency services contacted.', { position: 'top', animation: 'slide-down', duration: 3000 });
+            showGlobalSuccess(t('emergencyAlertSent'), t('emergencyServicesContacted'), { position: 'top', animation: 'slide-down', duration: 3000 });
           },
         },
-        { label: 'Cancel', style: 'cancel', onPress: () => {} },
+        { label: t('cancel'), style: 'cancel', onPress: () => {} },
       ],
     });
   };
@@ -357,10 +494,10 @@ export default function DriverOnline({
   };
 
   const menuItems = [
-    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
-    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
-    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
+    { icon: "person", title: t('profile'), onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: t('earnings'), onPress: () => router.push('/EarningsPage') },
+    { icon: "star", title: t('feedback'), onPress: () => router.push('/FeedbackHistoryScreen') },
+    { icon: "help-circle", title: t('help'), onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
   const activeTrips = useQuery(
@@ -723,7 +860,7 @@ export default function DriverOnline({
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading location...</Text>
+          <Text style={styles.loadingText}>{t('loadingLocation')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -739,7 +876,7 @@ export default function DriverOnline({
           <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
             <Icon name="menu" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Driver Online</Text>
+          <Text style={styles.headerTitle}>{t('driverOnline')}</Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -756,25 +893,25 @@ export default function DriverOnline({
         {/* Stats */}
         <View style={styles.statsContainer}>
           <Pressable style={styles.statCard} onPress={() => router.push("/ActiveRides")}>
-            <Text style={styles.statLabel}>Active Rides</Text>
+            <Text style={styles.statLabel}>{t('activeRides')}</Text>
             <Text style={styles.statValue}>{activeTrips?.activeCount || 0}</Text>
           </Pressable>
 
           <Pressable style={styles.statCard} onPress={() => router.push("/UnpaidPayments")}>
-            <Text style={styles.statLabel}>Unpaid Accounts</Text>
+            <Text style={styles.statLabel}>{t('unpaidAccounts')}</Text>
             <Text style={styles.statValue}>{activeTrips?.unpaidCount || 0}</Text>
           </Pressable>
         </View>
         <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
-          <Text style={styles.primaryButtonText}>View Statistics</Text>
+          <Text style={styles.primaryButtonText}>{t('viewStatistics')}</Text>
         </TouchableOpacity>
 
         {/* Seat Control */}
         <View style={styles.seatControlContainer}>
           <View style={styles.seatCard}>
-            <Text style={styles.seatTitle}>Seat Management</Text>
+            <Text style={styles.seatTitle}>{t('seatManagement')}</Text>
             <Text style={styles.seatSubtitle}>
-              Adjust available seats for passengers
+              {t('adjustSeatsSubtitle')}
             </Text>
             
             <Text style={styles.seatDisplay}>
@@ -805,12 +942,12 @@ export default function DriverOnline({
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionButton, styles.emergencyButton]} onPress={handleEmergency}>
             <Icon name="warning" size={18} color="#EF4444" />
-            <Text style={styles.emergencyButtonText}>Emergency</Text>
+            <Text style={styles.emergencyButtonText}>{t('emergency')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
             <Icon name="map" size={18} color={theme.primary} />
-            <Text style={styles.mapButtonText}>View Map</Text>
+            <Text style={styles.mapButtonText}>{t('viewMap')}</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
@@ -910,7 +1047,7 @@ export default function DriverOnline({
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.menuModal}>
               <View style={styles.menuHeader}>
-                <Text style={styles.menuHeaderText}>Menu</Text>
+                <Text style={styles.menuHeaderText}>{t('menu')}</Text>
               </View>
               
               {menuItems.map((item, index) => (

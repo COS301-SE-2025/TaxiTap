@@ -10,7 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default () => {
     const params = useLocalSearchParams();
@@ -19,7 +19,28 @@ export default () => {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
     const { showError, showSuccess } = useAlertHelpers();
-    const { t } = useTranslation();
+    const { currentLanguage } = useLanguage();
+
+    // Hardcoded translations
+    const translations = {
+        en: {
+            rideCancelled: "Ride Cancelled"
+        },
+        tn: {
+            rideCancelled: "Leeto le Khanselwe"
+        },
+        zu: {
+            rideCancelled: "Uhambo Lukhanseliwe"
+        },
+        af: {
+            rideCancelled: "Rit Gekanselleer"
+        }
+    };
+
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -267,7 +288,7 @@ export default () => {
             case 'completed':
                 return <Text style={dynamicStyles.statusText}>Ride Completed</Text>;
             case 'cancelled':
-                return <Text style={dynamicStyles.statusText}>{t('home:rideCancelled')}</Text>;
+                return <Text style={dynamicStyles.statusText}>{t('rideCancelled')}</Text>;
             default:
                 return null;
         }

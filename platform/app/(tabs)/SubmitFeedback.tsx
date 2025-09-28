@@ -14,6 +14,7 @@ import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Id } from '../../convex/_generated/dataModel';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMapContext } from '../../contexts/MapContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
 
 export default function SubmitFeedbackScreen() {
@@ -37,6 +38,80 @@ export default function SubmitFeedbackScreen() {
   const router = useRouter();
   const { clearMapContext } = useMapContext();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      noInput: "No Input",
+      pleaseProvideRating: "Please provide a rating or comment",
+      missingInfo: "Missing info",
+      cannotSubmitFeedback: "Cannot submit feedback: Missing ride/user info.",
+      continueToNextLeg: "Continue to Next Leg",
+      cancelJourney: "Cancel Journey",
+      journeyComplete: "Journey Complete!",
+      feedbackSubmitted: "Feedback submitted!",
+      continuingToNextLeg: "Continuing to next leg...",
+      success: "Success",
+      feedbackSubmittedSuccessfully: "Feedback submitted successfully!",
+      error: "Error",
+      somethingWentWrong: "Something went wrong.",
+      shareYourThoughts: "Share your thoughts about the driver..."
+    },
+    tn: {
+      noInput: "Ga go na Tsenyo",
+      pleaseProvideRating: "Ka kopo ntsha kakaretso kgotsa maikutlo",
+      missingInfo: "Tshedimosetso e Tlhokega",
+      cannotSubmitFeedback: "Ga go kgonege go roma dikakaretso: Tshedimosetso ya leeto/mosebenzisi e tlhokega.",
+      continueToNextLeg: "Tswela Pele go Lege e e Latelang",
+      cancelJourney: "Khansela Leeto",
+      journeyComplete: "Leeto le Fetswe!",
+      feedbackSubmitted: "Dikakaretso di Romilwe!",
+      continuingToNextLeg: "Go tswela pele go lege e e latelang...",
+      success: "Katlego",
+      feedbackSubmittedSuccessfully: "Dikakaretso di romilwe ka katlego!",
+      error: "Phoso",
+      somethingWentWrong: "Sengwe se dirile phoso.",
+      shareYourThoughts: "Arolelana maikutlo a gago ka mokgweetsi..."
+    },
+    zu: {
+      noInput: "Awukho Okufakwayo",
+      pleaseProvideRating: "Sicela unikeze isilinganiso noma ukuphawula",
+      missingInfo: "Ulwazi Oluswele",
+      cannotSubmitFeedback: "Awukwazi ukuthumela impendulo: Ulwazi lohambo/omsebenzisi luswele.",
+      continueToNextLeg: "Qhubeka Kuya Emilenzeni Elandelayo",
+      cancelJourney: "Khansela Uhambo",
+      journeyComplete: "Uhambo Luphelile!",
+      feedbackSubmitted: "Impendulo ithunyelwe!",
+      continuingToNextLeg: "Kuqhubeka kuya emilenzeni elandelayo...",
+      success: "Impumelelo",
+      feedbackSubmittedSuccessfully: "Impendulo ithunyelwe ngempumelelo!",
+      error: "Iphutha",
+      somethingWentWrong: "Kukhona okungahambanga kahle.",
+      shareYourThoughts: "Yabelana ngemibono yakho ngomshayeli..."
+    },
+    af: {
+      noInput: "Geen Invoer",
+      pleaseProvideRating: "Verskaf asseblief 'n gradering of kommentaar",
+      missingInfo: "Ontbrekende Inligting",
+      cannotSubmitFeedback: "Kan nie terugvoer indien nie: Ontbrekende rit/gebruiker inligting.",
+      continueToNextLeg: "Gaan Voort na Volgende Been",
+      cancelJourney: "Kanselleer Reis",
+      journeyComplete: "Reis Voltooi!",
+      feedbackSubmitted: "Terugvoer ingedien!",
+      continuingToNextLeg: "Gaan voort na volgende been...",
+      success: "Sukses",
+      feedbackSubmittedSuccessfully: "Terugvoer suksesvol ingedien!",
+      error: "Fout",
+      somethingWentWrong: "Iets het verkeerd gegaan.",
+      shareYourThoughts: "Deel jou gedagtes oor die bestuurder..."
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   // Safe access to MultiLegJourneyProvider with fallback
   let clearJourneyCache: (() => Promise<void>) | undefined;
@@ -95,12 +170,12 @@ export default function SubmitFeedbackScreen() {
 
   const handleSubmit = async () => {
     if (!rating && !comment) {
-      showGlobalError('No Input', 'Please provide a rating or comment', { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('noInput'), t('pleaseProvideRating'), { duration: 4000, position: 'top', animation: 'slide-down' });
       return;
     }
 
     if (!rideId || !passengerId || !driverId || !startName || !endName) {
-      showGlobalError('Missing info', 'Cannot submit feedback: Missing ride/user info.', { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('missingInfo'), t('cannotSubmitFeedback'), { duration: 5000, position: 'top', animation: 'slide-down' });
       return;
     }
 
@@ -138,7 +213,7 @@ export default function SubmitFeedbackScreen() {
               duration: 0,
               actions: [
                 {
-                  label: 'Continue to Next Leg',
+                  label: t('continueToNextLeg'),
                   onPress: () => {
                     router.replace({
                       pathname: '/TaxiInformation',
@@ -162,7 +237,7 @@ export default function SubmitFeedbackScreen() {
                   style: 'default',
                 },
                 {
-                  label: 'Cancel Journey',
+                  label: t('cancelJourney'),
                   onPress: () => router.replace('/HomeScreen'),
                   style: 'cancel',
                 },
@@ -173,7 +248,7 @@ export default function SubmitFeedbackScreen() {
         } else if (legResult.success && legResult.journeyComplete) {
           // Journey complete - clear all states before navigating home
           showGlobalSuccess(
-            'Journey Complete!',
+            t('journeyComplete'),
             `Multi-leg journey completed successfully! Total cost: R${legResult.totalActualCost?.toFixed(2) || '0.00'}`,
             {
               duration: 0,
@@ -205,7 +280,7 @@ export default function SubmitFeedbackScreen() {
       if (continueToNext === 'true' && journeyId && legIndex) {
         // Navigate to TaxiInformation for next leg
         const nextLegIndex = parseInt(legIndex) + 1;
-        showGlobalSuccess('Feedback submitted!', 'Continuing to next leg...', {
+        showGlobalSuccess(t('feedbackSubmitted'), t('continuingToNextLeg'), {
           duration: 2000,
           position: 'top',
           animation: 'slide-down',
@@ -229,7 +304,7 @@ export default function SubmitFeedbackScreen() {
       // Standard single ride completion
       setRating(0);
       setComment('');
-      showGlobalSuccess('Success', 'Feedback submitted successfully!', {
+      showGlobalSuccess(t('success'), t('feedbackSubmittedSuccessfully'), {
         duration: 0,
         position: 'top',
         animation: 'slide-down',
@@ -245,7 +320,7 @@ export default function SubmitFeedbackScreen() {
         ],
       });
     } catch (err: any) {
-      showGlobalError('Error', err.message || 'Something went wrong.', { duration: 5000, position: 'top', animation: 'slide-down' });
+      showGlobalError(t('error'), err.message || t('somethingWentWrong'), { duration: 5000, position: 'top', animation: 'slide-down' });
     }
   };
 
@@ -548,7 +623,7 @@ export default function SubmitFeedbackScreen() {
             <TextInput
               value={comment}
               onChangeText={setComment}
-              placeholder="Share your thoughts about the driver..."
+              placeholder={t('shareYourThoughts')}
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               style={dynamicStyles.commentInput}
               multiline

@@ -28,7 +28,120 @@ const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
 function SignUpComponent() {
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
-  const { t, currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      error: "Error",
+      pleaseFillAllFields: "Please fill all fields",
+      pleaseSelectRole: "Please select a role",
+      invalidNumber: "Invalid number format",
+      passwordMismatch: "Passwords do not match",
+      signUp: "Sign Up",
+      createAccount: "Create Account",
+      fullName: "Full Name",
+      enterFullName: "Enter your full name",
+      phoneNumber: "Phone Number",
+      enterPhoneNumber: "Enter your phone number",
+      password: "Password",
+      enterPassword: "Enter your password",
+      confirmPassword: "Confirm Password",
+      confirmPasswordPlaceholder: "Confirm your password",
+      selectRole: "Select Role",
+      passenger: "Passenger",
+      driver: "Driver",
+      alreadyHaveAccount: "Already have an account?",
+      login: "Login",
+      creatingAccount: "Creating Account...",
+      accountCreated: "Account Created!",
+      accountCreatedMessage: "Your account has been created successfully. You can now log in.",
+      ok: "OK"
+    },
+    tn: {
+      error: "Phoso",
+      pleaseFillAllFields: "Ka kopo tlatlhele mafelo otlhe",
+      pleaseSelectRole: "Ka kopo kgetha boemo",
+      invalidNumber: "Foromo ya nomoro e e sa siamang",
+      passwordMismatch: "Diphetogo di sa tshwane",
+      signUp: "Ngwadisetsa",
+      createAccount: "Tlhola Akhaonto",
+      fullName: "Leina Le Feletseng",
+      enterFullName: "Tsenya leina la gago le feletseng",
+      phoneNumber: "Nomoro ya Tsela",
+      enterPhoneNumber: "Tsenya nomoro ya gago ya tsela",
+      password: "Phetogo",
+      enterPassword: "Tsenya phetogo ya gago",
+      confirmPassword: "Tiisetsa Phetogo",
+      confirmPasswordPlaceholder: "Tiisetsa phetogo ya gago",
+      selectRole: "Kgetha Boemo",
+      passenger: "Mopalami",
+      driver: "Mokgweetsi",
+      alreadyHaveAccount: "O na le akhaonto?",
+      login: "Kena",
+      creatingAccount: "Go tlhola Akhaonto...",
+      accountCreated: "Akhaonto e Tlholwe!",
+      accountCreatedMessage: "Akhaonto ya gago e tlholwe ka katlego. O ka tsena jaanong.",
+      ok: "Sentle"
+    },
+    zu: {
+      error: "Iphutha",
+      pleaseFillAllFields: "Sicela ugcwalise wonke amasimu",
+      pleaseSelectRole: "Sicela ukhethe indima",
+      invalidNumber: "Ifomethi yenombolo engalungile",
+      passwordMismatch: "Amaphasiwedi awafani",
+      signUp: "Bhalisa",
+      createAccount: "Dala I-Akhawunti",
+      fullName: "Igama Eligcwele",
+      enterFullName: "Faka igama lakho eligcwele",
+      phoneNumber: "Inombolo Yefoni",
+      enterPhoneNumber: "Faka inombolo yakho yefoni",
+      password: "Iphasiwedi",
+      enterPassword: "Faka iphasiwedi yakho",
+      confirmPassword: "Qinisekisa Iphasiwedi",
+      confirmPasswordPlaceholder: "Qinisekisa iphasiwedi yakho",
+      selectRole: "Khetha Indima",
+      passenger: "Umgibeli",
+      driver: "Umshayeli",
+      alreadyHaveAccount: "Usenayo i-akhawunti?",
+      login: "Ngena",
+      creatingAccount: "Kudalwa I-Akhawunti...",
+      accountCreated: "I-Akhawunti Idalwe!",
+      accountCreatedMessage: "I-akhawunti yakho idalwe ngempumelelo. Manje ungangena.",
+      ok: "Kulungile"
+    },
+    af: {
+      error: "Fout",
+      pleaseFillAllFields: "Vul asseblief alle velde in",
+      pleaseSelectRole: "Kies asseblief 'n rol",
+      invalidNumber: "Ongeldige nommerformaat",
+      passwordMismatch: "Wagwoorde stem nie ooreen nie",
+      signUp: "Registreer",
+      createAccount: "Skep Rekening",
+      fullName: "Volle Naam",
+      enterFullName: "Voer jou volle naam in",
+      phoneNumber: "Telefoonnommer",
+      enterPhoneNumber: "Voer jou telefoonnommer in",
+      password: "Wagwoord",
+      enterPassword: "Voer jou wagwoord in",
+      confirmPassword: "Bevestig Wagwoord",
+      confirmPasswordPlaceholder: "Bevestig jou wagwoord",
+      selectRole: "Kies Rol",
+      passenger: "Passasier",
+      driver: "Bestuurder",
+      alreadyHaveAccount: "Het jy reeds 'n rekening?",
+      login: "Teken In",
+      creatingAccount: "Skep Rekening...",
+      accountCreated: "Rekening Geskep!",
+      accountCreatedMessage: "Jou rekening is suksesvol geskep. Jy kan nou inteken.",
+      ok: "OK"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   const [nameSurname, setNameSurname] = useState('');
   const [selectedRole, setSelectedRole] = useState<'passenger' | 'driver' | null>(null);
   const [password, setPassword] = useState('');
@@ -68,8 +181,8 @@ function SignUpComponent() {
   const handleSignup = async () => {
     if (!localNumber || !password || !nameSurname || !confirmPassword) {
       showGlobalError(
-        t('common:error'),
-        t('common:pleaseFillAllFields'),
+        t('error'),
+        t('pleaseFillAllFields'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -77,8 +190,8 @@ function SignUpComponent() {
 
     if (!selectedRole) {
       showGlobalError(
-        t('common:error'),
-        t('common:pleaseSelectRole'),
+        t('error'),
+        t('pleaseSelectRole'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -87,8 +200,8 @@ function SignUpComponent() {
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(localNumber)) {
       showGlobalError(
-        t('common:error'),
-        t('common:invalidNumber'),
+        t('error'),
+        t('invalidNumber'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -96,8 +209,8 @@ function SignUpComponent() {
 
     if (password !== confirmPassword) {
       showGlobalError(
-        t('common:error'),
-        t('common:passwordMismatch'),
+        t('error'),
+        t('passwordMismatch'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -123,7 +236,7 @@ function SignUpComponent() {
         );
       } else {
         showGlobalError(
-          t('common:error'),
+          t('error'),
           result.reason || 'Signup failed. Please try again.',
           { duration: 4000, position: 'top', animation: 'slide-down' }
         );
@@ -183,13 +296,13 @@ function SignUpComponent() {
         >
           {/* Name and surname */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:nameAndSurname')}
+            {t('fullName')}
           </Text>
 
           <TextInput
             value={nameSurname}
             onChangeText={setNameSurname}
-            placeholder={t('auth:nameAndSurname')}
+            placeholder={t('enterFullName')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -203,7 +316,7 @@ function SignUpComponent() {
 
           {/* Phone Number */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:phoneNumber')}
+            {t('phoneNumber')}
           </Text>
 
           <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -241,14 +354,14 @@ function SignUpComponent() {
 
           {/* Dropdown for Role */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:selectRole')}
+            {t('selectRole')}
           </Text>
 
           <Dropdown
             data={currentRoleData}
             labelField="label"
             valueField="value"
-            placeholder={t('auth:selectRole')}
+            placeholder={t('selectRole')}
             placeholderStyle={{ color: '#999' }}
             style={{
               backgroundColor: '#fff',
@@ -264,7 +377,7 @@ function SignUpComponent() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:password')}
+            {t('password')}
           </Text>
 
           <View
@@ -281,7 +394,7 @@ function SignUpComponent() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('auth:password')}
+              placeholder={t('enterPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -300,7 +413,7 @@ function SignUpComponent() {
 
           {/* Confirm Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:confirmPassword')}
+            {t('confirmPassword')}
           </Text>
 
           <View
@@ -317,7 +430,7 @@ function SignUpComponent() {
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder={t('auth:confirmPassword')}
+              placeholder={t('confirmPasswordPlaceholder')}
               placeholderTextColor="#999"
               secureTextEntry={!showConfirmPassword}
               style={{
@@ -348,7 +461,7 @@ function SignUpComponent() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              {t('auth:signUp')}
+              {t('signUp')}
             </Text>
           </Pressable>
         </View>

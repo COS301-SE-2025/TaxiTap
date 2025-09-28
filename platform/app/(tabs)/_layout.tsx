@@ -8,7 +8,7 @@ import dark from '../../assets/images/icon-dark.png';
 import light from '../../assets/images/icon.png';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useMapContext } from '../../contexts/MapContext';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -107,9 +107,8 @@ const HeaderRightButtons: React.FC = () => {
   );
 };
 
-const TabNavigation: React.FC = () => {
+const TabNavigation: React.FC<{ t: (key: string) => string }> = ({ t }) => {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const isSmallScreen = screenWidth < 375;
   const insets = useSafeAreaInsets();
@@ -187,7 +186,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HomeScreen"
         options={{
-          title: t('navigation:home'),
+          title: t('home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               alignItems: 'center',
@@ -211,7 +210,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerRoute"
         options={{
-          title: t('navigation:routes'),
+          title: t('routes'),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               alignItems: 'center',
@@ -235,7 +234,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="PassengerProfile"
         options={{
-          title: t('navigation:profile'),
+          title: t('profile'),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               alignItems: 'center',
@@ -259,7 +258,7 @@ const TabNavigation: React.FC = () => {
       <Tabs.Screen
         name="HelpPage"
         options={{
-          title: t('navigation:help'),
+          title: t('help'),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               alignItems: 'center',
@@ -344,8 +343,61 @@ const TabNavigation: React.FC = () => {
 
 export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
-  const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      home: "Home",
+      routes: "Routes",
+      profile: "Profile",
+      help: "Help",
+      rideDeclined: "Ride Declined",
+      rideDeclinedMessage: "The driver has declined your ride request.",
+      rideAccepted: "Ride Accepted",
+      ok: "OK",
+      rideCancelled: "Ride Cancelled"
+    },
+    tn: {
+      home: "Gae",
+      routes: "Ditsela",
+      profile: "Profaile",
+      help: "Tshegetso",
+      rideDeclined: "Leeto le Gannwe",
+      rideDeclinedMessage: "Mokgweetsi o ganne kopo ya gago ya leeto.",
+      rideAccepted: "Leeto le Amogetswe",
+      ok: "Sentle",
+      rideCancelled: "Leeto le Khanselwe"
+    },
+    zu: {
+      home: "Ikhaya",
+      routes: "Izindlela",
+      profile: "Iphrofayili",
+      help: "Usizo",
+      rideDeclined: "Uhambo Lukhanseliwe",
+      rideDeclinedMessage: "Umshayeli ukhanselile isicelo sakho sohambo.",
+      rideAccepted: "Uhambo Lwamukelwe",
+      ok: "Kulungile",
+      rideCancelled: "Uhambo Lukhanseliwe"
+    },
+    af: {
+      home: "Tuis",
+      routes: "Roetes",
+      profile: "Profiel",
+      help: "Hulp",
+      rideDeclined: "Rit Geweier",
+      rideDeclinedMessage: "Die bestuurder het jou rit versoek geweier.",
+      rideAccepted: "Rit Aanvaar",
+      ok: "OK",
+      rideCancelled: "Rit Gekanselleer"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   // Safely get map context
   let currentLocation: any = undefined;
@@ -375,13 +427,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideDeclined._id); // Mark as processed
 
       showGlobalError(
-        t('notifications:rideDeclined'),
-        rideDeclined.message || t('notifications:rideDeclinedMessage'),
+        t('rideDeclined'),
+        rideDeclined.message || t('rideDeclinedMessage'),
         {
           duration: 0,
           actions: [
             {
-              label: t('notifications:ok'),
+              label: t('ok'),
               onPress: () => {
                 markAsRead(rideDeclined._id);
                 router.push('./HomeScreen');
@@ -412,13 +464,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideAccepted._id);// Mark as processed
 
       showGlobalSuccess(
-        t('notifications:rideAccepted'),
+        t('rideAccepted'),
         rideAccepted.message,
         {
           duration: 0,
           actions: [
             {
-              label: t('notifications:ok'),
+              label: t('ok'),
               onPress: () => {
                 markAsRead(rideAccepted._id);
                 router.push({
@@ -458,13 +510,13 @@ export default function TabLayout() {
       processedNotificationsRef.current.add(rideCancelled._id);// Mark as processed
 
       showGlobalAlert({
-        title: t('notifications:rideCancelled'),
+        title: t('rideCancelled'),
         message: rideCancelled.message,
         type: 'warning',
         duration: 0,
         actions: [
           {
-            label: t('notifications:ok'),
+            label: t('ok'),
             onPress: () => markAsRead(rideCancelled._id),
             style: 'default',
           },
@@ -476,6 +528,6 @@ export default function TabLayout() {
   }, [notifications, markAsRead, showGlobalAlert]);
 
   return (
-    <TabNavigation />
+    <TabNavigation t={t} />
   );
 }

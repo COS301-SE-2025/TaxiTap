@@ -10,7 +10,28 @@ export default () => {
 	const params = useLocalSearchParams();
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
+
+	// Hardcoded translations
+	const translations = {
+		en: {
+			currentLocation: "Current Location"
+		},
+		tn: {
+			currentLocation: "Lefelo la Jaanong"
+		},
+		zu: {
+			currentLocation: "Indawo Yamanje"
+		},
+		af: {
+			currentLocation: "Huidige Ligging"
+		}
+	};
+
+	const t = (key: string) => {
+		const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+		return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+	};
 	
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -29,7 +50,7 @@ export default () => {
 	const currentLocation = {
 		latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
 		longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-		name: getParamAsString(params.currentName, t('common:currentLocation'))
+		name: getParamAsString(params.currentName, t('currentLocation'))
 	};
 
 	const destination = {

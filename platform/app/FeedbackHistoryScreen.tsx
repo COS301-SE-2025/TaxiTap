@@ -7,13 +7,71 @@ import { useUser } from '../contexts/UserContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function FeedbackHistoryScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      noFeedbackYet: "No Feedback Yet",
+      noReviewsYet: "No Reviews Yet",
+      passengerFeedbackMessage: "Passenger feedback will appear here once you complete rides. Great service leads to better ratings!",
+      rideReviewsMessage: "Your ride reviews will appear here. Share your experience to help improve our service!",
+      passengerFeedback: "Passenger Feedback",
+      rideReviews: "Ride Reviews",
+      feedbackFrom: "Feedback from",
+      reviewFor: "Review for",
+      passengerFeedbackLabel: "Passenger Feedback",
+      driverReview: "Driver Review"
+    },
+    tn: {
+      noFeedbackYet: "Ga go na Dikakaretso Go Fitlha Jaanong",
+      noReviewsYet: "Ga go na Dikakaretso Go Fitlha Jaanong",
+      passengerFeedbackMessage: "Dikakaretso tsa mopalami di tla bonala mo fa o fetsa diteko. Tshebediso e e siameng e isa go dikakaretso tse di siameng!",
+      rideReviewsMessage: "Dikakaretso tsa diteko tsa gago di tla bonala mo. Arolelana ka phihlelelo ya gago go thusa go tokafatsa tshebediso ya rona!",
+      passengerFeedback: "Dikakaretso tsa Mopalami",
+      rideReviews: "Dikakaretso tsa Diteko",
+      feedbackFrom: "Dikakaretso tsa",
+      reviewFor: "Kakaretso ya",
+      passengerFeedbackLabel: "Dikakaretso tsa Mopalami",
+      driverReview: "Kakaretso ya Mokgweetsi"
+    },
+    zu: {
+      noFeedbackYet: "Awukho Impendulo Okwamanje",
+      noReviewsYet: "Awukho Izibuyekezo Okwamanje",
+      passengerFeedbackMessage: "Impendulo yomgibeli izobonakala lapha uma uqeda imihambo. Inkonzo enhle iholela ezilinganisweni ezinhle!",
+      rideReviewsMessage: "Izibuyekezo zakho zohambo zizobonakala lapha. Yabelana ngolwazi lwakho ukuze usize ukuthuthukisa inkonzo yethu!",
+      passengerFeedback: "Impendulo Yomgibeli",
+      rideReviews: "Izibuyekezo Zohambo",
+      feedbackFrom: "Impendulo ivela ku",
+      reviewFor: "Isibuyekezo sika",
+      passengerFeedbackLabel: "Impendulo Yomgibeli",
+      driverReview: "Isibuyekezo Somshayeli"
+    },
+    af: {
+      noFeedbackYet: "Nog Geen Terugvoer Nie",
+      noReviewsYet: "Nog Geen Resensies Nie",
+      passengerFeedbackMessage: "Passasier terugvoer sal hier verskyn sodra jy ritte voltooi. Uitstekende diens lei tot beter graderings!",
+      rideReviewsMessage: "Jou rit resensies sal hier verskyn. Deel jou ervaring om te help om ons diens te verbeter!",
+      passengerFeedback: "Passasier Terugvoer",
+      rideReviews: "Rit Resensies",
+      feedbackFrom: "Terugvoer van",
+      reviewFor: "Resensie vir",
+      passengerFeedbackLabel: "Passasier Terugvoer",
+      driverReview: "Bestuurder Resensie"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -343,21 +401,21 @@ export default function FeedbackHistoryScreen() {
               </View>
               <Text style={dynamicStyles.emptyStateText}>
                 {user.role === 'driver' 
-                  ? "No Feedback Yet" 
-                  : "No Reviews Yet"
+                  ? t('noFeedbackYet') 
+                  : t('noReviewsYet')
                 }
               </Text>
               <Text style={dynamicStyles.emptyStateSubtext}>
                 {user.role === 'driver' 
-                  ? "Passenger feedback will appear here once you complete rides. Great service leads to better ratings!" 
-                  : "Your ride reviews will appear here. Share your experience to help improve our service!"
+                  ? t('passengerFeedbackMessage') 
+                  : t('rideReviewsMessage')
                 }
               </Text>
             </View>
           ) : (
             <>
               <Text style={dynamicStyles.sectionTitle}>
-                Your {user.role === 'driver' ? 'Passenger Feedback' : 'Ride Reviews'}
+                Your {user.role === 'driver' ? t('passengerFeedback') : t('rideReviews')}
               </Text>
               
               {paginatedFeedback.map((entry: any, index: number) => (
@@ -366,8 +424,8 @@ export default function FeedbackHistoryScreen() {
                    <View style={dynamicStyles.feedbackHeader}>
                      <Text style={dynamicStyles.feedbackTitle}>
                        {user.role === 'driver' 
-                         ? (entry.passengerName ? `Feedback from ${entry.passengerName}` : 'Passenger Feedback')
-                         : (entry.driverName ? `Review for ${entry.driverName}` : 'Driver Review')
+                         ? (entry.passengerName ? `${t('feedbackFrom')} ${entry.passengerName}` : t('passengerFeedbackLabel'))
+                         : (entry.driverName ? `${t('reviewFor')} ${entry.driverName}` : t('driverReview'))
                        }
                      </Text>
                      <Text style={dynamicStyles.feedbackSubtitle}>

@@ -23,7 +23,140 @@ export default function AddWorkAddress() {
     const router = useRouter();
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
+
+    // Hardcoded translations
+    const translations = {
+        en: {
+            permissionDenied: "Permission Denied",
+            locationPermissionRequired: "Location permission is required to get your current location.",
+            error: "Error",
+            failedToGetLocation: "Failed to get your current location. Please try again.",
+            userNotLoaded: "User not loaded. Please try again.",
+            addressRequired: "Address is required.",
+            nicknameRequired: "Nickname is required.",
+            coordinatesRequired: "Coordinates are required.",
+            success: "Success",
+            workAddressSaved: "Work address saved successfully!",
+            failedToSaveAddress: "Failed to save work address. Please try again.",
+            deleteWorkAddress: "Delete Work Address",
+            deleteAddressConfirm: "Are you sure you want to delete this work address?",
+            workAddressDeleted: "Work address deleted successfully",
+            failedToDeleteAddress: "Failed to delete work address. Please try again.",
+            delete: "Delete",
+            cancel: "Cancel",
+            editWorkAddress: "Edit Work Address",
+            addWorkAddress: "Add Work Address",
+            addressInformation: "Address Information",
+            addressNickname: "Address Nickname",
+            fullAddress: "Full Address",
+            location: "Location",
+            gettingLocation: "Getting Location...",
+            useCurrentLocation: "Use Current Location",
+            actions: "Actions",
+            saving: "Saving...",
+            updateAddress: "Update Address",
+            saveAddress: "Save Address"
+        },
+        tn: {
+            permissionDenied: "Tumelo e Gannwe",
+            locationPermissionRequired: "Tumelo ya lefelo e tlhoka go nna lefelo la gago la jaanong.",
+            error: "Phoso",
+            failedToGetLocation: "Go hlolekile go nna lefelo la gago la jaanong. Ka kopo leka gape.",
+            userNotLoaded: "Mosebenzisi ga a layishwe. Ka kopo leka gape.",
+            addressRequired: "Aterese e tlhoka.",
+            nicknameRequired: "Leina la go tsewa e tlhoka.",
+            coordinatesRequired: "Dikgokagano di tlhoka.",
+            success: "Katlego",
+            workAddressSaved: "Aterese ya tiro e bolokilwe ka katlego!",
+            failedToSaveAddress: "Go hlolekile go boloka aterese ya tiro. Ka kopo leka gape.",
+            deleteWorkAddress: "Tlosa Aterese ya Tiro",
+            deleteAddressConfirm: "O na le bonnete ba gore o batla go tlosa aterese ya tiro e?",
+            workAddressDeleted: "Aterese ya tiro e tlosiwe ka katlego",
+            failedToDeleteAddress: "Go hlolekile go tlosa aterese ya tiro. Ka kopo leka gape.",
+            delete: "Tlosa",
+            cancel: "Khansela",
+            editWorkAddress: "Hlopha Aterese ya Tiro",
+            addWorkAddress: "Tsenya Aterese ya Tiro",
+            addressInformation: "Tshedimosetso ya Aterese",
+            addressNickname: "Leina la go Tsewa la Aterese",
+            fullAddress: "Aterese e Feletseng",
+            location: "Lefelo",
+            gettingLocation: "Go nna Lefelo...",
+            useCurrentLocation: "Dirisa Lefelo la Jaanong",
+            actions: "Ditiro",
+            saving: "Go Bolokwa...",
+            updateAddress: "Ntsha Aterese",
+            saveAddress: "Boloka Aterese"
+        },
+        zu: {
+            permissionDenied: "Imvume Iyenqatshwe",
+            locationPermissionRequired: "Imvume yendawo iyadingeka ukuthola indawo yakho yamanje.",
+            error: "Iphutha",
+            failedToGetLocation: "Kuhlulekile ukuthola indawo yakho yamanje. Sicela uzame futhi.",
+            userNotLoaded: "Umsebenzisi akalayishwanga. Sicela uzame futhi.",
+            addressRequired: "Ikheli liyadingeka.",
+            nicknameRequired: "Igama lokubizwa ngalo liyadingeka.",
+            coordinatesRequired: "Amakhonodineyithi ayadingeka.",
+            success: "Impumelelo",
+            workAddressSaved: "Ikheli lomsebenzi lilondoloziwe ngempumelelo!",
+            failedToSaveAddress: "Kuhlulekile ukulondoloza ikheli lomsebenzi. Sicela uzame futhi.",
+            deleteWorkAddress: "Susa Ikheli Lomsebenzi",
+            deleteAddressConfirm: "Uqinisekile ukuthi ufuna ukususa ikheli lomsebenzi?",
+            workAddressDeleted: "Ikheli lomsebenzi lisusiwe ngempumelelo",
+            failedToDeleteAddress: "Kuhlulekile ukususa ikheli lomsebenzi. Sicela uzame futhi.",
+            delete: "Susa",
+            cancel: "Khansela",
+            editWorkAddress: "Hlela Ikheli Lomsebenzi",
+            addWorkAddress: "Faka Ikheli Lomsebenzi",
+            addressInformation: "Ulwazi Lwekheli",
+            addressNickname: "Igama Lokubizwa Ngalo Lekheli",
+            fullAddress: "Ikheli Eligcwele",
+            location: "Indawo",
+            gettingLocation: "Kutholwa Indawo...",
+            useCurrentLocation: "Sebenzisa Indawo Yamanje",
+            actions: "Izenzo",
+            saving: "Kulondoloziwa...",
+            updateAddress: "Buyekeza Ikheli",
+            saveAddress: "Londoloza Ikheli"
+        },
+        af: {
+            permissionDenied: "Toestemming Geweier",
+            locationPermissionRequired: "Ligging toestemming word vereis om jou huidige ligging te kry.",
+            error: "Fout",
+            failedToGetLocation: "Kon nie jou huidige ligging kry nie. Probeer asseblief weer.",
+            userNotLoaded: "Gebruiker nie gelaai nie. Probeer asseblief weer.",
+            addressRequired: "Adres word vereis.",
+            nicknameRequired: "Bynaam word vereis.",
+            coordinatesRequired: "Koördinate word vereis.",
+            success: "Sukses",
+            workAddressSaved: "Werk adres suksesvol gestoor!",
+            failedToSaveAddress: "Kon nie werk adres stoor nie. Probeer asseblief weer.",
+            deleteWorkAddress: "Skrap Werk Adres",
+            deleteAddressConfirm: "Is jy seker jy wil hierdie werk adres skrap?",
+            workAddressDeleted: "Werk adres suksesvol geskrap",
+            failedToDeleteAddress: "Kon nie werk adres skrap nie. Probeer asseblief weer.",
+            delete: "Skrap",
+            cancel: "Kanselleer",
+            editWorkAddress: "Redigeer Werk Adres",
+            addWorkAddress: "Voeg Werk Adres By",
+            addressInformation: "Adres Inligting",
+            addressNickname: "Adres Bynaam",
+            fullAddress: "Volledige Adres",
+            location: "Ligging",
+            gettingLocation: "Kry Ligging...",
+            useCurrentLocation: "Gebruik Huidige Ligging",
+            actions: "Aksies",
+            saving: "Stoor...",
+            updateAddress: "Opdateer Adres",
+            saveAddress: "Stoor Adres"
+        }
+    };
+
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
     
     // Screen dimensions for responsive design
@@ -59,8 +192,8 @@ export default function AddWorkAddress() {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 showGlobalError(
-                    t('address:permissionDenied'),
-                    t('address:locationPermissionRequired'),
+                    t('permissionDenied'),
+                    t('locationPermissionRequired'),
                     { duration: 4000 }
                 );
                 return;
@@ -85,8 +218,8 @@ export default function AddWorkAddress() {
         } catch (error) {
             console.error('Location error:', error);
             showGlobalError(
-                t('address:error'),
-                t('address:failedToGetLocation'),
+                t('error'),
+                t('failedToGetLocation'),
                 { duration: 4000 }
             );
         } finally {
@@ -97,32 +230,32 @@ export default function AddWorkAddress() {
     const handleSave = async () => {
         if (!user) {
             showGlobalError(
-                t('address:error'),
-                t('address:userNotLoaded'),
+                t('error'),
+                t('userNotLoaded'),
                 { duration: 4000 }
             );
             return;
         }
         if (!address.trim()) {
             showGlobalError(
-                t('address:error'),
-                t('address:addressRequired'),
+                t('error'),
+                t('addressRequired'),
                 { duration: 4000 }
             );
             return;
         }
         if (!nickname.trim()) {
             showGlobalError(
-                t('address:error'),
-                t('address:nicknameRequired'),
+                t('error'),
+                t('nicknameRequired'),
                 { duration: 4000 }
             );
             return;
         }
         if (coordinates.latitude === 0 && coordinates.longitude === 0) {
             showGlobalError(
-                t('address:error'),
-                t('address:coordinatesRequired'),
+                t('error'),
+                t('coordinatesRequired'),
                 { duration: 4000 }
             );
             return;
@@ -138,8 +271,8 @@ export default function AddWorkAddress() {
                 },
             });
             showGlobalSuccess(
-                t('address:success'),
-                t('address:workAddressSaved'),
+                t('success'),
+                t('workAddressSaved'),
                 { duration: 2000 }
             );
             setTimeout(() => {
@@ -148,8 +281,8 @@ export default function AddWorkAddress() {
         } catch (error: any) {
             console.error('Save error:', error);
             showGlobalError(
-                t('address:error'),
-                error.message || t('address:failedToSaveAddress'),
+                t('error'),
+                error.message || t('failedToSaveAddress'),
                 { duration: 4000 }
             );
         } finally {
@@ -160,16 +293,16 @@ export default function AddWorkAddress() {
     const handleDelete = async () => {
         if (!user) {
             showGlobalError(
-                t('address:error'),
-                t('address:userNotLoaded'),
+                t('error'),
+                t('userNotLoaded'),
                 { duration: 4000 }
             );
             return;
         }
         
         showConfirm(
-            t('address:deleteWorkAddress'),
-            t('address:deleteAddressConfirm'),
+            t('deleteWorkAddress'),
+            t('deleteAddressConfirm'),
             async () => {
                 try {
                     setIsLoading(true);
@@ -178,8 +311,8 @@ export default function AddWorkAddress() {
                         workAddress: null,
                     });
                     showGlobalSuccess(
-                        t('address:success'),
-                        t('address:workAddressDeleted'),
+                        t('success'),
+                        t('workAddressDeleted'),
                         { duration: 2000 }
                     );
                     setTimeout(() => {
@@ -188,8 +321,8 @@ export default function AddWorkAddress() {
                 } catch (error: any) {
                     console.error('Delete error:', error);
                     showGlobalError(
-                        t('address:error'),
-                        error.message || t('address:failedToDeleteAddress'),
+                        t('error'),
+                        error.message || t('failedToDeleteAddress'),
                         { duration: 4000 }
                     );
                 } finally {
@@ -197,8 +330,8 @@ export default function AddWorkAddress() {
                 }
             },
             undefined,
-            t('address:delete'),
-            t('address:cancel')
+            t('delete'),
+            t('cancel')
         );
     };
 
@@ -410,7 +543,7 @@ export default function AddWorkAddress() {
                         <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>
-                        {hasExistingAddress ? t('address:editWorkAddress') : t('address:addWorkAddress')}
+                        {hasExistingAddress ? t('editWorkAddress') : t('addWorkAddress')}
                     </Text>
                 </View>
             </View>
@@ -425,10 +558,10 @@ export default function AddWorkAddress() {
                 >
 
                 {/* Address Information Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:addressInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('addressInformation')}</Text>
                 <View style={dynamicStyles.card}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
+                        <Text style={dynamicStyles.label}>{t('addressNickname')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={nickname}
@@ -439,7 +572,7 @@ export default function AddWorkAddress() {
                     </View>
 
                     <View style={[dynamicStyles.fieldContainer, dynamicStyles.lastField]}>
-                        <Text style={dynamicStyles.label}>{t('address:fullAddress')}</Text>
+                        <Text style={dynamicStyles.label}>{t('fullAddress')}</Text>
                         <TextInput
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
@@ -453,7 +586,7 @@ export default function AddWorkAddress() {
                 </View>
 
                 {/* Location Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:location')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('location')}</Text>
                 <View style={dynamicStyles.locationCard}>
                     <Pressable
                         style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
@@ -474,7 +607,7 @@ export default function AddWorkAddress() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={dynamicStyles.locationButtonText}>
-                                {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
+                                {isLoadingLocation ? t('gettingLocation') : t('useCurrentLocation')}
                             </Text>
                             <Text style={dynamicStyles.locationSubtext}>
                                 {isLoadingLocation 
@@ -492,7 +625,7 @@ export default function AddWorkAddress() {
                 </View>
 
                 {/* Action Buttons Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:actions')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('actions')}</Text>
                 <View style={dynamicStyles.buttonCard}>
                     <Pressable
                         style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
@@ -510,7 +643,7 @@ export default function AddWorkAddress() {
                             />
                         )}
                         <Text style={dynamicStyles.saveButtonText}>
-                            {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                            {isLoading ? t('saving') : hasExistingAddress ? t('updateAddress') : t('saveAddress')}
                         </Text>
                     </Pressable>
 
@@ -526,7 +659,7 @@ export default function AddWorkAddress() {
                                 size={20} 
                                 color="#FF3B30" 
                             />
-                            <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
+                            <Text style={dynamicStyles.deleteButtonText}>{t('delete')}</Text>
                         </Pressable>
                     )}
                 </View>

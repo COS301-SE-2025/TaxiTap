@@ -7,12 +7,139 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Id } from '../convex/_generated/dataModel';
 
 export default function VehicleDriver() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
+    const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            permissionDenied: "Permission Denied",
+            mediaLibraryAccess: "We need access to your media library to upload a photo.",
+            userNotFound: "Not found",
+            userNotLoaded: "User not loaded.",
+            invalidSeats: "Invalid Seats",
+            maxSeatsAllowed: "Maximum 14 seats are allowed for taxis.",
+            success: "Success",
+            vehicleInfoUpdated: "Vehicle information updated successfully.",
+            error: "Error",
+            failedToUpdateVehicle: "Failed to update vehicle information.",
+            loadingUserData: "Loading user data...",
+            vehicleInformation: "Vehicle Information",
+            updateTaxiDetails: "Update your taxi details",
+            vehicleDetails: "Vehicle Details",
+            vehicleType: "Vehicle Type",
+            vehicleTypePlaceholder: "e.g., Toyota Camry",
+            licensePlate: "License Plate",
+            licensePlatePlaceholder: "e.g., ABC 123 GP",
+            color: "Color",
+            colorPlaceholder: "e.g., White",
+            year: "Year",
+            yearPlaceholder: "e.g., 2020",
+            totalSeats: "Total Seats",
+            seatsPlaceholder: "e.g., 4",
+            vehiclePhoto: "Vehicle Photo",
+            uploadVehiclePhoto: "Upload Vehicle Photo",
+            saveChanges: "Save Changes"
+        },
+        tn: {
+            permissionDenied: "Tumelo e Gannwe",
+            mediaLibraryAccess: "Re tlhoka phihlelelo ya media library ya gago go tsaya setshwantsho.",
+            userNotFound: "Ga e Bonwe",
+            userNotLoaded: "Mosebenzisi ga a layishwe.",
+            invalidSeats: "Dithulo tse di sa Siame",
+            maxSeatsAllowed: "Dithulo tse di ka nang le 14 fela di letlelelwa mo ditekising.",
+            success: "Katlego",
+            vehicleInfoUpdated: "Tshedimosetso ya koloi e ntshitswe ka katlego.",
+            error: "Phoso",
+            failedToUpdateVehicle: "Go hlolekile go ntsha tshedimosetso ya koloi.",
+            loadingUserData: "Go layishwa tshedimosetso ya mosebenzisi...",
+            vehicleInformation: "Tshedimosetso ya Koloi",
+            updateTaxiDetails: "Ntsha tshedimosetso ya tekisi ya gago",
+            vehicleDetails: "Tshedimosetso ya Koloi",
+            vehicleType: "Mofuta wa Koloi",
+            vehicleTypePlaceholder: "mme., Toyota Camry",
+            licensePlate: "Plate ya Tumelo",
+            licensePlatePlaceholder: "mme., ABC 123 GP",
+            color: "Mmala",
+            colorPlaceholder: "mme., Bosweu",
+            year: "Ngwaga",
+            yearPlaceholder: "mme., 2020",
+            totalSeats: "Dithulo Tsotlhe",
+            seatsPlaceholder: "mme., 4",
+            vehiclePhoto: "Setshwantsho sa Koloi",
+            uploadVehiclePhoto: "Tsaya Setshwantsho sa Koloi",
+            saveChanges: "Boloka Diphetogo"
+        },
+        zu: {
+            permissionDenied: "Imvume Iyenqatshwe",
+            mediaLibraryAccess: "Sidinga ukufinyelela ku-media library yakho ukuze ulayishe isithombe.",
+            userNotFound: "Akutholakali",
+            userNotLoaded: "Umsebenzisi akalayishwanga.",
+            invalidSeats: "Izihlalo Ezingalungile",
+            maxSeatsAllowed: "Izihlalo ezingama-14 kuphela zivunyelwe kumatekisi.",
+            success: "Impumelelo",
+            vehicleInfoUpdated: "Ulwazi lwemoto luvuselelwe ngempumelelo.",
+            error: "Iphutha",
+            failedToUpdateVehicle: "Kuhlulekile ukuvuselela ulwazi lwemoto.",
+            loadingUserData: "Kulayishwa ulwazi lomsebenzisi...",
+            vehicleInformation: "Ulwazi Lwemoto",
+            updateTaxiDetails: "Vuselela imininingwane yakho yetekisi",
+            vehicleDetails: "Imininingwane Yemoto",
+            vehicleType: "Uhlobo Lwemoto",
+            vehicleTypePlaceholder: "isb., Toyota Camry",
+            licensePlate: "I-License Plate",
+            licensePlatePlaceholder: "isb., ABC 123 GP",
+            color: "Umbala",
+            colorPlaceholder: "isb., Okumhlophe",
+            year: "Unyaka",
+            yearPlaceholder: "isb., 2020",
+            totalSeats: "Zonke Izihlalo",
+            seatsPlaceholder: "isb., 4",
+            vehiclePhoto: "Isithombe Semoto",
+            uploadVehiclePhoto: "Layisha Isithombe Semoto",
+            saveChanges: "Londoloza Izinguquko"
+        },
+        af: {
+            permissionDenied: "Toestemming Geweier",
+            mediaLibraryAccess: "Ons het toegang tot jou media biblioteek nodig om 'n foto op te laai.",
+            userNotFound: "Nie Gevind Nie",
+            userNotLoaded: "Gebruiker nie gelaai nie.",
+            invalidSeats: "Ongeldige Sitplekke",
+            maxSeatsAllowed: "Maksimum 14 sitplekke word toegelaat vir taxis.",
+            success: "Sukses",
+            vehicleInfoUpdated: "Voertuig inligting suksesvol opgedateer.",
+            error: "Fout",
+            failedToUpdateVehicle: "Kon nie voertuig inligting opdateer nie.",
+            loadingUserData: "Laai gebruiker data...",
+            vehicleInformation: "Voertuig Inligting",
+            updateTaxiDetails: "Dateer jou taxi besonderhede op",
+            vehicleDetails: "Voertuig Besonderhede",
+            vehicleType: "Voertuig Tipe",
+            vehicleTypePlaceholder: "bv., Toyota Camry",
+            licensePlate: "Lisensie Plaat",
+            licensePlatePlaceholder: "bv., ABC 123 GP",
+            color: "Kleur",
+            colorPlaceholder: "bv., Wit",
+            year: "Jaar",
+            yearPlaceholder: "bv., 2020",
+            totalSeats: "Totale Sitplekke",
+            seatsPlaceholder: "bv., 4",
+            vehiclePhoto: "Voertuig Foto",
+            uploadVehiclePhoto: "Laai Voertuig Foto Op",
+            saveChanges: "Stoor Veranderinge"
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const [vehicleType, setVehicleType] = useState('');
     const [licensePlate, setLicensePlate] = useState('');
     const [seats, setSeats] = useState('');
@@ -42,7 +169,7 @@ export default function VehicleDriver() {
         (async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                showGlobalError('Permission Denied', 'We need access to your media library to upload a photo.', {
+                showGlobalError(t('permissionDenied'), t('mediaLibraryAccess'), {
                     duration: 4000,
                     position: 'top',
                     animation: 'slide-down',
@@ -72,7 +199,7 @@ export default function VehicleDriver() {
 
     const handleSaveChanges = async () => {
         if (!user) {
-            showGlobalError("Not found", "User not loaded.", {
+            showGlobalError(t('userNotFound'), t('userNotLoaded'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -83,7 +210,7 @@ export default function VehicleDriver() {
         // Validate seats - maximum 14 seats allowed
         const seatsNumber = parseInt(seats, 10);
         if (seatsNumber > 14) {
-            showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
+            showGlobalError(t('invalidSeats'), t('maxSeatsAllowed'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -101,14 +228,14 @@ export default function VehicleDriver() {
                 color,
                 year: parseInt(year, 10)
             });
-            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+            showGlobalSuccess(t('success'), t('vehicleInfoUpdated'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
             });
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            showGlobalError("Error", "Failed to update vehicle information.", {
+            showGlobalError(t('error'), t('failedToUpdateVehicle'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -232,7 +359,7 @@ export default function VehicleDriver() {
         return (
             <SafeAreaView style={dynamicStyles.safeArea}>
                 <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ color: theme.text, fontSize: 16 }}>Loading user data...</Text>
+                    <Text style={{ color: theme.text, fontSize: 16 }}>{t('loadingUserData')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -246,66 +373,66 @@ export default function VehicleDriver() {
             >
                 {/* Header Section */}
                 <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerTitle}>Vehicle Information</Text>
-                    <Text style={dynamicStyles.headerSubtitle}>Update your taxi details</Text>
+                    <Text style={dynamicStyles.headerTitle}>{t('vehicleInformation')}</Text>
+                    <Text style={dynamicStyles.headerSubtitle}>{t('updateTaxiDetails')}</Text>
                 </View>
 
                 {/* Vehicle Details Form */}
-                <Text style={dynamicStyles.sectionHeader}>Vehicle Details</Text>
+                <Text style={dynamicStyles.sectionHeader}>{t('vehicleDetails')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Vehicle Type</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{t('vehicleType')}</Text>
                         <TextInput
                             value={vehicleType}
                             onChangeText={setVehicleType}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., Toyota Camry"
+                            placeholder={t('vehicleTypePlaceholder')}
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>License Plate</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{t('licensePlate')}</Text>
                         <TextInput
                             value={licensePlate}
                             onChangeText={setLicensePlate}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., ABC 123 GP"
+                            placeholder={t('licensePlatePlaceholder')}
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             autoCapitalize="characters"
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Color</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{t('color')}</Text>
                         <TextInput
                             value={color}
                             onChangeText={setColor}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., White"
+                            placeholder={t('colorPlaceholder')}
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Year</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{t('year')}</Text>
                         <TextInput
                             value={year}
                             onChangeText={setYear}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., 2020"
+                            placeholder={t('yearPlaceholder')}
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             keyboardType="numeric"
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Total Seats</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{t('totalSeats')}</Text>
                         <TextInput
                             value={seats}
                             onChangeText={setSeats}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., 4"
+                            placeholder={t('seatsPlaceholder')}
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             keyboardType="numeric"
                         />
@@ -313,7 +440,7 @@ export default function VehicleDriver() {
                 </View>
 
                 {/* Vehicle Photo Section */}
-                <Text style={dynamicStyles.sectionHeader}>Vehicle Photo</Text>
+                <Text style={dynamicStyles.sectionHeader}>{t('vehiclePhoto')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.imageSection}>
                         <Image
@@ -330,7 +457,7 @@ export default function VehicleDriver() {
                             style={dynamicStyles.uploadButton}
                         >
                             <Ionicons name="camera" size={20} color={theme.text} />
-                            <Text style={dynamicStyles.uploadButtonText}>Upload Vehicle Photo</Text>
+                            <Text style={dynamicStyles.uploadButtonText}>{t('uploadVehiclePhoto')}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -340,7 +467,7 @@ export default function VehicleDriver() {
                     onPress={handleSaveChanges}
                     style={dynamicStyles.saveButton}
                 >
-                    <Text style={dynamicStyles.saveButtonText}>Save Changes</Text>
+                    <Text style={dynamicStyles.saveButtonText}>{t('saveChanges')}</Text>
                 </Pressable>
             </ScrollView>
         </SafeAreaView>

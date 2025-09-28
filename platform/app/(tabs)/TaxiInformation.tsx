@@ -36,8 +36,137 @@ export default function TaxiInformation() {
     });
   }, [navigation]);
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      km: "km",
+      away: "away",
+      driver: "Driver",
+      findingAvailableTaxis: "Finding Available Taxis",
+      selectYourDriver: "Select Your Driver",
+      noAvailableTaxis: "No Available Taxis",
+      noTaxisMessage: "No taxis are currently available for this route. Please try again later.",
+      bookingRide: "Booking Ride...",
+      bookRideWith: "Book Ride with {name}",
+      rideRequestSent: "Ride Request Sent!",
+      rideRequestMessage: "Your ride request has been sent to {name}. They will contact you shortly.",
+      ok: "OK",
+      error: "Error",
+      pleaseSelectTaxi: "Please select a taxi and ensure you are logged in",
+      bookingError: "Booking Error",
+      bookingFailed: "Failed to send ride request. Please try again.",
+      phoneCallsNotSupported: "Phone calls are not supported on this device",
+      couldNotOpenPhoneApp: "Could not open phone app",
+      journeyCancelled: "Journey Cancelled",
+      journeyCancelledMessage: "Your multi-leg journey has been cancelled. You can start a new journey from the home screen.",
+      multiLegJourney: "Multi-Leg Journey: Leg",
+      of: "of",
+      availableTaxis: "Available Taxis",
+      legBooked: "Booked!",
+      legBookedMessage: "Your {routeName} for leg {legIndex} has been booked with {driverName}.",
+      currentLocation: "Current Location",
+      destination: "Destination",
+      taxisAvailable: "taxi{s} available"
+    },
+    tn: {
+      km: "km",
+      away: "kgakala",
+      driver: "Mokgweetsi",
+      findingAvailableTaxis: "Go Batla Ditekisi tse di Leng teng",
+      selectYourDriver: "Kgetha Mokgweetsi wa Gago",
+      noAvailableTaxis: "Ga go na Ditekisi tse di Leng teng",
+      noTaxisMessage: "Ga go na ditekisi tse di leng teng mo tseleng e. Ka kopo leka gape morago.",
+      bookingRide: "Go Boka Leeto...",
+      bookRideWith: "Boka Leeto le {name}",
+      rideRequestSent: "Kopo ya Leeto e Romilwe!",
+      rideRequestMessage: "Kopo ya gago ya leeto e romilwe go {name}. Ba tla go kgokaganya ka nakwana.",
+      ok: "Sentle",
+      error: "Phoso",
+      pleaseSelectTaxi: "Ka kopo kgetha tekisi mme o netefatse gore o tsene",
+      bookingError: "Phoso ya Go Boka",
+      bookingFailed: "Go hlolekile go roma kopo ya leeto. Ka kopo leka gape.",
+      phoneCallsNotSupported: "Dikgopolo tsa mogala ga di tshegediwe mo sedirisweng seno",
+      couldNotOpenPhoneApp: "Ga go kgonege go bulela app ya mogala",
+      journeyCancelled: "Leeto le Khanselwe",
+      journeyCancelledMessage: "Leeto la gago la maleg a le mmalwa le khanselwe. O ka simolola leeto le lešwa go tswa mo skrineng ya gae.",
+      multiLegJourney: "Leeto la Maleg a le Mmalwa: Lege",
+      of: "ya",
+      availableTaxis: "Ditekisi tse di Leng teng",
+      legBooked: "Lebokwe!",
+      legBookedMessage: "Leeto la gago la {routeName} la lege {legIndex} le bokwe le {driverName}.",
+      currentLocation: "Lefelo la Jaanong",
+      destination: "Mafelo a Go Ya Go One",
+      taxisAvailable: "tekisi{s} e leng teng"
+    },
+    zu: {
+      km: "km",
+      away: "kude",
+      driver: "Umshayeli",
+      findingAvailableTaxis: "Kutholwa AmaTekisi Atholakalayo",
+      selectYourDriver: "Khetha Umshayeli Wakho",
+      noAvailableTaxis: "Awukho AmaTekisi Atholakalayo",
+      noTaxisMessage: "Awukho amaTekisi atholakalayo ngalesi sikhathi kulendlela. Sicela uzame futhi kamuva.",
+      bookingRide: "Kubhuka Uhambo...",
+      bookRideWith: "Bhuka Uhambo no{name}",
+      rideRequestSent: "Isicelo Sohambo Sithunyelwe!",
+      rideRequestMessage: "Isicelo sakho sohambo sithunyelwe ku{name}. Bazokuxhumana naye maduzane.",
+      ok: "Kulungile",
+      error: "Iphutha",
+      pleaseSelectTaxi: "Sicela ukhethe itekisi futhi uqinisekise ukuthi ungene",
+      bookingError: "Iphutha Lokubhuka",
+      bookingFailed: "Kuhlulekile ukuthumela isicelo sohambo. Sicela uzame futhi.",
+      phoneCallsNotSupported: "Ocingo alusekelwa kule divayisi",
+      couldNotOpenPhoneApp: "Akukwazanga ukuvula i-app yocingo",
+      journeyCancelled: "Uhambo Lukhanseliwe",
+      journeyCancelledMessage: "Uhambo lwakho lwemilenze eminingi lukhanseliwe. Ungaqala uhambo olusha esikrinini sasekhaya.",
+      multiLegJourney: "Uhambo Lwemilenze Eminingi: Umilenze",
+      of: "we",
+      availableTaxis: "AmaTekisi Atholakalayo",
+      legBooked: "Kubhukwe!",
+      legBookedMessage: "Uhambo lwakho lwe{routeName} lwemilenze {legIndex} lubhukwe no{driverName}.",
+      currentLocation: "Indawo Yamanje",
+      destination: "Indawo Eyihloswe",
+      taxisAvailable: "itekisi{s} itholakalayo"
+    },
+    af: {
+      km: "km",
+      away: "weg",
+      driver: "Bestuurder",
+      findingAvailableTaxis: "Vind Beskikbare Taxis",
+      selectYourDriver: "Kies Jou Bestuurder",
+      noAvailableTaxis: "Geen Beskikbare Taxis",
+      noTaxisMessage: "Geen taxis is tans beskikbaar vir hierdie roete. Probeer asseblief later weer.",
+      bookingRide: "Bespreek Rit...",
+      bookRideWith: "Bespreek Rit met {name}",
+      rideRequestSent: "Rit Versoek Gestuur!",
+      rideRequestMessage: "Jou rit versoek is gestuur na {name}. Hulle sal jou binnekort kontak.",
+      ok: "OK",
+      error: "Fout",
+      pleaseSelectTaxi: "Kies asseblief 'n taxi en maak seker jy is ingeteken",
+      bookingError: "Bespreking Fout",
+      bookingFailed: "Kon nie rit versoek stuur nie. Probeer asseblief weer.",
+      phoneCallsNotSupported: "Telefoon oproepe word nie ondersteun op hierdie toestel nie",
+      couldNotOpenPhoneApp: "Kon nie telefoon app oopmaak nie",
+      journeyCancelled: "Reis Gekanselleer",
+      journeyCancelledMessage: "Jou multi-been reis is gekanselleer. Jy kan 'n nuwe reis van die tuisskerm begin.",
+      multiLegJourney: "Multi-Been Reis: Been",
+      of: "van",
+      availableTaxis: "Beskikbare Taxis",
+      legBooked: "Geboek!",
+      legBookedMessage: "Jou {routeName} vir been {legIndex} is geboek met {driverName}.",
+      currentLocation: "Huidige Ligging",
+      destination: "Bestemming",
+      taxisAvailable: "taxi{s} beskikbaar"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   // Screen dimensions for responsive design
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -154,7 +283,7 @@ export default function TaxiInformation() {
           routeInfo: taxi.routeInfo,
           averageRating: taxi.averageRating ?? taxi.routeInfo?.calculatedRating ?? 0,
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
-          displayDistance: `${taxi.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
+          displayDistance: `${taxi.distanceToOrigin}${t('km')} ${t('away')}`,
           routeName: taxi.routeInfo.routeName,
           fare: taxi.routeInfo.calculatedFare,
         })) || [];
@@ -237,7 +366,7 @@ export default function TaxiInformation() {
           distanceToOrigin: driver.distanceToOrigin,
           routeInfo: driver.routeInfo,
           displayName: `${driver.name} - ${driver.vehicleModel}`,
-          displayDistance: `${driver.distanceToOrigin}${t('taxiInfo:km')} ${t('taxiInfo:away')}`,
+          displayDistance: `${driver.distanceToOrigin}${t('km')} ${t('away')}`,
           routeName: driver.routeInfo.routeName,
           fare: driver.routeInfo.calculatedFare,
         }));
@@ -282,7 +411,7 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          showGlobalError('Error', 'Phone calls are not supported on this device', {
+          showGlobalError(t('error'), t('phoneCallsNotSupported'), {
             duration: 4000,
             position: 'top',
             animation: 'slide-down',
@@ -291,7 +420,7 @@ export default function TaxiInformation() {
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        showGlobalError('Error', 'Could not open phone app', {
+        showGlobalError(t('error'), t('couldNotOpenPhoneApp'), {
           duration: 4000,
           position: 'top',
           animation: 'slide-down',
@@ -305,8 +434,8 @@ export default function TaxiInformation() {
     
     // Show success notification
     showGlobalSuccess(
-      'Journey Cancelled',
-      'Your multi-leg journey has been cancelled. You can start a new journey from the home screen.',
+      t('journeyCancelled'),
+      t('journeyCancelledMessage'),
       { 
         duration: 3000, 
         position: 'top', 
@@ -323,7 +452,7 @@ export default function TaxiInformation() {
   // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
+      showGlobalError(t('error'), t('pleaseSelectTaxi'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -373,16 +502,16 @@ export default function TaxiInformation() {
 
         showGlobalSuccess(
           isMultiLegJourney
-            ? `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`
-            : t('taxiInfo:rideRequestSent'),
+            ? `${t('multiLegJourney')} ${currentLegIndex + 1} ${t('of')} ${totalLegsCount} ${t('legBooked')}`
+            : t('rideRequestSent'),
           isMultiLegJourney
-            ? `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`
-            : t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
+            ? t('legBookedMessage').replace('{routeName}', routeName || 'taxi').replace('{legIndex}', (currentLegIndex + 1).toString()).replace('{driverName}', selectedTaxi.name)
+            : t('rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
             actions: [
               {
-                label: t('common:ok'),
+                label: t('ok'),
                 onPress: () => {
                   const navigationParams = {
                     currentLat: effectiveCurrentLat,
@@ -433,8 +562,8 @@ export default function TaxiInformation() {
     } catch (error) {
       console.error('❌ Error creating ride request:', error);
       showGlobalError(
-        'Booking Error',
-        'Failed to send ride request. Please try again.',
+        t('bookingError'),
+        t('bookingFailed'),
         {
           duration: 0,
           actions: [
@@ -473,7 +602,7 @@ export default function TaxiInformation() {
           {/* Left side - Driver info */}
           <View style={dynamicStyles.driverInfo}>
             <Text style={dynamicStyles.driverName}>
-              {taxi.name || `${t('taxiInfo:driver')} ${index + 1}`}
+              {taxi.name || `${t('driver')} ${index + 1}`}
             </Text>
 
             {/* Driver Rating */}
@@ -874,8 +1003,8 @@ export default function TaxiInformation() {
           </Pressable>
           <Text style={dynamicStyles.headerTitle}>
             {isMultiLegJourney
-              ? `Multi-Leg Journey: Leg ${currentLegIndex + 1} of ${totalLegsCount}`
-              : 'Available Taxis'
+              ? `${t('multiLegJourney')} ${currentLegIndex + 1} ${t('of')} ${totalLegsCount}`
+              : t('availableTaxis')
             }
           </Text>
         </View>
@@ -908,7 +1037,7 @@ export default function TaxiInformation() {
                 <View style={[dynamicStyles.routeDot, dynamicStyles.startDot]} />
               </View>
               <Text style={dynamicStyles.routeText}>
-                {effectiveCurrentName || 'Current Location'}
+                {effectiveCurrentName || t('currentLocation')}
               </Text>
             </View>
             <View style={dynamicStyles.routeHeader}>
@@ -916,14 +1045,14 @@ export default function TaxiInformation() {
                 <View style={[dynamicStyles.routeDot, dynamicStyles.endDot]} />
               </View>
               <Text style={dynamicStyles.routeText}>
-                {effectiveDestinationName || 'Destination'}
+                {effectiveDestinationName || t('destination')}
               </Text>
             </View>
             <View style={dynamicStyles.routeStats}>
               <View style={dynamicStyles.statItem}>
                 <Ionicons name="car-outline" size={16} color={theme.primary} />
                 <Text style={dynamicStyles.statText}>
-                  {nearbyTaxis.length} taxi{nearbyTaxis.length !== 1 ? 's' : ''} available
+                  {nearbyTaxis.length} {t('taxisAvailable').replace('{s}', nearbyTaxis.length !== 1 ? 's' : '')}
                 </Text>
               </View>
               {nearbyTaxis[0]?.routeInfo?.calculatedFare && (
@@ -939,14 +1068,14 @@ export default function TaxiInformation() {
 
           {/* Taxi List Section */}
           <Text style={dynamicStyles.sectionTitle}>
-            {isLoadingTaxis ? t('taxiInfo:findingAvailableTaxis') : t('taxiInfo:selectYourDriver')}
+            {isLoadingTaxis ? t('findingAvailableTaxis') : t('selectYourDriver')}
           </Text>
 
           {isLoadingTaxis ? (
             <View style={dynamicStyles.loadingContainer}>
               <LoadingSpinner size="large" />
               <Text style={dynamicStyles.loadingText}>
-                {t('taxiInfo:findingAvailableTaxis')}
+                {t('findingAvailableTaxis')}
               </Text>
             </View>
           ) : nearbyTaxis.length > 0 ? (
@@ -960,10 +1089,10 @@ export default function TaxiInformation() {
                 style={dynamicStyles.noTaxisIcon}
               />
               <Text style={dynamicStyles.noTaxisTitle}>
-                {t('taxiInfo:noAvailableTaxis')}
+                {t('noAvailableTaxis')}
               </Text>
               <Text style={dynamicStyles.noTaxisText}>
-                {routeMatchData?.message || t('taxiInfo:noTaxisMessage')}
+                {routeMatchData?.message || t('noTaxisMessage')}
               </Text>
             </View>
           )}
@@ -986,8 +1115,8 @@ export default function TaxiInformation() {
           >
             <Text style={dynamicStyles.bookButtonText}>
               {isBooking
-                ? t('taxiInfo:bookingRide')
-                : t('taxiInfo:bookRideWith').replace('{name}', selectedTaxi.name)
+                ? t('bookingRide')
+                : t('bookRideWith').replace('{name}', selectedTaxi.name)
               }
             </Text>
           </TouchableOpacity>

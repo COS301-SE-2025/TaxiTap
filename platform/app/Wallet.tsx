@@ -6,11 +6,82 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Id } from "../convex/_generated/dataModel";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
   const router = useRouter();
   const { theme, isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      myWallet: "My Wallet",
+      noPassengerId: "No passenger ID provided",
+      loadingTransactions: "Loading transactions...",
+      noRecentTransactions: "No recent transactions",
+      paid: "PAID",
+      unpaid: "UNPAID",
+      driver: "Driver",
+      owes: "Owes",
+      changeDue: "Change Due",
+      overpaidTrip: "Overpaid Trip",
+      exactPayment: "Exact Payment",
+      underpaidTrip: "Underpaid Trip",
+      notPaid: "Not Paid"
+    },
+    tn: {
+      myWallet: "Wallet ya Me",
+      noPassengerId: "Ga go na ID ya mopalami e e neelweng",
+      loadingTransactions: "Go layishwa ditiro...",
+      noRecentTransactions: "Ga go na ditiro tsa bokhutshwane",
+      paid: "E LEFILWE",
+      unpaid: "E SA LEFILENG",
+      driver: "Mokgweetsi",
+      owes: "O tlhoka",
+      changeDue: "Tshwetso e e Tlhokang",
+      overpaidTrip: "Leeto le le Lefileng ka Nako",
+      exactPayment: "Tefo e e Tokafaditseng",
+      underpaidTrip: "Leeto le le sa Lefileng ka Nako",
+      notPaid: "Ga le Lefilwe"
+    },
+    zu: {
+      myWallet: "I-Wallet Yami",
+      noPassengerId: "Awukho i-ID yomgibeli enikeziwe",
+      loadingTransactions: "Kulayishwa izenzo...",
+      noRecentTransactions: "Awukho izenzo zakamuva",
+      paid: "IKHOKHIWE",
+      unpaid: "ENGIKHOKHILE",
+      driver: "Umshayeli",
+      owes: "Uyakhokha",
+      changeDue: "Ukushintsha Okudingekayo",
+      overpaidTrip: "Uhambo Olukhokhwe Ngokweqile",
+      exactPayment: "Inkokhelo Eqondile",
+      underpaidTrip: "Uhambo Olungakhokhwa Ngokwanele",
+      notPaid: "Alukhokhwa"
+    },
+    af: {
+      myWallet: "My Beursie",
+      noPassengerId: "Geen passasier ID verskaf nie",
+      loadingTransactions: "Laai transaksies...",
+      noRecentTransactions: "Geen onlangse transaksies nie",
+      paid: "BETAAL",
+      unpaid: "ONBETAALD",
+      driver: "Bestuurder",
+      owes: "Skuldig",
+      changeDue: "Kleingeld Verskuldig",
+      overpaidTrip: "Oorbetaalde Rit",
+      exactPayment: "Presiese Betaling",
+      underpaidTrip: "Onderbetaalde Rit",
+      notPaid: "Nie Betaal Nie"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   // Screen dimensions for responsive design
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -24,10 +95,10 @@ const TransactionHistoryScreen = () => {
   );
 
   const paymentTypeLabels: Record<string, string> = {
-    overpaid: "Overpaid Trip",
-    exact: "Exact Payment",
-    underpaid: "Underpaid Trip",
-    not_paid: "Not Paid",
+    overpaid: t('overpaidTrip'),
+    exact: t('exactPayment'),
+    underpaid: t('underpaidTrip'),
+    not_paid: t('notPaid'),
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -171,12 +242,12 @@ const TransactionHistoryScreen = () => {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('myWallet')}</Text>
           </View>
         </View>
         
         <View style={dynamicStyles.center}>
-          <Text style={dynamicStyles.centerText}>No passenger ID provided</Text>
+          <Text style={dynamicStyles.centerText}>{t('noPassengerId')}</Text>
         </View>
       </View>
     );
@@ -191,12 +262,12 @@ const TransactionHistoryScreen = () => {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('myWallet')}</Text>
           </View>
         </View>
         
         <View style={dynamicStyles.center}>
-          <Text style={dynamicStyles.centerText}>Loading transactions...</Text>
+          <Text style={dynamicStyles.centerText}>{t('loadingTransactions')}</Text>
         </View>
       </View>
     );
@@ -210,7 +281,7 @@ const TransactionHistoryScreen = () => {
           <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </Pressable>
-          <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+          <Text style={dynamicStyles.headerTitle}>{t('myWallet')}</Text>
         </View>
       </View>
 
@@ -224,7 +295,7 @@ const TransactionHistoryScreen = () => {
         >
 
       {transactions.length === 0 && (
-        <Text style={dynamicStyles.empty}>No recent transactions</Text>
+        <Text style={dynamicStyles.empty}>{t('noRecentTransactions')}</Text>
       )}
 
       {transactions.map((tx) => (
@@ -243,7 +314,7 @@ const TransactionHistoryScreen = () => {
                 tx.paymentStatus === "paid" ? dynamicStyles.paid : dynamicStyles.unpaid,
               ]}
             >
-              {tx.paymentStatus.toUpperCase()}
+              {tx.paymentStatus === "paid" ? t('paid') : t('unpaid')}
             </Text>
           </View>
 
@@ -267,17 +338,17 @@ const TransactionHistoryScreen = () => {
           
           {tx.driver && (
             <View style={[dynamicStyles.row, { marginTop: 8 }]}>
-              <Text style={dynamicStyles.driver}>Driver: {tx.driver.name}</Text>
+              <Text style={dynamicStyles.driver}>{t('driver')}: {tx.driver.name}</Text>
             </View>
           )}
 
           {(tx.amountOwed > 0 || tx.changeDue > 0) && (
             <View style={{ marginTop: 8 }}>
               {tx.amountOwed > 0 && (
-                <Text style={dynamicStyles.owed}>Owes: R {tx.amountOwed.toFixed(2)}</Text>
+                <Text style={dynamicStyles.owed}>{t('owes')}: R {tx.amountOwed.toFixed(2)}</Text>
               )}
               {tx.changeDue > 0 && (
-                <Text style={dynamicStyles.change}>Change Due: R {tx.changeDue.toFixed(2)}</Text>
+                <Text style={dynamicStyles.change}>{t('changeDue')}: R {tx.changeDue.toFixed(2)}</Text>
               )}
             </View>
           )}

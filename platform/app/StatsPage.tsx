@@ -16,7 +16,60 @@ export default function StatsPage() {
   const navigation = useNavigation();
   const { user } = useUser();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      dashboard: "Dashboard",
+      loading: "Loading...",
+      rideAndPaymentOverview: "Ride and payment overview",
+      quickSummary: "Quick Summary",
+      youHaveActiveRides: "You have {activeCount} active rides and {pendingCount} payments pending.",
+      activeRides: "Active Rides",
+      changeDueAndMoneyOwed: "Change Due and Money Owed",
+      pendingPayments: "Pending Payments",
+      unpaidAccounts: "Unpaid Accounts"
+    },
+    tn: {
+      dashboard: "Dashboard",
+      loading: "Go Layishwa...",
+      rideAndPaymentOverview: "Tlhatlhobo ya leeto le tefo",
+      quickSummary: "Kakaretso e e Bonolo",
+      youHaveActiveRides: "O na le {activeCount} diteko tse di tsamayang le {pendingCount} tefo e e emeng.",
+      activeRides: "Diteko tse di Tsamayang",
+      changeDueAndMoneyOwed: "Tshwetso e e Tlhokang le Tshelete e e Tshwanetseng",
+      pendingPayments: "Tefo e e Emeng",
+      unpaidAccounts: "Akhaonto tse di sa Lefileng"
+    },
+    zu: {
+      dashboard: "I-Dashboard",
+      loading: "Kulayishwa...",
+      rideAndPaymentOverview: "Ukubuka uhambo nokukhokha",
+      quickSummary: "Isifinyezo Esilula",
+      youHaveActiveRides: "Unemihambo {activeCount} esebenzayo nezinkokhelo {pendingCount} ezilindile.",
+      activeRides: "Imihambo Esebenzayo",
+      changeDueAndMoneyOwed: "Ukushintsha Okudingekayo Nezimali Ezifanele",
+      pendingPayments: "Izinkokhelo Ezilindile",
+      unpaidAccounts: "Ama-Akhawunti Angakhokhile"
+    },
+    af: {
+      dashboard: "Dashboard",
+      loading: "Laai...",
+      rideAndPaymentOverview: "Rit en betaling oorsig",
+      quickSummary: "Vinnige Opsomming",
+      youHaveActiveRides: "Jy het {activeCount} aktiewe ritte en {pendingCount} betalings hangend.",
+      activeRides: "Aktiewe Ritte",
+      changeDueAndMoneyOwed: "Kleingeld Verskuldig en Geld Skuldig",
+      pendingPayments: "Hangende Betalings",
+      unpaidAccounts: "Onbetaalde Rekeninge"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   const activeTrips = useQuery(
     api.functions.rides.getActiveTrips.getActiveTrips,
@@ -40,8 +93,8 @@ export default function StatsPage() {
       <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
         <View style={dynamicStyles.container}>
           <View style={dynamicStyles.headerSection}>
-            <Text style={dynamicStyles.headerTitle}>Dashboard</Text>
-            <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('dashboard')}</Text>
+            <Text style={dynamicStyles.headerSubtitle}>{t('loading')}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -56,15 +109,15 @@ export default function StatsPage() {
       >
         {/* Header Section */}
         <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.headerSubtitle}>Ride and payment overview</Text>
+          <Text style={dynamicStyles.headerSubtitle}>{t('rideAndPaymentOverview')}</Text>
         </View>
 
         {/* Summary Section */}
         <View style={dynamicStyles.summarySection}>
-          <Text style={dynamicStyles.summaryTitle}>Quick Summary</Text>
+          <Text style={dynamicStyles.summaryTitle}>{t('quickSummary')}</Text>
           <View style={dynamicStyles.summaryContent}>
             <Text style={dynamicStyles.summaryText}>
-              You have {activeTrips?.activeCount || 0} active rides and {activeTrips?.noResponseCount || 0} payments pending.
+              {t('youHaveActiveRides').replace('{activeCount}', (activeTrips?.activeCount || 0).toString()).replace('{pendingCount}', (activeTrips?.noResponseCount || 0).toString())}
             </Text>
           </View>
         </View>
@@ -76,7 +129,7 @@ export default function StatsPage() {
             onPress={() => router.push("/ActiveRides")}
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.activeCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Active Rides</Text>
+            <Text style={dynamicStyles.statLabel}>{t('activeRides')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -84,7 +137,7 @@ export default function StatsPage() {
             onPress={() => router.push("/ChangePage")}
           >
             <Text style={dynamicStyles.statNumber}>{changeDueCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Change Due and Money Owed</Text>
+            <Text style={dynamicStyles.statLabel}>{t('changeDueAndMoneyOwed')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -92,7 +145,7 @@ export default function StatsPage() {
             onPress={() => router.push("/WaitingPayments")}
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.noResponseCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Pending Payments</Text>
+            <Text style={dynamicStyles.statLabel}>{t('pendingPayments')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -100,7 +153,7 @@ export default function StatsPage() {
             onPress={() => router.push("/UnpaidPayments")}
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.unpaidCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Unpaid Accounts</Text>
+            <Text style={dynamicStyles.statLabel}>{t('unpaidAccounts')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

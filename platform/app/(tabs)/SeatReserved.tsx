@@ -87,7 +87,84 @@ export default function SeatReserved() {
 	// Context hooks need to be declared before any queries that use them
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
+
+	// Hardcoded translations
+	const translations = {
+		en: {
+			error: "Error",
+			missingRideInfo: "Missing ride or user information.",
+			success: "Success",
+			driverVerified: "Driver verified! Ride started.",
+			invalidPin: "Invalid PIN",
+			checkWithDriver: "Please check with the driver and try again.",
+			failedToVerifyPin: "Failed to verify PIN. Please try again.",
+			noRideInfo: "No ride or user information available.",
+			rideEnded: "Ride Ended",
+			fare: "Fare: R",
+			failedToEndRide: "Failed to end ride. Please try again.",
+			failedToContinue: "Failed to continue to next leg. Please try again.",
+			rideCancelled: "Ride cancelled",
+			failedToCancelRide: "Failed to cancel ride.",
+			waitingForDriver: "Waiting for driver..."
+		},
+		tn: {
+			error: "Phoso",
+			missingRideInfo: "Tshedimosetso ya leeto kgotsa mosebenzisi e tlhokega.",
+			success: "Katlego",
+			driverVerified: "Mokgweetsi o tiisetswe! Leeto le simolotswe.",
+			invalidPin: "PIN e e sa Siame",
+			checkWithDriver: "Ka kopo tlhatlhoba le mokgweetsi mme o leke gape.",
+			failedToVerifyPin: "Go hlolekile go tiisetsa PIN. Ka kopo leka gape.",
+			noRideInfo: "Ga go na tshedimosetso ya leeto kgotsa mosebenzisi.",
+			rideEnded: "Leeto le Fetswe",
+			fare: "Tefo: R",
+			failedToEndRide: "Go hlolekile go fetsa leeto. Ka kopo leka gape.",
+			failedToContinue: "Go hlolekile go tswela pele go lege e e latelang. Ka kopo leka gape.",
+			rideCancelled: "Leeto le khanselwe",
+			failedToCancelRide: "Go hlolekile go khansela leeto.",
+			waitingForDriver: "Go emela mokgweetsi..."
+		},
+		zu: {
+			error: "Iphutha",
+			missingRideInfo: "Ulwazi lohambo noma lomsebenzisi luyadingeka.",
+			success: "Impumelelo",
+			driverVerified: "Umshayeli uqinisekisiwe! Uhambo luqalisiwe.",
+			invalidPin: "I-PIN Engalungile",
+			checkWithDriver: "Sicela uhlole nomshayeli bese uzama futhi.",
+			failedToVerifyPin: "Kuhlulekile ukuqinisekisa i-PIN. Sicela uzame futhi.",
+			noRideInfo: "Awukho ulwazi lohambo noma lomsebenzisi.",
+			rideEnded: "Uhambo Luphelile",
+			fare: "Imali: R",
+			failedToEndRide: "Kuhlulekile ukuqeda uhambo. Sicela uzame futhi.",
+			failedToContinue: "Kuhlulekile ukuqhubeka kuya emilenzeni elandelayo. Sicela uzame futhi.",
+			rideCancelled: "Uhambo lukhanseliwe",
+			failedToCancelRide: "Kuhlulekile ukukhansela uhambo.",
+			waitingForDriver: "Kulindele umshayeli..."
+		},
+		af: {
+			error: "Fout",
+			missingRideInfo: "Ontbrekende rit of gebruiker inligting.",
+			success: "Sukses",
+			driverVerified: "Bestuurder geverifieer! Rit begin.",
+			invalidPin: "Ongeldige PIN",
+			checkWithDriver: "Kontroleer asseblief met die bestuurder en probeer weer.",
+			failedToVerifyPin: "Kon nie PIN verifieer nie. Probeer asseblief weer.",
+			noRideInfo: "Geen rit of gebruiker inligting beskikbaar nie.",
+			rideEnded: "Rit Beëindig",
+			fare: "Tarief: R",
+			failedToEndRide: "Kon nie rit beëindig nie. Probeer asseblief weer.",
+			failedToContinue: "Kon nie voortgaan na volgende been nie. Probeer asseblief weer.",
+			rideCancelled: "Rit gekanselleer",
+			failedToCancelRide: "Kon nie rit kanselleer nie.",
+			waitingForDriver: "Wag vir bestuurder..."
+		}
+	};
+
+	const t = (key: string) => {
+		const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+		return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+	};
 
 	// Screen dimensions for responsive design (matching TaxiInformation)
 	const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -600,7 +677,7 @@ export default function SeatReserved() {
 
 	const verifyPinCode = async (enteredPin: string) => {
 		if (!user || !taxiInfo?.rideId || !driverId) {
-			Alert.alert('Error', 'Missing ride or user information.');
+			Alert.alert(t('error'), t('missingRideInfo'));
 			return;
 		}
 
@@ -614,15 +691,15 @@ export default function SeatReserved() {
 			});
 
 			if (result.success) {
-				Alert.alert('Success', 'Driver verified! Ride started.');
+				Alert.alert(t('success'), t('driverVerified'));
 				setShowPinEntry(false);
 				// The ride status should now change to 'in_progress' via the backend
 			} else {
-				Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+				Alert.alert(t('invalidPin'), t('checkWithDriver'));
 				setPin(['', '', '', '']);
 			}
 		} catch (error: any) {
-			Alert.alert('Error', 'Failed to verify PIN. Please try again.');
+			Alert.alert(t('error'), t('failedToVerifyPin'));
 			setPin(['', '', '', '']);
 		} finally {
 			setIsVerifying(false);
@@ -726,7 +803,7 @@ export default function SeatReserved() {
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(t('error'), t('noRideInfo'));
 			return;
 		}
 		
@@ -751,7 +828,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			console.log('🔄 Seat availability updated');
 			
-			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
+			Alert.alert(t('rideEnded'), `${t('fare')}${result.fare}`);
 			
 			if (!currentLocation || !destination) {
 				console.log('⚠️ Missing location data, cannot navigate to feedback');
@@ -782,13 +859,13 @@ export default function SeatReserved() {
 			setIsEndingRide(false);
 			setRideJustEnded(false);
 			console.error('❌ Error ending ride:', error);
-			Alert.alert('Error', error?.message || 'Failed to end ride. Please try again.');
+			Alert.alert(t('error'), error?.message || t('failedToEndRide'));
 		}
 	};
 
 	const handleContinueToNextLeg = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(t('error'), t('noRideInfo'));
 			return;
 		}
 		
@@ -868,13 +945,13 @@ export default function SeatReserved() {
 			setIsEndingRide(false);
 			setRideJustEnded(false);
 			console.error('❌ Error continuing to next leg:', error);
-			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
+			Alert.alert(t('error'), error?.message || t('failedToContinue'));
 		}
 	};
 
 	const handleCancelRequest = async () => { //this for when user wants to cancel the ride request
 		if (!taxiInfo?.rideId || !user?.id) {
-			Alert.alert('Error', 'No ride or user information available.');
+			Alert.alert(t('error'), t('noRideInfo'));
 			return;
 		}
 		try {
@@ -883,12 +960,12 @@ export default function SeatReserved() {
 			
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert(t('home:success'), t('home:rideCancelled'));
+			Alert.alert(t('success'), t('rideCancelled'));
 			router.push('/HomeScreen');
 		} catch (error: any) {
 			// Reset the flag if there's an error
 			setRideJustEnded(false);
-			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
+			Alert.alert(t('error'), error?.message || t('failedToCancelRide'));
 		}
 	};
 
@@ -1565,7 +1642,7 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-{t('home:waitingForDriver')}
+{t('waitingForDriver')}
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
 										Your ride request has been sent. A driver will be assigned soon.

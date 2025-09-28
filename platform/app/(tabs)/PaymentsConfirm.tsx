@@ -11,7 +11,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
-import { useMapContext } from '../../contexts/MapContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
@@ -35,6 +35,96 @@ export default function PaymentConfirmation() {
   } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
   const { clearMapContext } = useMapContext();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      legPaymentConfirmed: "Leg Payment Confirmed",
+      paymentConfirmed: "Payment Confirmed",
+      thankYouForPayment: "Thank you for confirming your payment!",
+      paymentConfirmationFailed: "Payment Confirmation Failed",
+      unableToConfirmPayment: "Unable to confirm payment. Please try again.",
+      paymentRequired: "Payment Required",
+      cancelJourney: "Cancel Journey",
+      paymentNotConfirmed: "Payment Not Confirmed",
+      rememberToPayDriver: "Please remember to pay your driver. You can still provide feedback about your ride.",
+      continueToFeedback: "Continue to Feedback",
+      skipFeedback: "Skip Feedback",
+      updateFailed: "Update Failed",
+      unableToUpdatePayment: "Unable to update payment status. Please try again.",
+      legPayment: "Leg Payment",
+      tripPayment: "Trip Payment",
+      noRatings: "No ratings",
+      legFare: "Leg Fare:",
+      totalFare: "Total Fare:"
+    },
+    tn: {
+      legPaymentConfirmed: "Tefo ya Lege e Tiisetswe",
+      paymentConfirmed: "Tefo e Tiisetswe",
+      thankYouForPayment: "Re leboga go tiisetsa tefo ya gago!",
+      paymentConfirmationFailed: "Go Tiisetsa Tefo go Hlolekile",
+      unableToConfirmPayment: "Ga go kgonege go tiisetsa tefo. Ka kopo leka gape.",
+      paymentRequired: "Tefo e Tlhoka",
+      cancelJourney: "Khansela Leeto",
+      paymentNotConfirmed: "Tefo e sa Tiisetsweng",
+      rememberToPayDriver: "Ka kopo gopola go lefa mokgweetsi wa gago. O ka nna o ntsha dikakaretso ka leeto la gago.",
+      continueToFeedback: "Tswela Pele go Dikakaretso",
+      skipFeedback: "Tlogela Dikakaretso",
+      updateFailed: "Go Ntsha go Hlolekile",
+      unableToUpdatePayment: "Ga go kgonege go ntsha boemo jwa tefo. Ka kopo leka gape.",
+      legPayment: "Tefo ya Lege",
+      tripPayment: "Tefo ya Leeto",
+      noRatings: "Ga go na dikakaretso",
+      legFare: "Tefo ya Lege:",
+      totalFare: "Tefo e Feletseng:"
+    },
+    zu: {
+      legPaymentConfirmed: "Inkokhelo Yemilenze Iqinisekisiwe",
+      paymentConfirmed: "Inkokhelo Iqinisekisiwe",
+      thankYouForPayment: "Siyabonga ngokuqinisekisa inkokhelo yakho!",
+      paymentConfirmationFailed: "Ukuqinisekisa Inkokhelo Kuhlulekile",
+      unableToConfirmPayment: "Akukwazanga ukuqinisekisa inkokhelo. Sicela uzame futhi.",
+      paymentRequired: "Inkokhelo Iyadingeka",
+      cancelJourney: "Khansela Uhambo",
+      paymentNotConfirmed: "Inkokhelo Engaqinisekisiwe",
+      rememberToPayDriver: "Sicela ukhumbule ukukhokha umshayeli wakho. Usengakwazi ukunikeza impendulo ngohambo lwakho.",
+      continueToFeedback: "Qhubeka Kuya Empendulweni",
+      skipFeedback: "Yeza Impendulo",
+      updateFailed: "Ukubuyekeza Kuhlulekile",
+      unableToUpdatePayment: "Akukwazanga ukubuyekeza isimo senkokhelo. Sicela uzame futhi.",
+      legPayment: "Inkokhelo Yemilenze",
+      tripPayment: "Inkokhelo Yohambo",
+      noRatings: "Awukho izilinganiso",
+      legFare: "Imali Yemilenze:",
+      totalFare: "Imali Ephelele:"
+    },
+    af: {
+      legPaymentConfirmed: "Been Betaling Bevestig",
+      paymentConfirmed: "Betaling Bevestig",
+      thankYouForPayment: "Dankie dat jy jou betaling bevestig het!",
+      paymentConfirmationFailed: "Betaling Bevestiging Misluk",
+      unableToConfirmPayment: "Kon nie betaling bevestig nie. Probeer asseblief weer.",
+      paymentRequired: "Betaling Vereis",
+      cancelJourney: "Kanselleer Reis",
+      paymentNotConfirmed: "Betaling Nie Bevestig Nie",
+      rememberToPayDriver: "Onthou asseblief om jou bestuurder te betaal. Jy kan steeds terugvoer oor jou rit gee.",
+      continueToFeedback: "Gaan Voort na Terugvoer",
+      skipFeedback: "Slaan Terugvoer Oor",
+      updateFailed: "Opdatering Misluk",
+      unableToUpdatePayment: "Kon nie betaling status opdateer nie. Probeer asseblief weer.",
+      legPayment: "Been Betaling",
+      tripPayment: "Rit Betaling",
+      noRatings: "Geen graderings nie",
+      legFare: "Been Tarief:",
+      totalFare: "Totale Tarief:"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   // Safe access to MultiLegJourneyProvider with fallback
   let clearJourneyCache: (() => Promise<void>) | undefined;
@@ -71,7 +161,7 @@ export default function PaymentConfirmation() {
         const total = parseInt(totalLegs as string);
 
         showGlobalSuccess(
-          'Leg Payment Confirmed',
+          t('legPaymentConfirmed'),
           `Payment for leg ${currentLeg} of ${total} confirmed!${!result.journeyComplete ? ' Ready for next leg.' : ' Journey completed!'}`,
           { duration: 3000, position: 'top', animation: 'slide-down' }
         );
@@ -131,8 +221,8 @@ export default function PaymentConfirmation() {
         });
 
         showGlobalSuccess(
-          'Payment Confirmed',
-          'Thank you for confirming your payment!',
+          t('paymentConfirmed'),
+          t('thankYouForPayment'),
           { duration: 2000, position: 'top', animation: 'slide-down' }
         );
 
@@ -172,8 +262,8 @@ export default function PaymentConfirmation() {
 
     } catch (error: any) {
       showGlobalError(
-        'Payment Confirmation Failed',
-        error?.message || 'Unable to confirm payment. Please try again.',
+        t('paymentConfirmationFailed'),
+        error?.message || t('unableToConfirmPayment'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
@@ -194,7 +284,7 @@ export default function PaymentConfirmation() {
         const total = parseInt(totalLegs as string);
 
         showGlobalAlert({
-          title: 'Payment Required',
+          title: t('paymentRequired'),
           message: `Payment for leg ${currentLeg} of ${total} is required before continuing your journey. Please pay the driver to proceed.`,
           type: 'warning',
           duration: 0,
@@ -207,7 +297,7 @@ export default function PaymentConfirmation() {
               style: 'default',
             },
             {
-              label: 'Cancel Journey',
+              label: t('cancelJourney'),
               onPress: async () => {
                 clearMapContext();
                 await clearJourneyCache();
@@ -228,13 +318,13 @@ export default function PaymentConfirmation() {
         });
 
         showGlobalAlert({
-          title: 'Payment Not Confirmed',
-          message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
+          title: t('paymentNotConfirmed'),
+          message: t('rememberToPayDriver'),
         type: 'warning',
         duration: 0,
         actions: [
           {
-            label: 'Continue to Feedback',
+            label: t('continueToFeedback'),
             onPress: () => {
               router.push({
                 pathname: '/SubmitFeedback',
@@ -250,7 +340,7 @@ export default function PaymentConfirmation() {
             style: 'default',
           },
           {
-            label: 'Skip Feedback',
+            label: t('skipFeedback'),
             onPress: async () => {
               clearMapContext();
               router.push('/HomeScreen');
@@ -265,8 +355,8 @@ export default function PaymentConfirmation() {
 
     } catch (error: any) {
       showGlobalError(
-        'Update Failed',
-        error?.message || 'Unable to update payment status. Please try again.',
+        t('updateFailed'),
+        error?.message || t('unableToUpdatePayment'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
@@ -276,7 +366,7 @@ export default function PaymentConfirmation() {
     <View style={[styles.safeArea]}>
       <View style={styles.container}>
         <Text style={styles.headerTitle}>
-          {isMultiLeg === 'true' ? 'Leg Payment' : 'Trip Payment'}
+          {isMultiLeg === 'true' ? t('legPayment') : t('tripPayment')}
         </Text>
 
         {/* Multi-leg progress indicator */}
@@ -301,7 +391,7 @@ export default function PaymentConfirmation() {
                 <Text style={styles.ratingText}>
                   {typeof driverRating === "number" && driverRating > 0
                     ? driverRating.toFixed(1)
-                    : "No ratings"}
+                    : t('noRatings')}
                 </Text>
                 <View style={styles.starsContainer}>
                   {typeof driverRating === "number" && driverRating > 0
@@ -338,7 +428,7 @@ export default function PaymentConfirmation() {
             <Ionicons name="cash-outline" size={18} color="#FF9900" />
             <View style={styles.fareInfo}>
               <Text style={styles.fareLabel}>
-                {isMultiLeg === 'true' ? 'Leg Fare:' : 'Total Fare:'}
+                {isMultiLeg === 'true' ? t('legFare') : t('totalFare')}
               </Text>
               <Text style={styles.fareAmount}>R{fare}</Text>
             </View>

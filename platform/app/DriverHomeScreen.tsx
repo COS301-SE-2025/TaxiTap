@@ -13,7 +13,36 @@ export default function DriverHomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [todaysEarnings] = useState(0.00); 
   const { user, updateUserRole } = useUser();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      error: "Error",
+      failedToGoOnline: "Failed to go online as driver.",
+      failedToGoOffline: "Failed to go offline as driver."
+    },
+    tn: {
+      error: "Phoso",
+      failedToGoOnline: "Go hlolekile go tsamaya ka mokgweetsi.",
+      failedToGoOffline: "Go hlolekile go tswa ka mokgweetsi."
+    },
+    zu: {
+      error: "Iphutha",
+      failedToGoOnline: "Kuhlulekile ukusebenza njengomshayeli.",
+      failedToGoOffline: "Kuhlulekile ukuyeka ukusebenza njengomshayeli."
+    },
+    af: {
+      error: "Fout",
+      failedToGoOnline: "Kon nie aanlyn gaan as bestuurder nie.",
+      failedToGoOffline: "Kon nie aflyn gaan as bestuurder nie."
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   const { showGlobalError } = useAlertHelpers();
   const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
   const startWorkSession = useMutation(api.functions.work_sessions.startWorkSession.startWorkSession);
@@ -37,7 +66,7 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(true);
     } catch (err: any) {
-      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOnline'));
+      Alert.alert(t('error'), err.message || t('failedToGoOnline'));
       showGlobalError('Error', err.message || 'Failed to go online as driver.', {
         duration: 5000,
         position: 'top',
@@ -55,7 +84,7 @@ export default function DriverHomeScreen() {
       }
       setIsOnline(false);
     } catch (err: any) {
-      Alert.alert(t('driver:error'), err.message || t('driver:failedToGoOffline'));
+      Alert.alert(t('error'), err.message || t('failedToGoOffline'));
       showGlobalError('Error', err.message || 'Failed to go offline.', {
         duration: 5000,
         position: 'top',

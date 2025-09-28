@@ -59,7 +59,114 @@ export default function DriverOffline({
   const { user } = useUser();
   const router = useRouter();
   const { setCurrentRoute } = useRouteContext();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      notSet: "Not Set",
+      assignedRoute: "Assigned Route",
+      noRouteAssigned: "No route assigned",
+      currentRoute: "Current Route",
+      availableSeats: "Available Seats",
+      noSeatsAvailable: "No seats available",
+      seats: "seats",
+      taxiFull: "Taxi Full",
+      seatsAvailable: "Seats Available",
+      myDashboard: "My Dashboard",
+      todaysEarnings: "Today's Earnings",
+      tapToViewBreakdown: "Tap to view breakdown",
+      readyToPickUpPassengers: "Ready to Pick Up Passengers",
+      goOnlineToAcceptRequests: "Go online to accept ride requests",
+      emergency: "Emergency",
+      goOnline: "Go Online",
+      quickOverview: "Quick Overview",
+      profile: "Profile",
+      earnings: "Earnings",
+      feedback: "Feedback",
+      help: "Help"
+    },
+    tn: {
+      notSet: "Ga e Beelwe",
+      assignedRoute: "Tsela e e Boletsweng",
+      noRouteAssigned: "Ga go na tsela e e boletsweng",
+      currentRoute: "Tsela ya Jaanong",
+      availableSeats: "Dithulo tse di Leng teng",
+      noSeatsAvailable: "Ga go na dithulo tse di leng teng",
+      seats: "dithulo",
+      taxiFull: "Tekisi e Tlalele",
+      seatsAvailable: "Dithulo di Leng teng",
+      emergencyCall: "Kopano ya Tshoganetso",
+      call112Immediately: "Kopa 112 ka bonako",
+      myDashboard: "Dashboard ya Me",
+      todaysEarnings: "Madi a Letsatsi",
+      tapToViewBreakdown: "Tlhanya go bona kgaogano",
+      readyToPickUpPassengers: "Go Ikgatlha go Nna Bapalami",
+      goOnlineToAcceptRequests: "Tsamaya ka tsela ya go amohela dikopo tsa leeto",
+      emergency: "Tshoganetso",
+      goOnline: "Tsamaya ka Tsela",
+      quickOverview: "Kakaretso e e Bonolo",
+      profile: "Profaile",
+      earnings: "Madi",
+      feedback: "Maikutlo",
+      help: "Tshegetso"
+    },
+    zu: {
+      notSet: "Akusethiwe",
+      assignedRoute: "Indlela Ebekelwe",
+      noRouteAssigned: "Awukho indlela ebekelwe",
+      currentRoute: "Indlela Yamanje",
+      availableSeats: "Izihlalo Ezitholakalayo",
+      noSeatsAvailable: "Awukho izihlalo ezitholakalayo",
+      seats: "izihlalo",
+      taxiFull: "ITekisi Igcwele",
+      seatsAvailable: "Izihlalo Zitholakalayo",
+      emergencyCall: "Ucingo Lwesimo Esiphuthumayo",
+      call112Immediately: "Shayela u-112 ngokushesha",
+      myDashboard: "I-Dashboard Yami",
+      todaysEarnings: "Imali Yanamuhla",
+      tapToViewBreakdown: "Thinta ukuze ubone ukuhlukaniswa",
+      readyToPickUpPassengers: "Silungele Ukuthatha Abagibeli",
+      goOnlineToAcceptRequests: "Hamba ku-inthanethi ukuze wamukele izicelo zokugibela",
+      emergency: "Isimo Esiphuthumayo",
+      goOnline: "Hamba Ku-inthanethi",
+      quickOverview: "Ukubuka Okusheshayo",
+      profile: "Iphrofayili",
+      earnings: "Imali",
+      feedback: "Impendulo",
+      help: "Usizo"
+    },
+    af: {
+      notSet: "Nie Gestel Nie",
+      assignedRoute: "Toegewysde Roete",
+      noRouteAssigned: "Geen roete toegewys nie",
+      currentRoute: "Huidige Roete",
+      availableSeats: "Beskikbare Sitplekke",
+      noSeatsAvailable: "Geen sitplekke beskikbaar nie",
+      seats: "sitplekke",
+      taxiFull: "Taxi Vol",
+      seatsAvailable: "Sitplekke Beskikbaar",
+      emergencyCall: "Nood Oproep",
+      call112Immediately: "Bel 112 onmiddellik",
+      myDashboard: "My Dashboard",
+      todaysEarnings: "Vandag se Verdienste",
+      tapToViewBreakdown: "Tik om opbreek te sien",
+      readyToPickUpPassengers: "Gereed om Passasiers op te Tel",
+      goOnlineToAcceptRequests: "Gaan aanlyn om rit versoeke te aanvaar",
+      emergency: "Noodgeval",
+      goOnline: "Gaan Aanlyn",
+      quickOverview: "Vinnige Oorsig",
+      profile: "Profiel",
+      earnings: "Verdienste",
+      feedback: "Terugvoer",
+      help: "Hulp"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
@@ -156,14 +263,14 @@ export default function DriverOffline({
   };
 
    const menuItems = [
-    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
-    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
-    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
+    { icon: "person", title: t('profile'), onPress: () => router.push('/DriverProfile') },
+    { icon: "time", title: t('earnings'), onPress: () => router.push('/EarningsPage') },
+    { icon: "star", title: t('feedback'), onPress: () => router.push('/FeedbackHistoryScreen') },
+    { icon: "help-circle", title: t('help'), onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
   const getRouteDisplayString = () => {
-  if (!assignedRoute) return t('driver:notSet');
+  if (!assignedRoute) return t('notSet');
 
   if (assignedRoute.stops && assignedRoute.stops.length >= 2) {
     const start = assignedRoute.stops[0].name;
@@ -178,23 +285,23 @@ export default function DriverOffline({
   const quickActions: QuickActionType[] = [
     {
     icon: "location-outline",
-    title: t('driver:assignedRoute'),
+    title: t('assignedRoute'),
     value: getRouteDisplayString(),
-    subtitle: getRouteDisplayString() === t('driver:notSet') 
-      ? t('driver:noRouteAssigned') 
-      : t('driver:currentRoute'),
+    subtitle: getRouteDisplayString() === t('notSet') 
+      ? t('noRouteAssigned') 
+      : t('currentRoute'),
     color: "#F59E0B",
     onPress: () => router.push('/SetRoute'),
   },
     {
       icon: "people-outline",
-      title: t('common:availableSeats'),
-      value: taxiInfo?.capacity === 0
-        ? t('common:noSeatsAvailable')
-        : `${taxiInfo?.capacity ?? 0} ${t('common:seats')}`,
-      subtitle: taxiInfo?.capacity === 0
-        ? t('driver:taxiFull')
-        : t('driver:seatsAvailable'),
+      title: t('availableSeats'),
+      value: taxiInfo?.capacity === 0 
+        ? t('noSeatsAvailable')
+        : `${taxiInfo?.capacity ?? 0} ${t('seats')}`,
+      subtitle: taxiInfo?.capacity === 0 
+        ? t('taxiFull')
+        : t('seatsAvailable'),
       color: taxiInfo?.capacity === 0 ? "#EF4444" : "#F59E0B",
       onPress: () => console.log('Seats pressed')
     }
@@ -203,8 +310,8 @@ export default function DriverOffline({
   const safetyOptions: SafetyOptionType[] = [
     {
       icon: "call",
-      title: t('driver:emergencyCall'),
-      subtitle: t('driver:call112Immediately'),
+      title: t('emergencyCall'),
+      subtitle: t('call112Immediately'),
       color: "#EF4444",
       onPress: handleEmergency
     },
@@ -637,7 +744,7 @@ export default function DriverOffline({
             >
               <Icon name="menu" size={24} color={theme.text} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.headerTitle}>{t('driver:myDashboard')}</Text>
+            <Text style={dynamicStyles.headerTitle}>{t('myDashboard')}</Text>
           </View>
           
           <View style={dynamicStyles.headerRight}>
@@ -674,9 +781,9 @@ export default function DriverOffline({
             <Text style={dynamicStyles.earningsAmount}>
               R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
             </Text>
-            <Text style={dynamicStyles.earningsTitle}>{t('driver:todaysEarnings')}</Text>
+            <Text style={dynamicStyles.earningsTitle}>{t('todaysEarnings')}</Text>
             <Text style={dynamicStyles.earningsSubtitle}>
-              {t('driver:tapToViewBreakdown')}
+              {t('tapToViewBreakdown')}
             </Text>
           </TouchableOpacity>
 
@@ -685,9 +792,9 @@ export default function DriverOffline({
             <View style={dynamicStyles.offlineIconContainer}>
               <Icon name="car-outline" size={32} color="#F59E0B" />
             </View>
-            <Text style={dynamicStyles.offlineTitle}>{t('driver:readyToPickUpPassengers')}</Text>
+            <Text style={dynamicStyles.offlineTitle}>{t('readyToPickUpPassengers')}</Text>
             <Text style={dynamicStyles.offlineSubtitle}>
-              {t('driver:goOnlineToAcceptRequests')}
+              {t('goOnlineToAcceptRequests')}
             </Text>
             
             <View style={dynamicStyles.buttonRow}>
@@ -697,7 +804,7 @@ export default function DriverOffline({
                 activeOpacity={0.8}
               >
                 <Icon name="call" size={20} color="#DC2626" />
-                <Text style={dynamicStyles.emergencyButtonText}>{t('driver:emergency')}</Text>
+                <Text style={dynamicStyles.emergencyButtonText}>{t('emergency')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -707,14 +814,14 @@ export default function DriverOffline({
               activeOpacity={0.9}
               accessibilityLabel="Go online to accept passengers"
             >
-              <Text style={dynamicStyles.goOnlineButtonText}>{t('driver:goOnline')}</Text>
+              <Text style={dynamicStyles.goOnlineButtonText}>{t('goOnline')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Enhanced Quick Actions */}
           <View style={dynamicStyles.quickActionsSection}>
             <View style={dynamicStyles.sectionDivider} />
-            <Text style={dynamicStyles.sectionTitle}>{t('driver:quickOverview')}</Text>
+            <Text style={dynamicStyles.sectionTitle}>{t('quickOverview')}</Text>
             
             <View style={dynamicStyles.quickActionsRow}>
               {quickActions.map((action, index) => (

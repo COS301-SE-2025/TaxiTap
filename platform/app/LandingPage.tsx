@@ -31,15 +31,72 @@ const GlobeIcon = ({ size = 24, color = "#FFFFFF" }) => (
 
 export default () => {
 	const navigation = useNavigation<any>();
-	const { t, currentLanguage, changeLanguage } = useLanguage();
+	const { currentLanguage, changeLanguage } = useLanguage();
 	const [showLanguageModal, setShowLanguageModal] = useState(false);
 
-	// Helper function to get text based on language
-	const getText = (en: string, zu: string, tn: string, af?: string): string => {
-		if (currentLanguage === 'zu') return zu;
-		if (currentLanguage === 'tn') return tn;
-		if (currentLanguage === 'af' && af) return af;
-		return en;
+	// Hardcoded translations
+	const translations = {
+		en: {
+			skipThe: "Skip the ",
+			wait: "Wait",
+			reserveA: ", \nReserve a ",
+			seat: "Seat",
+			welcomeMessage: "Welcome to TaxiTap!\nYour reliable ride-sharing companion.",
+			description: "Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests.",
+			getStartedWithTaxiTap: "Get started with Taxi Tap",
+			letsGetStarted: "Let's get started",
+			signInToExistingAccount: "Sign in to existing account",
+			alreadyHaveAccount: "Already have an account? ",
+			signIn: "Sign in",
+			selectLanguage: "Select Language"
+		},
+		tn: {
+			skipThe: "Tlola ",
+			wait: "go leta",
+			reserveA: ", \nbea ",
+			seat: "setulo",
+			welcomeMessage: "Re amogela mo TaxiTap!\nMolekane wa gago wa go abelana leeto.",
+			description: "Taxi Tap e kopanya bapalami le bakgweetsi. Bapalami ba bea ditulo, ba abelana mafelo a ba yang teng, le go sala morago phitlhelo, fa bakgweetsi ba bea ditsela, ba laola go nna teng, le go tshwara dikopo tsa dinamelwa.",
+			getStartedWithTaxiTap: "A re simolole ka Taxi Tap",
+			letsGetStarted: "A re simolole",
+			signInToExistingAccount: "Tsena mo akhaonteng e e leng teng",
+			alreadyHaveAccount: "O nale akhaonte? ",
+			signIn: "Tsena",
+			selectLanguage: "Tlhopha Puo"
+		},
+		zu: {
+			skipThe: "Yeqa ",
+			wait: "Ukulinda",
+			reserveA: ", \nBeka ",
+			seat: "Isihlalo",
+			welcomeMessage: "Siyakwamukela ku-TaxiTap!\nUmngane wakho wokuhamba ngokwabelana.",
+			description: "I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babeka izihlalo, babelane ngezindawo abaya kuzo, futhi balandelele ukufika, kanti abashayeli besetha imizila, baphathe ukutholakala, futhi baphathe izicelo zokugibela.",
+			getStartedWithTaxiTap: "Qalisa nge-Taxi Tap",
+			letsGetStarted: "Ake siqale",
+			signInToExistingAccount: "Ngena ku-akhawunti ekhona",
+			alreadyHaveAccount: "Usunayo i-akhawunti? ",
+			signIn: "Ngena",
+			selectLanguage: "Khetha Ulimi"
+		},
+		af: {
+			skipThe: "Slaan die ",
+			wait: "wag oor",
+			reserveA: ", \nBespreek 'n ",
+			seat: "Sitplek",
+			welcomeMessage: "Welkom by TaxiTap!\nJou betroubare rit-deel metgesel.",
+			description: "Taxi Tap verbind passasiers en bestuurders. Passasiers bespreek sitplekke, deel bestemmings, en volg aankomste, terwyl bestuurders roetes stel, beskikbaarheid bestuur, en ritversoeke hanteer.",
+			getStartedWithTaxiTap: "Begin met Taxi Tap",
+			letsGetStarted: "Kom ons begin",
+			signInToExistingAccount: "Teken in by bestaande rekening",
+			alreadyHaveAccount: "Het jy reeds 'n rekening? ",
+			signIn: "Teken in",
+			selectLanguage: "Kies Taal"
+		}
+	};
+
+	const t = (key: string) => {
+		const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+		return translations[lang][key as keyof typeof translations[typeof lang]] || key;
 	};
 
 	// Get current language label
@@ -92,27 +149,22 @@ export default () => {
 				{/* Title Text */}
 				<Text style={styles.title}>
 					<Text style={styles.titleWhite}>
-						{getText("Skip the ", "Yeqa ", "Tlola ", "Slaan die ")}
+						{t('skipThe')}
 					</Text>
 					<Text style={styles.titleOrange}>
-						{getText("Wait", "Ukulinda", "go leta", "wag oor")}
+						{t('wait')}
 					</Text>
 					<Text style={styles.titleWhite}>
-						{getText(", \nReserve a ", ", \nBeka ", ", \nbea ", ", \nBespreek 'n ")}
+						{t('reserveA')}
 					</Text>
 					<Text style={styles.titleOrange}>
-						{getText("Seat", "Isihlalo", "setulo", "Sitplek")}
+						{t('seat')}
 					</Text>
 				</Text>
 
 				{/* Description */}
 				<Text style={styles.description}>
-					{getText(
-						"Taxi Tap connects passengers and drivers. Passengers reserve seats, share destinations, and track arrivals, while drivers set routes, manage availability, and handle ride requests.",
-						"I-Taxi Tap ixhumanisa abagibeli nabashayeli. Abagibeli babeka izihlalo, babelane ngezindawo abaya kuzo, futhi balandelele ukufika, kanti abashayeli besetha imizila, baphathe ukutholakala, futhi baphathe izicelo zokugibela.",
-						"Taxi Tap e kopanya bapalami le bakgweetsi. Bapalami ba bea ditulo, ba abelana mafelo a ba yang teng, le go sala morago phitlhelo, fa bakgweetsi ba bea ditsela, ba laola go nna teng, le go tshwara dikopo tsa dinamelwa.",
-						"Taxi Tap verbind passasiers en bestuurders. Passasiers bespreek sitplekke, deel bestemmings, en volg aankomste, terwyl bestuurders roetes stel, beskikbaarheid bestuur, en ritversoeke hanteer."
-					)}
+					{t('description')}
 				</Text>
 
 				{/* Get Started Button */}
@@ -121,10 +173,10 @@ export default () => {
 						style={styles.getStartedButton} 
 						onPress={() => navigation.navigate('SignUp')}
 						accessible={true}
-						accessibilityLabel={getText("Get started with Taxi Tap", "Qalisa nge-Taxi Tap", "A re simolole ka Taxi Tap", "Begin met Taxi Tap")}
+						accessibilityLabel={t('getStartedWithTaxiTap')}
 						accessibilityRole="button">
 						<Text style={styles.getStartedText}>
-							{getText("Let's get started", "Ake siqale", "A re simolole", "Kom ons begin")}
+							{t('letsGetStarted')}
 						</Text>
 					</TouchableOpacity>
 				</View>
@@ -134,14 +186,14 @@ export default () => {
 					<TouchableOpacity
 						onPress={() => navigation.navigate('Login')}
 						accessible={true}
-						accessibilityLabel={getText("Sign in to existing account", "Ngena ku-akhawunti ekhona", "Tsena mo akhaonteng e e leng teng", "Teken in by bestaande rekening")}
+						accessibilityLabel={t('signInToExistingAccount')}
 						accessibilityRole="button">
 						<Text style={styles.signInText}>
 							<Text style={styles.signInTextWhite}>
-								{getText("Already have an account? ", "Usunayo i-akhawunti? ", "O nale akhaonte? ", "Het jy reeds 'n rekening? ")}
+								{t('alreadyHaveAccount')}
 							</Text>
 							<Text style={styles.signInTextOrange}>
-								{getText("Sign in", "Ngena", "Tsena", "Teken in")}
+								{t('signIn')}
 							</Text>
 						</Text>
 					</TouchableOpacity>
@@ -161,7 +213,7 @@ export default () => {
 					<View style={styles.modalContent}>
 						<View style={styles.modalHeader}>
 							<Text style={styles.modalTitle}>
-								{getText("Select Language", "Khetha Ulimi", "Tlhopha Puo", "Kies Taal")}
+								{t('selectLanguage')}
 							</Text>
 							<TouchableOpacity
 								onPress={() => setShowLanguageModal(false)}

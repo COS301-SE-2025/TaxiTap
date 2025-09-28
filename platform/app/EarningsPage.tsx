@@ -60,6 +60,16 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
       avgPerHour: "Average per Hour",
       loadingEarnings: "Loading earnings..."
     },
+    tn: {
+      weeklySummary: "Kakaretso ya Beke",
+      weeklyEarnings: "Madi a Beke",
+      dailyBreakdown: "Kgaogano ya Madi a Letsatsi",
+      summary: "Kakaretso",
+      hoursOnline: "Dihora tsa Go Tsamaya",
+      reservations: "Diboka",
+      avgPerHour: "Bogare ba Hora",
+      loadingEarnings: "Go layishwa madi..."
+    },
     zu: {
       weeklySummary: "Isifinyezo Seviki",
       weeklyEarnings: "Imali Yeviki",
@@ -69,11 +79,21 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
       reservations: "Izibhukho",
       avgPerHour: "Isilinganiso Ngehora",
       loadingEarnings: "Kulayishwa imali..."
+    },
+    af: {
+      weeklySummary: "Weeklikse Opsomming",
+      weeklyEarnings: "Weeklikse Verdienste",
+      dailyBreakdown: "Daaglikse Opbreek",
+      summary: "Opsomming",
+      hoursOnline: "Ure Aanlyn",
+      reservations: "Besprekings",
+      avgPerHour: "Gemiddeld per Uur",
+      loadingEarnings: "Laai verdienste..."
     }
   };
   
   const t = (key: string) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
     return translations[lang][key as keyof typeof translations[typeof lang]] || key;
   };
 

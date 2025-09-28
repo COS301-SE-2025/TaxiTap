@@ -21,7 +21,56 @@ export default function DriverProfile() {
     const router = useRouter();
     const { user, loading, logout, updateUserRole, updateUserName, updateAccountType, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
+
+    // Hardcoded translations
+    const translations = {
+        en: {
+            switchProfile: "Switch Profile",
+            yourName: "Your Name",
+            driver: "Driver",
+            personalInformation: "Personal Information",
+            switchToPassengerProfile: "Switch to Passenger Profile",
+            vehicleInfo: "Vehicle Info",
+            earningsPage: "Earnings Page",
+            logOut: "Log Out"
+        },
+        tn: {
+            switchProfile: "Fetola Profaile",
+            yourName: "Leina la Gago",
+            driver: "Mokgweetsi",
+            personalInformation: "Tshedimosetso ya Botho",
+            switchToPassengerProfile: "Fetola go Profaile ya Mopalami",
+            vehicleInfo: "Tshedimosetso ya Koloi",
+            earningsPage: "Tsebe ya Madi",
+            logOut: "Tswa"
+        },
+        zu: {
+            switchProfile: "Shintsha Iphrofayili",
+            yourName: "Igama Lakho",
+            driver: "Umshayeli",
+            personalInformation: "Ulwazi Lwakho",
+            switchToPassengerProfile: "Shintsha ku-Iphrofayili Yomgibeli",
+            vehicleInfo: "Ulwazi Lwemoto",
+            earningsPage: "Ikhasi Lemali",
+            logOut: "Phuma"
+        },
+        af: {
+            switchProfile: "Wissel Profiel",
+            yourName: "Jou Naam",
+            driver: "Bestuurder",
+            personalInformation: "Persoonlike Inligting",
+            switchToPassengerProfile: "Wissel na Passasier Profiel",
+            vehicleInfo: "Voertuig Inligting",
+            earningsPage: "Verdienste Bladsy",
+            logOut: "Teken Uit"
+        }
+    };
+
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
     useEffect(() => {
@@ -133,7 +182,7 @@ export default function DriverProfile() {
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                    title: t('profile:switchProfile'),
+                    title: t('switchProfile'),
                     message: 'Are you sure you want to switch to the passenger profile?',
                     type: 'info',
                     duration: 0,
@@ -384,8 +433,8 @@ export default function DriverProfile() {
                             <Ionicons name="camera" size={14} color="white" />
                         </View>
                     </Pressable>
-                    <Text style={dynamicStyles.userName}>{name || t('personalInfo:yourName')}</Text>
-                    <Text style={dynamicStyles.userRole}>{t('driver:driver')}</Text>
+                    <Text style={dynamicStyles.userName}>{name || t('yourName')}</Text>
+                    <Text style={dynamicStyles.userRole}>{t('driver')}</Text>
                 </View>
 
                 {/* Account Section */}
@@ -393,7 +442,7 @@ export default function DriverProfile() {
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="person-outline"
-                        title={t('personalInfo:personalInformation')}
+                        title={t('personalInformation')}
                         onPress={handlePersonalInfo}
                     />
                     <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -401,7 +450,7 @@ export default function DriverProfile() {
                             <View style={dynamicStyles.iconContainer}>
                                 <Ionicons name="walk-outline" size={20} color={theme.text} />
                             </View>
-                            <Text style={dynamicStyles.menuItemText}>{t('driver:switchToPassengerProfile')}</Text>
+                            <Text style={dynamicStyles.menuItemText}>{t('switchToPassengerProfile')}</Text>
                         </View>
                         <Pressable onPress={handleSwitchToPassenger}>
                             <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
@@ -414,12 +463,12 @@ export default function DriverProfile() {
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="car-outline"
-                        title={t('driver:vehicleInfo')}
+                        title={t('vehicleInfo')}
                         onPress={handleVehicle}
                     />
                     <MenuItemComponent
                         icon="cash-outline"
-                        title={t('driver:earningsPage')}
+                        title={t('earningsPage')}
                         onPress={handleEarnings}
                     />
                 </View>
@@ -454,7 +503,7 @@ export default function DriverProfile() {
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="log-out-outline"
-                        title={t('profile:logOut')}
+                        title={t('logOut')}
                         onPress={handleSignout}
                         isDestructive={true}
                     />

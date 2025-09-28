@@ -10,7 +10,40 @@ import { Id } from "@/convex/_generated/dataModel";
 
 export default function ChangeDue() {
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      changeDue: "Change Due",
+      owesDriver: "Owes Driver",
+      markChangeGiven: "Mark Change Given",
+      markMoneyReceived: "Mark Money Received"
+    },
+    tn: {
+      changeDue: "Tshwetso e e Tlhokang",
+      owesDriver: "O tlhoka Mokgweetsi",
+      markChangeGiven: "Tlhaela Tshwetso e e Neelweng",
+      markMoneyReceived: "Tlhaela Tshelete e e Amogetsweng"
+    },
+    zu: {
+      changeDue: "Ukushintsha Okudingekayo",
+      owesDriver: "Uyakhokha Umshayeli",
+      markChangeGiven: "Maka Ukushintsha Okunikeziwe",
+      markMoneyReceived: "Maka Imali Etholakele"
+    },
+    af: {
+      changeDue: "Kleingeld Verskuldig",
+      owesDriver: "Skuldig Bestuurder",
+      markChangeGiven: "Merk Kleingeld Gegee",
+      markMoneyReceived: "Merk Geld Ontvang"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   const { user } = useUser();
 
   // Check if the current user is a front passenger
@@ -135,28 +168,28 @@ export default function ChangeDue() {
         </View>
 
         {passengers.map((ride) => {
-            let statusText = "Change Due";
+            let statusText = t('changeDue');
             let statusColor = "#f59e0b";
             let statusBackground = "rgba(239, 68, 68, 0.1)";
-            let changeLabel = "Change Due";
-            let buttonText = "Mark Change Given";
+            let changeLabel = t('changeDue');
+            let buttonText = t('markChangeGiven');
             let buttonColor = "#22c55e";
             let iconName: "cash-outline" | "wallet-outline" = "cash-outline";
 
             if (ride.paymentType === "underpaid") {
-                statusText = "Owes Driver";
+                statusText = t('owesDriver');
                 statusColor = "#ef4444";
                 statusBackground = "rgba(245, 158, 11, 0.1)";
                 changeLabel = `Owes: R${ride.changeDue.toFixed(2)}`;
-                buttonText = "Mark Money Received";
+                buttonText = t('markMoneyReceived');
                 buttonColor = "#3b82f6";
                 iconName = "wallet-outline";
             } else if (ride.paymentType === "overpaid") {
-                statusText = "Change Due";
+                statusText = t('changeDue');
                 statusColor = "#ef4444";
                 statusBackground = "rgba(239, 68, 68, 0.1)";
                 changeLabel = `Change: R${ride.changeDue.toFixed(2)}`;
-                buttonText = "Mark Change Given";
+                buttonText = t('markChangeGiven');
                 buttonColor = "#22c55e";
                 iconName = "cash-outline";
             }

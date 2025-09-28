@@ -20,7 +20,128 @@ export default function PassengerProfile() {
     const { user, logout, updateUserRole, updateUserName, updateAccountType } = useUser();
     const { updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            success: "Success",
+            successfullySwitchedToDriver: "Successfully switched to driver mode!",
+            switchProfile: "Switch Profile",
+            switchProfileMessage: "You already have a driver profile. Switch to driver mode?",
+            switchedToDriverMode: "Switched to driver mode!",
+            yourName: "Your Name",
+            passenger: "Passenger",
+            account: "Account",
+            personalInfo: "Personal Info",
+            switchToDriverProfile: "Switch to Driver Profile",
+            wallet: "Wallet",
+            myWallet: "My Wallet",
+            savedPlaces: "Saved Places",
+            addHomeAddress: "Add Home Address",
+            addWorkAddress: "Add Work Address",
+            recentFeedback: "Recent Feedback",
+            viewAllFeedback: "View All Feedback",
+            noFeedbackYet: "No feedback yet",
+            settings: "Settings",
+            logOut: "Log Out",
+            notFound: "Not Found",
+            userDataNotFound: "User data not found",
+            firstTimeSwitching: "First Time Switching",
+            firstTimeSwitchingMessage: "This will upgrade your account to support both passenger and driver roles.",
+            cancel: "Cancel",
+            continue: "Continue"
+        },
+        tn: {
+            success: "Katlego",
+            successfullySwitchedToDriver: "Go fetogile go mokgweetsi ka katlego!",
+            switchProfile: "Fetola Profaile",
+            switchProfileMessage: "O na le profaile ya mokgweetsi. Fetola go mokgweetsi?",
+            switchedToDriverMode: "Go fetogile go mokgweetsi!",
+            yourName: "Leina la Gago",
+            passenger: "Mopalami",
+            account: "Akhaonto",
+            personalInfo: "Tshedimosetso ya Botho",
+            switchToDriverProfile: "Fetola go Profaile ya Mokgweetsi",
+            wallet: "Wallet",
+            myWallet: "Wallet ya Me",
+            savedPlaces: "Mafelo a a Bolokilweng",
+            addHomeAddress: "Tsenya Aterese ya Gae",
+            addWorkAddress: "Tsenya Aterese ya Tiro",
+            recentFeedback: "Dikakaretso tsa Bokhutshwane",
+            viewAllFeedback: "Bona Dikakaretso Tsotlhe",
+            noFeedbackYet: "Ga go na dikakaretso go fitlha jaanong",
+            settings: "Dilao",
+            logOut: "Tswa",
+            notFound: "Ga e Bonwe",
+            userDataNotFound: "Tshedimosetso ya mosebenzisi ga e bonwe",
+            firstTimeSwitching: "Go Fetola ka Nako ya Ntlha",
+            firstTimeSwitchingMessage: "Seno se tla tokafatsa akhaonto ya gago go tshegetsa boemo jwa mopalami le mokgweetsi.",
+            cancel: "Khansela",
+            continue: "Tswela Pele"
+        },
+        zu: {
+            success: "Impumelelo",
+            successfullySwitchedToDriver: "Kushintshwe ngempumelelo kwimodi yomshayeli!",
+            switchProfile: "Shintsha Iphrofayili",
+            switchProfileMessage: "Usenayo iphrofayili yomshayeli. Shintsha kwimodi yomshayeli?",
+            switchedToDriverMode: "Kushintshwe kwimodi yomshayeli!",
+            yourName: "Igama Lakho",
+            passenger: "Umgibeli",
+            account: "I-Akhawunti",
+            personalInfo: "Ulwazi Lwakho",
+            switchToDriverProfile: "Shintsha ku-Iphrofayili Yomshayeli",
+            wallet: "I-Wallet",
+            myWallet: "I-Wallet Yami",
+            savedPlaces: "Izindawo Ezilondoloziwe",
+            addHomeAddress: "Faka Ikheli Lasekhaya",
+            addWorkAddress: "Faka Ikheli Lomsebenzi",
+            recentFeedback: "Impendulo Yakamuva",
+            viewAllFeedback: "Bona Wonke Amapendulo",
+            noFeedbackYet: "Awukho impendulo okwamanje",
+            settings: "Izilungiselelo",
+            logOut: "Phuma",
+            notFound: "Akutholakali",
+            userDataNotFound: "Ulwazi lomsebenzisi alutholakali",
+            firstTimeSwitching: "Ukushintsha Okokuqala",
+            firstTimeSwitchingMessage: "Lokhu kuzothuthukisa i-akhawunti yakho ukusekela izindima zomgibeli nomshayeli.",
+            cancel: "Khansela",
+            continue: "Qhubeka"
+        },
+        af: {
+            success: "Sukses",
+            successfullySwitchedToDriver: "Suksesvol oorgeskakel na bestuurder modus!",
+            switchProfile: "Wissel Profiel",
+            switchProfileMessage: "Jy het reeds 'n bestuurder profiel. Wissel na bestuurder modus?",
+            switchedToDriverMode: "Oorgeskakel na bestuurder modus!",
+            yourName: "Jou Naam",
+            passenger: "Passasier",
+            account: "Rekening",
+            personalInfo: "Persoonlike Inligting",
+            switchToDriverProfile: "Wissel na Bestuurder Profiel",
+            wallet: "Beursie",
+            myWallet: "My Beursie",
+            savedPlaces: "Gestoorde Plekke",
+            addHomeAddress: "Voeg Tuis Adres By",
+            addWorkAddress: "Voeg Werk Adres By",
+            recentFeedback: "Onlangse Terugvoer",
+            viewAllFeedback: "Bekyk Alle Terugvoer",
+            noFeedbackYet: "Nog geen terugvoer nie",
+            settings: "Instellings",
+            logOut: "Teken Uit",
+            notFound: "Nie Gevind Nie",
+            userDataNotFound: "Gebruiker data nie gevind nie",
+            firstTimeSwitching: "Eerste Keer Wissel",
+            firstTimeSwitchingMessage: "Dit sal jou rekening opgradeer om beide passasier en bestuurder rolle te ondersteun.",
+            cancel: "Kanselleer",
+            continue: "Gaan Voort"
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const [imageUri, setImageUri] = useState<string | null>(null);
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
@@ -76,27 +197,27 @@ export default function PassengerProfile() {
     const handleSwitchToDriver = async () => {
         try {
             if (!user?.id) {
-                showGlobalError('Not Found', 'User data not found', { duration: 4000, position: 'top', animation: 'slide-down' });
+                showGlobalError(t('notFound'), t('userDataNotFound'), { duration: 4000, position: 'top', animation: 'slide-down' });
                 return;
             }
 
             if ((convexUser?.accountType || user.accountType) === 'passenger') {
                 showGlobalAlert({
-                  title: 'First Time Switching',
-                  message: 'This will upgrade your account to support both passenger and driver roles.',
+                  title: t('firstTimeSwitching'),
+                  message: t('firstTimeSwitchingMessage'),
                   type: 'info',
                   duration: 0,
                   position: 'top',
                   animation: 'slide-down',
                   actions: [
-                    { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                    { label: 'Continue', onPress: async () => {
+                    { label: t('cancel'), onPress: () => {}, style: 'cancel' },
+                    { label: t('continue'), onPress: async () => {
                         try {
                           await switchPassengerToBoth({ userId: user.id as Id<'taxiTap_users'> });
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess(t('home:success'), t('profile:successfullySwitchedToDriver'));
+                          showGlobalSuccess(t('success'), t('successfullySwitchedToDriver'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -106,8 +227,8 @@ export default function PassengerProfile() {
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                  title: t('profile:switchProfile'),
-                  message: t('profile:switchProfileMessage'),
+                  title: t('switchProfile'),
+                  message: t('switchProfileMessage'),
                   type: 'info',
                   duration: 0,
                   position: 'top',
@@ -118,7 +239,7 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess(t('home:success'), t('profile:switchedToDriverMode'));
+                          showGlobalSuccess(t('success'), t('switchedToDriverMode'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -382,8 +503,8 @@ export default function PassengerProfile() {
                         <Ionicons name="camera" size={14} color="white" />
                     </View>
                 </Pressable>
-                <Text style={dynamicStyles.userName}>{name || t('profile:yourName')}</Text>
-                <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
+                <Text style={dynamicStyles.userName}>{name || t('yourName')}</Text>
+                <Text style={dynamicStyles.userRole}>{t('passenger')}</Text>
             </View>
 
             {/* Badges Section */}
@@ -409,11 +530,11 @@ export default function PassengerProfile() {
             </View>
 
             {/* Account Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:account')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('account')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
-                    title={t('profile:personalInfo')}
+                    title={t('personalInfo')}
                     onPress={handlePersonalInfo}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -421,7 +542,7 @@ export default function PassengerProfile() {
                         <View style={dynamicStyles.iconContainer}>
                             <Ionicons name="car-outline" size={20} color={theme.text} />
                         </View>
-                        <Text style={dynamicStyles.menuItemText}>{t('profile:switchToDriverProfile')}</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('switchToDriverProfile')}</Text>
                     </View>
                     <Pressable onPress={handleSwitchToDriver}>
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
@@ -429,21 +550,21 @@ export default function PassengerProfile() {
                 </View>
             </View>
 
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:wallet')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('wallet')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="wallet-outline"
-                    title={t('profile:My Wallet')}
+                    title={t('myWallet')}
                     onPress={handleWallet}
                 />
             </View>
 
             {/* Saved Places Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:savedPlaces')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('savedPlaces')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
-                    title={t('profile:addHomeAddress')}
+                    title={t('addHomeAddress')}
                     onPress={handleAddHomeAddress}
                 />
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
@@ -451,7 +572,7 @@ export default function PassengerProfile() {
                         <View style={dynamicStyles.iconContainer}>
                             <Ionicons name="briefcase-outline" size={20} color={theme.text} />
                         </View>
-                        <Text style={dynamicStyles.menuItemText}>{t('profile:addWorkAddress')}</Text>
+                        <Text style={dynamicStyles.menuItemText}>{t('addWorkAddress')}</Text>
                     </View>
                     <Pressable onPress={handleAddWorkAddress}>
                         <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
@@ -460,7 +581,7 @@ export default function PassengerProfile() {
             </View>
 
             {/* Feedback History Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:recentFeedback')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('recentFeedback')}</Text>
             <View style={dynamicStyles.section}>
                 <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
                     <View style={dynamicStyles.menuItemLeft}>
@@ -469,8 +590,8 @@ export default function PassengerProfile() {
                         </View>
                         <Text style={dynamicStyles.menuItemText}>
                             {recentFeedback && recentFeedback.length > 0 
-                                ? t('profile:viewAllFeedback')
-                                : t('profile:noFeedbackYet')
+                                ? t('viewAllFeedback')
+                                : t('noFeedbackYet')
                             }
                         </Text>
                     </View>
@@ -481,11 +602,11 @@ export default function PassengerProfile() {
             </View>
 
             {/* Settings Section */}
-            <Text style={dynamicStyles.sectionHeader}>{t('profile:settings')}</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('settings')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="log-out-outline"
-                    title={t('profile:logOut')}
+                    title={t('logOut')}
                     onPress={handleSignout}
                     isDestructive={true}
                 />

@@ -25,8 +25,137 @@ export default function PersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            error: "Error",
+            failedToUploadImage: "Failed to upload image",
+            userNotLoaded: "User not loaded",
+            nameRequired: "Name is required",
+            phoneNumberRequired: "Phone number is required",
+            savingChanges: "Saving changes...",
+            changesSaved: "Changes saved successfully!",
+            failedToSaveChanges: "Failed to save changes",
+            personalInfo: "Personal Info",
+            editingProfile: "Editing Profile",
+            basicInformation: "Basic Information",
+            fullName: "Full Name",
+            enterFullName: "Enter your full name",
+            phoneNumber: "Phone Number",
+            enterPhoneNumber: "Enter your phone number",
+            email: "Email",
+            enterEmail: "Enter your email",
+            emergencyContact: "Emergency Contact",
+            emergencyContactName: "Emergency Contact Name",
+            enterEmergencyContactName: "Enter emergency contact name",
+            emergencyContactPhone: "Emergency Contact Phone",
+            enterEmergencyContactNumber: "Enter emergency contact number",
+            emergencyContactRelationship: "Relationship",
+            relationshipPlaceholder: "e.g., Spouse, Parent, Friend",
+            changePhoto: "Change Photo",
+            saveChanges: "Save Changes",
+            cancel: "Cancel",
+            loading: "Loading..."
+        },
+        tn: {
+            error: "Phoso",
+            failedToUploadImage: "Go hlolekile go tsaya setshwantsho",
+            userNotLoaded: "Mosebenzisi ga a layishwe",
+            nameRequired: "Leina le tlhoka",
+            phoneNumberRequired: "Nomoro ya tsela e tlhoka",
+            savingChanges: "Go boloka diphetogo...",
+            changesSaved: "Diphetogo di bolokilwe ka katlego!",
+            failedToSaveChanges: "Go hlolekile go boloka diphetogo",
+            personalInfo: "Tshedimosetso ya Botho",
+            editingProfile: "Go Hlopha Profaile",
+            basicInformation: "Tshedimosetso e e Tlhokomelwang",
+            fullName: "Leina Le Feletseng",
+            enterFullName: "Tsenya leina la gago le feletseng",
+            phoneNumber: "Nomoro ya Tsela",
+            enterPhoneNumber: "Tsenya nomoro ya gago ya tsela",
+            email: "Imeile",
+            enterEmail: "Tsenya imeile ya gago",
+            emergencyContact: "Kgokagano ya Tshoganetso",
+            emergencyContactName: "Leina la Kgokagano ya Tshoganetso",
+            enterEmergencyContactName: "Tsenya leina la kgokagano ya tshoganetso",
+            emergencyContactPhone: "Nomoro ya Tsela ya Kgokagano ya Tshoganetso",
+            enterEmergencyContactNumber: "Tsenya nomoro ya tsela ya kgokagano ya tshoganetso",
+            emergencyContactRelationship: "Kgokagano",
+            relationshipPlaceholder: "mme., Mongwadi, Motswadi, Tsala",
+            changePhoto: "Fetola Setshwantsho",
+            saveChanges: "Boloka Diphetogo",
+            cancel: "Khansela",
+            loading: "Go Layishwa..."
+        },
+        zu: {
+            error: "Iphutha",
+            failedToUploadImage: "Kuhlulekile ukulayisha isithombe",
+            userNotLoaded: "Umsebenzisi akalayishwanga",
+            nameRequired: "Igama liyadingeka",
+            phoneNumberRequired: "Inombolo yefoni iyadingeka",
+            savingChanges: "Kulondoloza izinguquko...",
+            changesSaved: "Izinguquko zilondoloziwe ngempumelelo!",
+            failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
+            personalInfo: "Ulwazi Lwakho",
+            editingProfile: "Kuhlelwa Iphrofayili",
+            basicInformation: "Ulwazi Oluyisisekelo",
+            fullName: "Igama Eligcwele",
+            enterFullName: "Faka igama lakho eligcwele",
+            phoneNumber: "Inombolo Yefoni",
+            enterPhoneNumber: "Faka inombolo yakho yefoni",
+            email: "I-imeyili",
+            enterEmail: "Faka i-imeyili yakho",
+            emergencyContact: "Uxhumano Lwesimo Esiphuthumayo",
+            emergencyContactName: "Igama Lomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            enterEmergencyContactName: "Faka igama lomuntu oxhumana naye esimweni esiphuthumayo",
+            emergencyContactPhone: "Inombolo Yefoni Yomuntu Oxhumana Naye Esimweni Esiphuthumayo",
+            enterEmergencyContactNumber: "Faka inombolo yefoni yomuntu oxhumana naye esimweni esiphuthumayo",
+            emergencyContactRelationship: "Ubuhlobo",
+            relationshipPlaceholder: "isb., Umngane Wokuganana, Umzali, Umngane",
+            changePhoto: "Shintsha Isithombe",
+            saveChanges: "Londoloza Izinguquko",
+            cancel: "Khansela",
+            loading: "Kulayishwa..."
+        },
+        af: {
+            error: "Fout",
+            failedToUploadImage: "Kon nie beeld oplaai nie",
+            userNotLoaded: "Gebruiker nie gelaai nie",
+            nameRequired: "Naam word vereis",
+            phoneNumberRequired: "Telefoonnommer word vereis",
+            savingChanges: "Stoor veranderinge...",
+            changesSaved: "Veranderinge suksesvol gestoor!",
+            failedToSaveChanges: "Kon nie veranderinge stoor nie",
+            personalInfo: "Persoonlike Inligting",
+            editingProfile: "Redigeer Profiel",
+            basicInformation: "Basiese Inligting",
+            fullName: "Volle Naam",
+            enterFullName: "Voer jou volle naam in",
+            phoneNumber: "Telefoonnommer",
+            enterPhoneNumber: "Voer jou telefoonnommer in",
+            email: "E-pos",
+            enterEmail: "Voer jou e-pos in",
+            emergencyContact: "Noodkontak",
+            emergencyContactName: "Noodkontak Naam",
+            enterEmergencyContactName: "Voer noodkontak naam in",
+            emergencyContactPhone: "Noodkontak Telefoonnommer",
+            enterEmergencyContactNumber: "Voer noodkontak telefoonnommer in",
+            emergencyContactRelationship: "Verhouding",
+            relationshipPlaceholder: "bv., Gade, Ouer, Vriend",
+            changePhoto: "Verander Foto",
+            saveChanges: "Stoor Veranderinge",
+            cancel: "Kanselleer",
+            loading: "Laai..."
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     
     // Screen dimensions for responsive design
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -78,7 +207,7 @@ export default function PersonalInfoEdit() {
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            showGlobalError('Error', 'Failed to upload image', {
+            showGlobalError(t('error'), t('failedToUploadImage'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -88,7 +217,7 @@ export default function PersonalInfoEdit() {
 
     const handleSave = async () => {
         if (!user) {
-            showGlobalError('Error', 'User not loaded', {
+            showGlobalError(t('error'), t('userNotLoaded'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -96,7 +225,7 @@ export default function PersonalInfoEdit() {
             return;
         }
         if (!name.trim()) {
-            showGlobalError('Error', 'Name is required', {
+            showGlobalError(t('error'), t('nameRequired'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -104,7 +233,7 @@ export default function PersonalInfoEdit() {
             return;
         }
         if (!phoneNumber.trim()) {
-            showGlobalError('Error', 'Phone number is required', {
+            showGlobalError(t('error'), t('phoneNumberRequired'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -136,7 +265,7 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess('Success', t('changesSaved'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -150,7 +279,7 @@ export default function PersonalInfoEdit() {
             });
         } catch (error: any) {
             console.error('Update error:', error);
-            showGlobalError('Error', error.message || 'Failed to save changes', {
+            showGlobalError(t('error'), error.message || t('failedToSaveChanges'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -343,38 +472,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Basic Information */}
-                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:basicInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('basicInformation')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:name')}</Text>
+                        <Text style={dynamicStyles.label}>{t('fullName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder={t('personalInfo:namePlaceholder')}
+                            placeholder={t('enterFullName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:phoneNumber')}</Text>
+                        <Text style={dynamicStyles.label}>{t('phoneNumber')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            placeholder={t('personalInfo:phoneNumberPlaceholder')}
+                            placeholder={t('enterPhoneNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:email')}</Text>
+                        <Text style={dynamicStyles.label}>{t('email')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={email}
                             onChangeText={setEmail}
-                            placeholder={t('personalInfo:emailPlaceholder')}
+                            placeholder={t('enterEmail')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -383,38 +512,38 @@ export default function PersonalInfoEdit() {
                 </View>
 
                 {/* Emergency Contact */}
-                <Text style={dynamicStyles.sectionTitle}>{t('personalInfo:emergencyContactText')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('emergencyContact')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactName')}</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactName')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactName}
                             onChangeText={setEmergencyContactName}
-                            placeholder={t('personalInfo:emergencyContactNamePlaceholder')}
+                            placeholder={t('enterEmergencyContactName')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactPhone')}</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactPhone')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactPhone}
                             onChangeText={setEmergencyContactPhone}
-                            placeholder={t('personalInfo:emergencyContactPhonePlaceholder')}
+                            placeholder={t('enterEmergencyContactNumber')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('personalInfo:emergencyContactRelationship')}</Text>
+                        <Text style={dynamicStyles.label}>{t('emergencyContactRelationship')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={emergencyContactRelationship}
                             onChangeText={setEmergencyContactRelationship}
-                            placeholder={t('personalInfo:emergencyContactRelationshipPlaceholder')}
+                            placeholder={t('relationshipPlaceholder')}
                             placeholderTextColor={isDark ? '#999' : '#aaa'}
                         />
                     </View>
@@ -427,7 +556,7 @@ export default function PersonalInfoEdit() {
                     disabled={isLoading}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {isLoading ? t('personalInfo:saving') : t('personalInfo:saveChanges')}
+                        {isLoading ? t('savingChanges') : t('saveChanges')}
                     </Text>
                 </Pressable>
                 </ScrollView>

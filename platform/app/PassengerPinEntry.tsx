@@ -23,8 +23,81 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 export default function PassengerPinEntry() {
   const { user } = useUser();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const params = useLocalSearchParams();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      error: "Error",
+      failedToProcessPinInput: "Failed to process PIN input. Please try again.",
+      failedToProcessBackspace: "Failed to process backspace. Please try again.",
+      missingRideOrUserInfo: "Missing ride or user information.",
+      invalidPin: "Invalid PIN",
+      enterValidPin: "Please enter a valid 4-digit PIN.",
+      unknownDriver: "Unknown Driver",
+      unknownPlate: "Unknown Plate",
+      currentLocation: "Current Location",
+      destination: "Destination",
+      navigationError: "Navigation Error",
+      failedToNavigateToPayments: "Failed to navigate to payments. Please try again.",
+      checkWithDriver: "Please check with the driver and try again.",
+      failedToVerifyPin: "Failed to verify PIN. Please try again."
+    },
+    tn: {
+      error: "Phoso",
+      failedToProcessPinInput: "Go hlolekile go tsamaisa tsenyo ya PIN. Ka kopo leka gape.",
+      failedToProcessBackspace: "Go hlolekile go tsamaisa backspace. Ka kopo leka gape.",
+      missingRideOrUserInfo: "Tshedimosetso ya leeto kgotsa mosebenzisi e tlhokega.",
+      invalidPin: "PIN e e sa Siame",
+      enterValidPin: "Ka kopo tsenya PIN e e siameng ya dinomoro tse 4.",
+      unknownDriver: "Mokgweetsi e e sa Itseweng",
+      unknownPlate: "Plate e e sa Itseweng",
+      currentLocation: "Lefelo la Jaanong",
+      destination: "Mafelo a go ya",
+      navigationError: "Phoso ya Go Tsamaya",
+      failedToNavigateToPayments: "Go hlolekile go tsamaya go tefo. Ka kopo leka gape.",
+      checkWithDriver: "Ka kopo tlhatlhoba le mokgweetsi mme o leke gape.",
+      failedToVerifyPin: "Go hlolekile go tiisetsa PIN. Ka kopo leka gape."
+    },
+    zu: {
+      error: "Iphutha",
+      failedToProcessPinInput: "Kuhlulekile ukulungisa ukufakwa kwe-PIN. Sicela uzame futhi.",
+      failedToProcessBackspace: "Kuhlulekile ukulungisa i-backspace. Sicela uzame futhi.",
+      missingRideOrUserInfo: "Ulwazi lohambo noma lomsebenzisi luswele.",
+      invalidPin: "I-PIN Engalungile",
+      enterValidPin: "Sicela ufake i-PIN elungile enamadijithi ama-4.",
+      unknownDriver: "Umshayeli Ongaziwa",
+      unknownPlate: "I-Plate Engaziwa",
+      currentLocation: "Indawo Yamanje",
+      destination: "Indawo Eyihloswe",
+      navigationError: "Iphutha Lokuhamba",
+      failedToNavigateToPayments: "Kuhlulekile ukuhamba ukuya ezinkokhelweni. Sicela uzame futhi.",
+      checkWithDriver: "Sicela uhlole nomshayeli bese uzama futhi.",
+      failedToVerifyPin: "Kuhlulekile ukuqinisekisa i-PIN. Sicela uzame futhi."
+    },
+    af: {
+      error: "Fout",
+      failedToProcessPinInput: "Kon nie PIN invoer verwerk nie. Probeer asseblief weer.",
+      failedToProcessBackspace: "Kon nie backspace verwerk nie. Probeer asseblief weer.",
+      missingRideOrUserInfo: "Ontbrekende rit of gebruiker inligting.",
+      invalidPin: "Ongeldige PIN",
+      enterValidPin: "Voer asseblief 'n geldige 4-syfer PIN in.",
+      unknownDriver: "Onbekende Bestuurder",
+      unknownPlate: "Onbekende Plaat",
+      currentLocation: "Huidige Ligging",
+      destination: "Bestemming",
+      navigationError: "Navigasie Fout",
+      failedToNavigateToPayments: "Kon nie na betalings navigeer nie. Probeer asseblief weer.",
+      checkWithDriver: "Kontroleer asseblief met die bestuurder en probeer weer.",
+      failedToVerifyPin: "Kon nie PIN verifieer nie. Probeer asseblief weer."
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
   
   const [pin, setPin] = useState(['', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -97,7 +170,7 @@ export default function PassengerPinEntry() {
       }
     } catch (error) {
       console.error('PIN input error:', error);
-      Alert.alert('Error', 'Failed to process PIN input. Please try again.');
+      Alert.alert(t('error'), t('failedToProcessPinInput'));
       // Reset PIN state on error
       setPin(['', '', '', '']);
     }
@@ -124,7 +197,7 @@ export default function PassengerPinEntry() {
       }
     } catch (error) {
       console.error('Backspace error:', error);
-      Alert.alert('Error', 'Failed to process backspace. Please try again.');
+      Alert.alert(t('error'), t('failedToProcessBackspace'));
       // Reset PIN state on error
       setPin(['', '', '', '']);
     }
@@ -133,13 +206,13 @@ export default function PassengerPinEntry() {
   // Verify PIN
   const handleVerifyPin = async (enteredPin: string) => {
     if (!user || !rideId || !driverId) {
-      Alert.alert('Error', 'Missing ride or user information.');
+      Alert.alert(t('error'), t('missingRideOrUserInfo'));
       return;
     }
 
     // Validate PIN format
     if (!enteredPin || enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
+      Alert.alert(t('invalidPin'), t('enterValidPin'));
       return;
     }
 
@@ -158,12 +231,12 @@ export default function PassengerPinEntry() {
           await router.push({
             pathname: '/Payments',
             params: {
-              driverName: driverName || 'Unknown Driver',
-              licensePlate: licensePlate || 'Unknown Plate',
+              driverName: driverName || t('unknownDriver'),
+              licensePlate: licensePlate || t('unknownPlate'),
               fare: fare || '0',
               rideId: rideId,
-              startName: startName || 'Current Location',
-              endName: endName || 'Destination',
+              startName: startName || t('currentLocation'),
+              endName: endName || t('destination'),
               driverId: driverId || '',
               // Pass through location parameters
               currentLat: params.currentLat,
@@ -182,15 +255,15 @@ export default function PassengerPinEntry() {
           });
         } catch (navError) {
           console.error('Navigation error:', navError);
-          Alert.alert('Navigation Error', 'Failed to navigate to payments. Please try again.');
+          Alert.alert(t('navigationError'), t('failedToNavigateToPayments'));
         }
       } else {
-        Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+        Alert.alert(t('invalidPin'), t('checkWithDriver'));
         setPin(['', '', '', '']);
       }
     } catch (error: any) {
       console.error('PIN verification error:', error);
-      Alert.alert('Error', error?.message || 'Failed to verify PIN. Please try again.');
+      Alert.alert(t('error'), error?.message || t('failedToVerifyPin'));
       setPin(['', '', '', '']);
     } finally {
       setIsVerifying(false);

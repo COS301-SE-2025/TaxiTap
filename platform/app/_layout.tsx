@@ -23,7 +23,6 @@ import { AlertProvider } from '../contexts/AlertContext';
 import { AlertOverlay } from '../components/AlertOverlay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
-import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { MultiLegJourneyProvider } from '../contexts/MultiLegJourneyContext';
 

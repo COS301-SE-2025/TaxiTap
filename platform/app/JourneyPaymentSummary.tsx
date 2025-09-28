@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useRouter } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface JourneyPaymentSummaryProps {
   journeyId: string;
@@ -11,6 +11,36 @@ interface JourneyPaymentSummaryProps {
 
 export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSummaryProps) {
   const router = useRouter();
+  const { currentLanguage } = useLanguage();
+
+  // Hardcoded translations
+  const translations = {
+    en: {
+      loadingPaymentSummary: "Loading payment summary...",
+      allPaid: "All Paid",
+      pendingPayment: "Pending Payment"
+    },
+    tn: {
+      loadingPaymentSummary: "Go layishwa kakaretso ya tefo...",
+      allPaid: "Tsotlhe di Lefilwe",
+      pendingPayment: "Tefo e e Emeng"
+    },
+    zu: {
+      loadingPaymentSummary: "Kulayishwa isifinyezo senkokhelo...",
+      allPaid: "Konke Kukhokhiwe",
+      pendingPayment: "Inkokhelo Elindile"
+    },
+    af: {
+      loadingPaymentSummary: "Laai betaling opsomming...",
+      allPaid: "Alles Betaal",
+      pendingPayment: "Hangende Betaling"
+    }
+  };
+
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   const journeyPaymentData = useQuery(api.functions.journeys.journeyStateManager.getJourneyState, {
     journeyId,
@@ -19,7 +49,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
   if (!journeyPaymentData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading payment summary...</Text>
+        <Text style={styles.loadingText}>{t('loadingPaymentSummary')}</Text>
       </View>
     );
   }
@@ -62,7 +92,7 @@ export default function JourneyPaymentSummary({ journeyId }: JourneyPaymentSumma
         </View>
         <View style={styles.overallStatus}>
           <Text style={[styles.statusText, { color: getStatusColor(journeyPaymentData.status) }]}>
-            {journeyPaymentData.status === 'completed' ? 'All Paid' : 'Pending Payment'}
+            {journeyPaymentData.status === 'completed' ? t('allPaid') : t('pendingPayment')}
           </Text>
         </View>
       </View>

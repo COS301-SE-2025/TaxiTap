@@ -12,9 +12,54 @@ import { useRouter, useNavigation } from 'expo-router';
 export default function UnpaidPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+    
+    // Hardcoded translations
+    const translations = {
+        en: {
+            loading: "Loading...",
+            allUsersPaid: "All users have paid",
+            noUnpaidAccounts: "No unpaid accounts",
+            unpaidAccounts: "unpaid account{s}",
+            unpaid: "Unpaid",
+            fare: "Fare",
+            requested: "Requested"
+        },
+        tn: {
+            loading: "Go Layishwa...",
+            allUsersPaid: "Batho botlhe ba lefile",
+            noUnpaidAccounts: "Ga go na akhaonto tse di sa lefileng",
+            unpaidAccounts: "akhaonto{s} e sa lefileng",
+            unpaid: "E sa Lefileng",
+            fare: "Tefo",
+            requested: "Go Kopilwe"
+        },
+        zu: {
+            loading: "Kulayishwa...",
+            allUsersPaid: "Bonke abasebenzisi bakhokhile",
+            noUnpaidAccounts: "Awukho ama-akhawunti angakhokhile",
+            unpaidAccounts: "i-akhawunti{s} engakhokhile",
+            unpaid: "Engakhokhile",
+            fare: "Imali",
+            requested: "Kuceliwe"
+        },
+        af: {
+            loading: "Laai...",
+            allUsersPaid: "Alle gebruikers het betaal",
+            noUnpaidAccounts: "Geen onbetaalde rekeninge nie",
+            unpaidAccounts: "onbetaalde rekening{s}",
+            unpaid: "Onbetaald",
+            fare: "Tarief",
+            requested: "Versoek"
+        }
+    };
+    
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -30,7 +75,7 @@ export default function UnpaidPayments() {
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>Loading...</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>{t('loading')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -44,11 +89,11 @@ export default function UnpaidPayments() {
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>All users have paid</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>{t('allUsersPaid')}</Text>
                     </View>
                     <View style={styles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No unpaid accounts</Text>
+                        <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>{t('noUnpaidAccounts')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -63,7 +108,7 @@ export default function UnpaidPayments() {
             >
                 <View style={styles.headerSection}>
                     <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                        {unpaid.length} unpaid account{unpaid.length !== 1 ? 's' : ''}
+                        {unpaid.length} {t('unpaidAccounts').replace('{s}', unpaid.length !== 1 ? 's' : '')}
                     </Text>
                 </View>
 
@@ -81,7 +126,7 @@ export default function UnpaidPayments() {
                                         </Text>
                                     </View>
                                     <View style={[styles.statusBadge, styles.statusUnpaid]}>
-                                        <Text style={styles.statusText}>Unpaid</Text>
+                                        <Text style={styles.statusText}>{t('unpaid')}</Text>
                                     </View>
                                 </View>
                                 
@@ -89,13 +134,13 @@ export default function UnpaidPayments() {
                                     <View style={styles.detailRow}>
                                         <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                         <Text style={[styles.detailText, { color: theme.text }]}>
-                                            Fare: R{p.fare.toFixed(2)}
+                                            {t('fare')}: R{p.fare.toFixed(2)}
                                         </Text>
                                     </View>
                                     <View style={styles.detailRow}>
                                         <Ionicons name="time-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                         <Text style={[styles.detailText, { color: theme.text }]}>
-                                            Requested: {dateString}
+                                            {t('requested')}: {dateString}
                                         </Text>
                                     </View>
                                 </View>

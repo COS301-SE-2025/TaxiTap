@@ -23,7 +23,136 @@ export default function AddHomeAddress() {
     const router = useRouter();
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
+
+    // Hardcoded translations
+    const translations = {
+        en: {
+            permissionDenied: "Permission Denied",
+            locationPermissionRequired: "Location permission is required to get your current location.",
+            error: "Error",
+            failedToGetLocation: "Failed to get your current location. Please try again.",
+            userNotLoaded: "User not loaded. Please try again.",
+            addressRequired: "Address is required.",
+            nicknameRequired: "Nickname is required.",
+            coordinatesRequired: "Coordinates are required.",
+            success: "Success",
+            homeAddressSaved: "Home address saved successfully!",
+            failedToSaveAddress: "Failed to save home address. Please try again.",
+            deleteHomeAddress: "Delete Home Address",
+            deleteAddressConfirm: "Are you sure you want to delete this home address?",
+            homeAddressDeleted: "Home address deleted successfully",
+            delete: "Delete",
+            cancel: "Cancel",
+            editHomeAddress: "Edit Home Address",
+            addHomeAddress: "Add Home Address",
+            addressInformation: "Address Information",
+            addressNickname: "Address Nickname",
+            fullAddress: "Full Address",
+            location: "Location",
+            gettingLocation: "Getting Location...",
+            useCurrentLocation: "Use Current Location",
+            actions: "Actions",
+            saving: "Saving...",
+            updateAddress: "Update Address",
+            saveAddress: "Save Address"
+        },
+        tn: {
+            permissionDenied: "Tumelo e Gannwe",
+            locationPermissionRequired: "Tumelo ya lefelo e tlhoka go nna lefelo la gago la jaanong.",
+            error: "Phoso",
+            failedToGetLocation: "Go hlolekile go nna lefelo la gago la jaanong. Ka kopo leka gape.",
+            userNotLoaded: "Mosebenzisi ga a layishwe. Ka kopo leka gape.",
+            addressRequired: "Aterese e tlhoka.",
+            nicknameRequired: "Leina la go tsewa e tlhoka.",
+            coordinatesRequired: "Dikgokagano di tlhoka.",
+            success: "Katlego",
+            homeAddressSaved: "Aterese ya gae e bolokilwe ka katlego!",
+            failedToSaveAddress: "Go hlolekile go boloka aterese ya gae. Ka kopo leka gape.",
+            deleteHomeAddress: "Tlosa Aterese ya Gae",
+            deleteAddressConfirm: "O na le bonnete ba gore o batla go tlosa aterese ya gae e?",
+            homeAddressDeleted: "Aterese ya gae e tlosiwe ka katlego",
+            delete: "Tlosa",
+            cancel: "Khansela",
+            editHomeAddress: "Hlopha Aterese ya Gae",
+            addHomeAddress: "Tsenya Aterese ya Gae",
+            addressInformation: "Tshedimosetso ya Aterese",
+            addressNickname: "Leina la go Tsewa la Aterese",
+            fullAddress: "Aterese e Feletseng",
+            location: "Lefelo",
+            gettingLocation: "Go nna Lefelo...",
+            useCurrentLocation: "Dirisa Lefelo la Jaanong",
+            actions: "Ditiro",
+            saving: "Go Bolokwa...",
+            updateAddress: "Ntsha Aterese",
+            saveAddress: "Boloka Aterese"
+        },
+        zu: {
+            permissionDenied: "Imvume Iyenqatshwe",
+            locationPermissionRequired: "Imvume yendawo iyadingeka ukuthola indawo yakho yamanje.",
+            error: "Iphutha",
+            failedToGetLocation: "Kuhlulekile ukuthola indawo yakho yamanje. Sicela uzame futhi.",
+            userNotLoaded: "Umsebenzisi akalayishwanga. Sicela uzame futhi.",
+            addressRequired: "Ikheli liyadingeka.",
+            nicknameRequired: "Igama lokubizwa ngalo liyadingeka.",
+            coordinatesRequired: "Amakhonodineyithi ayadingeka.",
+            success: "Impumelelo",
+            homeAddressSaved: "Ikheli lasekhaya lilondoloziwe ngempumelelo!",
+            failedToSaveAddress: "Kuhlulekile ukulondoloza ikheli lasekhaya. Sicela uzame futhi.",
+            deleteHomeAddress: "Susa Ikheli Lasekhaya",
+            deleteAddressConfirm: "Uqinisekile ukuthi ufuna ukususa ikheli lasekhaya?",
+            homeAddressDeleted: "Ikheli lasekhaya lisusiwe ngempumelelo",
+            delete: "Susa",
+            cancel: "Khansela",
+            editHomeAddress: "Hlela Ikheli Lasekhaya",
+            addHomeAddress: "Faka Ikheli Lasekhaya",
+            addressInformation: "Ulwazi Lwekheli",
+            addressNickname: "Igama Lokubizwa Ngalo Lekheli",
+            fullAddress: "Ikheli Eligcwele",
+            location: "Indawo",
+            gettingLocation: "Kutholwa Indawo...",
+            useCurrentLocation: "Sebenzisa Indawo Yamanje",
+            actions: "Izenzo",
+            saving: "Kulondoloziwa...",
+            updateAddress: "Buyekeza Ikheli",
+            saveAddress: "Londoloza Ikheli"
+        },
+        af: {
+            permissionDenied: "Toestemming Geweier",
+            locationPermissionRequired: "Ligging toestemming word vereis om jou huidige ligging te kry.",
+            error: "Fout",
+            failedToGetLocation: "Kon nie jou huidige ligging kry nie. Probeer asseblief weer.",
+            userNotLoaded: "Gebruiker nie gelaai nie. Probeer asseblief weer.",
+            addressRequired: "Adres word vereis.",
+            nicknameRequired: "Bynaam word vereis.",
+            coordinatesRequired: "Koördinate word vereis.",
+            success: "Sukses",
+            homeAddressSaved: "Tuis adres suksesvol gestoor!",
+            failedToSaveAddress: "Kon nie tuis adres stoor nie. Probeer asseblief weer.",
+            deleteHomeAddress: "Skrap Tuis Adres",
+            deleteAddressConfirm: "Is jy seker jy wil hierdie tuis adres skrap?",
+            homeAddressDeleted: "Tuis adres suksesvol geskrap",
+            delete: "Skrap",
+            cancel: "Kanselleer",
+            editHomeAddress: "Redigeer Tuis Adres",
+            addHomeAddress: "Voeg Tuis Adres By",
+            addressInformation: "Adres Inligting",
+            addressNickname: "Adres Bynaam",
+            fullAddress: "Volledige Adres",
+            location: "Ligging",
+            gettingLocation: "Kry Ligging...",
+            useCurrentLocation: "Gebruik Huidige Ligging",
+            actions: "Aksies",
+            saving: "Stoor...",
+            updateAddress: "Opdateer Adres",
+            saveAddress: "Stoor Adres"
+        }
+    };
+
+    const t = (key: string) => {
+        const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+        return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+    };
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
     
     // Screen dimensions for responsive design
@@ -59,8 +188,8 @@ export default function AddHomeAddress() {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 showGlobalError(
-                    t('address:permissionDenied'),
-                    t('address:locationPermissionRequired'),
+                    t('permissionDenied'),
+                    t('locationPermissionRequired'),
                     { duration: 4000 }
                 );
                 return;
@@ -85,8 +214,8 @@ export default function AddHomeAddress() {
         } catch (error) {
             console.error('Location error:', error);
             showGlobalError(
-                t('address:error'),
-                t('address:failedToGetLocation'),
+                t('error'),
+                t('failedToGetLocation'),
                 { duration: 4000 }
             );
         } finally {
@@ -97,32 +226,40 @@ export default function AddHomeAddress() {
     const handleSave = async () => {
         if (!user) {
             showGlobalError(
-                t('address:error'),
-                t('address:userNotLoaded'),
+                t('error'),
+                t('userNotLoaded'),
                 { duration: 4000 }
             );
             return;
         }
         if (!address.trim()) {
             showGlobalError(
-                t('address:error'),
-                t('address:addressRequired'),
+                t('error'),
+                t('addressRequired'),
                 { duration: 4000 }
             );
             return;
         }
         if (!nickname.trim()) {
             showGlobalError(
-                t('address:error'),
-                t('address:nicknameRequired'),
+                t('error'),
+                t('nicknameRequired'),
+                { duration: 4000 }
+            );
+            return;
+        }
+        if (!user) {
+            showGlobalError(
+                t('error'),
+                t('userNotLoaded'),
                 { duration: 4000 }
             );
             return;
         }
         if (coordinates.latitude === 0 && coordinates.longitude === 0) {
             showGlobalError(
-                t('address:error'),
-                t('address:coordinatesRequired'),
+                t('error'),
+                t('coordinatesRequired'),
                 { duration: 4000 }
             );
             return;
@@ -138,8 +275,8 @@ export default function AddHomeAddress() {
                 },
             });
             showGlobalSuccess(
-                t('address:success'),
-                t('address:homeAddressSaved'),
+                t('success'),
+                t('homeAddressSaved'),
                 { duration: 2000 }
             );
             setTimeout(() => {
@@ -148,8 +285,8 @@ export default function AddHomeAddress() {
         } catch (error: any) {
             console.error('Save error:', error);
             showGlobalError(
-                t('address:error'),
-                error.message || t('address:failedToSaveAddress'),
+                t('error'),
+                error.message || t('failedToSaveAddress'),
                 { duration: 4000 }
             );
         } finally {
@@ -160,16 +297,16 @@ export default function AddHomeAddress() {
     const handleDelete = async () => {
         if (!user) {
             showGlobalError(
-                t('address:error'),
-                t('address:userNotLoaded'),
+                t('error'),
+                t('userNotLoaded'),
                 { duration: 4000 }
             );
             return;
         }
         
         showConfirm(
-            t('address:deleteHomeAddress'),
-            t('address:deleteAddressConfirm'),
+            t('deleteHomeAddress'),
+            t('deleteAddressConfirm'),
             async () => {
                 try {
                     setIsLoading(true);
@@ -178,8 +315,8 @@ export default function AddHomeAddress() {
                         homeAddress: null,
                     });
                     showGlobalSuccess(
-                        t('address:success'),
-                        t('address:homeAddressDeleted'),
+                        t('success'),
+                        t('homeAddressDeleted'),
                         { duration: 2000 }
                     );
                     setTimeout(() => {
@@ -188,8 +325,8 @@ export default function AddHomeAddress() {
                 } catch (error: any) {
                     console.error('Delete error:', error);
                     showGlobalError(
-                        t('address:error'),
-                        error.message || t('address:failedToDeleteAddress'),
+                        t('error'),
+                        error.message || t('failedToDeleteAddress'),
                         { duration: 4000 }
                     );
                 } finally {
@@ -197,8 +334,8 @@ export default function AddHomeAddress() {
                 }
             },
             undefined,
-            t('address:delete'),
-            t('address:cancel')
+            t('delete'),
+            t('cancel')
         );
     };
 
@@ -410,7 +547,7 @@ export default function AddHomeAddress() {
                         <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>
-                        {hasExistingAddress ? t('address:editHomeAddress') : t('address:addHomeAddress')}
+                        {hasExistingAddress ? t('editHomeAddress') : t('addHomeAddress')}
                     </Text>
                 </View>
             </View>
@@ -425,10 +562,10 @@ export default function AddHomeAddress() {
                 >
 
                 {/* Address Information Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:addressInformation')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('addressInformation')}</Text>
                 <View style={dynamicStyles.card}>
                     <View style={dynamicStyles.fieldContainer}>
-                        <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
+                        <Text style={dynamicStyles.label}>{t('addressNickname')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={nickname}
@@ -439,7 +576,7 @@ export default function AddHomeAddress() {
                     </View>
 
                     <View style={[dynamicStyles.fieldContainer, dynamicStyles.lastField]}>
-                        <Text style={dynamicStyles.label}>{t('address:fullAddress')}</Text>
+                        <Text style={dynamicStyles.label}>{t('fullAddress')}</Text>
                         <TextInput
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
@@ -453,7 +590,7 @@ export default function AddHomeAddress() {
                 </View>
 
                 {/* Location Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:location')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('location')}</Text>
                 <View style={dynamicStyles.locationCard}>
                     <Pressable
                         style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
@@ -474,7 +611,7 @@ export default function AddHomeAddress() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={dynamicStyles.locationButtonText}>
-                                {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
+                                {isLoadingLocation ? t('gettingLocation') : t('useCurrentLocation')}
                             </Text>
                             <Text style={dynamicStyles.locationSubtext}>
                                 {isLoadingLocation 
@@ -492,7 +629,7 @@ export default function AddHomeAddress() {
                 </View>
 
                 {/* Action Buttons Section */}
-                <Text style={dynamicStyles.sectionTitle}>{t('address:actions')}</Text>
+                <Text style={dynamicStyles.sectionTitle}>{t('actions')}</Text>
                 <View style={dynamicStyles.buttonCard}>
                     <Pressable
                         style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
@@ -510,7 +647,7 @@ export default function AddHomeAddress() {
                             />
                         )}
                         <Text style={dynamicStyles.saveButtonText}>
-                            {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                            {isLoading ? t('saving') : hasExistingAddress ? t('updateAddress') : t('saveAddress')}
                         </Text>
                     </Pressable>
 
@@ -526,7 +663,7 @@ export default function AddHomeAddress() {
                                 size={20} 
                                 color="#FF3B30" 
                             />
-                            <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
+                            <Text style={dynamicStyles.deleteButtonText}>{t('delete')}</Text>
                         </Pressable>
                     )}
                 </View>

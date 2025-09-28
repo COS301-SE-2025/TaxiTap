@@ -54,7 +54,144 @@ export default function HomeScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const role = user?.role || user?.accountType || 'passenger';
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
+  
+  // Hardcoded translations
+  const translations = {
+    en: {
+      permissionDenied: "Permission Denied",
+      locationPermissionRequired: "Location permission is required to find nearby taxis.",
+      error: "Error",
+      couldNotGetPlaceDetails: "Could not get place details. Please try again.",
+      currentLocation: "Current Location",
+      unknownRoute: "Unknown Route",
+      home: "Home",
+      couldNotFindAddress: "Could not find the address. Please try again.",
+      pleaseEnterAddresses: "Please enter both origin and destination addresses.",
+      routeNotSelected: "Please select a route first.",
+      noTaxisAvailableAlert: "No Taxis Available",
+      noTaxisAvailableMessage: "No taxis are currently available for this route. Please try again later.",
+      ok: "OK",
+      routeError: "Route Error",
+      unknownError: "An unknown error occurred",
+      gettingLocation: "Getting Location...",
+      enterOriginAddress: "Enter origin address",
+      findingAddress: "Finding address...",
+      gettingCurrentLocation: "Getting current location...",
+      enterDestinationAddress: "Enter destination address",
+      loadingRoute: "Loading route...",
+      searchingTaxis: "Searching for taxis...",
+      journeyStatus: "Journey Status",
+      availableTaxis: "available taxis",
+      matchingRoutes: "matching routes",
+      readyToBook: "Ready to Book",
+      noTaxisAvailable: "No taxis available",
+      noRecentRoutes: "No recent routes",
+      reserveSeat: "Reserve Seat",
+      recentlyUsedRoutes: "Recently Used Routes"
+    },
+    tn: {
+      permissionDenied: "Tumelo e Gannwe",
+      locationPermissionRequired: "Tumelo ya lefelo e tlhoka go bona ditekisi tse di kgakala.",
+      error: "Phoso",
+      couldNotGetPlaceDetails: "Ga go kgonege go nna tshedimosetso ya lefelo. Ka kopo leka gape.",
+      currentLocation: "Lefelo la Jaanong",
+      unknownRoute: "Tsela e e sa Itseweng",
+      home: "Gae",
+      couldNotFindAddress: "Ga go kgonege go bona aterese. Ka kopo leka gape.",
+      pleaseEnterAddresses: "Ka kopo tsenya aterese ya mafelo a go tswa le go ya.",
+      routeNotSelected: "Ka kopo kgetha tsela pele.",
+      noTaxisAvailableAlert: "Ga go na Ditekisi tse di Leng teng",
+      noTaxisAvailableMessage: "Ga go na ditekisi tse di leng teng mo tseleng e. Ka kopo leka gape morago.",
+      ok: "Sentle",
+      routeError: "Phoso ya Tsela",
+      unknownError: "Phoso e e sa Itseweng e dirile",
+      gettingLocation: "Go nna Lefelo...",
+      enterOriginAddress: "Tsenya aterese ya mafelo a go tswa",
+      findingAddress: "Go batla aterese...",
+      gettingCurrentLocation: "Go nna lefelo la jaanong...",
+      enterDestinationAddress: "Tsenya aterese ya mafelo a go ya",
+      loadingRoute: "Go layishwa tsela...",
+      searchingTaxis: "Go batla ditekisi...",
+      journeyStatus: "Boemo jwa Leeto",
+      availableTaxis: "ditekisi tse di leng teng",
+      matchingRoutes: "ditsela tse di tshwanang",
+      readyToBook: "Go Ikgatlha go Boka",
+      noTaxisAvailable: "Ga go na ditekisi tse di leng teng",
+      noRecentRoutes: "Ga go na ditsela tsa bokhutshwane",
+      reserveSeat: "Boloka Sefatse",
+      recentlyUsedRoutes: "Ditsela tse di Dirisitsweng ka Nako e e Sa Tswang"
+    },
+    zu: {
+      permissionDenied: "Imvume Iyenqatshwe",
+      locationPermissionRequired: "Imvume yendawo iyadingeka ukuthola amaTekisi aseduze.",
+      error: "Iphutha",
+      couldNotGetPlaceDetails: "Akukwazanga ukuthola imininingwane yendawo. Sicela uzame futhi.",
+      currentLocation: "Indawo Yamanje",
+      unknownRoute: "Indlela Engaziwa",
+      home: "Ikhaya",
+      couldNotFindAddress: "Akukwazanga ukuthola ikheli. Sicela uzame futhi.",
+      pleaseEnterAddresses: "Sicela ufake amakheli womabili wendawo yokuqala nendawo yokugcina.",
+      routeNotSelected: "Sicela ukhethe indlela kuqala.",
+      noTaxisAvailableAlert: "Awukho AmaTekisi Atholakalayo",
+      noTaxisAvailableMessage: "Awukho amaTekisi atholakalayo ngalesi sikhathi kulendlela. Sicela uzame futhi kamuva.",
+      ok: "Kulungile",
+      routeError: "Iphutha Lendlela",
+      unknownError: "Kwenzeke iphutha elingaziwa",
+      gettingLocation: "Kutholwa Indawo...",
+      enterOriginAddress: "Faka ikheli lendawo yokuqala",
+      findingAddress: "Kutholwa ikheli...",
+      gettingCurrentLocation: "Kutholwa indawo yamanje...",
+      enterDestinationAddress: "Faka ikheli lendawo eyihloswe",
+      loadingRoute: "Kulayishwa indlela...",
+      searchingTaxis: "Kuseshwa amaTekisi...",
+      journeyStatus: "Isimo Sohambo",
+      availableTaxis: "amaTekisi atholakalayo",
+      matchingRoutes: "izindlela ezifanayo",
+      readyToBook: "Silungele Ukubhuka",
+      noTaxisAvailable: "Awukho amaTekisi atholakalayo",
+      noRecentRoutes: "Awukho izindlela zakamuva",
+      reserveSeat: "Gcina Isihlalo",
+      recentlyUsedRoutes: "Izindlela Ezisetshenzisiwe Muva"
+    },
+    af: {
+      permissionDenied: "Toestemming Geweier",
+      locationPermissionRequired: "Ligging toestemming word vereis om nabye taxis te vind.",
+      error: "Fout",
+      couldNotGetPlaceDetails: "Kon nie plek besonderhede kry nie. Probeer asseblief weer.",
+      currentLocation: "Huidige Ligging",
+      unknownRoute: "Onbekende Roete",
+      home: "Tuis",
+      couldNotFindAddress: "Kon nie die adres vind nie. Probeer asseblief weer.",
+      pleaseEnterAddresses: "Voer asseblief beide oorsprong en bestemming adresse in.",
+      routeNotSelected: "Kies asseblief eers 'n roete.",
+      noTaxisAvailableAlert: "Geen Taxis Beskikbaar",
+      noTaxisAvailableMessage: "Geen taxis is tans beskikbaar vir hierdie roete. Probeer asseblief later weer.",
+      ok: "OK",
+      routeError: "Roete Fout",
+      unknownError: "'n Onbekende fout het voorgekom",
+      gettingLocation: "Kry Ligging...",
+      enterOriginAddress: "Voer oorsprong adres in",
+      findingAddress: "Vind adres...",
+      gettingCurrentLocation: "Kry huidige ligging...",
+      enterDestinationAddress: "Voer bestemming adres in",
+      loadingRoute: "Laai roete...",
+      searchingTaxis: "Soek taxis...",
+      journeyStatus: "Reis Status",
+      availableTaxis: "beskikbare taxis",
+      matchingRoutes: "ooreenstemmende roetes",
+      readyToBook: "Gereed om te Bespreek",
+      noTaxisAvailable: "Geen taxis beskikbaar",
+      noRecentRoutes: "Geen onlangse roetes",
+      reserveSeat: "Reserveer Sitplek",
+      recentlyUsedRoutes: "Onlangs Gebruikte Roetes"
+    }
+  };
+  
+  const t = (key: string) => {
+    const lang = currentLanguage === 'tn' ? 'tn' : currentLanguage === 'zu' ? 'zu' : currentLanguage === 'af' ? 'af' : 'en';
+    return translations[lang][key as keyof typeof translations[typeof lang]] || key;
+  };
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
   const createMultiLegJourney = useMutation(api.functions.journeys.journeyStateManager.createMultiLegJourney);
@@ -83,7 +220,7 @@ export default function HomeScreen() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert(t('home:permissionDenied'), t('home:locationPermissionRequired'));
+          Alert.alert(t('permissionDenied'), t('locationPermissionRequired'));
           showGlobalError(
             "Permission denied", 
             "Location permission is required to find nearby taxis.",
@@ -287,7 +424,7 @@ export default function HomeScreen() {
   const getPlaceDetails = async (placeId: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
       showGlobalError(
-        t('common:error'), 
+        t('error'), 
         'Google Maps API key is not configured',
         {
           duration: 4000,
@@ -313,7 +450,7 @@ export default function HomeScreen() {
         throw new Error('Place details not found');
       }
     } catch (error) {
-      Alert.alert(t('common:error'), 'Could not get place details. Please try again.');
+      Alert.alert(t('error'), 'Could not get place details. Please try again.');
       return null;
     }
   };
@@ -549,7 +686,7 @@ export default function HomeScreen() {
       setCurrentLocation({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: t('common:currentLocation')
+        name: t('currentLocation')
       });
       setIsLoadingCurrentLocation(false);
     }
@@ -562,7 +699,7 @@ export default function HomeScreen() {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
-        name: t('common:currentLocation')
+        name: t('currentLocation')
       });
     }
   }, [detectedLocation, origin, isFirstLoad]);
@@ -657,7 +794,7 @@ export default function HomeScreen() {
       return {
         ...recent,
         _id: recent._id,
-        routeName: t('home:unknownRoute'),
+        routeName: t('unknownRoute'),
         destinationLat: null,
         destinationLng: null,
         startName: recent.startName,
@@ -724,7 +861,7 @@ export default function HomeScreen() {
     } else {
       // Show header and tab bar normally
       navigation.setOptions({ 
-        title: t('navigation:home'),
+        title: t('home'),
         headerShown: true,
         tabBarStyle: undefined
       });
@@ -735,7 +872,7 @@ export default function HomeScreen() {
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
     if (!GOOGLE_MAPS_API_KEY) {
       showGlobalError(
-        t('common:error'), 
+        t('error'), 
         'Google Maps API key is not configured',
         {
           duration: 4000,
@@ -762,7 +899,7 @@ export default function HomeScreen() {
         throw new Error('Address not found');
       }
     } catch (error) {
-      Alert.alert(t('common:error'), 'Could not find the address. Please try again.');
+      Alert.alert(t('error'), 'Could not find the address. Please try again.');
       return null;
     }
   };
@@ -973,8 +1110,8 @@ export default function HomeScreen() {
   const handleReserveSeat = async () => {
     if (!destination || !origin) {
       showGlobalError(
-        t('common:error'), 
-        t('home:pleaseEnterAddresses'),
+        t('error'), 
+        t('pleaseEnterAddresses'),
         {
           duration: 4000,
           position: 'top',
@@ -986,8 +1123,8 @@ export default function HomeScreen() {
 
     if (!selectedRouteId) {
       showGlobalError(
-        t('common:error'), 
-        t('home:routeNotSelected'),
+        t('error'), 
+        t('routeNotSelected'),
         {
           duration: 4000,
           position: 'top',
@@ -999,9 +1136,9 @@ export default function HomeScreen() {
 
     if (availableTaxis.length === 0) {
       Alert.alert(
-        t('home:noTaxisAvailableAlert'), 
-        t('home:noTaxisAvailableMessage'),
-        [{ text: t('common:ok') }]
+        t('noTaxisAvailableAlert'), 
+        t('noTaxisAvailableMessage'),
+        [{ text: t('ok') }]
       );
       showGlobalAlert({
         title: 'No Taxis Available',
@@ -1125,8 +1262,8 @@ export default function HomeScreen() {
       
     } catch (err) {
       showGlobalError(
-        t('home:routeError'), 
-        err instanceof Error ? err.message : t('home:unknownError'),
+        t('routeError'), 
+        err instanceof Error ? err.message : t('unknownError'),
         {
           duration: 5000,
           position: 'top',
@@ -1643,7 +1780,7 @@ export default function HomeScreen() {
                 fontWeight: '600',
                 letterSpacing: -0.2
               }}>
-                {t('home:gettingLocation')}
+                {t('gettingLocation')}
               </Text>
             </View>
           </View>
@@ -1723,7 +1860,7 @@ export default function HomeScreen() {
             <View style={dynamicStyles.inputContainer}>
               <TextInput
                 style={[dynamicStyles.addressInput, dynamicStyles.originInput]}
-                placeholder={origin ? origin.name : t('home:enterOriginAddress')}
+                placeholder={origin ? origin.name : t('enterOriginAddress')}
                 value={originAddress}
                 onChangeText={handleOriginAddressChange}
                 onSubmitEditing={handleOriginSubmit}
@@ -1745,13 +1882,13 @@ export default function HomeScreen() {
                 autoCapitalize="words"
               />
               {isGeocodingOrigin && (
-                <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('findingAddress')}</Text>
               )}
               {isLoadingOriginSuggestions && (
                 <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
               )}
               {isLoadingCurrentLocation && (
-                <Text style={dynamicStyles.geocodingText}>{t('home:gettingCurrentLocation')}</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('gettingCurrentLocation')}</Text>
               )}
 
               {/* Origin Suggestions */}
@@ -1797,7 +1934,7 @@ export default function HomeScreen() {
             <View style={dynamicStyles.inputContainer}>
               <TextInput
                 style={[dynamicStyles.addressInput, dynamicStyles.destinationInput]}
-                placeholder={t('home:enterDestinationAddress')}
+                placeholder={t('enterDestinationAddress')}
                 value={destinationAddress}
                 onChangeText={handleDestinationAddressChange}
                 onSubmitEditing={handleDestinationSubmit}
@@ -1818,7 +1955,7 @@ export default function HomeScreen() {
                 autoCapitalize="words"
               />
               {isGeocodingDestination && (
-                <Text style={dynamicStyles.geocodingText}>{t('home:findingAddress')}</Text>
+                <Text style={dynamicStyles.geocodingText}>{t('findingAddress')}</Text>
               )}
               {isLoadingDestinationSuggestions && (
                 <Text style={dynamicStyles.geocodingText}>Loading suggestions...</Text>
@@ -1830,7 +1967,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  {t('home:loadingRoute')}
+                  {t('loadingRoute')}
                 </Text>
               )}
               {/* Route loaded text removed - no longer needed */}
@@ -1840,7 +1977,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   fontSize: 13
                 }]}>
-                  {t('home:searchingTaxis')}
+                  {t('searchingTaxis')}
                 </Text>
               )}
 
@@ -1887,7 +2024,7 @@ export default function HomeScreen() {
         {false && routeMatchResults && !keyboardVisible && !routeLoaded && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
-              🚗 {t('home:journeyStatus')}
+              🚗 {t('journeyStatus')}
             </Text>
             <View style={dynamicStyles.searchResultsCard}>
               <View style={{
@@ -1917,13 +2054,13 @@ export default function HomeScreen() {
                     fontWeight: '600',
                     marginBottom: 4
                   }]}>
-                    {routeMatchResults.availableTaxis?.length || 0} {t('home:availableTaxis')}
+                    {routeMatchResults.availableTaxis?.length || 0} {t('availableTaxis')}
                   </Text>
                   <Text style={[dynamicStyles.searchResultsText, { 
                     fontSize: 13,
                     opacity: 0.8
                   }]}>
-                    {routeMatchResults.matchingRoutes?.length || 0} {t('home:matchingRoutes')}
+                    {routeMatchResults.matchingRoutes?.length || 0} {t('matchingRoutes')}
                   </Text>
                 </View>
               </View>
@@ -1991,7 +2128,7 @@ export default function HomeScreen() {
                       fontWeight: '600',
                       marginLeft: 8,
                     }}>
-                      {t('home:readyToBook')}
+                      {t('readyToBook')}
                     </Text>
                   </View>
                 ) : (
@@ -2010,7 +2147,7 @@ export default function HomeScreen() {
                       fontWeight: '600',
                       marginLeft: 8,
                     }}>
-                      {t('home:noTaxisAvailable')}
+                      {t('noTaxisAvailable')}
                     </Text>
                   </View>
                 )}
@@ -2022,7 +2159,7 @@ export default function HomeScreen() {
         {!keyboardVisible && (!routeLoaded || (routeLoaded && availableTaxis.length === 0 && !isSearchingTaxis && !isSearchingMultiLeg)) && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
-              Recently Used Routes
+              {t('recentlyUsedRoutes')}
             </Text>
             <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (
@@ -2121,7 +2258,7 @@ export default function HomeScreen() {
                     fontWeight: '500',
                     opacity: 0.8
                   }}>
-                    {t('home:noRecentRoutes')}
+                    {t('noRecentRoutes')}
                   </Text>
                 </View>
               )}
@@ -2142,7 +2279,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
           >
             <Text style={dynamicStyles.reserveButtonText}>
-              {t('home:reserveSeat')}
+              {t('reserveSeat')}
             </Text>
           </TouchableOpacity>
         </Animated.View>
