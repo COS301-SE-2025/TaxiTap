@@ -1262,11 +1262,22 @@ export default function HomeScreen() {
       marginBottom: keyboardVisible ? 20 : 32,
       width: '100%',
       alignSelf: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.4 : 0.15,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 8,
-      elevation: 6,
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.4 : 0.15,
+          shadowOffset: { width: 0, height: 6 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 3,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.25 : 0.1,
+          shadowOffset: { width: 0, height: 3 },
+          shadowRadius: 6,
+        },
+      }),
     },
     locationIndicator: {
       marginRight: 16,
@@ -1465,14 +1476,9 @@ export default function HomeScreen() {
       alignItems: 'center',
       padding: 20,
       marginBottom: 16,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
       borderWidth: 1,
       borderColor: isDark 
-        ? 'rgba(25, 85, 105, 0.3)' 
+        ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
     },
     routeTitle: {

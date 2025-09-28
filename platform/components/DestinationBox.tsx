@@ -113,18 +113,6 @@ export default function DestinationBox({
       borderRadius: 16,
       padding: 20,
       marginBottom: 16,
-      // Cross-platform shadow handling
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.shadow,
-          shadowOpacity: isDark ? 0.3 : 0.1,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 4,
-        },
-      }),
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(255, 255, 255, 0.08)' 

@@ -27,16 +27,17 @@ const NotificationButton: React.FC = () => {
         width: isSmallScreen ? 36 : 40,
         height: isSmallScreen ? 36 : 40,
         borderRadius: isSmallScreen ? 18 : 20,
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+        backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
         marginRight: isSmallScreen ? 8 : 12,
         justifyContent: 'center',
         alignItems: 'center',
-        // iOS-style shadows
-        shadowColor: theme.shadow,
-        shadowOpacity: isDark ? 0.2 : 0.08,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
+        // Platform-specific shadows (iOS only)
+        ...(Platform.OS === 'ios' && {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        }),
       }}
       onPress={handleNotificationPress}
       activeOpacity={0.7}
@@ -65,16 +66,17 @@ const ThemeToggleButton: React.FC = () => {
         width: isSmallScreen ? 36 : 40,
         height: isSmallScreen ? 36 : 40,
         borderRadius: isSmallScreen ? 18 : 20,
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+        backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
         marginRight: isSmallScreen ? 8 : 12,
         justifyContent: 'center',
         alignItems: 'center',
-        // iOS-style shadows
-        shadowColor: theme.shadow,
-        shadowOpacity: isDark ? 0.2 : 0.08,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
+        // Platform-specific shadows (iOS only)
+        ...(Platform.OS === 'ios' && {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        }),
       }}
       onPress={toggleTheme}
       activeOpacity={0.7}

@@ -93,12 +93,22 @@ export default function FeedbackHistoryScreen() {
       marginBottom: isSmallScreen ? 12 : 16,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-      // iOS-style shadows for both platforms
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        },
+      }),
     },
     feedbackHeader: {
       marginBottom: 12,
@@ -191,12 +201,22 @@ export default function FeedbackHistoryScreen() {
       marginTop: 32,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-      // iOS-style shadows for both platforms
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        },
+      }),
     },
     emptyStateIcon: {
       width: 72,
@@ -248,16 +268,17 @@ export default function FeedbackHistoryScreen() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
       alignItems: 'center',
       justifyContent: 'center',
       marginHorizontal: 12,
-      // iOS-style shadows for both platforms
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.2 : 0.05,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 2,
+      // Platform-specific shadows (iOS only)
+      ...(Platform.OS === 'ios' && {
+        shadowColor: theme.shadow,
+        shadowOpacity: isDark ? 0.2 : 0.05,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      }),
     },
     paginationButtonActive: {
       backgroundColor: theme.primary,
