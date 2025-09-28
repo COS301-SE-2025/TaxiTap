@@ -10,8 +10,110 @@ import { Id } from "@/convex/_generated/dataModel";
 
 export default function ChangeDue() {
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { user } = useUser();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    notAuthorized: {
+      en: "Not Authorized",
+      zu: "Akugunyaziwe",
+      tn: "Ga o na Tumello",
+      af: "Nie Gemagtig Nie"
+    },
+    notAuthorizedMessage: {
+      en: "You are not authorized to view this page.",
+      zu: "Awugunyaziwe ukubuka leli khasi.",
+      tn: "Ga o na tumello ya go bona tsebe e.",
+      af: "Jy is nie gemagtig om hierdie bladsy te sien nie."
+    },
+    loading: {
+      en: "Loading...",
+      zu: "Kulayishwa...",
+      tn: "Go tsena...",
+      af: "Laai..."
+    },
+    changeDueOrMoneyOwed: {
+      en: "Change Due or Money Owed",
+      zu: "Imali Ebekiwe Noma Ebolekiwe",
+      tn: "Tefo e e Bekilweng kgotsa e e Bolokilweng",
+      af: "Wisselgeld Verskuldig of Geld Skuldig"
+    },
+    frontPassengerAccess: {
+      en: "Front Passenger Access",
+      zu: "Ukufinyelela Komhambi Ongaphambili",
+      tn: "Phihlelelo ya Moleledi wa Pele",
+      af: "Voor Passasier Toegang"
+    },
+    changeDue: {
+      en: "Change Due",
+      zu: "Imali Ebekiwe",
+      tn: "Tefo e e Bekilweng",
+      af: "Wisselgeld Verskuldig"
+    },
+    owesDriver: {
+      en: "Owes Driver",
+      zu: "Uboleka Umshayeli",
+      tn: "O Boloka Mokgweetsi",
+      af: "Skul Bestuurder"
+    },
+    owes: {
+      en: "Owes:",
+      zu: "Uboleka:",
+      tn: "O Boloka:",
+      af: "Skul:"
+    },
+    change: {
+      en: "Change:",
+      zu: "Imali Ebekiwe:",
+      tn: "Tefo:",
+      af: "Wisselgeld:"
+    },
+    markMoneyReceived: {
+      en: "Mark Money Received",
+      zu: "Maka Imali Etholakele",
+      tn: "Tlhopha Tefo e e Amogetsweng",
+      af: "Merk Geld Ontvang"
+    },
+    markChangeGiven: {
+      en: "Mark Change Given",
+      zu: "Maka Imali Ebekiwe Inikezwe",
+      tn: "Tlhopha Tefo e e Ntshitsweng",
+      af: "Merk Wisselgeld Gegee"
+    },
+    paid: {
+      en: "Paid:",
+      zu: "Kukhokhiwe:",
+      tn: "E tshwerwe:",
+      af: "Betaal:"
+    },
+    fare: {
+      en: "Fare:",
+      zu: "Imali:",
+      tn: "Tefo:",
+      af: "Tarief:"
+    },
+    noChangeDue: {
+      en: "No Change Due",
+      zu: "Awukho Imali Ebekiwe",
+      tn: "Ga go na Tefo e e Bekilweng",
+      af: "Geen Wisselgeld Verskuldig Nie"
+    },
+    noChangeDueMessage: {
+      en: "No passengers need change at this time.",
+      zu: "Awukho abagibeli abadinga imali ebekiwe okwamanje.",
+      tn: "Ga go na baleleledi ba ba tlhokang tefo ka nako e.",
+      af: "Geen passasiers het wisselgeld nodig op die oomblik nie."
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   // Check if the current user is a front passenger
   const frontPassengerStatus = useQuery(
@@ -83,7 +185,7 @@ export default function ChangeDue() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
-          <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: theme.text }]}>{getTranslation('loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -96,7 +198,7 @@ export default function ChangeDue() {
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={styles.container}>
           <View style={styles.headerSection}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Change Due or Money Owed</Text>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>{getTranslation('changeDueOrMoneyOwed')}</Text>
             <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
               No passengers need change or owe money
             </Text>
@@ -128,35 +230,35 @@ export default function ChangeDue() {
             <View style={styles.frontPassengerBadge}>
               <Ionicons name="person" size={14} color="#007AFF" />
               <Text style={[styles.frontPassengerText, { color: "#007AFF" }]}>
-                Front Passenger Access
+                {getTranslation('frontPassengerAccess')}
               </Text>
             </View>
           )}
         </View>
 
         {passengers.map((ride) => {
-            let statusText = "Change Due";
+            let statusText = getTranslation('changeDue');
             let statusColor = "#f59e0b";
             let statusBackground = "rgba(239, 68, 68, 0.1)";
-            let changeLabel = "Change Due";
-            let buttonText = "Mark Change Given";
+            let changeLabel = getTranslation('changeDue');
+            let buttonText = getTranslation('markChangeGiven');
             let buttonColor = "#22c55e";
             let iconName: "cash-outline" | "wallet-outline" = "cash-outline";
 
             if (ride.paymentType === "underpaid") {
-                statusText = "Owes Driver";
+                statusText = getTranslation('owesDriver');
                 statusColor = "#ef4444";
                 statusBackground = "rgba(245, 158, 11, 0.1)";
-                changeLabel = `Owes: R${ride.changeDue.toFixed(2)}`;
-                buttonText = "Mark Money Received";
+                changeLabel = `${getTranslation('owes')} R${ride.changeDue.toFixed(2)}`;
+                buttonText = getTranslation('markMoneyReceived');
                 buttonColor = "#3b82f6";
                 iconName = "wallet-outline";
             } else if (ride.paymentType === "overpaid") {
-                statusText = "Change Due";
+                statusText = getTranslation('changeDue');
                 statusColor = "#ef4444";
                 statusBackground = "rgba(239, 68, 68, 0.1)";
-                changeLabel = `Change: R${ride.changeDue.toFixed(2)}`;
-                buttonText = "Mark Change Given";
+                changeLabel = `${getTranslation('change')} R${ride.changeDue.toFixed(2)}`;
+                buttonText = getTranslation('markChangeGiven');
                 buttonColor = "#22c55e";
                 iconName = "cash-outline";
             }
@@ -178,11 +280,11 @@ export default function ChangeDue() {
                 <View style={[styles.cardDetails, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#f0f0f0" }]}>
                     <View style={styles.detailRow}>
                     <Ionicons name="cash-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
-                    <Text style={[styles.detailText, { color: theme.text }]}>Fare: R{ride.fare.toFixed(2)}</Text>
+                    <Text style={[styles.detailText, { color: theme.text }]}>{getTranslation('fare')} R{ride.fare.toFixed(2)}</Text>
                     </View>
                     <View style={styles.detailRow}>
                     <Ionicons name="wallet-outline" size={16} color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"} />
-                    <Text style={[styles.detailText, { color: theme.text }]}>Paid: R{ride.amountPaid.toFixed(2)}</Text>
+                    <Text style={[styles.detailText, { color: theme.text }]}>{getTranslation('paid')} R{ride.amountPaid.toFixed(2)}</Text>
                     </View>
                     <View style={styles.detailRow}>
                     <Ionicons name={iconName} size={16} color={statusColor} />

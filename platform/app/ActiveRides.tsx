@@ -33,10 +33,88 @@ interface Passenger {
 export default function ActiveRides() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
     const [loadingFrontPassenger, setLoadingFrontPassenger] = useState<string | null>(null);
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        noActiveTripsFound: {
+            en: "No active trips found",
+            zu: "Awukho ohambo olusebenzayo olutholakele",
+            tn: "Ga go na ditlhwatlhwa tse di tsamayang tse di bonweng",
+            af: "Geen aktiewe ritte gevind nie"
+        },
+        noActiveRidesAtMoment: {
+            en: "No active rides at the moment",
+            zu: "Awukho ohambo olusebenzayo okwamanje",
+            tn: "Ga go na ditlhwatlhwa tse di tsamayang ka nako e",
+            af: "Geen aktiewe ritte op die oomblik nie"
+        },
+        passengersOnTrip: {
+            en: "{count} passenger{plural} on trip",
+            zu: "{count} umhambi{plural} ohambweni",
+            tn: "{count} moleledi{plural} mo leetong",
+            af: "{count} passasier{plural} op rit"
+        },
+        paid: {
+            en: "Paid",
+            zu: "Kukhokhiwe",
+            tn: "E tshwerwe",
+            af: "Betaal"
+        },
+        unpaid: {
+            en: "Unpaid",
+            zu: "Akukakhokhiwe",
+            tn: "Ga e tshwerwe",
+            af: "Nie Betaal"
+        },
+        pending: {
+            en: "Pending",
+            zu: "Kulinde",
+            tn: "E emetse",
+            af: "Hangend"
+        },
+        front: {
+            en: "Front",
+            zu: "Ngaphambili",
+            tn: "Pele",
+            af: "Voor"
+        },
+        fare: {
+            en: "Fare:",
+            zu: "Imali:",
+            tn: "Tefo:",
+            af: "Tarief:"
+        },
+        loading: {
+            en: "Loading...",
+            zu: "Kulayishwa...",
+            tn: "Go tsena...",
+            af: "Laai..."
+        },
+        removeFront: {
+            en: "Remove Front",
+            zu: "Susa Ngaphambili",
+            tn: "Tlosa Pele",
+            af: "Verwyder Voor"
+        },
+        setAsFront: {
+            en: "Set as Front",
+            zu: "Setha Njengaphambili",
+            tn: "Beakanya jaaka Pele",
+            af: "Stel as Voor"
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
     
     const activeTrips = useQuery(
         api.functions.rides.getActiveTrips.getActiveTrips,
@@ -81,11 +159,11 @@ export default function ActiveRides() {
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>No active trips found</Text>
+                        <Text style={dynamicStyles.headerSubtitle}>{getTranslation('noActiveTripsFound')}</Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
                         <Ionicons name="car-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No active rides at the moment</Text>
+                        <Text style={dynamicStyles.emptyStateText}>{getTranslation('noActiveRidesAtMoment')}</Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -100,7 +178,9 @@ export default function ActiveRides() {
             >
                 <View style={dynamicStyles.headerSection}>
                     <Text style={dynamicStyles.headerSubtitle}>
-                        {activeTrips.passengers.length} passenger{activeTrips.passengers.length !== 1 ? 's' : ''} on trip
+                        {getTranslation('passengersOnTrip')
+                            .replace('{count}', activeTrips.passengers.length.toString())
+                            .replace('{plural}', activeTrips.passengers.length !== 1 ? 's' : '')}
                     </Text>
                 </View>
 
@@ -138,14 +218,14 @@ export default function ActiveRides() {
                                         dynamicStyles.statusWaiting
                                     ]}>
                                         <Text style={dynamicStyles.statusText}>
-                                            {p.tripPaid === true ? "Paid" :
-                                             p.tripPaid === false ? "Unpaid" :
-                                             "Pending"}
+                                            {p.tripPaid === true ? getTranslation('paid') :
+                                             p.tripPaid === false ? getTranslation('unpaid') :
+                                             getTranslation('pending')}
                                         </Text>
                                     </View>
                                     {p.isFrontPassenger && (
                                         <View style={dynamicStyles.frontPassengerBadge}>
-                                            <Text style={dynamicStyles.frontPassengerText}>Front</Text>
+                                            <Text style={dynamicStyles.frontPassengerText}>{getTranslation('front')}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -155,7 +235,7 @@ export default function ActiveRides() {
                                 <View style={dynamicStyles.detailRow}>
                                     <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                     <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
-                                        Fare: R{p.fare.toFixed(2)}
+                                        {getTranslation('fare')} R{p.fare.toFixed(2)}
                                     </Text>
                                 </View>
                             </View>
@@ -174,7 +254,7 @@ export default function ActiveRides() {
                                             <Text style={[
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
-                                            ]}>Loading...</Text>
+                                            ]}>{getTranslation('loading')}</Text>
                                         </View>
                                     ) : (
                                         <View style={dynamicStyles.buttonContent}>
@@ -187,7 +267,7 @@ export default function ActiveRides() {
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
                                             ]}>
-                                                {p.isFrontPassenger ? 'Remove Front' : 'Set as Front'}
+                                                {p.isFrontPassenger ? getTranslation('removeFront') : getTranslation('setAsFront')}
                                             </Text>
                                         </View>
                                     )}
