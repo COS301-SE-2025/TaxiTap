@@ -133,6 +133,15 @@ View All Available Stops & As a passenger, I should be able to see all the avail
 See Estimated Time to Destination & As a passenger, I should be able to see how long it will take to reach my destination or drop-off spot. & Given I’ve set a destination, when I view trip details, then I should see the estimated time remaining. \\
 & & ETA is shown dynamically on screen and is updated with real-time traffic and route changes. \\
 \hline
+See driver badges & As a passenger, I should be able to see the badges my driver have. & Given I have started my ride, then I should see my driver's badges. \\
+& & Badges appear on the page where the passenger is once the ride has started. \\
+\hline
+Front Passenger & As a front passenger, I should be able to see who owes the driver money and who the driver owes money. & Given I am the front passenger, then I should see the money owed to the driver and they money owed to a passenger. \\
+& & This page appears for the front passenger once the driver sets them as the front passenger. \\
+\hline
+Book a Seat and Get Confirmation for Multi-Leg Journey & As a passenger, I want to book a seat on multiple taxi's and receive confirmation, so that I’m guaranteed a spot before the taxi's arrives. & Given I’ve selected a taxi, I should be taken to a screen that shows me multiple multi-leg routes to choose from, Then I should receive a booking confirmation and a ride status update once the first leg driver has accepted. Once the first leg is completed, the same process should happen for the second leg. \\
+& & A booking confirmation message appears with the selected taxi details and current ride status for both legs. \\
+\hline
 \caption{Commuter user stories}
 \label{tab:commuter-user-stories}
 \end{longtable}
@@ -176,6 +185,15 @@ Indicate Taxi Association & As a driver, I should be able to indicate which taxi
 Receive Route from Association & As a driver, I should be assigned a route by my taxi association. & Given I belong to a taxi association, when I log in or go online, then the assigned route from the association should appear. \\
 & & System pulls assigned route from the association records and displays it on the app. \\
 \hline
+See passenger badges & As a driver, I should be able to see the badges of my passengers. & Given I have passengers on my ride, then I should see the passenger's badges. \\
+& & Badges appear on the page where the active rides are. \\
+\hline
+See Money Owed & As a driver, I should be able to see who owes me money and who I owes money. & Given I am the driver, then I should see the money owed to me and they money owed to a passenger. \\
+& & This page appears for the driver under all their statistics. \\
+\hline
+Set Front Passenger & As a driver, I should be able to set a front passenger who can see certain ride details. & Given I am the driver, then I should be able to set a front passenger. \\
+& & This functionality appears under the active rides page. \\
+\hline
 \caption{Driver user stories}
 \label{tab:driver-user-stories}
 \end{longtable}
@@ -214,6 +232,7 @@ Receive Route from Association & As a driver, I should be assigned a route by my
     \item R3.3: Drivers should be notified of nearby passenger pickup requests.
     \item R3.4: Drivers should be able to accept or decline pickup requests.
     \item R3.5: Passengers should be able to specify their destinations.
+    \item R3.6: Passengers should be able to make a multi-leg (max 2 legs) ride request.
 \end{itemize}
 
 \subsection*{R4: Route Management}
@@ -265,6 +284,10 @@ Receive Route from Association & As a driver, I should be assigned a route by my
     \item R10.1: The system should calculate fare estimates based on route and distance.
     \item R10.2: The system should support cash payment options.
     \item R10.3: The system should track payment status for trips.
+    \item R10.4: The driver should be able to see unpaid trips.
+    \item R10.5: The driver should be able to see who owes them money and who they owe change.
+    \item R10.6: The driver should be able to indicate who their front passenger is.
+    \item R10.7: The front passenger should be able to see who owed the driver money and who needs change from the driver.
 \end{itemize}
 
 \subsection*{R11: Taxi Identification}
@@ -277,6 +300,14 @@ Receive Route from Association & As a driver, I should be assigned a route by my
 \subsection*{R12: Safety Features}
 \begin{itemize}
     \item R12.1: The system should include emergency contact features.
+\end{itemize}
+
+\subsection*{R13: Badges Features}
+\begin{itemize}
+    \item R13.1: Passengers should be able to see their own badges on their profile page.
+    \item R13.2: Drivers should be able to see their own badges on their profile page.
+    \item R13.3: Passengers should be able to see the badges of the driver they choose.
+    \item R13.4: Drivers should be able to see the badges of passengers on their ride.
 \end{itemize}
 
 \section{Use Case Diagrams}
