@@ -23,6 +23,11 @@
   \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
 \end{figure}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
 \newpage
 
 \tableofcontents
@@ -933,6 +938,469 @@ Provides two specialized functions for retrieving feedback: one for passengers t
 \end{itemize} \\
 \hline
 \end{longtable}
+
+\section{Badge Service}
+\label{sec:badge-service}
+
+The Badge Service is responsible for managing, tracking, and awarding digital badges to users (both drivers and passengers) based on achievements, performance, and loyalty within the TaxiTap ecosystem. Badges are derived from specific criteria evaluated by helper functions.
+
+\subsection{getUserBadges (Query)}
+\label{sub:getUserBadges}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Retrieves all currently active and earned badges for a specific user, enriching the badge record with static metadata from \texttt{BADGE\_DEFINITIONS}. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{userId} (Id<"taxiTap\_users">) - The ID of the user whose badges are requested.
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{Array of Badge objects} containing: \texttt{badgeType}, \texttt{name}, \texttt{description}, \texttt{icon}, \texttt{color}, \texttt{earnedAt} (timestamp), \texttt{isActive}, and \texttt{metadata} (optional).
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries the \texttt{badges} table by user ID.
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{getBadgeInfo (Query)}
+\label{sub:getBadgeInfo}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Retrieves the static definition and display information for a specific badge type (e.g., name, icon, color). \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{badgeType} (string) - The unique identifier of the badge definition.
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{BadgeInfo} (object or null) - Static badge definition details.
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item None - Uses local application constants (\texttt{BADGE\_DEFINITIONS}).
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{awardBadge (Mutation)}
+\label{sub:awardBadge}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+The core mutation to award a badge. It creates a new badge record or reactivates an existing badge of the same type for the user, updating the \texttt{earnedAt} timestamp. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{userId} (Id<"taxiTap\_users">) - The ID of the user to receive the badge.
+\item \texttt{badgeType} (string) - The unique identifier of the badge to be awarded.
+\item \texttt{metadata} (optional any) - Contextual data related to the badge award (e.g., total rides).
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{void}
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries and patches/inserts records in the \texttt{badges} table.
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{checkAndAwardTrustedPayerBadge (Mutation)}
+\label{sub:checkAndAwardTrustedPayerBadge}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Automated check to determine if a passenger is eligible for the \texttt{trusted\_payer} badge (100\% payment rate on completed rides). Awards the badge via \texttt{awardBadge} if eligible. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{userId} (Id<"taxiTap\_users">) - The passenger's ID.
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{boolean} - True if the badge was awarded, false otherwise.
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries the \texttt{rides} table and updates the \texttt{badges} table.
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{checkAndAwardMarathonDriverBadge (Mutation)}
+\label{sub:checkAndAwardMarathonDriverBadge}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Automated check to determine if a driver is eligible for the \texttt{marathon\_driver} badge (completed at least one ride). Awards the badge via \texttt{awardBadge} if eligible. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{userId} (Id<"taxiTap\_users">) - The driver's ID.
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{boolean} - True if the badge was awarded, false otherwise.
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries the \texttt{rides} table and updates the \texttt{badges} table.
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{updateTopEarnerBadges (Mutation - Internal/Scheduled)}
+\label{sub:updateTopEarnerBadges}
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+A background process that periodically recalculates the top 10 earning drivers. It activates the \texttt{top\_earner} badge for qualifying drivers and deactivates it for those who are no longer in the top 10. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item None.
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{void}
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries \texttt{taxiTap\_users}, \texttt{trips}, and patches/inserts the \texttt{badges} table for all drivers.
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\section{Journeys Service}
+
+The Journeys Service manages the complex lifecycle of multi-leg taxi journeys, including planning, state tracking, and leg-by-leg progression. It is crucial for cross-regional travel requiring transfers between different route associations.
+
+\subsection{findMultiLegJourneyOptionsHandler Query}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Calculates potential multi-leg journey routes between an origin and a destination that cannot be serviced by a single taxi route, involving a transfer point and walking legs. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{originLat, originLng} (number) - Start coordinates
+\item \texttt{destinationLat, destinationLng} (number) - End coordinates
+\item \texttt{maxWalkingDistance} (optional number) - Max walking distance from origin/to destination (default 1km)
+\item \texttt{maxTransferDistance} (optional number) - Max walking distance between transfer stops (default 4km)
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{success} (boolean) - Indicates if options were successfully found
+\item \texttt{journeyOptions} (array) - List of viable \texttt{MultiLegOption} objects, including route names, stop IDs, and estimated costs
+\item \texttt{message} (optional string) - Explanatory message for success/failure
+\item \texttt{searchCriteria} (object) - Echoes the input criteria used for the search
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries \texttt{routes}, \texttt{enrichedRouteStops}, \texttt{locations}, and \texttt{drivers} tables
+\item Geospatial Service - Performs complex distance and fare calculations
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{createMultiLegJourney Mutation}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Initializes and persists a new multi-leg journey record based on a planned travel option, detailing both legs, the transfer point, and estimated total cost. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{passengerId} (Id<"taxiTap\_users">) - The ID of the passenger initiating the journey
+\item \texttt{journeyOption} (object) - A structure defining the two legs, their stops, estimated costs, and transfer point details
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - The user-facing unique journey identifier
+\item \texttt{dbId} (Id<"multiLegJourneys">) - The internal database ID of the new journey document
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Inserts a new record into the \texttt{multiLegJourneys} table
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{getNextLegInfo Query}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Retrieves detailed information about the subsequent leg of a multi-leg journey, including route details and available drivers on that route, specifically for display on the \texttt{TaxiInformation} screen. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\item \texttt{currentLegIndex} (number) - The 0-based index of the currently completed or active leg
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{hasNextLeg} (boolean) - True if a subsequent leg exists
+\item \texttt{message} (optional string) - Status message (e.g., "This is the final leg...")
+\item \texttt{nextLeg} (optional object) - Details of the next leg (route, origin, destination, cost, etc.)
+\item \texttt{availableDrivers} (array) - List of drivers available on the next leg's route
+\item \texttt{journey} (optional object) - Current state summary of the journey
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Retrieves journey, route, location, driver, and taxi data
+\item Location/Geospatial Service - Implicitly uses location data for driver matching
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{startJourneyLeg Mutation}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Transitions a specific leg of the journey from 'pending' to 'in\_progress', associating it with a specific ride and driver. Updates the overall journey status and current leg index. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\item \texttt{legIndex} (number) - The 0-based index of the leg being started
+\item \texttt{rideId} (Id<"rides">) - The ID of the corresponding single-leg ride record
+\item \texttt{driverId} (Id<"taxiTap\_users">) - The ID of the driver assigned to this leg
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{success} (boolean) - True if the leg was successfully started
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Patches the \texttt{multiLegJourneys} document with updated status and leg details
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{completeLegWithPayment Mutation}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Marks a specific journey leg as 'completed', records the final actual cost, and updates the total journey cost. If it's the final leg, the entire journey status is set to 'completed'. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\item \texttt{legIndex} (number) - The 0-based index of the leg being completed
+\item \texttt{actualCost} (number) - The final cost of this completed leg
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{success} (boolean) - True if the leg was successfully completed
+\item \texttt{journeyComplete} (boolean) - True if this was the final leg and the journey is finished
+\item \texttt{nextLeg} (optional object) - Details about the next leg if the journey continues
+\item \texttt{totalActualCost} (optional number) - The cumulative cost of all completed legs
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Patches the \texttt{multiLegJourneys} document with updated cost and status
+\item Payment Service - Assumed to integrate with this step to finalize payment
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{cancelJourney Mutation}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Updates the overall journey status to 'cancelled' and marks any 'pending' legs as 'cancelled'. Used primarily for passenger-initiated cancellations. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\item \texttt{reason} (optional string) - Reason for cancellation
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{success} (boolean) - True if the cancellation was successful
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Patches the \texttt{multiLegJourneys} document
+\item Ride Request System Service - Implicitly cancels any pending ride requests related to the journey
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{handleTransferTimeout Mutation}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Manages the state transition when a transfer window expires (though disabled in the current manual flow), setting the overall journey status to 'timeout'. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{success} (boolean) - True if the status was successfully updated
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Patches the \texttt{multiLegJourneys} document
+\item Background Task Scheduler - Previously used to trigger this function on timeout
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{getJourneyState Query}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Retrieves the complete current state document for a specific multi-leg journey using its unique ID. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{journeyId} (string) - Unique identifier for the multi-leg journey
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{journey} (object or null) - The full \texttt{multiLegJourneys} document
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries the \texttt{multiLegJourneys} table
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{getActiveJourneyForPassenger Query}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+Identifies and retrieves the single currently active (\texttt{in\_progress}) or planned journey for a specific passenger. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item \texttt{passengerId} (Id<"taxiTap\_users">) - The ID of the passenger
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{journey} (object or null) - The full active or planned \texttt{multiLegJourneys} document
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries the \texttt{multiLegJourneys} table by passenger ID and status
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\subsection{cleanupExpiredTransfers Mutation (Internal)}
+
+\begin{longtable}{|p{4cm}|p{12cm}|}
+\hline
+\textbf{Field} & \textbf{Description} \\
+\hline
+\textbf{What the service does} & 
+An internal function intended to find and mark journeys as 'timeout' if the transfer window expired. Currently \textbf{disabled} as the system transitioned to a manual user-driven flow. \\
+\hline
+\textbf{Inputs required} & 
+\begin{itemize}[nosep]
+\item None
+\end{itemize} \\
+\hline
+\textbf{Outputs returned} & 
+\begin{itemize}[nosep]
+\item \texttt{cleanedCount} (number) - Number of journeys processed (always 0 while disabled)
+\item \texttt{disabled} (boolean) - Indicates the function is currently inactive
+\item \texttt{reason} (string) - Explains why the function is disabled
+\end{itemize} \\
+\hline
+\textbf{Interactions with other systems/components} & 
+\begin{itemize}[nosep]
+\item Database Service - Queries and potentially patches \texttt{multiLegJourneys} table
+\end{itemize} \\
+\hline
+\end{longtable}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+These service contracts provide a comprehensive foundation for the TaxiTap system architecture. Each contract clearly defines the interface, behavior, and integration points for major system services, enabling reliable communication between components and facilitating system maintenance and expansion.
+
+\end{document}
 
 \section{Conclusion}
 
