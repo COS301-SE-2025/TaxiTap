@@ -1,0 +1,114 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{booktabs}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+
+\title{Testing Policy\\Taxi Tap by Git It Done}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+This document outlines the Testing Policy for Taxi Tap. The purpose of this policy is to establish a clear framework for testing procedures. This is done to ensure that all aspects of the application are thoroughly evaluated.\newline
+The testing policy includes, but is not limited to:
+\begin{itemize}
+    \item Unit testing
+    \item Integration testing
+    \item Performance testing
+    \item Scalability testing
+    \item Security testing
+\end{itemize}
+
+The sections below provide detailed procedures, tools, and responsibilities associated with each testing phase, ensuring that all components of Taxi tap are validated before deployment.
+
+\section{Unit and Integration Testing Policies}
+
+This section entails details for the testing policy of our software development projects, focusing on unit testing and integration testing. We use automated testing to enhance efficiency and accuracy. Both unit and integration tests are integrated into our CI pipeline, which is configured using GitHub Actions. Automated testing is a key component in the pipeline such as to prevent code from being merged into our master branch if tests fail. This approach helps to maintain high standards of code quality. To maintain a robust testing framework, we aim for a test coverage of at least 80\% across the project. This policy must be implemented by all contributors and is designed to facilitate continuous improvement in our application. Our code coverage is tracked using \textbf{npx jest --coverage} and can be found on our GitHub under the demo 4 files.
+
+\subsection{Unit Testing Policy}
+
+\subsubsection{Objective}
+
+The objective of unit testing is to validate the functionality of individual components within the software. This ensures that each section operates as it is intended. This includes testing various function logic and error handling.
+
+\subsubsection{Automation}
+
+All unit tests are automated and integrated into the GitHub Actions Pipeline. The integration of the tests into the pipeline enforces testing protocols and prevents any code from being merged into other branches if tests fail.
+
+\subsubsection{Coverage}
+
+We aim for a minimum code coverage of 80\% for our unit testing. All functions must undergo unit testing.
+
+\subsubsection{Framework}
+
+We make use of Jest for implementing automated unit testing across our system.
+
+\subsection{Integration Testing Policy}
+
+\subsubsection{Objective}
+
+The objective of integration testing is to validate interactions between various components, thus ensuring that they function together as expected.
+
+\subsubsection{Automation}
+
+All unit tests are automated and integrated into the GitHub Actions Pipeline. The integration of the tests into the pipeline enforces testing protocols and prevents any code from being merged into other branches if tests fail.
+
+\subsubsection{Framework}
+
+We make use of Jest for implementing automated integration testing across our system.
+
+\section{Testing Workflow}
+
+The testing workflow outlines the systematic approach we take to ensure quality of our software.
+Steps in the workflow:
+\begin{itemize}
+    \item Development: When a developer writes code for a new feature or a bug fix, they create a corresponding unit test to validate the individual function or component.
+    \item Unit testing: Automated unit tests are executed in the GitHub pipeline when a branch is being merged into dev or main. The tests confirm if functions work as expected. Any failures in the tests prevent the code from being merged into the other branch.
+    \item Integration testing: Once unit tests pass, integration tests are executed. These tests run in the environment set up during the implementation of the tests.
+    \item Review and Feedback: If any issues are identified, feedback is shared among the team. Team members responsible for those tests should fix them before we can proceed with deployment.
+    \item Deployment: Once all tests pass and issues are resolved, the application is deployed to production by merging the code into the master branch, which then triggers the deployment workflow.
+\end{itemize}
+
+\section{Quality Assurance testing}
+
+This is a critical aspect of the software development lifecycle, focusing on ensuring that applications not only function as intended, but also meet the standards of performance, scalability, and security testing. As the application grows in complexity and user expectations rise, it becomes more important to assess how well our software performs under various conditions.
+
+\subsection{Performance}
+
+Add here
+
+\subsection{Scalability}
+
+Add here
+
+\subsection{Security}
+
+Add here
+
+\end{document}
