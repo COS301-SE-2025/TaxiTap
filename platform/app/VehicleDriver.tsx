@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
@@ -12,7 +13,140 @@ import { Id } from '../convex/_generated/dataModel';
 export default function VehicleDriver() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
+    const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+
+    // Supported languages type
+    type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+    // Hardcoded translations for all UI text
+    const translations: Record<string, Record<SupportedLanguage, string>> = {
+        permissionDenied: {
+            en: "Permission Denied",
+            zu: "Imvume Yenqatshwe",
+            tn: "Tumello e Tlhaotswe",
+            af: "Toestemming Geweier"
+        },
+        needMediaLibraryAccess: {
+            en: "We need access to your media library to upload a photo.",
+            zu: "Sidinga ukufinyelela kumtapo wakho wemidiya ukuze ulayishe isithombe.",
+            tn: "Re tlhoka phihlelelo go mokgobokanyo wa gago wa media go tsaya setšhupo.",
+            af: "Ons het toegang tot jou mediebiblioteek nodig om 'n foto op te laai."
+        },
+        userNotFound: {
+            en: "Not found",
+            zu: "Akutholakali",
+            tn: "Ga a bonwe",
+            af: "Nie gevind nie"
+        },
+        userNotLoaded: {
+            en: "User not loaded.",
+            zu: "Umsebenzisi akalayishwanga.",
+            tn: "Modirisi ga a tsene.",
+            af: "Gebruiker nie gelaai nie."
+        },
+        invalidSeats: {
+            en: "Invalid Seats",
+            zu: "Izihlalo Ezingalungile",
+            tn: "Diseatulo tse di sa Tshwaneng",
+            af: "Ongeldige Sitplekke"
+        },
+        maxSeatsAllowed: {
+            en: "Maximum 14 seats are allowed for taxis.",
+            zu: "Izihlalo eziyi-14 kuphela zivunyelwe eziteksini.",
+            tn: "Diseatulo tse di ka nna 14 fela di letlwa mo ditekising.",
+            af: "Maksimum 14 sitplekke word toegelaat vir taxis."
+        },
+        success: {
+            en: "Success",
+            zu: "Impumelelo",
+            tn: "Katlego",
+            af: "Sukses"
+        },
+        vehicleInfoUpdated: {
+            en: "Vehicle information updated successfully.",
+            zu: "Ulwazi lwemoto lubuyiswe ngempumelelo.",
+            tn: "Tshedimosetso ya koloi e tokafaditswe ka katlego.",
+            af: "Voertuiginligting suksesvol bygewerk."
+        },
+        error: {
+            en: "Error",
+            zu: "Iphutha",
+            tn: "Phoso",
+            af: "Fout"
+        },
+        failedToUpdateVehicle: {
+            en: "Failed to update vehicle information.",
+            zu: "Kuhlulekile ukubuyisa ulwazi lwemoto.",
+            tn: "Ga go atlege go tokafatsa tshedimosetso ya koloi.",
+            af: "Kon nie voertuiginligting bywerk nie."
+        },
+        vehicleInformation: {
+            en: "Vehicle Information",
+            zu: "Ulwazi Lwemoto",
+            tn: "Tshedimosetso ya Koloi",
+            af: "Voertuiginligting"
+        },
+        vehicleDetails: {
+            en: "Vehicle Details",
+            zu: "Imininingwane Yemoto",
+            tn: "Mabaka a Koloi",
+            af: "Voertuigbesonderhede"
+        },
+        vehicleType: {
+            en: "Vehicle Type",
+            zu: "Uhlobo Lwemoto",
+            tn: "Mofuta wa Koloi",
+            af: "Voertuigtipe"
+        },
+        licensePlate: {
+            en: "License Plate",
+            zu: "Iphepha Lelayisense",
+            tn: "Phepha ya Laesense",
+            af: "Kentekenplaat"
+        },
+        color: {
+            en: "Color",
+            zu: "Umbala",
+            tn: "Mmala",
+            af: "Kleur"
+        },
+        year: {
+            en: "Year",
+            zu: "Unyaka",
+            tn: "Ngwaga",
+            af: "Jaar"
+        },
+        totalSeats: {
+            en: "Total Seats",
+            zu: "Izihlalo Eziphelele",
+            tn: "Diseatulo tse di Phelele",
+            af: "Totale Sitplekke"
+        },
+        vehiclePhoto: {
+            en: "Vehicle Photo",
+            zu: "Isithombe Semoto",
+            tn: "Setšhupo sa Koloi",
+            af: "Voertuigfoto"
+        },
+        uploadVehiclePhoto: {
+            en: "Upload Vehicle Photo",
+            zu: "Layisha Isithombe Semoto",
+            tn: "Tsaya Setšhupo sa Koloi",
+            af: "Laai Voertuigfoto"
+        },
+        saveChanges: {
+            en: "Save Changes",
+            zu: "Gcina Izinguquko",
+            tn: "Boloka Diphetogo",
+            af: "Stoor Veranderinge"
+        }
+    } as const;
+
+    // Type-safe translation getter
+    const getTranslation = (key: keyof typeof translations) => {
+        return translations[key][currentLanguage as SupportedLanguage];
+    };
     const [vehicleType, setVehicleType] = useState('');
     const [licensePlate, setLicensePlate] = useState('');
     const [seats, setSeats] = useState('');
@@ -42,7 +176,7 @@ export default function VehicleDriver() {
         (async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                showGlobalError('Permission Denied', 'We need access to your media library to upload a photo.', {
+                showGlobalError(getTranslation('permissionDenied'), getTranslation('needMediaLibraryAccess'), {
                     duration: 4000,
                     position: 'top',
                     animation: 'slide-down',
@@ -72,7 +206,7 @@ export default function VehicleDriver() {
 
     const handleSaveChanges = async () => {
         if (!user) {
-            showGlobalError("Not found", "User not loaded.", {
+            showGlobalError(getTranslation('userNotFound'), getTranslation('userNotLoaded'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -83,7 +217,7 @@ export default function VehicleDriver() {
         // Validate seats - maximum 14 seats allowed
         const seatsNumber = parseInt(seats, 10);
         if (seatsNumber > 14) {
-            showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
+            showGlobalError(getTranslation('invalidSeats'), getTranslation('maxSeatsAllowed'), {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
@@ -101,14 +235,14 @@ export default function VehicleDriver() {
                 color,
                 year: parseInt(year, 10)
             });
-            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+            showGlobalSuccess(getTranslation('success'), getTranslation('vehicleInfoUpdated'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
             });
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            showGlobalError("Error", "Failed to update vehicle information.", {
+            showGlobalError(getTranslation('error'), getTranslation('failedToUpdateVehicle'), {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -246,15 +380,15 @@ export default function VehicleDriver() {
             >
                 {/* Header Section */}
                 <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerTitle}>Vehicle Information</Text>
+                    <Text style={dynamicStyles.headerTitle}>{getTranslation('vehicleInformation')}</Text>
                     <Text style={dynamicStyles.headerSubtitle}>Update your taxi details</Text>
                 </View>
 
                 {/* Vehicle Details Form */}
-                <Text style={dynamicStyles.sectionHeader}>Vehicle Details</Text>
+                <Text style={dynamicStyles.sectionHeader}>{getTranslation('vehicleDetails')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Vehicle Type</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{getTranslation('vehicleType')}</Text>
                         <TextInput
                             value={vehicleType}
                             onChangeText={setVehicleType}
@@ -265,7 +399,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>License Plate</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{getTranslation('licensePlate')}</Text>
                         <TextInput
                             value={licensePlate}
                             onChangeText={setLicensePlate}
@@ -277,7 +411,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Color</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{getTranslation('color')}</Text>
                         <TextInput
                             value={color}
                             onChangeText={setColor}
@@ -288,7 +422,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Year</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{getTranslation('year')}</Text>
                         <TextInput
                             value={year}
                             onChangeText={setYear}
@@ -300,7 +434,7 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Total Seats</Text>
+                        <Text style={dynamicStyles.fieldLabel}>{getTranslation('totalSeats')}</Text>
                         <TextInput
                             value={seats}
                             onChangeText={setSeats}
@@ -313,7 +447,7 @@ export default function VehicleDriver() {
                 </View>
 
                 {/* Vehicle Photo Section */}
-                <Text style={dynamicStyles.sectionHeader}>Vehicle Photo</Text>
+                <Text style={dynamicStyles.sectionHeader}>{getTranslation('vehiclePhoto')}</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.imageSection}>
                         <Image
@@ -330,7 +464,7 @@ export default function VehicleDriver() {
                             style={dynamicStyles.uploadButton}
                         >
                             <Ionicons name="camera" size={20} color={theme.text} />
-                            <Text style={dynamicStyles.uploadButtonText}>Upload Vehicle Photo</Text>
+                            <Text style={dynamicStyles.uploadButtonText}>{getTranslation('uploadVehiclePhoto')}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -340,7 +474,7 @@ export default function VehicleDriver() {
                     onPress={handleSaveChanges}
                     style={dynamicStyles.saveButton}
                 >
-                    <Text style={dynamicStyles.saveButtonText}>Save Changes</Text>
+                    <Text style={dynamicStyles.saveButtonText}>{getTranslation('saveChanges')}</Text>
                 </Pressable>
             </ScrollView>
         </SafeAreaView>

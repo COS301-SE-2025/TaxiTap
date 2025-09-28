@@ -28,7 +28,7 @@ const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
 function SignUpComponent() {
   const signUpWithSMS = useMutation(api.functions.users.UserManagement.signUpWithSMS.signUpSMS);
-  const { t, currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const [nameSurname, setNameSurname] = useState('');
   const [selectedRole, setSelectedRole] = useState<'passenger' | 'driver' | null>(null);
   const [password, setPassword] = useState('');
@@ -38,6 +38,101 @@ function SignUpComponent() {
   const router = useRouter();
   const [localNumber, setLocalNumber] = useState('');
   const { login } = useUser();
+
+  // Hardcoded translations for all UI text
+  const translations = {
+    nameAndSurname: {
+      en: "Name and Surname",
+      zu: "Igama Nesibongo",
+      tn: "Leina le Motsadi",
+      af: "Naam en Van"
+    },
+    phoneNumber: {
+      en: "Phone Number",
+      zu: "Inombolo Yocingo",
+      tn: "Nomoro ya Tshepe",
+      af: "Telefoonnommer"
+    },
+    selectRole: {
+      en: "Select Role",
+      zu: "Khetha Indima",
+      tn: "Tlhopha Seemo",
+      af: "Kies Rol"
+    },
+    password: {
+      en: "Password",
+      zu: "Iphasiwedi",
+      tn: "Leleme la sephiri",
+      af: "Wagwoord"
+    },
+    confirmPassword: {
+      en: "Confirm Password",
+      zu: "Qinisekisa Iphasiwedi",
+      tn: "Tlatsa Leleme la sephiri",
+      af: "Bevestig Wagwoord"
+    },
+    signUp: {
+      en: "Sign Up",
+      zu: "Bhalisa",
+      tn: "Ikwadise",
+      af: "Registreer"
+    },
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    pleaseFillAllFields: {
+      en: "Please fill all fields",
+      zu: "Sicela ugcwalise zonke izinkambu",
+      tn: "Ka kopo, tlatsa mafelo otlhe",
+      af: "Vul asseblief alle velde in"
+    },
+    pleaseSelectRole: {
+      en: "Please select a role",
+      zu: "Sicela ukhethe indima",
+      tn: "Ka kopo, tlopha seemo",
+      af: "Kies asseblief 'n rol"
+    },
+    invalidNumber: {
+      en: "Invalid number format",
+      zu: "Ifomethi yenombolo engavumelekile",
+      tn: "Mokgwa wa nomoro o o sa siamang",
+      af: "Ongeldige nommerformaat"
+    },
+    passwordMismatch: {
+      en: "Passwords do not match",
+      zu: "Amaphasiwedi awahambelani",
+      tn: "Maleme a sephiri ga a tshwane",
+      af: "Wagwoorde stem nie ooreen nie"
+    },
+    phoneNumberInUse: {
+      en: "Phone Number In Use",
+      zu: "Inombolo Yocingo Isasetshenziswa",
+      tn: "Nomoro ya Tshepe e dirisiwa",
+      af: "Telefoonnommer In Gebruik"
+    },
+    phoneAlreadyRegistered: {
+      en: "This phone number is already registered. Try logging in or use a different number.",
+      zu: "Leyi inombolo yocingo isivele ibhalisiwe. Zama ukungena noma usebenzise enye inombolo.",
+      tn: "Nomoro ya tshepe e e e leng teng e setse e kwadilwe. Lekanya go tsena kgotsa dirisa nomoro e nngwe.",
+      af: "Hierdie telefoonnommer is reeds geregistreer. Probeer aan te meld of gebruik 'n ander nommer."
+    },
+    signupFailed: {
+      en: "Signup failed. Please try again.",
+      zu: "Ukubhalisa kuhlulekile. Sicela uzame futhi.",
+      tn: "Go ikwadisa ga ga atlega. Ka kopo, leka gape.",
+      af: "Registrasie het misluk. Probeer asseblief weer."
+    }
+  } as const;
+
+  // Type-safe translation getter
+  type Language = 'en' | 'zu' | 'tn' | 'af';
+
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as Language];
+  };
 
   const getRoleData = () => {
     switch(currentLanguage) {
@@ -68,8 +163,8 @@ function SignUpComponent() {
   const handleSignup = async () => {
     if (!localNumber || !password || !nameSurname || !confirmPassword) {
       showGlobalError(
-        t('common:error'),
-        t('common:pleaseFillAllFields'),
+        getTranslation('error'),
+        getTranslation('pleaseFillAllFields'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -77,8 +172,8 @@ function SignUpComponent() {
 
     if (!selectedRole) {
       showGlobalError(
-        t('common:error'),
-        t('common:pleaseSelectRole'),
+        getTranslation('error'),
+        getTranslation('pleaseSelectRole'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -87,8 +182,8 @@ function SignUpComponent() {
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(localNumber)) {
       showGlobalError(
-        t('common:error'),
-        t('common:invalidNumber'),
+        getTranslation('error'),
+        getTranslation('invalidNumber'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -96,8 +191,8 @@ function SignUpComponent() {
 
     if (password !== confirmPassword) {
       showGlobalError(
-        t('common:error'),
-        t('common:passwordMismatch'),
+        getTranslation('error'),
+        getTranslation('passwordMismatch'),
         { duration: 4000, position: 'top', animation: 'slide-down' }
       );
       return;
@@ -117,14 +212,14 @@ function SignUpComponent() {
     if (!result.success) {
       if (result.reason === "Phone number already exists") {
         showGlobalError(
-          'Phone Number In Use',
-          'This phone number is already registered. Try logging in or use a different number.',
+          getTranslation('phoneNumberInUse'),
+          getTranslation('phoneAlreadyRegistered'),
           { duration: 5000, position: 'top', animation: 'slide-down' }
         );
       } else {
         showGlobalError(
-          t('common:error'),
-          result.reason || 'Signup failed. Please try again.',
+          getTranslation('error'),
+          result.reason || getTranslation('signupFailed'),
           { duration: 4000, position: 'top', animation: 'slide-down' }
         );
       }
@@ -183,13 +278,13 @@ function SignUpComponent() {
         >
           {/* Name and surname */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:nameAndSurname')}
+            {getTranslation('nameAndSurname')}
           </Text>
 
           <TextInput
             value={nameSurname}
             onChangeText={setNameSurname}
-            placeholder={t('auth:nameAndSurname')}
+            placeholder={getTranslation('nameAndSurname')}
             placeholderTextColor="#999"
             style={{
               backgroundColor: '#fff',
@@ -203,7 +298,7 @@ function SignUpComponent() {
 
           {/* Phone Number */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:phoneNumber')}
+            {getTranslation('phoneNumber')}
           </Text>
 
           <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -241,14 +336,14 @@ function SignUpComponent() {
 
           {/* Dropdown for Role */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:selectRole')}
+            {getTranslation('selectRole')}
           </Text>
 
           <Dropdown
             data={currentRoleData}
             labelField="label"
             valueField="value"
-            placeholder={t('auth:selectRole')}
+            placeholder={getTranslation('selectRole')}
             placeholderStyle={{ color: '#999' }}
             style={{
               backgroundColor: '#fff',
@@ -264,7 +359,7 @@ function SignUpComponent() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:password')}
+            {getTranslation('password')}
           </Text>
 
           <View
@@ -281,7 +376,7 @@ function SignUpComponent() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('auth:password')}
+              placeholder={getTranslation('password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -300,7 +395,7 @@ function SignUpComponent() {
 
           {/* Confirm Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-            {t('auth:confirmPassword')}
+            {getTranslation('confirmPassword')}
           </Text>
 
           <View
@@ -317,7 +412,7 @@ function SignUpComponent() {
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder={t('auth:confirmPassword')}
+              placeholder={getTranslation('confirmPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showConfirmPassword}
               style={{
@@ -348,7 +443,7 @@ function SignUpComponent() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              {t('auth:signUp')}
+              {getTranslation('signUp')}
             </Text>
           </Pressable>
         </View>
