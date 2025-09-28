@@ -71,7 +71,6 @@ export default function RootLayout() {
                     <AlertProvider>
                       <NotificationProvider>
                         <RootLayoutNav />
-                        <AlertOverlay />
                       </NotificationProvider>
                     </AlertProvider>
                   </MultiLegJourneyProvider>
@@ -128,6 +127,7 @@ function RootLayoutNav() {
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <AlertOverlay />
         <Stack
           screenOptions={{
             headerStyle: {

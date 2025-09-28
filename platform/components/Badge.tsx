@@ -12,16 +12,15 @@ interface BadgeProps {
   showDescription?: boolean;
 }
 
-export function Badge({ 
-  badgeType, 
-  name, 
-  description, 
-  icon, 
-  color, 
+export function Badge({
+  badgeType,
+  name,
+  description,
+  icon,
+  color,
   size = 'medium',
-  showDescription = false 
+  showDescription = false
 }: BadgeProps) {
-  console.log('Badge rendering with:', { name, description, icon, color });
 
   const getIconComponent = (iconName: string, size: number, color: string) => {
     switch (iconName) {

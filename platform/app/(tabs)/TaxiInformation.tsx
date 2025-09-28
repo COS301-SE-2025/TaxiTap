@@ -284,12 +284,8 @@ export default function TaxiInformation() {
         setRouteMatchData(parsedData);
         setAvailableTaxis(parsedData.availableTaxis || []);
         setIsLoadingTaxis(false);
-        
-        console.log('📊 TaxiInformation received enhanced data:', {
-          availableTaxis: parsedData.availableTaxis?.length || 0,
-          matchingRoutes: parsedData.matchingRoutes?.length || 0
-        });
-        
+
+
         // Transform enhanced data to display format
         const enhancedTaxiData = parsedData.availableTaxis?.map((taxi: any) => ({
           _id: taxi.driverId,
@@ -304,13 +300,13 @@ export default function TaxiInformation() {
           routeInfo: taxi.routeInfo,
           averageRating: taxi.averageRating ?? taxi.routeInfo?.calculatedRating ?? 0,
           displayName: `${taxi.name} - ${taxi.vehicleModel}`,
-          displayDistance: `${taxi.distanceToOrigin}${t('km')} ${t('away')}`,
+          displayDistance: `${taxi.distanceToOrigin}km away`,
           routeName: taxi.routeInfo.routeName,
           fare: taxi.routeInfo.calculatedFare,
         })) || [];
-        
+
         setNearbyTaxis(enhancedTaxiData);
-        
+
       } catch (error) {
         console.error('❌ Error parsing route match data:', error);
         setIsLoadingTaxis(false);
@@ -319,7 +315,7 @@ export default function TaxiInformation() {
       console.log('⚠️ No enhanced data received, falling back to original query');
       setIsLoadingTaxis(false);
     }
-  }, [routeMatchDataString, t]);
+  }, [routeMatchDataString]);
 
   // Fallback query for backward compatibility
   const shouldUseOriginalQuery = !routeMatchDataString;
@@ -388,11 +384,11 @@ export default function TaxiInformation() {
           distanceToOrigin: driver.distanceToOrigin,
           routeInfo: driver.routeInfo,
           displayName: `${driver.name} - ${driver.vehicleModel}`,
-          displayDistance: `${driver.distanceToOrigin}${t('km')} ${t('away')}`,
+          displayDistance: `${driver.distanceToOrigin}km away`,
           routeName: driver.routeInfo.routeName,
           fare: driver.routeInfo.calculatedFare,
         }));
-        
+
         setNearbyTaxis(nextLegTaxiData);
         setAvailableTaxis(nextLegInfo.availableDrivers);
         console.log(`✅ Found ${nextLegTaxiData.length} drivers for next leg`);
@@ -402,10 +398,10 @@ export default function TaxiInformation() {
         setAvailableTaxis([]);
         console.log('⚠️ No drivers available for next leg');
       }
-      
+
       setIsLoadingTaxis(false);
     }
-  }, [nextLegInfo, isMultiLegJourney, routeMatchDataString, t]);
+  }, [nextLegInfo, isMultiLegJourney, routeMatchDataString, effectiveCurrentLat, effectiveCurrentLng, effectiveDestinationLat, effectiveDestinationLng]);
 
   // Animation for book button
   useEffect(() => {
