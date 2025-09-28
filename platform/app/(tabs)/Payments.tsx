@@ -38,7 +38,12 @@ export default function PaymentConfirmation() {
     currentName,
     destinationLat,
     destinationLng,
-    destinationName
+    destinationName,
+    isMultiLeg,
+    journeyId,
+    legIndex,
+    totalLegs,
+    routeName
   } = useLocalSearchParams();
 
   // Use the new payment handler mutation
@@ -58,6 +63,11 @@ export default function PaymentConfirmation() {
         driverName,
         fare,
         rideId,
+        isMultiLeg,
+        journeyId,
+        legIndex,
+        totalLegs,
+        routeName
       }
     });
   };
