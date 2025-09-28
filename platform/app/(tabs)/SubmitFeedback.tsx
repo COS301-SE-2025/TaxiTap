@@ -118,8 +118,8 @@ export default function SubmitFeedbackScreen() {
 
       // Handle multi-leg journey progression
       if (isMultiLegJourney && journeyId) {
-        console.log(`🔄 Completing leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
-        console.log('🔍 Multi-leg parameters:', {
+        console.log(`Completing leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+        console.log('Multi-leg parameters:', {
           isMultiLegJourney,
           journeyId,
           legIndex,
@@ -139,8 +139,8 @@ export default function SubmitFeedbackScreen() {
             actualCost: actualFare ? parseFloat(actualFare) : 0,
           });
 
-          console.log('🔍 Multi-leg completion result:', legResult);
-          console.log('🔍 Journey completion analysis:', {
+          console.log('Multi-leg completion result:', legResult);
+          console.log('Journey completion analysis:', {
             success: legResult.success,
             journeyComplete: legResult.journeyComplete,
             hasNextLeg: !!legResult.nextLeg,
@@ -193,7 +193,7 @@ export default function SubmitFeedbackScreen() {
           return;
         } else if (legResult.success && legResult.journeyComplete) {
           // Journey complete - clear all states before navigating home
-          console.log('🏁 Journey complete! Clearing states and navigating to HomeScreen');
+          console.log('Journey complete! Clearing states and navigating to HomeScreen');
 
           try {
             // Clear all journey and map states immediately
@@ -202,40 +202,40 @@ export default function SubmitFeedbackScreen() {
             if (clearJourneyCache) {
               await clearJourneyCache();
             }
-            console.log('✅ Multi-leg journey cache cleared successfully');
+            console.log('Multi-leg journey cache cleared successfully');
           } catch (error) {
-            console.error('❌ Error clearing journey states:', error);
+            console.error('Error clearing journey states:', error);
             // Continue with navigation even if clearing fails
           }
 
           // Navigate immediately without showing success message first to avoid conflicts
-          console.log('🏠 Navigating to HomeScreen after journey completion');
+          console.log('Navigating to HomeScreen after journey completion');
           try {
             // Navigate to HomeScreen without passing any parameters that might cause crashes
             router.push({ pathname: './HomeScreen' });
-            console.log('✅ Navigation to HomeScreen initiated with clean parameters');
+            console.log('Navigation to HomeScreen initiated with clean parameters');
           } catch (error) {
-            console.error('❌ Navigation error:', error);
+            console.error('Navigation error:', error);
             // Fallback: try with replace
             try {
               router.replace({ pathname: './HomeScreen' });
-              console.log('✅ Fallback navigation to HomeScreen successful');
+              console.log('Fallback navigation to HomeScreen successful');
             } catch (fallbackError) {
-              console.error('❌ All navigation attempts failed:', fallbackError);
+              console.error('All navigation attempts failed:', fallbackError);
               // Last resort: try basic navigation without object syntax
               try {
                 router.push('./HomeScreen');
               } catch (basicError) {
-                console.error('❌ Even basic navigation failed:', basicError);
+                console.error('Even basic navigation failed:', basicError);
               }
             }
           }
           return;
         } else {
           // If journey doesn't have nextLeg or other issue, show error
-          console.error('🚨 Multi-leg journey completion failed or missing nextLeg:', legResult);
-          console.error('🚨 This else case should not happen for final leg. Expected journeyComplete: true');
-          console.error('🚨 Debug values:', {
+          console.error('Multi-leg journey completion failed or missing nextLeg:', legResult);
+          console.error('This else case should not happen for final leg. Expected journeyComplete: true');
+          console.error('Debug values:', {
             legResultSuccess: legResult.success,
             legResultJourneyComplete: legResult.journeyComplete,
             legResultNextLeg: legResult.nextLeg,
@@ -259,7 +259,7 @@ export default function SubmitFeedbackScreen() {
           return;
         }
       } catch (multiLegError: any) {
-          console.error('🚨 Multi-leg journey completion error:', multiLegError);
+          console.error('Multi-leg journey completion error:', multiLegError);
           showGlobalError('Multi-leg Journey Error',
             multiLegError.message || 'Failed to complete leg. Please ensure payment is confirmed and try again.',
             {
@@ -715,9 +715,9 @@ export default function SubmitFeedbackScreen() {
                     if (clearJourneyCache) {
                       await clearJourneyCache();
                     }
-                    console.log('✅ Multi-leg journey cache cleared successfully');
+                    console.log('Multi-leg journey cache cleared successfully');
                   } catch (error) {
-                    console.error('❌ Error clearing journey states on skip:', error);
+                    console.error('Error clearing journey states on skip:', error);
                   }
 
                   // Add a small delay to ensure cache clearing propagates before navigation

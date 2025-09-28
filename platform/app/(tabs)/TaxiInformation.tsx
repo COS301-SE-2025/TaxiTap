@@ -183,7 +183,7 @@ export default function TaxiInformation() {
         setNearbyTaxis(enhancedTaxiData);
         
       } catch (error) {
-        console.error('❌ Error parsing route match data:', error);
+        console.error('Error parsing route match data:', error);
         setIsLoadingTaxis(false);
       }
     } else {
@@ -240,7 +240,7 @@ export default function TaxiInformation() {
           setEffectiveDestinationName(nextLeg.destination.address);
         }
 
-        console.log('✅ Updated coordinates from nextLeg:', {
+        console.log('Updated coordinates from nextLeg:', {
           origin: { lat: nextLeg.origin.coordinates.latitude, lng: nextLeg.origin.coordinates.longitude, name: nextLeg.origin.address },
           destination: { lat: nextLeg.destination.coordinates.latitude, lng: nextLeg.destination.coordinates.longitude, name: nextLeg.destination.address }
         });
@@ -266,7 +266,7 @@ export default function TaxiInformation() {
         
         setNearbyTaxis(nextLegTaxiData);
         setAvailableTaxis(nextLegInfo.availableDrivers);
-        console.log(`✅ Found ${nextLegTaxiData.length} drivers for next leg`);
+        console.log(`Found ${nextLegTaxiData.length} drivers for next leg`);
       } else {
         // No drivers available for next leg
         setNearbyTaxis([]);
@@ -383,7 +383,7 @@ export default function TaxiInformation() {
       if (result) {
         // If this is a multi-leg journey, update the journey state
         if (isMultiLegJourney && journeyId && result._id) {
-          console.log(`🚗 Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+          console.log(`Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
 
           await startJourneyLeg({
             journeyId,
@@ -453,7 +453,7 @@ export default function TaxiInformation() {
         );
       }
     } catch (error) {
-      console.error('❌ Error creating ride request:', error);
+      console.error('Error creating ride request:', error);
       showGlobalError(
         'Booking Error',
         'Failed to send ride request. Please try again.',

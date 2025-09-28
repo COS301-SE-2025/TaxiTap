@@ -8,7 +8,7 @@ export const forceCancelStuckRides = mutation({
   },
   handler: async (ctx, { passengerId, reason = "Force cancelled due to stuck state" }) => {
     try {
-      console.log(`🔧 Force cancelling stuck rides for passenger ${passengerId}`);
+      console.log(`Force cancelling stuck rides for passenger ${passengerId}`);
 
       // Find all active rides for this passenger
       const activeRides = await ctx.db
@@ -40,7 +40,7 @@ export const forceCancelStuckRides = mutation({
         cancelledRideIds.push(ride.rideId);
       }
 
-      console.log(`✅ Force cancelled ${cancelledRideIds.length} stuck rides:`, cancelledRideIds);
+      console.log(`Force cancelled ${cancelledRideIds.length} stuck rides:`, cancelledRideIds);
 
       return {
         success: true,
@@ -49,7 +49,7 @@ export const forceCancelStuckRides = mutation({
         cancelledRideIds,
       };
     } catch (error) {
-      console.error("❌ Error force cancelling stuck rides:", error);
+      console.error("Error force cancelling stuck rides:", error);
       throw new Error(`Failed to cancel stuck rides: ${error}`);
     }
   },

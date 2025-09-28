@@ -223,8 +223,6 @@ export default function SeatReserved() {
 		});
 	}, [navigation]);
 
-	// IMMEDIATE DEBUG - This should show up in logs right away
-	console.log('🟢 PassengerReservation component loaded - checking for multi-leg params');
 
 	const [useLiveLocation, setUseLiveLocation] = useState(false);
 	const params = useLocalSearchParams();
@@ -252,13 +250,6 @@ export default function SeatReserved() {
 			multiLegParams.journeyId !== currentJourneyId ||
 			multiLegParams.legIndex !== currentLegIndex
 		)) {
-			console.log('💾 PassengerReservation - Preserving multi-leg params in state:', {
-				isMultiLeg: currentIsMultiLeg,
-				journeyId: currentJourneyId,
-				legIndex: currentLegIndex,
-				totalLegs: currentTotalLegs,
-				routeName: currentRouteName,
-			});
 			setMultiLegParams({
 				isMultiLeg: currentIsMultiLeg,
 				journeyId: currentJourneyId,
@@ -269,25 +260,9 @@ export default function SeatReserved() {
 		}
 	}, [params.isMultiLeg, params.journeyId, params.legIndex, params.totalLegs, params.routeName]);
 
-	// IMMEDIATE DEBUG - Log params as soon as they're available
-	console.log('🔍 PassengerReservation IMMEDIATE - Raw params received:', params);
-	console.log('🔍 PassengerReservation IMMEDIATE - Multi-leg check (router params):', {
-		isMultiLeg: params.isMultiLeg,
-		totalLegs: params.totalLegs,
-		legIndex: params.legIndex,
-		journeyId: params.journeyId
-	});
-	console.log('🔍 PassengerReservation IMMEDIATE - Multi-leg check (preserved state):', multiLegParams);
 
 	// Watch for parameter changes
 	useEffect(() => {
-		console.log('🔄 PassengerReservation - PARAMS CHANGED:', {
-			isMultiLeg: params.isMultiLeg,
-			totalLegs: params.totalLegs,
-			legIndex: params.legIndex,
-			journeyId: params.journeyId,
-			rideId: params.rideId
-		});
 	}, [params.isMultiLeg, params.totalLegs, params.legIndex, params.journeyId, params.rideId]);
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
@@ -394,15 +369,6 @@ export default function SeatReserved() {
 
 		// Update locations when we have valid parameters
 		if (rawCurrentLat && rawCurrentLng && rawDestLat && rawDestLng) {
-			console.log('Setting/updating locations from params:', {
-				rawCurrentLat,
-				rawCurrentLng,
-				rawDestLat,
-				rawDestLng,
-				currentName: params.currentName,
-				destinationName: params.destinationName,
-				legIndex: params.legIndex
-			});
 
 			const currentLat = parseFloat(rawCurrentLat);
 			const currentLng = parseFloat(rawCurrentLng);
@@ -429,7 +395,6 @@ export default function SeatReserved() {
 	useEffect(() => {
 		// Only set currentLocation from streamedLocation if we don't have any location data at all
 		if (useLiveLocation && streamedLocation && !currentLocation && !destination) {
-			console.log('Setting fallback locations from streamed data - no location data available');
 			setCurrentLocation({
 				latitude: streamedLocation.latitude,
 				longitude: streamedLocation.longitude,
@@ -488,7 +453,6 @@ export default function SeatReserved() {
 	// Function to get route from Google Directions API
 	const getRoute = useCallback(async (origin: { latitude: number; longitude: number; name: string }, dest: { latitude: number; longitude: number; name: string }) => {
 		if (isRouteCalculating) {
-			console.log('Route calculation already in progress, skipping...');
 			return;
 		}
 
@@ -531,7 +495,6 @@ export default function SeatReserved() {
 			
 			const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
 			
-			console.log('Fetching route from:', url);
 			
 			const response = await fetch(url);
 			
@@ -543,7 +506,6 @@ export default function SeatReserved() {
 			
 			const data = await response.json();
 			
-			console.log('Directions API response status:', data.status);
 			
 			if (data.status !== 'OK') {
 				console.error('Directions API Error:', data);
@@ -558,7 +520,6 @@ export default function SeatReserved() {
 				}
 				
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
-				console.log('Decoded coordinates count:', decodedCoords.length);
 				
 				setCachedRoute(routeKey, decodedCoords);
 				
@@ -570,7 +531,6 @@ export default function SeatReserved() {
 		} catch (error) {
 			console.error('Error fetching route:', error);
 			
-			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
 				{ latitude: dest.latitude, longitude: dest.longitude }
@@ -594,13 +554,11 @@ export default function SeatReserved() {
 		const calculateRoute = () => {
 			if (!isEffectActive || isRouteCalculating) return;
 
-			console.log('Calculating route for mode:', mapMode, 'with streamedLocation:', !!streamedLocation);
 
 			switch (mapMode) {
 				case 'initial':
 					// Original route: pickup origin -> destination
 					if (!routeLoaded && !isLoadingRoute) {
-						console.log('Initial route: origin -> destination');
 						getRoute(currentLocation, destination);
 					}
 					break;
@@ -608,7 +566,6 @@ export default function SeatReserved() {
 				case 'to_driver':
 					// Route from phone's current location to pickup origin (where driver will meet passenger)
 					if (streamedLocation) {
-						console.log('Driver route: phone location -> pickup origin');
 						const phoneLiveLocation = {
 							latitude: streamedLocation.latitude,
 							longitude: streamedLocation.longitude,
@@ -621,7 +578,6 @@ export default function SeatReserved() {
 					
 				case 'to_destination':
 					// Route from pickup origin to final destination (the original planned route)
-					console.log('Destination route: pickup origin -> destination');
 					getRoute(currentLocation, destination);
 					break;
 			}
@@ -715,25 +671,18 @@ export default function SeatReserved() {
 
 	// Handle map mode transitions - FIXED: Prevent backwards transitions
 	useEffect(() => {
-		console.log('Map mode transition check:', { rideStatus, mapMode });
-		
 		if (rideStatus === 'accepted' && mapMode === 'initial') {
-			console.log('Switching to driver mode');
 			setMapMode('to_driver');
 			setUseLiveLocation(true);
 		} else if ((rideStatus === 'started' || rideStatus === 'in_progress') && mapMode !== 'to_destination') {
-			console.log('Switching to destination mode');
 			setMapMode('to_destination');
 		}
-		
-		console.log('Current map mode:', mapMode, 'Ride status:', rideStatus);
 	}, [rideStatus, mapMode]);
 
 	// Driver location updates with validation - REMOVED HARDCODING
 	useEffect(() => {
 		// Note: Driver location is not available in the current driver object structure
 		// This would need to be implemented separately if driver location tracking is needed
-		console.log('Driver location tracking not implemented in current driver object structure');
 	}, [rideStatus, taxiInfo?.driver]);
 
 	// Calculate ETA/proximity for display
@@ -851,15 +800,11 @@ export default function SeatReserved() {
 		if (rideJustEnded || hasShownDeclinedAlert) return;
 		
 		// Handle taxi info loading states
-		if (taxiInfo === null) {
-			console.log('No active reservation found - ride likely completed successfully');
-		}
 	}, [hasShownDeclinedAlert, rideJustEnded, t, router, showGlobalError, taxiInfo]);
 
 	// FIXED: Debounced proximity monitoring with ref tracking
 	const startProximityMonitoring = useCallback(() => {
 		// Note: Driver location tracking not implemented in current structure
-		console.log('Proximity monitoring not implemented - driver location not available');
 	}, [rideStatus, taxiInfo?.rideId, currentLocation, user?.id, rideJustEnded, startMonitoringRide, taxiInfo?.driver]);
 
 	useEffect(() => {
@@ -868,7 +813,6 @@ export default function SeatReserved() {
 		}
 		
 		if (rideStatus !== 'accepted' && isMonitoringRef.current && taxiInfo?.rideId) {
-			console.log('Stopped proximity monitoring for ride', taxiInfo.rideId);
 			stopMonitoringRide(taxiInfo.rideId);
 			isMonitoringRef.current = false;
 		}
@@ -877,7 +821,6 @@ export default function SeatReserved() {
 	// Update driver location when we receive location updates
 	useEffect(() => {
 		// Note: Driver location tracking not implemented in current structure
-		console.log('Driver location updates not implemented - driver location not available');
 	}, [rideStatus, taxiInfo?.rideId, updateDriverLocation]);
 
 	// Driver contact functions - REMOVED HARDCODED PHONE NUMBER
@@ -1176,7 +1119,6 @@ export default function SeatReserved() {
 		setHasShownDeclinedAlert(true);
 		
 		try {
-			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
 
 			// Check if payment has been confirmed BEFORE trying to end the ride
 			const hasAlreadyPaid = taxiInfo.tripPaid === true;
@@ -1223,14 +1165,11 @@ export default function SeatReserved() {
 				rideId: taxiInfo.rideId,
 			});
 
-			console.log('💰 Trip ended, fare calculated:', result);
 
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			console.log('✅ Ride ended successfully');
 
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			console.log('🔄 Seat availability updated');
 
 			if (!currentLocation || !destination) {
 				console.log('⚠️ Missing location data, cannot navigate to next leg');
@@ -1296,7 +1235,7 @@ export default function SeatReserved() {
 			// Reset the flags if there's an error
 			setRideJustEnded(false);
 			setHasShownDeclinedAlert(false);
-			console.error('❌ Error continuing to next leg:', error);
+			console.error('Error continuing to next leg:', error);
 			showGlobalError('Error', error?.message || 'Failed to continue to next leg. Please try again.', {
 				duration: 4000,
 				position: 'top',

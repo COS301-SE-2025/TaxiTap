@@ -33,8 +33,6 @@ export default function SeatReserved() {
 		});
 	}, [navigation]);
 
-	// IMMEDIATE DEBUG - This should show up in logs right away
-	console.log('🟢 SeatReserved component loaded - checking for multi-leg params');
 
 	// Add error boundary state for crash prevention
 	const [hasError, setHasError] = useState(false);
@@ -80,14 +78,6 @@ export default function SeatReserved() {
 		userId?: string;
 	}>();
 
-	// IMMEDIATE DEBUG - Log params as soon as they're available
-	console.log('🔍 SeatReserved IMMEDIATE - Raw params received:', params);
-	console.log('🔍 SeatReserved IMMEDIATE - Multi-leg check:', {
-		isMultiLeg: params.isMultiLeg,
-		totalLegs: params.totalLegs,
-		legIndex: params.legIndex,
-		journeyId: params.journeyId
-	});
 
 	// Context hooks need to be declared before any queries that use them
 	const { theme, isDark } = useTheme();
@@ -135,28 +125,10 @@ export default function SeatReserved() {
 	// Helper to determine ride status - declared immediately after taxiInfo to ensure it's available for all useEffects
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 
-	// Debug logging for multi-leg journey parameters
+	// Multi-leg journey parameters handling
 	useEffect(() => {
-		console.log('🔍 SeatReserved DEBUG - Multi-leg journey parameters:', {
-			isMultiLeg: params.isMultiLeg,
-			journeyId: params.journeyId,
-			legIndex: params.legIndex,
-			totalLegs: params.totalLegs,
-			routeName: params.routeName,
-			allParams: params,
-		});
-		
 		const multiLegCheck = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
 		const lastLegCheck = isLastLeg(params.legIndex, params.totalLegs);
-		
-		console.log('🔍 SeatReserved DEBUG - Button visibility logic:', {
-			isMultiLegJourney: multiLegCheck,
-			isLastLeg: lastLegCheck,
-			shouldShowContinueButton: multiLegCheck && !lastLegCheck,
-			rideStatus: rideStatus,
-			currentLegIndex: params.legIndex ? parseInt(params.legIndex) : undefined,
-			totalLegsCount: params.totalLegs ? parseInt(params.totalLegs) : undefined,
-		});
 	}, [params, rideStatus]);
 
 	// Handle query errors
@@ -180,16 +152,12 @@ export default function SeatReserved() {
 
 	// Handle query errors gracefully
 	useEffect(() => {
-		if (taxiInfo === null && !rideJustEnded && !isEndingRide && user) {
-			console.log('No active reservation found - this is normal when no ride is active');
-		}
 	}, [taxiInfo, rideJustEnded, isEndingRide, user]);
 
 	// Automatically set rideJustEnded when ride is completed or cancelled with safety checks
 	useEffect(() => {
 		try {
 			if (rideStatus === 'completed' || rideStatus === 'cancelled') {
-				console.log(`Ride status changed to: ${rideStatus}`);
 				setRideJustEnded(true);
 				setIsEndingRide(false);
 			}
@@ -307,7 +275,6 @@ export default function SeatReserved() {
 				const rawDestLat = getParamAsString(params.destinationLat);
 				const rawDestLng = getParamAsString(params.destinationLng);
 
-				console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
 				const currentLat = parseFloat(rawCurrentLat);
 				const currentLng = parseFloat(rawCurrentLng);
@@ -443,8 +410,6 @@ export default function SeatReserved() {
 			
 			const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
 			
-			console.log('Fetching route from:', url);
-			console.log('Platform:', Platform.OS);
 			
 			const response = await fetch(url);
 			
@@ -456,7 +421,6 @@ export default function SeatReserved() {
 			
 			const data = await response.json();
 			
-			console.log('Directions API response status:', data.status);
 			
 			if (data.status !== 'OK') {
 				console.error('Directions API Error:', data);
@@ -471,7 +435,6 @@ export default function SeatReserved() {
 				}
 				
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
-				console.log('Decoded coordinates count:', decodedCoords.length);
 				
 				// Cache the route
 				setCachedRoute(routeKey, decodedCoords);
@@ -496,7 +459,6 @@ export default function SeatReserved() {
 			console.error('Error fetching route:', error);
 			
 			// Fallback: use straight line between origin and destination
-			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
 				{ latitude: dest.latitude, longitude: dest.longitude }
@@ -724,9 +686,6 @@ export default function SeatReserved() {
 		if (rideJustEnded) return;
 		
 		// Handle taxi info loading states
-		if (taxiInfo === null && !hasShownDeclinedAlert) {
-			console.log('No active reservation found');
-		}
 	}, [hasShownDeclinedAlert, taxiInfo]);
 
 	const handleEndRide = async () => {
@@ -771,7 +730,6 @@ export default function SeatReserved() {
 		setRideJustEnded(true);
 
 		try {
-			console.log('🚗 Ending ride:', { rideId: taxiInfo.rideId, userId: user.id });
 
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
@@ -779,14 +737,11 @@ export default function SeatReserved() {
 				rideId: taxiInfo.rideId,
 			});
 
-			console.log('💰 Trip ended, fare calculated:', result);
 
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			console.log('✅ Ride ended successfully');
 			
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			console.log('🔄 Seat availability updated');
 			
 			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			
@@ -834,7 +789,7 @@ export default function SeatReserved() {
 			// Reset the flags if there's an error
 			setIsEndingRide(false);
 			setRideJustEnded(false);
-			console.error('❌ Error ending ride:', error);
+			console.error('Error ending ride:', error);
 			Alert.alert('Error', error?.message || 'Failed to end ride. Please try again.');
 		}
 	};
@@ -881,7 +836,6 @@ export default function SeatReserved() {
 		setRideJustEnded(true);
 
 		try {
-			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
 
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
@@ -889,14 +843,11 @@ export default function SeatReserved() {
 				rideId: taxiInfo.rideId,
 			});
 
-			console.log('💰 Trip ended, fare calculated:', result);
 
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			console.log('✅ Ride ended successfully');
 			
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			console.log('🔄 Seat availability updated');
 			
 			if (!currentLocation || !destination) {
 				console.log('⚠️ Missing location data, cannot navigate to next leg');
@@ -984,7 +935,7 @@ export default function SeatReserved() {
 			// Reset the flags if there's an error
 			setIsEndingRide(false);
 			setRideJustEnded(false);
-			console.error('❌ Error continuing to next leg:', error);
+			console.error('Error continuing to next leg:', error);
 			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
 		}
 	};
@@ -1766,18 +1717,6 @@ export default function SeatReserved() {
 								{(() => {
 									const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
 									const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
-
-									console.log('🔍 SeatReserved BUTTON DEBUG:', {
-										isMultiLeg,
-										legIndex,
-										totalLegs: params.totalLegs,
-										shouldShow: isMultiLeg && legIndex === 0,
-										params: {
-											isMultiLeg: params.isMultiLeg,
-											legIndex: params.legIndex,
-											totalLegs: params.totalLegs
-										}
-									});
 
 									// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
 									return isMultiLeg && legIndex === 0;

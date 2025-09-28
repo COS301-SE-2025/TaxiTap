@@ -13,7 +13,7 @@ export const requestRideHandler = async (
   }
 ) => {
   try {
-    console.log('🚕 Processing ride request:', {
+    console.log('Processing ride request:', {
       passengerId: args.passengerId,
       driverId: args.driverId,
       startLocation: args.startLocation,
@@ -78,7 +78,7 @@ export const requestRideHandler = async (
         calculatedDuration = matchedTaxi.routeInfo.estimatedDuration;
       }
 
-      console.log('📏 Passenger displacement and fare calculated:', {
+      console.log('Passenger displacement and fare calculated:', {
         passengerDisplacement: routeDistance,
         calculatedFare,
         routeName: matchedTaxi.routeInfo.routeName,
@@ -101,7 +101,7 @@ export const requestRideHandler = async (
       distance: Math.round(routeDistance * 100) / 100,
     });
 
-    console.log('💾 Ride created with passenger displacement and fare:', {
+    console.log('Ride created with passenger displacement and fare:', {
       rideId,
       passengerDisplacement: Math.round(routeDistance * 100) / 100,
       calculatedFare: args.estimatedFare || Math.round(calculatedFare * 100) / 100
@@ -128,7 +128,7 @@ export const requestRideHandler = async (
     };
 
   } catch (error) {
-    console.error("❌ Error creating ride request:", error);
+    console.error("Error creating ride request:", error);
     throw new Error(`Failed to create ride request: ${error}`);
   }
 };

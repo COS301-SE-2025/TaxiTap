@@ -43,8 +43,8 @@ export const useJourneyRestoration = (options: JourneyRestorationOptions = {}) =
       setHasCheckedRestoration(true);
 
       if (hasActiveJourney && activeJourney && !restorationHandled) {
-        console.log(`🔄 Found active multi-leg journey: ${activeJourney.journeyId}`);
-        console.log(`📍 Journey status: ${activeJourney.status}, leg ${journeyProgress.currentLeg}/${journeyProgress.totalLegs}`);
+        console.log(`Found active multi-leg journey: ${activeJourney.journeyId}`);
+        console.log(`Journey status: ${activeJourney.status}, leg ${journeyProgress.currentLeg}/${journeyProgress.totalLegs}`);
 
         setRestorationHandled(true);
 

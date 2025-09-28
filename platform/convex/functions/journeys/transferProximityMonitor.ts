@@ -95,7 +95,7 @@ export const checkTransferPointProximity = internalQuery({
 
       // Check if driver is within 1km of transfer point
       if (distance <= TRANSFER_PROXIMITY_THRESHOLD) {
-        console.log(`🚩 Driver ${currentLeg.driverId} is ${distance.toFixed(2)}km from transfer point for journey ${journey.journeyId}`);
+        console.log(`Driver ${currentLeg.driverId} is ${distance.toFixed(2)}km from transfer point for journey ${journey.journeyId}`);
 
         proximityAlerts.push({
           journeyId: journey.journeyId,
@@ -137,7 +137,7 @@ export const triggerTransferPointArrival = internalMutation({
       throw new Error(`Leg ${currentLegIndex} not found for journey ${journeyId}`);
     }
 
-    console.log(`🎯 Transfer point reached for journey ${journeyId}, leg ${currentLegIndex + 1}`);
+    console.log(`Transfer point reached for journey ${journeyId}, leg ${currentLegIndex + 1}`);
 
     const now = Date.now();
 
@@ -241,7 +241,7 @@ export const triggerTransferPointArrival = internalMutation({
       },
     });
 
-    console.log(`✅ Transfer point arrival processed for journey ${journeyId}`);
+    console.log(`Transfer point arrival processed for journey ${journeyId}`);
 
     // Return information about next leg if journey continues
     if (!isJourneyComplete && currentLegIndex + 1 < journey.totalLegs) {
