@@ -60,6 +60,11 @@ export default function SeatReserved() {
 		driverName?: string;
 		fare?: string;
 		rideId?: string;
+		// Route parameters
+		routeId?: string;
+		estimatedFare?: string;
+		availableTaxisCount?: string;
+		routeMatchData?: string;
 		// Multi-leg journey parameters
 		isMultiLeg?: string;
 		journeyId?: string;
@@ -729,21 +734,53 @@ export default function SeatReserved() {
 			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
-		
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
 		// Set this FIRST to prevent the query from being executed
 		setIsEndingRide(true);
 		setRideJustEnded(true);
-		
+
 		try {
 			console.log('🚗 Ending ride:', { rideId: taxiInfo.rideId, userId: user.id });
-			
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
+
 			console.log('💰 Trip ended, fare calculated:', result);
-			
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			console.log('✅ Ride ended successfully');
@@ -767,6 +804,22 @@ export default function SeatReserved() {
 					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
 					actualFare: result.fare.toString(), // Pass actual fare for payment validation
+					// Location parameters
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					// Driver/taxi parameters
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+					licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+					fare: taxiInfo?.fare?.toString() || '0',
+					estimatedFare: params.estimatedFare,
+					// Route parameters
+					routeId: params.routeId,
+					availableTaxisCount: params.availableTaxisCount,
+					routeMatchData: params.routeMatchData,
 					// Pass multi-leg journey parameters if applicable
 					...(params.isMultiLeg && {
 						isMultiLeg: params.isMultiLeg,
@@ -791,21 +844,53 @@ export default function SeatReserved() {
 			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
-		
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen for this leg
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
 		// Set this FIRST to prevent the query from being executed
 		setIsEndingRide(true);
 		setRideJustEnded(true);
-		
+
 		try {
 			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
-			
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
+
 			console.log('💰 Trip ended, fare calculated:', result);
-			
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			console.log('✅ Ride ended successfully');
@@ -832,12 +917,31 @@ export default function SeatReserved() {
 						rideId: taxiInfo?.rideDocId,
 						driverId: driverId,
 						actualFare: result.fare.toString(),
-						isMultiLeg: params.isMultiLeg,
-						journeyId: params.journeyId,
-						legIndex: params.legIndex,
-						totalLegs: params.totalLegs,
-						routeName: params.routeName,
 						continueToNext: 'true', // Flag to indicate this should continue to next leg
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Driver/taxi parameters
+						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						fare: taxiInfo?.fare?.toString() || '0',
+						estimatedFare: params.estimatedFare,
+						// Route parameters
+						routeId: params.routeId,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Pass multi-leg journey parameters if applicable
+						...(params.isMultiLeg && {
+							isMultiLeg: params.isMultiLeg,
+							journeyId: params.journeyId,
+							legIndex: params.legIndex,
+							totalLegs: params.totalLegs,
+							routeName: params.routeName,
+						}),
 					},
 				});
 			} else {
@@ -853,6 +957,19 @@ export default function SeatReserved() {
 						fare: result.fare.toString(),
 						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
 						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
 						isMultiLeg: params.isMultiLeg,
 						journeyId: params.journeyId,
 						legIndex: params.legIndex,

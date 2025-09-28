@@ -107,6 +107,7 @@ export const handlePassengerPayment = async (
 
   if (!isPaid) {
     paymentType = "not_paid";
+    amountOwed = fare; // The full fare is owed when not paid
   } else if (amountPaid === fare) {
     paymentType = "exact";
   } else if (amountPaid > fare) {
@@ -126,8 +127,38 @@ export const handlePassengerPayment = async (
     paymentType,
     changeReceived: changeDue === 0,
     paymentConfirmedAt: isPaid ? Date.now() : undefined,
+    finalFare: fare, // Set finalFare to the expected fare for consistency
     updatedAt: Date.now(),
   });
+
+  // Update the corresponding trip record for driver statistics
+  if (ride.tripId) {
+    try {
+      const trip = await ctx.db.get(ride.tripId);
+      if (trip) {
+        // Update the trip fare based on payment status and amount
+        let tripFare = trip.fare;
+
+        if (isPaid && amountPaid > 0) {
+          // If payment confirmed with specific amount, use that amount for driver earnings
+          tripFare = amountPaid;
+        } else if (!isPaid) {
+          // If payment not confirmed, set fare to 0 for driver statistics
+          tripFare = 0;
+        }
+
+        await ctx.db.patch(ride.tripId, {
+          fare: tripFare,
+          endTime: Date.now(),
+        });
+
+        console.log(`Updated trip ${ride.tripId} fare to ${tripFare} based on payment status: ${isPaid}, amount: ${amountPaid}`);
+      }
+    } catch (error) {
+      console.error('Error updating trip record during payment:', error);
+      // Don't fail the payment confirmation if trip update fails
+    }
+  }
 
   // Return the correct changeDue amount based on payment type
   const returnChangeDue = paymentType === "underpaid" ? amountOwed : changeDue;

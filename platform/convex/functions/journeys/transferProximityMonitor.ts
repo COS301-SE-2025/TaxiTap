@@ -158,6 +158,46 @@ export const triggerTransferPointArrival = internalMutation({
       .filter(leg => leg.actualCost !== undefined)
       .reduce((sum, leg) => sum + (leg.actualCost || 0), 0);
 
+    // Update the corresponding ride and trip records for driver statistics
+    if (currentLeg.rideId) {
+      try {
+        const ride = await ctx.db.get(currentLeg.rideId);
+        if (ride) {
+          // Verify that payment has been confirmed before completing the leg
+          if (ride.tripPaid !== true) {
+            throw new Error("Payment must be confirmed before completing this leg of the journey. Please use the payment confirmation screen first.");
+          }
+
+          // Use the actual payment amount from the ride record, not the passed actualCost
+          const actualPaymentAmount = ride.amountPaid || actualCost;
+
+          // Update ride with final cost information
+          await ctx.db.patch(currentLeg.rideId, {
+            finalFare: actualPaymentAmount,
+            paymentConfirmedAt: now,
+          });
+
+          // Update the corresponding trip record for driver statistics
+          if (ride.tripId) {
+            const trip = await ctx.db.get(ride.tripId);
+            if (trip) {
+              await ctx.db.patch(ride.tripId, {
+                fare: actualPaymentAmount,
+                endTime: now,
+              });
+              console.log(`Updated multi-leg trip ${ride.tripId} fare to ${actualPaymentAmount} for transfer at leg ${currentLegIndex + 1}`);
+            }
+          }
+
+          // Update the actualCost to match the payment amount for consistency
+          actualCost = actualPaymentAmount;
+        }
+      } catch (error) {
+        console.error(`Error updating trip record for multi-leg journey transfer at leg ${currentLegIndex}:`, error);
+        throw error; // Re-throw payment verification errors
+      }
+    }
+
     const isLastLeg = currentLegIndex === journey.totalLegs - 1;
     const isJourneyComplete = isLastLeg;
 
