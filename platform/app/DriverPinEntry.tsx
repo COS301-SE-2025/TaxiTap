@@ -12,6 +12,7 @@ import {
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
@@ -23,12 +24,103 @@ export default function DriverPinEntry() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
   const { user } = useUser();
   
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [driverPin, setDriverPin] = useState<string>('');
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    userOrRideInfoNotAvailable: {
+      en: "User or ride information not available.",
+      zu: "Ulwazi lomsebenzisi noma lohambo alukho.",
+      tn: "Tshedimosetso ya modirisi kgotsa ya leetong ga e na.",
+      af: "Gebruiker of rit inligting nie beskikbaar nie."
+    },
+    failedToStartRide: {
+      en: "Failed to start ride. Please try again.",
+      zu: "Kuhlulekile ukuqala uhambo. Sicela uzame futhi.",
+      tn: "Ga go atlege go simolola leetong. Re kopa o leke gape.",
+      af: "Kon nie rit begin nie. Probeer asseblief weer."
+    },
+    rideStarted: {
+      en: "Ride Started!",
+      zu: "Uhambo Luqalisiwe!",
+      tn: "Leetong le Simolotse!",
+      af: "Rit Begin!"
+    },
+    pickupLocation: {
+      en: "Pickup Location",
+      zu: "Indawo Yokuthatha",
+      tn: "Lefelo la Go Tsaya",
+      af: "Afhaalpunt"
+    },
+    destination: {
+      en: "Destination",
+      zu: "Indawo Eyayo",
+      tn: "Lefelo la Boikaelelo",
+      af: "Bestemming"
+    },
+    showYourPin: {
+      en: "Show Your PIN",
+      zu: "Khombisa I-PIN Yakho",
+      tn: "Bontsha PIN ya Gago",
+      af: "Wys Jou PIN"
+    },
+    displayPinToPassenger: {
+      en: "Display this PIN to the passenger for verification",
+      zu: "Khombisa le PIN kumhambi ukuze aqinisekise",
+      tn: "Bontsha PIN e kwa moleledi go tlhomamisa",
+      af: "Wys hierdie PIN aan die passasier vir verifikasie"
+    },
+    passenger: {
+      en: "Passenger:",
+      zu: "Umhambi:",
+      tn: "Moleledi:",
+      af: "Passasier:"
+    },
+    unknown: {
+      en: "Unknown",
+      zu: "Ongaziwa",
+      tn: "O sa Itseweng",
+      af: "Onbekend"
+    },
+    driverVerificationPin: {
+      en: "Driver Verification PIN",
+      zu: "I-PIN Yokuqinisekisa Yomshayeli",
+      tn: "PIN ya Tlhomamiso ya Mokgweetsi",
+      af: "Bestuurder Verifikasie PIN"
+    },
+    askPassengerToVerify: {
+      en: "Ask passenger to verify and enter this PIN on their device",
+      zu: "Cela umhambi ukuthi aqinisekise bese efaka le PIN kwisishiyi sakhe",
+      tn: "Kopa moleledi gore a tlhomamise mme a tsenye PIN e mo sediriseng sa gagwe",
+      af: "Vra die passasier om te verifieer en hierdie PIN op hul toestel in te voer"
+    },
+    startRide: {
+      en: "Start Ride",
+      zu: "Qala Uhambo",
+      tn: "Simolola Leetong",
+      af: "Begin Rit"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
   
   const rideId = params.rideId as string;
 
@@ -157,7 +249,7 @@ export default function DriverPinEntry() {
 
   const handleStartRide = async () => {
     if (!user || !ride) {
-      Alert.alert('Error', 'User or ride information not available.');
+      Alert.alert(getTranslation('error'), getTranslation('userOrRideInfoNotAvailable'));
       return;
     }
 
@@ -186,7 +278,7 @@ export default function DriverPinEntry() {
           await getRoute(origin, destination);
         }
       } else {
-        Alert.alert('Error', 'Failed to start ride. Please try again.');
+        Alert.alert(getTranslation('error'), getTranslation('failedToStartRide'));
       }
     } catch (error: any) {
       Alert.alert('Error', 'Failed to start ride. Please try again.');
@@ -435,7 +527,7 @@ export default function DriverPinEntry() {
         <View style={dynamicStyles.content}>
           <View style={dynamicStyles.header}>
             <Icon name="checkmark-circle" size={32} color="#4CAF50" />
-            <Text style={dynamicStyles.title}>Ride Started!</Text>
+            <Text style={dynamicStyles.title}>{getTranslation('rideStarted')}</Text>
             <Text style={dynamicStyles.subtitle}>
               Navigate to pickup location
             </Text>
@@ -457,12 +549,12 @@ export default function DriverPinEntry() {
               >
                 <Marker
                   coordinate={startLocation}
-                  title="Pickup Location"
+                  title={getTranslation('pickupLocation')}
                   pinColor="blue"
                 />
                 <Marker
                   coordinate={endLocation}
-                  title="Destination"
+                  title={getTranslation('destination')}
                   pinColor="orange"
                 />
                 {routeCoordinates.length > 0 && (
@@ -506,21 +598,21 @@ export default function DriverPinEntry() {
         <View style={dynamicStyles.content}>
           <View style={dynamicStyles.header}>
             <Icon name="shield-checkmark" size={32} color={theme.primary} />
-            <Text style={dynamicStyles.title}>Show Your PIN</Text>
+            <Text style={dynamicStyles.title}>{getTranslation('showYourPin')}</Text>
             <Text style={dynamicStyles.subtitle}>
-              Display this PIN to the passenger for verification
+              {getTranslation('displayPinToPassenger')}
             </Text>
           </View>
 
           {passenger && (
             <Text style={dynamicStyles.passengerName}>
-              Passenger: {passenger.name || 'Unknown'}
+              {getTranslation('passenger')} {passenger.name || getTranslation('unknown')}
             </Text>
           )}
 
           {/* Driver PIN Display */}
           <View style={dynamicStyles.pinContainer}>
-            <Text style={dynamicStyles.pinLabel}>Driver Verification PIN</Text>
+            <Text style={dynamicStyles.pinLabel}>{getTranslation('driverVerificationPin')}</Text>
             <View style={dynamicStyles.pinDisplay}>
               {driverPin.split('').map((digit, index) => (
                 <View key={index} style={dynamicStyles.pinDigit}>
@@ -529,7 +621,7 @@ export default function DriverPinEntry() {
               ))}
             </View>
             <Text style={dynamicStyles.pinInstruction}>
-              Ask passenger to verify and enter this PIN on their device
+              {getTranslation('askPassengerToVerify')}
             </Text>
           </View>
 
@@ -538,7 +630,7 @@ export default function DriverPinEntry() {
             onPress={handleStartRide}
             activeOpacity={0.8}
           >
-            <Text style={dynamicStyles.startRideButtonText}>Start Ride</Text>
+            <Text style={dynamicStyles.startRideButtonText}>{getTranslation('startRide')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

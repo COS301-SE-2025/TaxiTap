@@ -10,7 +10,37 @@ export default () => {
 	const params = useLocalSearchParams();
 	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
-	const { t } = useLanguage();
+	const { currentLanguage } = useLanguage();
+
+	// Supported languages type
+	type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+	// Hardcoded translations for all UI text
+	const translations: Record<string, Record<SupportedLanguage, string>> = {
+		currentLocation: {
+			en: "Current Location",
+			zu: "Indawo Yamanje",
+			tn: "Lefelo la Jaanong",
+			af: "Huidige Ligging"
+		},
+		passengerDetails: {
+			en: "Passenger Details",
+			zu: "Imininingwane Yomhambi",
+			tn: "Tshedimosetso ya Moleledi",
+			af: "Passasier Besonderhede"
+		},
+		endTrip: {
+			en: "End Trip",
+			zu: "Qeda Uhambo",
+			tn: "Fetsa Leetong",
+			af: "Eindig Rit"
+		}
+	} as const;
+
+	// Type-safe translation getter
+	const getTranslation = (key: keyof typeof translations) => {
+		return translations[key][currentLanguage as SupportedLanguage];
+	};
 	
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -29,7 +59,7 @@ export default () => {
 	const currentLocation = {
 		latitude: parseFloat(getParamAsString(params.currentLat, "-25.7479")),
 		longitude: parseFloat(getParamAsString(params.currentLng, "28.2293")),
-		name: getParamAsString(params.currentName, t('common:currentLocation'))
+		name: getParamAsString(params.currentName, getTranslation('currentLocation'))
 	};
 
 	const destination = {
@@ -245,7 +275,7 @@ export default () => {
 						<View style={dynamicStyles.driverDetailsHeader}>
 							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Passenger Details"}
+								{getTranslation('passengerDetails')}
 							</Text>
 							<View style={dynamicStyles.contactButton}>
 								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
@@ -301,7 +331,7 @@ export default () => {
 								style={dynamicStyles.cancelButton} 
 								onPress={handleEndtrip}>
 								<Text style={dynamicStyles.cancelButtonText}>
-									{"End Trip"}
+									{getTranslation('endTrip')}
 								</Text>
 							</TouchableOpacity>
 						</View>
