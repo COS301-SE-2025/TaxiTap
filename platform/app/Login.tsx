@@ -27,14 +27,92 @@ export default function Login() {
   const router = useRouter();
   const convex = useConvex();
   const { login } = useUser();
-  const { t, currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
+
+  // Supported languages type
+  type SupportedLanguage = 'en' | 'zu' | 'tn' | 'af';
+
+  // Hardcoded translations for all UI text
+  const translations: Record<string, Record<SupportedLanguage, string>> = {
+    phoneNumber: {
+      en: "Phone Number",
+      zu: "Inombolo Yocingo",
+      tn: "Nomoro ya Tshepe",
+      af: "Telefoonnommer"
+    },
+    password: {
+      en: "Password",
+      zu: "Iphasiwedi",
+      tn: "Leleme la sephiri",
+      af: "Wagwoord"
+    },
+    forgotPassword: {
+      en: "Forgot Password?",
+      zu: "Ukhohlwe Iphasiwedi?",
+      tn: "O lebetse Leleme la sephiri?",
+      af: "Wagwoord vergeet?"
+    },
+    login: {
+      en: "Login",
+      zu: "Ngena",
+      tn: "Tsena",
+      af: "Teken In"
+    },
+    error: {
+      en: "Error",
+      zu: "Iphutha",
+      tn: "Phoso",
+      af: "Fout"
+    },
+    pleaseFillAllFields: {
+      en: "Please fill all fields",
+      zu: "Sicela ugcwalise zonke izinkambu",
+      tn: "Ka kopo, tlatsa mafelo otlhe",
+      af: "Vul asseblief alle velde in"
+    },
+    invalidNumberFormat: {
+      en: "Invalid number format",
+      zu: "Ifomethi yenombolo engavumelekile",
+      tn: "Mokgwa wa nomoro o o sa siamang",
+      af: "Ongeldige nommerformaat"
+    },
+    loginError: {
+      en: "Login Error",
+      zu: "Iphutha Lokungena",
+      tn: "Phoso ya go Tsena",
+      af: "Aanmeldingsfout"
+    },
+    alreadyLoggedIn: {
+      en: "You are already logged in on another device. Please log out first.",
+      zu: "Usuvele ungene kwesinye isisetshenziswa. Sicela uphume kuqala.",
+      tn: "O setse o tsene mo sediriseng se sengwe. Ka kopo, tswa pele.",
+      af: "Jy is reeds aangemeld op 'n ander toestel. Meld asseblief eers uit."
+    },
+    phoneOrPasswordIncorrect: {
+      en: "Phone number or password incorrect",
+      zu: "Inombolo yocingo noma iphasiwedi ayilungile",
+      tn: "Nomoro ya tshepe kgotsa leleme la sephiri ga le siame",
+      af: "Telefoonnommer of wagwoord verkeerd"
+    },
+    unexpectedError: {
+      en: "An unexpected error occurred",
+      zu: "Kwenzeke iphutha elingalindelekile",
+      tn: "Phoso e e sa lebeletseng e tlhagile",
+      af: "'n Onverwagte fout het voorgekom"
+    }
+  } as const;
+
+  // Type-safe translation getter
+  const getTranslation = (key: keyof typeof translations) => {
+    return translations[key][currentLanguage as SupportedLanguage];
+  };
 
   const handleLogin = async () => {
     const deviceId = await getDeviceId();
 
     if (!number || !password) {
-      showGlobalError('Error', 'Please fill all fields', {
+      showGlobalError(getTranslation('error'), getTranslation('pleaseFillAllFields'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -44,7 +122,7 @@ export default function Login() {
 
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
-      showGlobalError('Error', 'Invalid number format', {
+      showGlobalError(getTranslation('error'), getTranslation('invalidNumberFormat'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -61,13 +139,13 @@ export default function Login() {
 
       if (!result.success) {
         if (result.reason === "Already logged in on another device") {
-          showGlobalError('Login Error', 'You are already logged in on another device. Please log out first.', {
+          showGlobalError(getTranslation('loginError'), getTranslation('alreadyLoggedIn'), {
             duration: 5000,
             position: 'top',
             animation: 'slide-down',
           });
         } else {
-          showGlobalError('Login Error', 'Phone number or password incorrect', {
+          showGlobalError(getTranslation('loginError'), getTranslation('phoneOrPasswordIncorrect'), {
             duration: 4000,
             position: 'top',
             animation: 'slide-down',
@@ -89,8 +167,8 @@ export default function Login() {
           params: { userId: result.user.id.toString() },
         });
       }
-    } catch (err) {
-      showGlobalError('Error', 'An unexpected error occurred', {
+    } catch (error) {
+      showGlobalError(getTranslation('error'), getTranslation('unexpectedError'), {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -129,7 +207,7 @@ export default function Login() {
         >
           {/* Username */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:phoneNumber')}
+              {getTranslation('phoneNumber')}
           </Text>
 
           <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -167,7 +245,7 @@ export default function Login() {
 
           {/* Password */}
           <Text style={{ color: 'white', fontWeight: '400', fontSize: 20, paddingLeft: 4, paddingBottom: 6 }}>
-              {t('auth:password')}
+              {getTranslation('password')}
           </Text>
 
           <View
@@ -184,7 +262,7 @@ export default function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('auth:password')}
+              placeholder={getTranslation('password')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               style={{
@@ -203,7 +281,7 @@ export default function Login() {
 
           {/* Forgot password */}
           <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
+            <Text style={{ color: '#ccc', fontSize: 16 }}>{getTranslation('forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -220,7 +298,7 @@ export default function Login() {
             }}
           >
             <Text style={{ color: '#232f3e', fontWeight: '700', fontSize: 26 }}>
-              {t('auth:login')}
+              {getTranslation('login')}
             </Text>
           </Pressable>
         </View>
