@@ -355,7 +355,7 @@ export default function TabLayout() {
     const mapContext = useMapContext();
     currentLocation = mapContext.currentLocation;
     destination = mapContext.destination;
-  } catch (e) {
+  } catch {
     console.warn('MapContext not available in TabLayout');
   }
 

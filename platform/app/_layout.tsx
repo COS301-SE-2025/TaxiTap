@@ -22,7 +22,6 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { AlertProvider } from '../contexts/AlertContext';
 import { AlertOverlay } from '../components/AlertOverlay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { Id } from '../convex/_generated/dataModel';
 import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { MultiLegJourneyProvider } from '../contexts/MultiLegJourneyContext';
@@ -87,7 +86,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
-  const { user, loading } = useUser();
+  const { loading } = useUser();
   
   // Configure Android Navigation Bar so it does not overlap content
   useEffect(() => {
@@ -100,7 +99,7 @@ function RootLayoutNav() {
           await NavigationBar.setPositionAsync('relative');
           await NavigationBar.setBackgroundColorAsync(theme.background);
           await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
-        } catch (e) {
+        } catch {
           // ignore if not available
         }
       })();
