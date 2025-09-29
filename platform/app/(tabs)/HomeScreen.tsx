@@ -32,10 +32,9 @@ import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 
-const GOOGLE_MAPS_API_KEY =
-  Platform.OS === 'ios'
-    ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
-    : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
+  ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
+  : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
 
 
 

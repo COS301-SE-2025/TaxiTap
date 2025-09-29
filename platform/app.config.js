@@ -16,8 +16,6 @@ export default {
     },
     // Add extra field for easier access to environment variables
     extra: {
-      googleMapsIosApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY,
-      googleMapsAndroidApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY,
       eas: {
         projectId: "880ada88-b612-4c2f-b902-1790c99551c0"
       }
