@@ -580,7 +580,7 @@ export default function RouteSelectionScreen() {
         }
       }));
       
-      console.log('❌ Search error: Unable to find taxis');
+      console.log('Search error: Unable to find taxis');
     }
   };
 

@@ -21,8 +21,6 @@ export function Badge({
   size = 'medium',
   showDescription = false 
 }: BadgeProps) {
-  console.log('Badge rendering with:', { name, description, icon, color });
-
   const getIconComponent = (iconName: string, size: number, color: string) => {
     switch (iconName) {
       case "shield-check":

@@ -58,7 +58,7 @@ export default function PassengerPinEntry() {
       endName,
       user: user?.id
     });
-    console.log('🔍 PassengerPinEntry - Multi-leg params check:', {
+    console.log('PassengerPinEntry - Multi-leg params check:', {
       isMultiLeg: params.isMultiLeg,
       journeyId: params.journeyId,
       legIndex: params.legIndex,

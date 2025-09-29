@@ -43,7 +43,7 @@ export const endRideHandler = async (ctx: any, args: any) => {
 
     // For multi-leg journeys, auto-confirm payment if not already confirmed
     if (isMultiLegRide && ride.tripPaid !== true) {
-      console.log(`💳 Auto-confirming payment for multi-leg ride ${ride.rideId}`);
+      console.log(`Auto-confirming payment for multi-leg ride ${ride.rideId}`);
       await ctx.db.patch(ride._id, {
         tripPaid: true,
         amountPaid: ride.estimatedFare || 0,

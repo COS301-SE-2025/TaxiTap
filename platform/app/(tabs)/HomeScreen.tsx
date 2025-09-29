@@ -427,9 +427,6 @@ export default function HomeScreen() {
 
   // Debug: Log when taxiSearchParams changes
   useEffect(() => {
-    if (taxiSearchParams) {
-      console.log('🔧 taxiSearchParams updated, query should execute:', taxiSearchParams);
-    }
   }, [taxiSearchParams]);
 
   // Query for multi-leg journey options - only runs when direct routes fail
@@ -773,18 +770,15 @@ export default function HomeScreen() {
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!userId) {
-      console.log('⚠️ No userId found, skipping taxi search');
       setIsSearchingTaxis(false);
       return;
     }
 
     // Prevent duplicate searches if one is already in progress
     if (isSearchingTaxis) {
-      console.log('⚠️ Taxi search already in progress, skipping duplicate search');
       return;
     }
 
-    console.log('🔍 Starting taxi search for:', { origin: origin.name, dest: dest.name, userId });
     setAvailableTaxis([]);
     setRouteMatchResults(null);
     setIsSearchingTaxis(true);
@@ -800,17 +794,13 @@ export default function HomeScreen() {
       
       // Fallback timeout in case the query doesn't respond
       const timeoutId = setTimeout(() => {
-        console.log('⏰ Taxi search timeout, checking if we should reset state');
         // Only reset if we don't already have successful results
         if (!hasSuccessfulResults.current) {
-          console.log('⏰ No existing results, forcing stop of loading state');
           setIsSearchingTaxis(false);
           setIsSearchingMultiLeg(false);
           setIsLoadingRoute(false);
           setRouteMatchResults({ success: false, availableTaxis: [], message: 'Search timeout' });
-          console.log('⏰ Search timeout: Search took too long. Please try again.');
         } else {
-          console.log('⏰ Existing results found, just stopping loading state without reset');
           setIsSearchingTaxis(false);
           setIsSearchingMultiLeg(false);
           setIsLoadingRoute(false);
@@ -821,9 +811,8 @@ export default function HomeScreen() {
       (window as any).taxiSearchTimeout = timeoutId;
       
     } catch (error) {
-      console.error('❌ Error in taxi search:', error);
+      console.error('Error in taxi search:', error);
       setIsSearchingTaxis(false);
-      console.log('❌ Search error: Unable to find taxis');
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
@@ -832,7 +821,6 @@ export default function HomeScreen() {
   // Handle taxi search results
   useEffect(() => {
     if (taxiSearchResult) {
-      console.log('🚖 Taxi search result received:', taxiSearchResult);
       
       // Clear timeout since we got a response
       if ((window as any).taxiSearchTimeout) {
@@ -843,13 +831,11 @@ export default function HomeScreen() {
       setIsSearchingTaxis(false);
 
       if (taxiSearchResult.success && taxiSearchResult.availableTaxis.length > 0) {
-        console.log(`✅ Found ${taxiSearchResult.availableTaxis.length} available taxis`);
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
         hasSuccessfulResults.current = true;
       } else {
         // No direct routes found - trigger multi-leg journey search
-        console.log('🔄 No direct routes found, searching for multi-leg options...');
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
         setIsSearchingMultiLeg(true);
@@ -863,11 +849,9 @@ export default function HomeScreen() {
       setIsSearchingMultiLeg(false);
 
       if (multiLegSearchResult.success && multiLegSearchResult.journeyOptions.length > 0) {
-        console.log(`🛤️ Found ${multiLegSearchResult.journeyOptions.length} multi-leg options`);
         setMultiLegOptions(multiLegSearchResult.journeyOptions);
         setShowMultiLegPreview(true);
       } else {
-        console.log('❌ No multi-leg options found');
         setMultiLegOptions([]);
         showGlobalAlert({
           title: 'No Routes Available',
@@ -938,7 +922,6 @@ export default function HomeScreen() {
   const handleDestinationSubmit = async () => {
     if (!destinationAddress.trim()) return;
     
-    console.log('📝 Destination submit pressed:', destinationAddress);
     setShowDestinationSuggestions(false);
     setDestinationSuggestions([]);
     setIsGeocodingDestination(true);
@@ -947,7 +930,6 @@ export default function HomeScreen() {
     setIsGeocodingDestination(false);
 
     if (result) {
-      console.log('📍 Geocoded destination:', result);
       const uniqueRouteId = `manual-${result.latitude.toFixed(5)}-${result.longitude.toFixed(5)}`;
       
       const destinationWithUserName = {
@@ -962,11 +944,9 @@ export default function HomeScreen() {
       
       // Force trigger route calculation if we have origin
       if (origin) {
-        console.log('🚀 Manually triggering route calculation');
         getRoute(origin, destinationWithUserName);
       }
     } else {
-      console.log('❌ Failed to geocode destination');
     }
   };
 
@@ -1245,8 +1225,6 @@ export default function HomeScreen() {
       setSelectedMultiLegOption(option);
 
       // Create the multi-leg journey in the database
-      console.log('🚀 Creating multi-leg journey with option:', JSON.stringify(option, null, 2));
-      console.log('🔑 PassengerId:', userId);
 
       try {
         const result = await createMultiLegJourney({
@@ -1254,10 +1232,8 @@ export default function HomeScreen() {
           journeyOption: option,
         });
 
-        console.log(`✅ Created multi-leg journey: ${result.journeyId}`);
       } catch (error) {
-        console.error('❌ Failed to create multi-leg journey:', error);
-        console.error('❌ Option data was:', JSON.stringify(option, null, 2));
+        console.error('Failed to create multi-leg journey:', error);
         throw error; // Re-throw to trigger the outer catch block
       }
 
@@ -1284,7 +1260,7 @@ export default function HomeScreen() {
       // Close the preview
       setShowMultiLegPreview(false);
     } catch (error) {
-      console.error('❌ Error creating multi-leg journey:', error);
+      console.error('Error creating multi-leg journey:', error);
       showGlobalError('Booking Error', 'Failed to create multi-leg journey. Please try again.');
     }
   };
@@ -1887,7 +1863,7 @@ export default function HomeScreen() {
         {false && routeMatchResults && !keyboardVisible && !routeLoaded && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
-              🚗 {t('home:journeyStatus')}
+              {t('home:journeyStatus')}
             </Text>
             <View style={dynamicStyles.searchResultsCard}>
               <View style={{

@@ -115,7 +115,7 @@ async function calculateRouteScore(
   endLat: number,
   endLon: number
 ): Promise<RouteScore> {
-  console.log('🔍 calculateRouteScore input:', {
+  console.log('calculateRouteScore input:', {
     routeId: route.routeId,
     startLat,
     startLon,
@@ -176,7 +176,7 @@ async function calculateRouteScore(
     // Fare based on passenger displacement from origin
     calculatedFare = calculateFare(passengerDisplacement);
     
-    console.log('📍 Route calculation debug:', {
+    console.log('Route calculation debug:', {
       startLat, startLon, endLat, endLon,
       passengerDisplacement,
       calculatedFare,
@@ -309,7 +309,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
   }: FindAvailableTaxisArgs
 ): Promise<TaxiSearchResult> => {
   try {
-    console.log('🔍 Finding available taxis for journey:', {
+    console.log('Finding available taxis for journey:', {
       origin: { lat: originLat, lng: originLng },
       destination: { lat: destinationLat, lng: destinationLng }
     });
@@ -483,7 +483,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
       }
     }
 
-    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis`);
+    console.log(`Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis`);
 
     if (availableTaxis.length === 0) {
       return {
@@ -528,7 +528,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
       calculatedFare: Math.round(calculatedFare * 100) / 100
     }));
 
-    console.log(`🎯 Final result: ${finalResults.length} available taxis found`);
+    console.log(`Final result: ${finalResults.length} available taxis found`);
 
     return {
       success: true,
@@ -549,7 +549,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
     };
     
   } catch (error) {
-    console.error("❌ Error in _findAvailableTaxisForJourney:", error);
+    console.error("Error in _findAvailableTaxisForJourney:", error);
     return {
       success: false,
       availableTaxis: [],
