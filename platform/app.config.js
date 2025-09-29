@@ -24,7 +24,7 @@ export default {
       supportsTablet: true,
       bundleIdentifier: "com.gititdone.taxitap",
       config: {
-        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
+        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY || "AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg"
       }
     },
     android: {
@@ -36,7 +36,7 @@ export default {
       package: "com.gititdone.taxitap",
       config: {
         googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY || "AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA"
         }
       }
     },
@@ -50,6 +50,12 @@ export default {
     },
     plugins: [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app uses location to find nearby taxis and provide directions."
+        }
+      ],
       [
         "expo-notifications",
         {
