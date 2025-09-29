@@ -76,20 +76,20 @@ TaxiTap is a revolutionary mobile platform designed to transform South Africa's 
 ### 📊 Demo 4
 | Resource | Link |
 |----------|------|
-| **🎥 Presentation** | [Watch Video]() |
-| **🚀 Live Demo** | [Watch Video]() |
-| **📄 SRS Document** | [View PDF]() |
-| **🏗️ Architecture Document** | [View PDF]() |
-| **📝 Coding Standards** | [View PDF]() |
-| **📖 User Manual** | [View PDF]() |
-| **📄 Technical Installation Manual** | [View PDF]() |
-| **📄 Service Contracts** | [View PDF]() |
-| **📄 Testing Policy** | [View PDF]() |
-| **📄 Code Coverage** | [View Page]() |
-| **🗠 Domain Model** | [View Diagram]() |
-| **🗠 Architecture Diagram** | [View Diagram]() |
-| **🗠 Deployment Diagram** | [View Diagram]() |
-| **👥👥 Project Management** | [View Project Board]() |
+| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1yjJ8O9Y-pEzPHc2W1ztmisCIg2oq1Tri/view?usp=drive_link) |
+| **🚀 Live Demo** | [Watch Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link) |
+| **📄 SRS Document** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/SRS_Demo4.pdf) |
+| **🏗️ Architecture Document** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architectural_Document_Demo4.pdf) |
+| **📝 Coding Standards** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Coding%20Standards.pdf) |
+| **📖 User Manual** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Capstone_Demo_4_User_Manual.pdf) |
+| **📄 Technical Installation Manual** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf) |
+| **📄 Service Contracts** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/ServiceContracts_Demo4.pdf) |
+| **📄 Testing Policy** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/TestingPolicy.pdf) |
+| **📄 Code Coverage** | [View Page](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/platform/coverage/lcov-report/index.html) |
+| **🗠 Domain Model** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/DomainModel_Demo4.jpg) |
+| **🗠 Architecture Diagram** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architecural%20Diagram.png) |
+| **🗠 Deployment Diagram** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Deployment%20Model%20Updated.png) |
+| **👥👥 Project Management** | [View Project Board](https://github.com/orgs/COS301-SE-2025/projects/265) |
 
 ---
 
