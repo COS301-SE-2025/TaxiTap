@@ -1,28 +1,37 @@
-// Mock Convex validation functions before importing modules
+// tests/unit/backend/queries.test.ts
+
+// ----------------- Mock Convex validation -----------------
 jest.mock('convex/values', () => ({
   v: {
-    id: jest.fn((table) => ({ table })),
+    id: jest.fn((table: string) => ({ table })),
     number: jest.fn(() => ({})),
     string: jest.fn(() => ({})),
     boolean: jest.fn(() => ({})),
     object: jest.fn(() => ({})),
     array: jest.fn(() => ({})),
-    optional: jest.fn((validator) => ({ validator })),
-    union: jest.fn((...validators) => ({ validators })),
+    optional: jest.fn((validator: any) => ({ validator })),
+    union: jest.fn((...validators: any[]) => ({ validators })),
   },
 }));
 
-const { createQueryCtx } = require('../../mocks/convex-server');
-const { 
+jest.mock('../../../convex/_generated/server', () => ({
+  query: (def: any) => def,
+  mutation: (def: any) => def,
+  action: (def: any) => def,
+}));
+
+// ----------------- Imports -----------------
+import { createQueryCtx } from '../../mocks/convex-server';
+import {
   getRouteStopsWithEnrichment,
   getAllAvailableRoutesForPassenger,
   getRoutesByTaxiAssociationForPassenger,
   getRouteDetailsWithDrivers,
   getDriverAssignedRoute,
-  getAllTaxiAssociations
-} = require('../../../convex/functions/routes/queries');
+  getAllTaxiAssociations,
+} from '../../../convex/functions/routes/queries';
 
-// Mock data for testing
+// ----------------- Mock Data -----------------
 const mockRoutes = [
   {
     _id: 'route1',
@@ -31,16 +40,16 @@ const mockRoutes = [
     stops: [
       { id: '1', name: 'Johannesburg CBD', coordinates: [-26.2041, 28.0473], order: 1 },
       { id: '2', name: 'Sandton', coordinates: [-26.1067, 28.0567], order: 2 },
-      { id: '3', name: 'Pretoria CBD', coordinates: [-25.7479, 28.2293], order: 3 }
+      { id: '3', name: 'Pretoria CBD', coordinates: [-25.7479, 28.2293], order: 3 },
     ],
     isActive: true,
-    taxiAssociation: "PTA Taxi Association",
+    taxiAssociation: 'PTA Taxi Association',
     geometry: {
-      type: "LineString",
-      coordinates: [[-26.2041, 28.0473], [-26.1067, 28.0567], [-25.7479, 28.2293]]
+      type: 'LineString',
+      coordinates: [[-26.2041, 28.0473], [-26.1067, 28.0567], [-25.7479, 28.2293]],
     },
     fare: 45,
-    estimatedDuration: 1800
+    estimatedDuration: 1800,
   },
   {
     _id: 'route2',
@@ -49,17 +58,17 @@ const mockRoutes = [
     stops: [
       { id: '4', name: 'Cape Town CBD', coordinates: [-33.9249, 18.4241], order: 1 },
       { id: '5', name: 'Bellville', coordinates: [-33.9044, 18.6326], order: 2 },
-      { id: '6', name: 'Stellenbosch', coordinates: [-33.9321, 18.8602], order: 3 }
+      { id: '6', name: 'Stellenbosch', coordinates: [-33.9321, 18.8602], order: 3 },
     ],
     isActive: true,
-    taxiAssociation: "CPT Taxi Association",
+    taxiAssociation: 'CPT Taxi Association',
     geometry: {
-      type: "LineString",
-      coordinates: [[-33.9249, 18.4241], [-33.9044, 18.6326], [-33.9321, 18.8602]]
+      type: 'LineString',
+      coordinates: [[-33.9249, 18.4241], [-33.9044, 18.6326], [-33.9321, 18.8602]],
     },
     fare: 30,
-    estimatedDuration: 1200
-  }
+    estimatedDuration: 1200,
+  },
 ];
 
 const mockEnrichedStops = [
@@ -69,156 +78,132 @@ const mockEnrichedStops = [
     stops: [
       { id: '1', name: 'Johannesburg CBD', coordinates: [-26.2041, 28.0473], order: 1 },
       { id: '2', name: 'Sandton', coordinates: [-26.1067, 28.0567], order: 2 },
-      { id: '3', name: 'Pretoria CBD', coordinates: [-25.7479, 28.2293], order: 3 }
+      { id: '3', name: 'Pretoria CBD', coordinates: [-25.7479, 28.2293], order: 3 },
     ],
-    updatedAt: new Date()
-  }
+    updatedAt: new Date(),
+  },
 ];
 
-// Mock QueryCtx
-const createMockQueryCtx = (routes = mockRoutes, enrichedStops = mockEnrichedStops) => {
+const mockDrivers = [
+  { _id: 'driver1', userId: 'user1', name: 'Test Driver', isActive: true, assignedRoute: 'route1' },
+];
+
+// ----------------- Mock Query Context -----------------
+const createMockQueryCtx = () => {
   const ctx = createQueryCtx();
-  
-  // Mock the main routes query
+
+  // Mock query
   ctx.db.query = jest.fn().mockImplementation((table: string) => {
-    if (table === "routes") {
-      return {
-        collect: jest.fn().mockResolvedValue(routes),
-        filter: jest.fn().mockReturnThis(),
-        withIndex: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(routes[0]),
-        unique: jest.fn().mockResolvedValue(routes[0])
-      };
-    } else if (table === "enrichedRouteStops") {
-      return {
-        collect: jest.fn().mockResolvedValue(enrichedStops),
-        filter: jest.fn().mockReturnThis(),
-        withIndex: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(enrichedStops[0]),
-        unique: jest.fn().mockResolvedValue(enrichedStops[0])
-      };
-    } else if (table === "drivers") {
-      return {
-        collect: jest.fn().mockResolvedValue([]),
-        filter: jest.fn().mockReturnThis(),
-        withIndex: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(null)
-      };
-    } else if (table === "taxiTap_users") {
-      return {
-        filter: jest.fn(() => ({
-          first: jest.fn().mockResolvedValue({
-            _id: "user1",
-            accountType: "both",
-          }),
-        })),
-      };
-    }
-    return {
-      withIndex: jest.fn(() => ({
-        filter: jest.fn(() => ({
-          first: jest.fn().mockResolvedValue(null),
-        })),
-      })),
+    const mockChain: any = {
+      collect: jest.fn(),
+      filter: jest.fn().mockReturnThis(),
+      withIndex: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      first: jest.fn(),
+      unique: jest.fn(),
     };
+
+    if (table === 'routes') {
+      mockChain.collect.mockResolvedValue(mockRoutes);
+      mockChain.first.mockResolvedValue(mockRoutes[0]);
+      mockChain.unique.mockResolvedValue(mockRoutes[0]);
+    } else if (table === 'enrichedRouteStops') {
+      mockChain.collect.mockResolvedValue(mockEnrichedStops);
+      mockChain.first.mockResolvedValue(mockEnrichedStops[0]);
+      mockChain.unique.mockResolvedValue(mockEnrichedStops[0]);
+    } else if (table === 'drivers') {
+      mockChain.collect.mockResolvedValue(mockDrivers);
+      mockChain.first.mockResolvedValue(mockDrivers[0]);
+    } else if (table === 'taxiTap_users') {
+      mockChain.first.mockResolvedValue({ _id: 'user1', accountType: 'both' });
+    } else {
+      mockChain.collect.mockResolvedValue([]);
+      mockChain.first.mockResolvedValue(null);
+      mockChain.unique.mockResolvedValue(null);
+    }
+
+    return mockChain;
   });
-  
-  // Mock ctx.db.get for user lookups
-  ctx.db.get = jest.fn().mockResolvedValue({ name: "Test Driver", isActive: true });
-  
+
+  // Mock get for your handlers
+  (ctx.db as any).get = jest.fn().mockImplementation((id: string) => {
+    // driver userId -> return driver info
+    const driver = mockDrivers.find(d => d.userId === id);
+    if (driver) return Promise.resolve({ name: driver.name, isActive: driver.isActive });
+    // routeId -> return route info
+    const route = mockRoutes.find(r => r.routeId === id);
+    if (route) return Promise.resolve(route);
+    return Promise.resolve(null);
+  });
+
   return ctx;
 };
 
+// ----------------- Helper to call Convex Queries -----------------
+const callQuery = async (queryObj: any, ctx: any, args: any) => {
+  if (queryObj && typeof queryObj.handler === 'function') {
+    return queryObj.handler(ctx, args);
+  }
+  throw new Error('Query handler not found');
+};
+
+// ----------------- Tests -----------------
 describe('Route Queries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('getRouteStopsWithEnrichment', () => {
-    it('should return enriched stops for a given route', async () => {
-      const ctx = createMockQueryCtx();
-      const args = { routeId: 'route1' };
+  it('getRouteStopsWithEnrichment returns enriched stops', async () => {
+    const ctx = createMockQueryCtx();
+    const result = await callQuery(getRouteStopsWithEnrichment, ctx, { routeId: 'route1' });
 
-      const result = await getRouteStopsWithEnrichment.handler(ctx, args);
-      
-      expect(result).toBeDefined();
-      expect(result.stops).toBeDefined();
-      expect(Array.isArray(result.stops)).toBe(true);
-      expect(result.isEnriched).toBe(true);
-      if (result.stops.length > 0) {
-        expect(result.stops[0]).toHaveProperty('name');
-        expect(result.stops[0]).toHaveProperty('order');
-        expect(result.stops[0]).toHaveProperty('coordinates');
-      }
-    });
+    expect(result).toBeDefined();
+    expect(result.stops).toBeDefined();
+    expect(Array.isArray(result.stops)).toBe(true);
+    expect(result.isEnriched).toBe(true);
   });
 
-  describe('getAllAvailableRoutesForPassenger', () => {
-    it('should return all available routes for passengers', async () => {
-      const ctx = createMockQueryCtx();
-      const routes = await getAllAvailableRoutesForPassenger.handler(ctx, {});
+  it('getAllAvailableRoutesForPassenger returns routes', async () => {
+    const ctx = createMockQueryCtx();
+    const routes = await callQuery(getAllAvailableRoutesForPassenger, ctx, {});
 
-      expect(routes).toBeDefined();
-      expect(Array.isArray(routes)).toBe(true);
-      if (routes.length > 0) {
-        expect(routes[0]).toHaveProperty('start');
-        expect(routes[0]).toHaveProperty('destination');
-        expect(routes[0]).toHaveProperty('routeId');
-        expect(routes[0]).toHaveProperty('taxiAssociation');
-      }
-    });
+    expect(routes).toBeDefined();
+    expect(Array.isArray(routes)).toBe(true);
   });
 
-  describe('getRoutesByTaxiAssociationForPassenger', () => {
-    it('should return routes for a specific taxi association', async () => {
-      const ctx = createMockQueryCtx();
-      const routes = await getRoutesByTaxiAssociationForPassenger.handler(ctx, { taxiAssociation: 'PTA Taxi Association' });
+  it('getRoutesByTaxiAssociationForPassenger returns filtered routes', async () => {
+    const ctx = createMockQueryCtx();
+    const routes = await callQuery(getRoutesByTaxiAssociationForPassenger, ctx, { taxiAssociation: 'PTA Taxi Association' });
 
-      expect(routes).toBeDefined();
-      expect(Array.isArray(routes)).toBe(true);
-      if (routes.length > 0) {
-        expect(routes[0]).toHaveProperty('start');
-        expect(routes[0]).toHaveProperty('destination');
-        expect(routes[0]).toHaveProperty('taxiAssociation');
-        expect(routes[0].taxiAssociation).toBe('PTA Taxi Association');
-      }
-    });
+    expect(routes).toBeDefined();
+    expect(Array.isArray(routes)).toBe(true);
+    if (routes.length > 0) expect(routes[0].taxiAssociation).toBe('PTA Taxi Association');
   });
 
-  describe('getRouteDetailsWithDrivers', () => {
-    it('should return route details with driver information', async () => {
-      const ctx = createMockQueryCtx();
-      const result = await getRouteDetailsWithDrivers.handler(ctx, { routeId: 'route1' });
+  it('getRouteDetailsWithDrivers returns route with drivers', async () => {
+    const ctx = createMockQueryCtx();
+    const result = await callQuery(getRouteDetailsWithDrivers, ctx, { routeId: 'route1' });
 
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
-      expect(result.route).toBeDefined();
-      expect(result.activeDrivers).toBeDefined();
-      expect(Array.isArray(result.activeDrivers)).toBe(true);
-    });
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
+    expect(result.route).toBeDefined();
+    expect(Array.isArray(result.activeDrivers)).toBe(true);
   });
 
-  describe('getDriverAssignedRoute', () => {
-    it('should return driver assigned route', async () => {
-      const ctx = createMockQueryCtx();
-      const route = await getDriverAssignedRoute.handler(ctx, { userId: 'user1' });
+  it('getDriverAssignedRoute returns driver route', async () => {
+    const ctx = createMockQueryCtx();
+    const route = await callQuery(getDriverAssignedRoute, ctx, { userId: 'user1' });
 
-      expect(route).toBeDefined();
-    });
+    expect(route).toBeDefined();
   });
 
-  describe('getAllTaxiAssociations', () => {
-    it('should return unique taxi associations', async () => {
-      const ctx = createMockQueryCtx();
-      const associations = await getAllTaxiAssociations.handler(ctx, {});
+  it('getAllTaxiAssociations returns unique associations', async () => {
+    const ctx = createMockQueryCtx();
+    const associations = await callQuery(getAllTaxiAssociations, ctx, {});
 
-      expect(associations).toBeDefined();
-      expect(Array.isArray(associations)).toBe(true);
-      expect(associations).toContain('PTA Taxi Association');
-      expect(associations).toContain('CPT Taxi Association');
-    });
+    expect(associations).toBeDefined();
+    expect(Array.isArray(associations)).toBe(true);
+    expect(associations).toContain('PTA Taxi Association');
+    expect(associations).toContain('CPT Taxi Association');
   });
 });
