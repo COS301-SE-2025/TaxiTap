@@ -1,0 +1,292 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{booktabs}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+
+\title{Testing Policy\\Taxi Tap by Git It Done}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoGroup.png} 
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{LogoTaxiTap.png} 
+\end{figure}
+
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+This document outlines the Testing Policy for Taxi Tap. The purpose of this policy is to establish a clear framework for testing procedures. This is done to ensure that all aspects of the application are thoroughly evaluated.\newline
+The testing policy includes, but is not limited to:
+\begin{itemize}
+    \item Unit testing
+    \item Integration testing
+    \item Performance testing
+    \item Scalability testing
+    \item Security testing
+\end{itemize}
+
+The sections below provide detailed procedures, tools, and responsibilities associated with each testing phase, ensuring that all components of Taxi tap are validated before deployment.
+
+\section{Unit and Integration Testing Policies}
+
+This section entails details for the testing policy of our software development projects, focusing on unit testing and integration testing. We use automated testing to enhance efficiency and accuracy. Both unit and integration tests are integrated into our CI pipeline, which is configured using GitHub Actions. Automated testing is a key component in the pipeline such as to prevent code from being merged into our master branch if tests fail. This approach helps to maintain high standards of code quality. To maintain a robust testing framework, we aim for a test coverage of at least 80\% across the project. This policy must be implemented by all contributors and is designed to facilitate continuous improvement in our application. Our code coverage is tracked using \textbf{npx jest --coverage} and can be found on our GitHub under the demo 4 files.
+
+\subsection{Unit Testing Policy}
+
+\subsubsection{Objective}
+
+The objective of unit testing is to validate the functionality of individual components within the software. This ensures that each section operates as it is intended. This includes testing various function logic and error handling.
+
+\subsubsection{Automation}
+
+All unit tests are automated and integrated into the GitHub Actions Pipeline. The integration of the tests into the pipeline enforces testing protocols and prevents any code from being merged into other branches if tests fail.
+
+\subsubsection{Coverage}
+
+We aim for a minimum code coverage of 80\% for our unit testing. All functions must undergo unit testing.
+
+\subsubsection{Framework}
+
+We make use of Jest for implementing automated unit testing across our system.
+
+\subsection{Integration Testing Policy}
+
+\subsubsection{Objective}
+
+The objective of integration testing is to validate interactions between various components, thus ensuring that they function together as expected.
+
+\subsubsection{Automation}
+
+All unit tests are automated and integrated into the GitHub Actions Pipeline. The integration of the tests into the pipeline enforces testing protocols and prevents any code from being merged into other branches if tests fail.
+
+\subsubsection{Framework}
+
+We make use of Jest for implementing automated integration testing across our system.
+
+\section{Testing Workflow}
+
+The testing workflow outlines the systematic approach we take to ensure quality of our software.
+Steps in the workflow:
+\begin{itemize}
+    \item Development: When a developer writes code for a new feature or a bug fix, they create a corresponding unit test to validate the individual function or component.
+    \item Unit testing: Automated unit tests are executed in the GitHub pipeline when a branch is being merged into dev or main. The tests confirm if functions work as expected. Any failures in the tests prevent the code from being merged into the other branch.
+    \item Integration testing: Once unit tests pass, integration tests are executed. These tests run in the environment set up during the implementation of the tests.
+    \item Review and Feedback: If any issues are identified, feedback is shared among the team. Team members responsible for those tests should fix them before we can proceed with deployment.
+    \item Deployment: Once all tests pass and issues are resolved, the application is deployed to production by merging the code into the master branch, which then triggers the deployment workflow.
+\end{itemize}
+
+\section{Quality Assurance testing}
+
+This is a critical aspect of the software development lifecycle, focusing on ensuring that applications not only function as intended, but also meet the standards of performance, scalability, and security testing. As the application grows in complexity and user expectations rise, it becomes more important to assess how well our software performs under various conditions.
+
+\subsection{Performance}
+
+\subsubsection{Objective}
+The objective of performance testing is to validate that the TaxiTap application meets specified performance requirements under normal and peak load conditions. This includes measuring response times, throughput, resource utilization, and identifying performance bottlenecks.
+
+\subsubsection{Performance Metrics}
+Our performance testing focuses on the following key metrics:
+\begin{itemize}
+    \item \textbf{Response Time}: Target P95 response time less than 3 seconds for all API endpoints
+    \item \textbf{Throughput}: Minimum 100 requests per second sustained capacity
+    \item \textbf{Error Rate}: less than 5\% error rate under normal load conditions
+    \item \textbf{Resource Utilization}: Memory usage less than 512MB, CPU utilization less than 80\%
+\end{itemize}
+
+\subsubsection{Testing Framework}
+We utilize a Node.js-based performance testing framework that provides:
+\begin{itemize}
+    \item Automated response time measurement
+    \item Throughput analysis with concurrent user simulation
+    \item Load progression testing (5 to 30 concurrent users)
+    \item Real-time performance monitoring
+    \item Comprehensive reporting with P50, P95, and P99 metrics
+\end{itemize}
+
+\subsubsection{Test Scenarios}
+Performance tests cover the following critical user journeys:
+\begin{itemize}
+    \item Ride request processing
+    \item User location updates
+    \item Driver matching and search
+    \item Ride acceptance and completion
+    \item Database operations (user profiles, ride history)
+    \item Real-time operations (WebSocket connections, location streaming)
+\end{itemize}
+
+\subsubsection{Acceptance Criteria}
+Performance tests must demonstrate:
+\begin{itemize}
+    \item P95 response time ≤ 300ms for all API endpoints
+    \item Sustained throughput of 4+ requests per second per endpoint
+    \item System stability under concurrent load
+    \item No memory leaks or resource exhaustion
+\end{itemize}
+
+\subsection{Scalability}
+
+\subsubsection{Objective}
+The objective of scalability testing is to evaluate the TaxiTap system's ability to handle increasing user loads while maintaining acceptable performance levels. This ensures the application can grow with user demand and maintain service quality.
+
+\subsubsection{Scalability Metrics}
+Our scalability testing measures:
+\begin{itemize}
+    \item \textbf{Concurrent Users}: System capacity under 100+ simultaneous users
+    \item \textbf{Load Distribution}: Performance across different geographic regions
+    \item \textbf{Peak Load Handling}: System behavior during traffic spikes
+    \item \textbf{Graceful Degradation}: Performance degradation patterns under stress
+\end{itemize}
+
+\subsubsection{Testing Framework}
+We employ K6 load testing framework for scalability validation:
+\begin{itemize}
+    \item \textbf{Load Test}: Gradual ramp-up from 10 to 50 users over 19 minutes
+    \item \textbf{Stress Test}: Rapid scaling to 100+ concurrent users
+    \item \textbf{Realistic Traffic Patterns}: 40\% ride requests, 35\% location updates, 25\% driver matching
+    \item \textbf{Geographic Distribution}: Tests across multiple South African cities
+\end{itemize}
+
+\subsubsection{Load Testing Scenarios}
+Scalability tests simulate realistic user behavior:
+\begin{itemize}
+    \item \textbf{Gradual Load Increase}: 10 → 50 → 30 → 0 users over test duration
+    \item \textbf{Sustained Load}: 50 concurrent users for 5 minutes
+    \item \textbf{Peak Load Bursts}: Sudden spikes to 100+ users
+    \item \textbf{Mixed Workload}: Combined ride requests, location updates, and driver searches
+\end{itemize}
+
+\subsubsection{Performance Thresholds}
+Scalability tests must demonstrate:
+\begin{itemize}
+    \item System stability with 100 concurrent users
+    \item Response time degradation less than 50\% under peak load
+    \item No system crashes or complete failures
+    \item Successful completion of 1,500+ iterations over 5 minutes
+    \item Graceful handling of connection timeouts and retries
+\end{itemize}
+
+\subsection{Security}
+
+\subsubsection{Objective}
+The objective of security testing is to identify vulnerabilities and security weaknesses in the TaxiTap application. This includes testing for common attack vectors, data protection mechanisms, and compliance with security best practices.
+
+\subsubsection{Security Test Coverage}
+Our security testing framework covers:
+\begin{itemize}
+    \item \textbf{Authentication Bypass}: Testing unauthorized access attempts
+    \item \textbf{Input Validation}: SQL injection, XSS, and parameter manipulation
+    \item \textbf{Authorization Flaws}: Privilege escalation and access control
+    \item \textbf{Data Exposure}: Sensitive information leakage prevention
+    \item \textbf{Rate Limiting}: DDoS protection and abuse prevention
+    \item \textbf{CORS Policy}: Cross-origin resource sharing configuration
+    \item \textbf{Session Management}: Token validation and session security
+\end{itemize}
+
+\subsubsection{Testing Framework}
+We utilize a Python-based security testing suite that provides:
+\begin{itemize}
+    \item Automated vulnerability scanning
+    \item Payload injection testing
+    \item Authentication and authorization testing
+    \item CORS policy validation
+    \item Comprehensive security reporting
+\end{itemize}
+
+\subsubsection{Security Test Scenarios}
+Security tests evaluate the following attack vectors:
+\begin{itemize}
+    \item \textbf{SQL Injection}: Testing database query manipulation
+    \item \textbf{XSS Attacks}: Cross-site scripting vulnerability assessment
+    \item \textbf{Authentication Bypass}: Unauthorized endpoint access attempts
+    \item \textbf{Input Validation}: Malicious payload injection
+    \item \textbf{Rate Limiting}: High-frequency request testing
+    \item \textbf{Data Exposure}: Sensitive endpoint enumeration
+\end{itemize}
+
+\subsubsection{Security Acceptance Criteria}
+Security tests must demonstrate:
+\begin{itemize}
+    \item No critical security vulnerabilities (HIGH severity = 0)
+    \item Proper input validation and sanitization
+    \item Secure authentication mechanisms
+    \item Appropriate CORS configuration
+    \item Protection against common attack vectors
+    \item Secure data handling and transmission
+\end{itemize}
+
+\subsubsection{Security Monitoring}
+Continuous security monitoring includes:
+\begin{itemize}
+    \item Regular automated security scans
+    \item Vulnerability assessment reports
+    \item Security metrics tracking
+    \item Incident response procedures
+\end{itemize}
+
+\section{Convex API Testing Constraints}
+
+\subsubsection{Unique API Architecture Challenges}
+TaxiTap's backend infrastructure utilizes Convex, a modern backend-as-a-service platform that presents unique testing challenges compared to traditional REST API architectures. Convex employs a proprietary function-based API system rather than standard HTTP REST endpoints, which necessitates specialized testing approaches.
+
+\subsubsection{Testing Limitations}
+The primary constraints encountered during non-functional requirements testing include:
+
+\begin{itemize}
+    \item \textbf{No Direct HTTP Endpoints}: Convex functions cannot be directly accessed via standard HTTP REST calls, requiring custom wrapper services for load testing tools
+    \item \textbf{Client-SDK Dependency}: Convex functions are designed to work exclusively through their proprietary client SDK, limiting direct API testing capabilities
+    \item \textbf{Authentication Complexity}: Convex's authentication system is tightly integrated with the client SDK, making it difficult to simulate realistic user authentication flows in load testing scenarios
+    \item \textbf{Function Call Validation}: Convex enforces strict parameter validation at the function level, causing test failures when using synthetic or mock data that doesn't match real-world data structures
+\end{itemize}
+
+\subsubsection{Testing Approach Adaptations}
+To overcome these constraints, our testing strategy includes:
+
+\begin{itemize}
+    \item \textbf{HTTP API Wrapper}: Development of a custom Express.js wrapper service that translates HTTP requests into Convex function calls
+    \item \textbf{Mock Data Limitations}: Tests use synthetic data that may not fully represent real user interactions, leading to higher error rates in validation scenarios
+    \item \textbf{Indirect Performance Measurement}: Performance metrics are measured through the wrapper layer rather than direct Convex function execution
+    \item \textbf{Simplified Authentication}: Security tests focus on wrapper-level vulnerabilities rather than Convex's native authentication mechanisms
+\end{itemize}
+
+\subsubsection{Impact on Test Results}
+These architectural constraints result in test outcomes that differ from traditional API testing:
+
+\begin{itemize}
+    \item \textbf{Elevated Error Rates}: High error rates (80-100\%) are expected due to parameter validation failures with synthetic test data
+    \item \textbf{Performance Overhead}: Response times include wrapper processing overhead in addition to Convex function execution time
+    \item \textbf{Limited Security Coverage}: Some Convex-specific security features cannot be directly tested through the wrapper approach
+    \item \textbf{Realistic Load Simulation}: Tests simulate load patterns at the wrapper level rather than directly against Convex's infrastructure
+\end{itemize}
+
+\subsubsection{Result Interpretation}
+When interpreting test results, it is important to consider:
+\begin{itemize}
+    \item High error rates do not indicate system failures but rather expected validation responses to synthetic data
+    \item Performance metrics include wrapper overhead and should be considered as end-to-end measurements
+    \item Security test results focus on the wrapper layer and may not capture all Convex-specific security mechanisms
+    \item Scalability tests demonstrate wrapper and infrastructure capacity rather than pure Convex performance
+\end{itemize}
+
+These constraints highlight the importance of understanding the underlying technology stack when designing and interpreting non-functional requirements tests, ensuring that test results are properly contextualized within the system's architectural framework.
+
+\end{document}
