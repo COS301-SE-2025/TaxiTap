@@ -9,10 +9,10 @@ import southAfricanTaxi from '../assets/images/south-african-black-taxi-common-2
 import iconDarkImage from '../assets/images/icon-dark.png';
 
 const languageOptions = [
-  { label: 'English', value: 'en', flag: '🇬🇧' },
-  { label: 'isiZulu', value: 'zu', flag: '🇿🇦' },
-  { label: 'Setswana', value: 'tn', flag: '🇧🇼' },
-  { label: 'Afrikaans', value: 'af', flag: '🇿🇦' },
+  { label: 'English', value: 'en', flag: 'EN' },
+  { label: 'isiZulu', value: 'zu', flag: 'ZU' },
+  { label: 'Setswana', value: 'tn', flag: 'TN' },
+  { label: 'Afrikaans', value: 'af', flag: 'AF' },
 ];
 
 // Globe Icon Component
@@ -166,7 +166,7 @@ export default () => {
 							<TouchableOpacity
 								onPress={() => setShowLanguageModal(false)}
 								style={styles.closeButton}>
-								<Text style={styles.closeButtonText}>✕</Text>
+								<Text style={styles.closeButtonText}>X</Text>
 							</TouchableOpacity>
 						</View>
 						
@@ -189,7 +189,7 @@ export default () => {
 									{option.label}
 								</Text>
 								{currentLanguage === option.value && (
-									<Text style={styles.checkmark}>✓</Text>
+									<Text style={styles.checkmark}>OK</Text>
 								)}
 							</TouchableOpacity>
 						))}

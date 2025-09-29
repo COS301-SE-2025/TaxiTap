@@ -156,10 +156,6 @@ export default function TaxiInformation() {
         setAvailableTaxis(parsedData.availableTaxis || []);
         setIsLoadingTaxis(false);
         
-        console.log('📊 TaxiInformation received enhanced data:', {
-          availableTaxis: parsedData.availableTaxis?.length || 0,
-          matchingRoutes: parsedData.matchingRoutes?.length || 0
-        });
         
         // Transform enhanced data to display format
         const enhancedTaxiData = parsedData.availableTaxis?.map((taxi: any) => ({
@@ -187,7 +183,6 @@ export default function TaxiInformation() {
         setIsLoadingTaxis(false);
       }
     } else {
-      console.log('⚠️ No enhanced data received, falling back to original query');
       setIsLoadingTaxis(false);
     }
   }, [routeMatchDataString, t]);
@@ -210,7 +205,6 @@ export default function TaxiInformation() {
   // Use fallback data if no enhanced data was provided
   useEffect(() => {
     if (shouldUseOriginalQuery && fallbackNearbyTaxis) {
-      console.log('📱 Using fallback taxi query result');
       setNearbyTaxis(fallbackNearbyTaxis);
       setIsLoadingTaxis(false);
     }
@@ -220,11 +214,9 @@ export default function TaxiInformation() {
   // Handle next leg information for multi-leg journeys
   useEffect(() => {
     if (isMultiLegJourney && nextLegInfo && !routeMatchDataString) {
-      console.log('🚌 Processing next leg information:', nextLegInfo);
 
       // Update missing coordinates from nextLegInfo if they're not provided
       if (nextLegInfo.nextLeg && (!effectiveCurrentLat || !effectiveCurrentLng || !effectiveDestinationLat || !effectiveDestinationLng)) {
-        console.log('🔧 Updating missing coordinates from nextLeg data');
         const { nextLeg } = nextLegInfo;
 
         // Update the coordinate state if they're missing
@@ -240,10 +232,6 @@ export default function TaxiInformation() {
           setEffectiveDestinationName(nextLeg.destination.address);
         }
 
-        console.log('Updated coordinates from nextLeg:', {
-          origin: { lat: nextLeg.origin.coordinates.latitude, lng: nextLeg.origin.coordinates.longitude, name: nextLeg.origin.address },
-          destination: { lat: nextLeg.destination.coordinates.latitude, lng: nextLeg.destination.coordinates.longitude, name: nextLeg.destination.address }
-        });
       }
 
       if (nextLegInfo.hasNextLeg && nextLegInfo.availableDrivers) {
@@ -266,12 +254,10 @@ export default function TaxiInformation() {
         
         setNearbyTaxis(nextLegTaxiData);
         setAvailableTaxis(nextLegInfo.availableDrivers);
-        console.log(`Found ${nextLegTaxiData.length} drivers for next leg`);
       } else {
         // No drivers available for next leg
         setNearbyTaxis([]);
         setAvailableTaxis([]);
-        console.log('⚠️ No drivers available for next leg');
       }
       
       setIsLoadingTaxis(false);
@@ -323,7 +309,6 @@ export default function TaxiInformation() {
 
   // Handle cancel leg for multi-leg journeys
   const handleCancelLeg = async () => {
-    console.log('🚫 User cancelled multi-leg journey');
     
     // Show success notification
     showGlobalSuccess(
@@ -376,14 +361,12 @@ export default function TaxiInformation() {
         estimatedFare: selectedTaxi.routeInfo?.calculatedFare || selectedTaxi.routeInfo?.fare || 0,
       };
 
-      console.log('📝 Creating ride request:', rideData);
 
       const result = await requestRide(rideData);
 
       if (result) {
         // If this is a multi-leg journey, update the journey state
         if (isMultiLegJourney && journeyId && result._id) {
-          console.log(`Starting leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
 
           await startJourneyLeg({
             journeyId,
@@ -427,17 +410,6 @@ export default function TaxiInformation() {
                     }),
                   };
 
-                  console.log('🚀 TaxiInformation DEBUG - Navigating to PassengerReservation with params:', {
-                    isMultiLegJourney,
-                    navigationParams,
-                    multiLegConditions: {
-                      isMultiLegJourney,
-                      journeyId,
-                      legIndex: currentLegIndex,
-                      totalLegs,
-                      routeName,
-                    },
-                  });
 
                   router.push({
                     pathname: './PassengerReservation',
@@ -462,7 +434,7 @@ export default function TaxiInformation() {
           actions: [
             {
               label: 'OK',
-              onPress: () => console.log('Booking error acknowledged'),
+              onPress: () => {},
               style: 'default',
             }
           ],

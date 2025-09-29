@@ -91,7 +91,6 @@ export const createMultiLegJourney = mutation({
       updatedAt: now,
     });
 
-    console.log(`Created multi-leg journey: ${journeyOption.journeyId}`);
 
     return { journeyId: journeyOption.journeyId, dbId: journeyId };
   },
@@ -139,7 +138,6 @@ export const startJourneyLeg = mutation({
       ...(legIndex === 0 && { startedAt: now }),
     });
 
-    console.log(`Started leg ${legIndex + 1} of journey ${journeyId}`);
 
     return { success: true };
   },
@@ -193,14 +191,12 @@ export const completeLegWithPayment = mutation({
             console.warn(`Payment not confirmed for ride ${ride.rideId}, leg ${legIndex}. Auto-confirming payment.`);
             // Auto-confirm payment if actualCost is provided (coming from feedback submission)
             if (actualCost > 0) {
-              console.log(`Auto-confirming payment: ${actualCost} for ride ${ride.rideId}`);
               await ctx.db.patch(completedLeg.rideId, {
                 tripPaid: true,
                 amountPaid: actualCost,
                 paymentType: "exact",
                 paymentConfirmedAt: now,
               });
-              console.log(`Payment auto-confirmed for ride ${ride.rideId}`);
             } else {
               throw new Error("Payment must be confirmed before completing this leg of the journey. Please use the payment confirmation screen first.");
             }
@@ -223,7 +219,6 @@ export const completeLegWithPayment = mutation({
                 fare: actualPaymentAmount,
                 endTime: now,
               });
-              console.log(`Updated multi-leg trip ${ride.tripId} fare to ${actualPaymentAmount} for leg ${legIndex + 1}`);
             }
           }
 
@@ -261,7 +256,6 @@ export const completeLegWithPayment = mutation({
       // }),
     });
 
-    console.log(`Completed leg ${legIndex + 1} of journey ${journeyId}${isJourneyComplete ? ' - Journey complete!' : ''}`);
 
     // Return information about next leg if journey continues
     if (!isJourneyComplete && legIndex + 1 < journey.totalLegs) {
@@ -327,7 +321,6 @@ export const cancelJourney = mutation({
       updatedAt: now,
     });
 
-    console.log(`Cancelled journey ${journeyId}${reason ? `: ${reason}` : ''}`);
 
     return { success: true };
   },
@@ -358,7 +351,6 @@ export const handleTransferTimeout = mutation({
       updatedAt: now,
     });
 
-    console.log(`Journey ${journeyId} timed out during transfer`);
 
     return { success: true };
   },
@@ -424,7 +416,6 @@ export const cleanupExpiredTransfers = mutation({
   handler: async (ctx: MutationCtx) => {
     // DISABLED: Transfer window timeouts are not used in the new manual flow
     // Passengers now control their own journey progression with "Continue to Next Leg" button
-    console.log(`SKIP: Transfer window cleanup disabled for manual multi-leg flow`);
     
     // Note: With the new manual flow:
     // - No automatic timeouts during transfers

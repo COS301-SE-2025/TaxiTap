@@ -46,7 +46,6 @@ export default function PassengerPinEntry() {
   const startName = params.startName as string;
   const endName = params.endName as string;
 
-  // Debug logging
   useEffect(() => {
     console.log('PassengerPinEntry mounted with params:', {
       rideId,

@@ -101,7 +101,7 @@ export const migrateLocationSchemaAdvanced = mutation({
               } else {
                 // If all parsing fails, use current timestamp
                 timestamp = Date.now();
-                console.log(`⚠️ Could not parse timestamp for location ${location._id}, using current time`);
+                console.log(`Could not parse timestamp for location ${location._id}, using current time`);
               }
             }
             

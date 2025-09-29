@@ -871,21 +871,6 @@ export default function SeatReserved() {
 			return;
 		}
 		
-		console.log('🚀 PassengerReservation - handleStartRide DEBUG - Sending params to PIN entry:', {
-			driverName: taxiInfo?.driver?.name || 'Unknown Driver',
-			licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
-			fare: taxiInfo?.fare?.toString() || '0',
-			rideId: taxiInfo?.rideId,
-			startName: currentLocation?.name || 'Current Location',
-			endName: destination?.name || 'Destination',
-			driverId: driverId || '',
-			// Multi-leg journey parameters (using preserved state)
-			isMultiLeg: multiLegParams.isMultiLeg,
-			journeyId: multiLegParams.journeyId,
-			legIndex: multiLegParams.legIndex,
-			totalLegs: multiLegParams.totalLegs,
-			routeName: multiLegParams.routeName,
-		});
 		
 		router.push({
 			pathname: '/PassengerPinEntry',
@@ -1172,8 +1157,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 
 			if (!currentLocation || !destination) {
-				console.log('⚠️ Missing location data, cannot navigate to next leg');
-				return;
+					return;
 			}
 			
 			if (hasAlreadyPaid) {

@@ -96,13 +96,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
   const getNotificationIcon = () => {
     switch (notification.type) {
       case 'success':
-        return '✓';
+        return 'OK';
       case 'warning':
-        return '⚠';
+        return '!';
       case 'error':
-        return '✕';
+        return 'X';
       default:
-        return 'ℹ';
+        return 'i';
     }
   };
 

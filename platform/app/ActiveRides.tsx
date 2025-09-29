@@ -52,7 +52,6 @@ export default function ActiveRides() {
 
     const handleSetFrontPassenger = async (rideId: string, passengerName: string, isFrontPassenger: boolean) => {
         try {
-            console.log('Setting front passenger with rideId:', rideId); // Debug log
             
             if (!rideId) {
                 throw new Error('No ride ID provided');

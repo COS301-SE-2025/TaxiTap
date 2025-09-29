@@ -425,7 +425,6 @@ export default function HomeScreen() {
     } : "skip"
   );
 
-  // Debug: Log when taxiSearchParams changes
   useEffect(() => {
   }, [taxiSearchParams]);
 
@@ -576,7 +575,7 @@ export default function HomeScreen() {
             actions: [
               {
                 label: 'OK',
-                onPress: () => console.log('Location error acknowledged'),
+                onPress: () => {},
                 style: 'default',
               }
             ],
@@ -861,7 +860,7 @@ export default function HomeScreen() {
           actions: [
             {
               label: 'OK',
-              onPress: () => console.log('No routes acknowledged'),
+              onPress: () => {},
               style: 'default',
             }
           ],
@@ -991,7 +990,7 @@ export default function HomeScreen() {
         actions: [
           {
             label: 'OK',
-            onPress: () => console.log('No taxis acknowledged'),
+            onPress: () => {},
             style: 'default',
           }
         ],

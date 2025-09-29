@@ -236,7 +236,7 @@ export class ProximityAlertService {
         alert.message,
         alert.metadata
       );
-      console.log(`📱 Sent push notification: ${alert.title}`);
+      console.log(`Sent push notification: ${alert.title}`);
     } catch (error) {
       console.error('Failed to send push notification:', error);
     }

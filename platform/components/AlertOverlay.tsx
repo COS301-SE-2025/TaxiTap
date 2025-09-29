@@ -206,11 +206,11 @@ const AlertItem: React.FC<AlertItemProps> = ({ alert, onDismiss, index, isGlobal
   const getAlertIcon = () => {
     switch (alert.type) {
       case 'success':
-        return '✓';
+        return 'OK';
       case 'warning':
-        return '⚠';
+        return '!';
       case 'error':
-        return '✕';
+        return 'X';
       case 'info':
         return 'ℹ';
       default:

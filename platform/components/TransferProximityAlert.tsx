@@ -221,7 +221,7 @@ export const TransferProximityAlert: React.FC<TransferProximityAlertProps> = ({
       {proximityStatus.isNearTransfer && (
         <View style={dynamicStyles.transferInfo}>
           <Text style={dynamicStyles.transferTitle}>
-            🚶‍♂️ Prepare for Transfer
+            Prepare for Transfer
           </Text>
           <Text style={dynamicStyles.transferDetail}>
             After completing this leg, you'll need to walk {formatDistance(proximityStatus.transferPoint.walkingDistance)} ({formatWalkingTime(proximityStatus.transferPoint.estimatedWalkingTime)}) to catch your next taxi.

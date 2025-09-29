@@ -746,8 +746,7 @@ export default function SeatReserved() {
 			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			
 			if (!currentLocation || !destination) {
-				console.log('⚠️ Missing location data, cannot navigate to feedback');
-				return;
+					return;
 			}
 			
 			router.push({
@@ -850,8 +849,7 @@ export default function SeatReserved() {
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			
 			if (!currentLocation || !destination) {
-				console.log('⚠️ Missing location data, cannot navigate to next leg');
-				return;
+					return;
 			}
 			
 			// Check if payment is required
