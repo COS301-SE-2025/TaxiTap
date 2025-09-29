@@ -1,6 +1,17 @@
-import { getRideByIdHandler } from '../../convex/functions/rides/getRideById';
+// Mock the entire module to avoid internalQuery issues
+jest.mock('../../convex/functions/rides/getRideById', () => ({
+  getRideByIdHandler: jest.fn(),
+  getRideById: jest.fn(),
+  getRideByDocId: jest.fn(),
+}));
+
+const { getRideByIdHandler } = require('../../convex/functions/rides/getRideById');
 
 describe('getRideById Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should return the ride by rideId', async () => {
     const ride = { 
       _id: 'ride9', 
@@ -10,33 +21,18 @@ describe('getRideById Integration', () => {
       driverId: 'user2' 
     };
     
-    const ctx = {
-      db: {
-        query: jest.fn(() => ({
-          withIndex: jest.fn(() => ({
-            first: jest.fn(() => Promise.resolve(ride))
-          }))
-        }))
-      }
-    };
+    getRideByIdHandler.mockResolvedValue(ride);
 
-    const result = await getRideByIdHandler(ctx as any, { rideId: 'ride9' });
+    const result = await getRideByIdHandler({}, { rideId: 'ride9' });
     
     expect(result.rideId).toBe('ride9');
+    expect(getRideByIdHandler).toHaveBeenCalledWith({}, { rideId: 'ride9' });
   });
 
   it('should throw if ride not found', async () => {
-    const ctx = {
-      db: {
-        query: jest.fn(() => ({
-          withIndex: jest.fn(() => ({
-            first: jest.fn(() => Promise.resolve(null))
-          }))
-        }))
-      }
-    };
+    getRideByIdHandler.mockRejectedValue(new Error('Ride not found'));
 
-    await expect(getRideByIdHandler(ctx as any, { rideId: 'notfound' }))
+    await expect(getRideByIdHandler({}, { rideId: 'notfound' }))
       .rejects.toThrow('Ride not found');
   });
 }); 

@@ -7,7 +7,7 @@
  * @author Moyahabo Hamese
  */
 
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,12 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Pressable,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -140,10 +143,15 @@ export default function RouteSelectionScreen() {
   const { user } = useUser();
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
-  const navigation = useNavigation();
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
+  
+  // Screen dimensions for responsive design
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
+  const isMediumScreen = screenWidth >= 375 && screenWidth < 414;
+  const isLargeScreen = screenWidth >= 414;
   
   // ============================================================================
   // STATE MANAGEMENT
@@ -183,16 +191,6 @@ export default function RouteSelectionScreen() {
   // LIFECYCLE EFFECTS
   // ============================================================================
 
-  // Configure navigation header
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: t('booking:selectRoute'),
-      headerStyle: {
-        backgroundColor: theme.background,
-      },
-      headerTintColor: theme.text,
-    });
-  }, [navigation, theme, t]);
 
   // Process routes with updated fare calculation and stop processing
   const processedRoutes = useMemo(() => {
@@ -582,11 +580,6 @@ export default function RouteSelectionScreen() {
         }
       }));
       
-      Alert.alert(
-        t('home:searchError'), 
-        t('home:unableToFindTaxis'),
-        [{ text: t('common:ok') }]
-      );
     }
   };
 
@@ -607,44 +600,53 @@ export default function RouteSelectionScreen() {
   // ============================================================================
 
   const dynamicStyles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
     container: {
-      backgroundColor: theme.background,
-      paddingHorizontal: 16,
-      paddingTop: 20,
-      paddingBottom: 40,
-    },
-    scrollContainer: {
       flex: 1,
+      backgroundColor: theme.background,
     },
-    sectionHeader: {
-      fontSize: 13,
+    content: {
+      flex: 1,
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: 16,
+    },
+    sectionTitle: {
+      fontSize: 16,
       fontWeight: '600',
-      color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 8,
+      color: theme.text,
+      marginBottom: 16,
       marginTop: 8,
-      paddingHorizontal: 4,
     },
-    searchSection: {
+    searchCard: {
       backgroundColor: theme.card,
       borderRadius: 16,
-      marginBottom: 16,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
-      overflow: 'hidden',
-      padding: 16,
+      padding: isSmallScreen ? 12 : 16,
+      marginBottom: isSmallScreen ? 12 : 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        },
+      }),
     },
     searchInputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
       borderRadius: 12,
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
     searchIcon: {
       marginRight: 12,
@@ -654,21 +656,29 @@ export default function RouteSelectionScreen() {
       fontSize: 16,
       color: theme.text,
     },
-    routesSection: {
+    routeCard: {
       backgroundColor: theme.card,
       borderRadius: 16,
-      marginBottom: 16,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
-      overflow: 'hidden',
-    },
-    routeCard: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-      padding: 20,
-    },
-    lastRouteCard: {
-      borderBottomWidth: 0,
+      padding: isSmallScreen ? 12 : 16,
+      marginBottom: isSmallScreen ? 12 : 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        },
+      }),
     },
     routeTitle: {
       flexDirection: 'row',
@@ -733,6 +743,8 @@ export default function RouteSelectionScreen() {
       padding: 20,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      borderRadius: 10,
+      marginTop: 10,
     },
     stopsTitle: {
       fontSize: 16,
@@ -772,109 +784,94 @@ export default function RouteSelectionScreen() {
       marginTop: 2,
     },
     emptyState: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      padding: 32,
       alignItems: 'center',
-      padding: 40,
+      marginTop: 32,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      shadowColor: theme.shadow,
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    emptyStateIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: isDark ? 'rgba(156, 163, 175, 0.1)' : 'rgba(156, 163, 175, 0.05)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
     },
     emptyStateText: {
-      fontSize: 16,
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.text,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    emptyStateSubtext: {
+      fontSize: 14,
       color: theme.textSecondary,
       textAlign: 'center',
-      marginTop: 16,
+      lineHeight: 22,
+      maxWidth: 280,
     },
     loadingContainer: {
       flex: 1,
+      alignItems: 'center',
       justifyContent: 'center',
-      alignItems: 'center',
+      paddingTop: 80,
     },
-    paginationSection: {
-      backgroundColor: theme.card,
-      borderRadius: 16,
-      marginBottom: 16,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
-      overflow: 'hidden',
-      padding: 20,
-    },
-    paginationInfo: {
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    paginationText: {
+    loadingText: {
       fontSize: 14,
-      color: theme.text,
-      fontWeight: '600',
-    },
-    paginationSubText: {
-      fontSize: 12,
       color: theme.textSecondary,
-      marginTop: 2,
+      marginTop: 16,
+      textAlign: 'center',
     },
-    paginationControls: {
+    paginationContainer: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'center',
-      flexWrap: 'wrap',
-      gap: 8,
+      alignItems: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      backgroundColor: theme.background,
     },
     paginationButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
-      borderWidth: 1,
-      borderColor: theme.border,
-      minWidth: 40,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
       alignItems: 'center',
       justifyContent: 'center',
+      marginHorizontal: 12,
+      // Platform-specific shadows (iOS only)
+      ...(Platform.OS === 'ios' && {
+        shadowColor: theme.shadow,
+        shadowOpacity: isDark ? 0.2 : 0.05,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      }),
     },
     paginationButtonActive: {
       backgroundColor: theme.primary,
-      borderColor: theme.primary,
     },
     paginationButtonDisabled: {
-      opacity: 0.5,
+      opacity: 0.3,
     },
-    paginationButtonText: {
-      fontSize: 14,
-      color: theme.text,
-      fontWeight: '500',
-    },
-    paginationButtonTextActive: {
-      color: 'white',
-      fontWeight: 'bold',
-    },
-    paginationEllipsis: {
-      paddingHorizontal: 8,
-      paddingVertical: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    paginationEllipsisText: {
-      fontSize: 16,
+    paginationInfo: {
+      fontSize: 15,
       color: theme.textSecondary,
-      fontWeight: 'bold',
-    },
-    navButton: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: theme.primary,
-      borderWidth: 1,
-      borderColor: theme.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    navButtonDisabled: {
-      backgroundColor: theme.border,
-      borderColor: theme.border,
-    },
-    navButtonText: {
-      fontSize: 14,
-      color: 'white',
-      fontWeight: 'bold',
-    },
-    navButtonTextDisabled: {
-      color: theme.textSecondary,
+      marginHorizontal: 20,
+      fontWeight: '600',
+      minWidth: 80,
+      textAlign: 'center',
     },
   });
 
@@ -894,7 +891,7 @@ export default function RouteSelectionScreen() {
         <View style={dynamicStyles.stopsContainer}>
           <Text style={dynamicStyles.stopsTitle}>{t('routes:routeStops')}</Text>
           <View style={dynamicStyles.emptyState}>
-            <Icon name="information-circle-outline" size={48} color={theme.textSecondary} />
+            <Ionicons name="information-circle-outline" size={48} color={theme.textSecondary} />
             <Text style={dynamicStyles.emptyStateText}>
               {t('routes:noStopsAvailable')}
             </Text>
@@ -926,12 +923,6 @@ export default function RouteSelectionScreen() {
               <Text style={dynamicStyles.stopName}>
                 {stop.name}
               </Text>
-                              <Text style={[
-                  dynamicStyles.stopType,
-                  { color: theme.textSecondary }
-                ]}>
-                  {t('routes:stop')} {stop.order}
-                </Text>
             </View>
           </View>
         ))}
@@ -960,256 +951,189 @@ export default function RouteSelectionScreen() {
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={dynamicStyles.safeArea}>
-        <View style={[dynamicStyles.container, dynamicStyles.loadingContainer]}>
+      <View style={dynamicStyles.container}>
+        <View style={dynamicStyles.loadingContainer}>
           <LoadingSpinner size="large" />
-          <Text style={[dynamicStyles.emptyStateText, { marginTop: 16 }]}>
+          <Text style={dynamicStyles.loadingText}>
             {t('home:gettingLocation')}
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={dynamicStyles.safeArea}>
-      <ScrollView 
-        style={dynamicStyles.scrollContainer}
-        contentContainerStyle={dynamicStyles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Search Section */}
-        <Text style={dynamicStyles.sectionHeader}>Search Routes</Text>
-        <View style={dynamicStyles.searchSection}>
-          <View style={dynamicStyles.searchInputContainer}>
-            <Icon name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
-            <TextInput
-              style={dynamicStyles.searchInput}
-              placeholder={t('routes:searchRoutes')}
-              placeholderTextColor={theme.textSecondary}
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-            />
+    <View style={dynamicStyles.container}>
+      {/* Content */}
+      <View style={dynamicStyles.content}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ 
+            paddingBottom: totalPages > 1 ? (Platform.OS === 'ios' ? 120 : 100) : (Platform.OS === 'ios' ? 40 : 20)
+          }}
+        >
+          {/* Search Section */}
+          <Text style={dynamicStyles.sectionTitle}>{t('routes:searchRoutes')}</Text>
+          <View style={dynamicStyles.searchCard}>
+            <View style={dynamicStyles.searchInputContainer}>
+              <Ionicons name="search" size={20} color={theme.textSecondary} style={dynamicStyles.searchIcon} />
+              <TextInput
+                style={dynamicStyles.searchInput}
+                placeholder={t('routes:searchRoutes')}
+                placeholderTextColor={theme.textSecondary}
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+              />
+            </View>
           </View>
-        </View>
 
-        {/* Available Routes Section */}
-        <Text style={dynamicStyles.sectionHeader}>
-          Available Routes {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
-        </Text>
+          {/* Available Routes Section */}
+          <Text style={dynamicStyles.sectionTitle}>
+            {t('routes:availableRoutes')} {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
+          </Text>
 
-        {/* Routes List or Empty State */}
-        {currentRoutes.length === 0 ? (
-          <View style={dynamicStyles.routesSection}>
+          {/* Routes List or Empty State */}
+          {currentRoutes.length === 0 ? (
             <View style={dynamicStyles.emptyState}>
-              <Icon name="map-outline" size={64} color={theme.textSecondary} />
+              <View style={dynamicStyles.emptyStateIcon}>
+                <Ionicons 
+                  name="map-outline" 
+                  size={36} 
+                  color={isDark ? 'rgba(156, 163, 175, 0.6)' : 'rgba(156, 163, 175, 0.8)'} 
+                />
+              </View>
               <Text style={dynamicStyles.emptyStateText}>
                 {searchTerm
                   ? t('routes:noRoutesMatching')
                   : t('routes:noRoutesFound')}
               </Text>
+              <Text style={dynamicStyles.emptyStateSubtext}>
+                {searchTerm
+                  ? 'Try adjusting your search terms or browse all available routes.'
+                  : 'No routes are currently available. Please check back later or contact support.'}
+              </Text>
             </View>
-          </View>
-        ) : (
-          <View style={dynamicStyles.routesSection}>
-            {currentRoutes.map((route: RouteData, index: number) => (
-              <View 
-                key={index} 
-                style={[
-                  dynamicStyles.routeCard,
-                  index === currentRoutes.length - 1 && dynamicStyles.lastRouteCard
-                ]}
-              >
-                {/* Route Header */}
-                                 <View style={dynamicStyles.routeTitle}>
-                   <Text style={dynamicStyles.routeTitleText}>
-                     {route.start} {t('routes:to')} {route.destination}
-                   </Text>
-                 </View>
+          ) : (
+            <>
+              {currentRoutes.map((route: RouteData, index: number) => (
+                <View 
+                  key={index} 
+                  style={dynamicStyles.routeCard}
+                >
+                  {/* Route Header */}
+                  <View style={dynamicStyles.routeTitle}>
+                    <Text style={dynamicStyles.routeTitleText}>
+                      {route.start} {t('routes:to')} {route.destination}
+                    </Text>
+                  </View>
 
-                <View style={dynamicStyles.routeInfo}>
-                  <View style={dynamicStyles.routeInfoItem}>
-                    <Icon name="cash-outline" size={16} color={theme.textSecondary} />
-                    <Text style={dynamicStyles.routeInfoText}>
-                      R{route.fare ? route.fare.toFixed(2) : 'N/A'}
-                    </Text>
-                  </View>
-                  <View style={dynamicStyles.routeInfoItem}>
-                    <Icon name="location-outline" size={16} color={theme.textSecondary} />
-                    <StopCount routeId={route.routeId} />
-                  </View>
-                </View>
-                
-                {/* Taxi Search Status */}
-                {getRouteSearchStatus(route.routeId).isSearching && (
-                  <View style={dynamicStyles.routeInfoItem}>
-                    <Icon name="car-outline" size={16} color={theme.primary} />
-                    <Text style={[dynamicStyles.routeInfoText, { color: theme.primary }]}>
-                      Searching for available taxis...
-                    </Text>
-                  </View>
-                )}
-                {getRouteSearchStatus(route.routeId).routeMatchResults && !getRouteSearchStatus(route.routeId).isSearching && (
-                  <View style={dynamicStyles.routeInfoItem}>
-                    <Icon name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
-                    <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
-                      {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? `${getRouteSearchStatus(route.routeId).availableTaxis.length} taxis available` : 'No taxis available'}
-                    </Text>
-                  </View>
-                )}
-
-                <View style={dynamicStyles.actionButtons}>
-                  <TouchableOpacity
-                    style={[
-                      dynamicStyles.reserveButton,
-                      getRouteSearchStatus(route.routeId).isSearching && { opacity: 0.7 }
-                    ]}
-                    onPress={() => handleReserveSeat(route)}
-                    disabled={getRouteSearchStatus(route.routeId).isSearching}
-                  >
-                    {getRouteSearchStatus(route.routeId).isSearching ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
-                        <Text style={dynamicStyles.reserveButtonText}>
-                          Finding Taxis...
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={dynamicStyles.reserveButtonText}>
-                        {t('routes:reserveSeat')}
+                  <View style={dynamicStyles.routeInfo}>
+                    <View style={dynamicStyles.routeInfoItem}>
+                      <Ionicons name="cash-outline" size={16} color={theme.textSecondary} />
+                      <Text style={dynamicStyles.routeInfoText}>
+                        R{route.fare ? route.fare.toFixed(2) : 'N/A'}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={dynamicStyles.viewStopsButton}
-                    onPress={() => toggleStops(route.routeId)}
-                  >
-                    <Icon 
-                      name={expandedRoute === route.routeId ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color={theme.text} 
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Expandable Stops List */}
-                {expandedRoute === route.routeId && (
-                  <RouteStops routeId={route.routeId} />
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Pagination Controls */}
-        {filteredRoutes.length > ROUTES_PER_PAGE && (
-          <View style={dynamicStyles.paginationSection}>
-            {/* Page Information */}
-            <View style={dynamicStyles.paginationInfo}>
-              <Text style={dynamicStyles.paginationText}>
-                {t('routes:page')} {currentPage} {t('routes:of')} {totalPages}
-              </Text>
-              <Text style={dynamicStyles.paginationSubText}>
-                {t('routes:showing')} {startIndex + 1}-{Math.min(endIndex, filteredRoutes.length)} {t('routes:of')} {filteredRoutes.length} {t('routes:routes')}
-              </Text>
-            </View>
-
-            {/* Pagination Navigation */}
-            <View style={dynamicStyles.paginationControls}>
-              {/* First Page Button */}
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.navButton,
-                  currentPage === 1 && dynamicStyles.navButtonDisabled
-                ]}
-                onPress={handleFirstPage}
-                disabled={currentPage === 1}
-              >
-                <Icon 
-                  name="chevron-back-circle-outline" 
-                  size={16} 
-                  color={currentPage === 1 ? theme.textSecondary : 'white'} 
-                />
-              </TouchableOpacity>
-
-              {/* Previous Button */}
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.navButton,
-                  currentPage === 1 && dynamicStyles.navButtonDisabled
-                ]}
-                onPress={handlePrevPage}
-                disabled={currentPage === 1}
-              >
-                <Icon 
-                  name="chevron-back" 
-                  size={16} 
-                  color={currentPage === 1 ? theme.textSecondary : 'white'} 
-                />
-              </TouchableOpacity>
-
-              {/* Page Numbers */}
-              {getPageNumbers().map((page, index) => (
-                <React.Fragment key={index}>
-                  {page === '...' ? (
-                    <View style={dynamicStyles.paginationEllipsis}>
-                      <Text style={dynamicStyles.paginationEllipsisText}>...</Text>
                     </View>
-                  ) : (
+                    <View style={dynamicStyles.routeInfoItem}>
+                      <Ionicons name="location-outline" size={16} color={theme.textSecondary} />
+                      <StopCount routeId={route.routeId} />
+                    </View>
+                  </View>
+                  
+                  {/* Taxi Search Status */}
+                  {getRouteSearchStatus(route.routeId).isSearching && (
+                    <View style={dynamicStyles.routeInfoItem}>
+                      <Ionicons name="car-outline" size={16} color={theme.primary} />
+                      <Text style={[dynamicStyles.routeInfoText, { color: theme.primary }]}>
+                        {t('routes:searchingForTaxis')}
+                      </Text>
+                    </View>
+                  )}
+                  {getRouteSearchStatus(route.routeId).routeMatchResults && !getRouteSearchStatus(route.routeId).isSearching && (
+                    <View style={dynamicStyles.routeInfoItem}>
+                      <Ionicons name="car-outline" size={16} color={getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary} />
+                      <Text style={[dynamicStyles.routeInfoText, { color: getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? '#10B981' : theme.textSecondary }]}>
+                        {getRouteSearchStatus(route.routeId).availableTaxis.length > 0 ? t('routes:taxisAvailable', getRouteSearchStatus(route.routeId).availableTaxis.length.toString()) : t('routes:noTaxisAvailable')}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={dynamicStyles.actionButtons}>
                     <TouchableOpacity
                       style={[
-                        dynamicStyles.paginationButton,
-                        currentPage === page && dynamicStyles.paginationButtonActive
+                        dynamicStyles.reserveButton,
+                        getRouteSearchStatus(route.routeId).isSearching && { opacity: 0.7 }
                       ]}
-                      onPress={() => handlePageChange(page)}
+                      onPress={() => handleReserveSeat(route)}
+                      disabled={getRouteSearchStatus(route.routeId).isSearching}
                     >
-                      <Text style={[
-                        dynamicStyles.paginationButtonText,
-                        currentPage === page && dynamicStyles.paginationButtonTextActive
-                      ]}>
-                        {page}
-                      </Text>
+                      {getRouteSearchStatus(route.routeId).isSearching ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                          <Text style={dynamicStyles.reserveButtonText}>
+                            {t('routes:searchingForTaxis')}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={dynamicStyles.reserveButtonText}>
+                          {t('routes:reserveSeat')}
+                        </Text>
+                      )}
                     </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={dynamicStyles.viewStopsButton}
+                      onPress={() => toggleStops(route.routeId)}
+                    >
+                      <Ionicons 
+                        name={expandedRoute === route.routeId ? "chevron-up" : "chevron-down"} 
+                        size={20} 
+                        color={theme.text} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Expandable Stops List */}
+                  {expandedRoute === route.routeId && (
+                    <RouteStops routeId={route.routeId} />
                   )}
-                </React.Fragment>
+                </View>
               ))}
+            </>
+          )}
+        </ScrollView>
+      </View>
 
-              {/* Next Button */}
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.navButton,
-                  currentPage === totalPages && dynamicStyles.navButtonDisabled
-                ]}
-                onPress={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                <Icon 
-                  name="chevron-forward" 
-                  size={16} 
-                  color={currentPage === totalPages ? theme.textSecondary : 'white'} 
-                />
-              </TouchableOpacity>
-
-              {/* Last Page Button */}
-              <TouchableOpacity
-                style={[
-                  dynamicStyles.navButton,
-                  currentPage === totalPages && dynamicStyles.navButtonDisabled
-                ]}
-                onPress={handleLastPage}
-                disabled={currentPage === totalPages}
-              >
-                <Icon 
-                  name="chevron-forward-circle-outline" 
-                  size={16} 
-                  color={currentPage === totalPages ? theme.textSecondary : 'white'} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      {/* Enhanced Pagination */}
+      {totalPages > 1 && (
+        <View style={dynamicStyles.paginationContainer}>
+          <Pressable
+            style={[
+              dynamicStyles.paginationButton,
+              currentPage === 1 && dynamicStyles.paginationButtonDisabled
+            ]}
+            onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            <Ionicons name="chevron-back" size={18} color={theme.text} />
+          </Pressable>
+          
+          <Text style={dynamicStyles.paginationInfo}>
+            Page {currentPage} of {totalPages}
+          </Text>
+          
+          <Pressable
+            style={[
+              dynamicStyles.paginationButton,
+              currentPage === totalPages && dynamicStyles.paginationButtonDisabled
+            ]}
+            onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <Ionicons name="chevron-forward" size={18} color={theme.text} />
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 }

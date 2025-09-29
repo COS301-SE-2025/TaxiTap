@@ -53,7 +53,7 @@ export const NotificationProvider: React.FC<{
 
   const userNotifications = useQuery(
     api.functions.notifications.getNotifications.getNotifications,
-    userId ? { userId } : "skip"
+    userId ? { userId: userId as Id<"taxiTap_users"> } : "skip"
   );
 
   // Calculate unread count from notifications if getUnreadCount doesn't exist
@@ -78,19 +78,19 @@ export const NotificationProvider: React.FC<{
 
   // Setup notifications
   useEffect(() => {
-    if (userId && !__DEV__) {
-      registerForPushNotifications();
+    // Skip notification setup in development/Expo Go to avoid warnings
+    if (__DEV__) {
+      return;
     }
 
-    if (__DEV__) {
-      console.log('Skipping notification setup in development/Expo Go');
-      return;
+    if (userId) {
+      registerForPushNotifications();
     }
 
     // Listener for notifications received while app is foregrounded
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
-        console.log("Notification received:", notification);
+        // Notification received
 
         // Use new alert system instead of old showInAppNotification
         if (appState === "active") {
@@ -125,7 +125,7 @@ export const NotificationProvider: React.FC<{
     // Listener for when user taps on notification
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification response:", response);
+        // Notification response received
         const notificationData = response.notification.request.content.data;
         handleNotificationTap(notificationData);
       });
@@ -149,14 +149,13 @@ export const NotificationProvider: React.FC<{
       try {
         NotificationService.setBadgeCount(unreadCount);
       } catch (error) {
-        console.log('Badge count not supported in Expo Go');
+        // Badge count not supported in Expo Go
       }
     }
   }, [unreadCount]);
 
   const registerForPushNotifications = async () => {
     if (__DEV__) {
-      console.log('Skipping push notification registration in Expo Go');
       return;
     }
 
@@ -165,7 +164,7 @@ export const NotificationProvider: React.FC<{
       if (token && userId) {
         setExpoPushToken(token);
         await registerToken({
-          userId,
+          userId: userId as Id<"taxiTap_users">,
           token,
           platform: Platform.OS as "ios" | "android",
         });
@@ -176,7 +175,7 @@ export const NotificationProvider: React.FC<{
   };
 
   const handleNotificationTap = (data: any) => {
-    console.log("Handling notification tap with data:", data);
+    // Handling notification tap
 
     try {
       if (data?.type === "ride_request" && data?.rideId) {
@@ -213,14 +212,14 @@ export const NotificationProvider: React.FC<{
     if (!userId) return;
     
     try {
-      await markAllNotificationsAsRead({ userId });
+      await markAllNotificationsAsRead({ userId: userId as Id<"taxiTap_users"> });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }
   };
 
   const refreshNotifications = () => {
-    console.log("Notifications will auto-refresh due to Convex reactivity");
+    // Notifications will auto-refresh due to Convex reactivity
   };
 
   const dismissInAppNotification = (id: string) => {

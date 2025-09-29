@@ -1,61 +1,24 @@
 import { Id } from "../../_generated/dataModel";
+import { query } from "../../_generated/server";
+import { v } from "convex/values";
+import { checkAndAwardTrustedPayerBadge } from "../badges/badgeService";
 
 export const tripPaidHandler = async (
-  ctx: any, 
-  rideId: string, 
-  userId: Id<"taxiTap_users">, 
-  paid: boolean
+  ctx: any,
+  rideId: string,
+  userId: Id<"taxiTap_users">,
+  paid: boolean,
+  amountPaid: number | null,
+  paymentType: "exact" | "overpaid" | "underpaid"
 ) => {
-  console.log('tripPaidHandler called with:', { rideId, userId, paid });
-  
-  let ride;
-  
-  try {
-    ride = await ctx.db.get(rideId as Id<"rides">);
-    console.log('Found ride by _id:', !!ride);
-  } catch (error) {
-    console.log('Not a valid document ID, trying custom rideId field');
-  }
-  
-  if (!ride) {
-    try {
-      ride = await ctx.db
-        .query("rides")
-        .withIndex("by_ride_id", (q: any) => q.eq("rideId", rideId))
-        .first();
-      console.log('Found ride by rideId field:', !!ride);
-    } catch (error) {
-      console.log('Index query failed, trying filter fallback');
-    }
-  }
-  
-  if (!ride) {
-    try {
-      ride = await ctx.db
-        .query("rides")
-        .filter((q: any) => q.eq(q.field("rideId"), rideId))
-        .first();
-      console.log('Found ride by filter:', !!ride);
-    } catch (error) {
-      console.log('Filter query failed:', error);
-    }
-  }
+  // Find ride by custom rideId field since navigation params are strings
+  const ride = await ctx.db
+    .query("rides")
+    .filter((q: any) => q.eq(q.field("rideId"), rideId))
+    .first();
 
   if (!ride) {
-    console.error('Ride not found with rideId:', rideId);
-    
-    try {
-      const allRides = await ctx.db.query("rides").collect();
-      console.log('All rides:', allRides.map((r: any) => ({ 
-        _id: r._id, 
-        rideId: r.rideId, 
-        status: r.status 
-      })));
-    } catch (error) {
-      console.log('Could not fetch all rides for debugging');
-    }
-    
-    throw new Error(`Ride not found`);
+    throw new Error("Ride not found");
   }
 
   if (ride.passengerId !== userId) {
@@ -65,13 +28,72 @@ export const tripPaidHandler = async (
   await ctx.db.patch(ride._id, {
     tripPaid: paid,
     paymentConfirmedAt: Date.now(),
+    amountPaid: amountPaid ?? undefined,
+    paymentType,
   });
 
-  console.log('Successfully updated ride payment status');
-  
+  // Update the corresponding trip record for driver statistics
+  if (ride.tripId) {
+    try {
+      const trip = await ctx.db.get(ride.tripId);
+      if (trip) {
+        // Update the trip fare based on payment status and amount
+        let tripFare = trip.fare;
+
+        if (paid && amountPaid !== null) {
+          // If payment confirmed with specific amount, use that amount
+          tripFare = amountPaid;
+        } else if (paid && ride.finalFare !== undefined) {
+          // If payment confirmed but no amount specified, use finalFare
+          tripFare = ride.finalFare;
+        } else if (paid && ride.estimatedFare !== undefined) {
+          // If payment confirmed but no finalFare, use estimatedFare
+          tripFare = ride.estimatedFare;
+        } else if (!paid) {
+          // If payment not confirmed, set fare to 0 for driver statistics
+          tripFare = 0;
+        }
+
+        await ctx.db.patch(ride.tripId, {
+          fare: tripFare,
+        });
+
+        console.log(`Updated trip ${ride.tripId} fare to ${tripFare} based on payment status: ${paid}`);
+      }
+    } catch (error) {
+      console.error('Error updating trip record:', error);
+      // Don't fail the payment confirmation if trip update fails
+    }
+  }
+
+  // Check and award Trusted Payer badge if payment was confirmed
+  if (paid) {
+    try {
+      const badgeAwarded = await checkAndAwardTrustedPayerBadge(ctx, userId);
+      if (badgeAwarded) {
+        console.log('Trusted Payer badge awarded to user:', userId);
+      }
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+      // Don't fail the payment confirmation if badge awarding fails
+    }
+  }
+
   return { 
     success: true, 
-    message: `Payment ${paid ? 'confirmed' : 'marked as unpaid'}`,
+    message: `Payment ${paymentType} (${paid ? "confirmed" : "unpaid"})`,
     rideId: ride._id
   };
 };
+
+export const getRideDocId = query({
+  args: { rideIdStr: v.string() },
+  handler: async (ctx, { rideIdStr }) => {
+    const ride = await ctx.db.query("rides")
+      .withIndex("by_ride_id", (q: any) => q.eq("rideId", rideIdStr))
+      .first();
+
+    if (!ride) throw new Error("Ride not found");
+    return ride._id;
+  }
+});

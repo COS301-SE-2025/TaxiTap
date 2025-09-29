@@ -1,6 +1,7 @@
-import { query } from "../../../_generated/server";
+import { mutation } from "../../../_generated/server";
 import { v } from "convex/values";
-import { QueryCtx } from "../../../_generated/server";
+import { MutationCtx } from "../../../_generated/server";
+import { Id } from "../../../_generated/dataModel";
 
 export async function verifyPassword(stored: string, passwordAttempt: string): Promise<boolean> {
   const [saltHex, storedHashHex] = stored.split(":");
@@ -37,31 +38,55 @@ export async function verifyPassword(stored: string, passwordAttempt: string): P
     storedHash.every((byte, i) => byte === derivedHash[i]);
 }
 
-export async function loginSMSHandler(ctx: QueryCtx, args: { phoneNumber: string; password: string; }) {
+export async function loginSMSHandler(ctx: MutationCtx, args: { phoneNumber: string; password: string; deviceId: string }) {
+  const response: any = { success: false, reason: null, user: null };
+
   const user = await ctx.db
     .query("taxiTap_users")
-    .withIndex("by_phone", (q) => q.eq("phoneNumber", args.phoneNumber))
+    .withIndex("by_phone", (q: any) => q.eq("phoneNumber", args.phoneNumber))
     .first();
 
-  if (!user) throw new Error("User not found");
-
-  const isValid = await verifyPassword(user.password, args.password);
-  if (!isValid) throw new Error("Invalid password");
-
-  if (!user.isActive) throw new Error("Account is deactivated. Please contact support.");
-
-  const activeRole = user.currentActiveRole;
-  if (!activeRole) throw new Error("No active role set. Please contact support.");
-
-  const hasPermission = user.accountType === activeRole || user.accountType === "both";
-
-  if (!hasPermission) {
-    throw new Error(
-      `Role mismatch: Current active role (${activeRole}) doesn't match your account permissions (${user.accountType})`
-    );
+  if (!user) {
+    response.reason = "User not found";
+    return response;
   }
 
-  return {
+  const isValid = await verifyPassword(user.password, args.password);
+  if (!isValid) {
+    response.reason = "Invalid password";
+    return response;
+  }
+
+  if (!user.isActive) {
+    response.reason = "Account is deactivated";
+    return response;
+  }
+
+  const activeRole = user.currentActiveRole;
+  if (!activeRole) {
+    response.reason = "No active role set";
+    return response;
+  }
+
+  const hasPermission = user.accountType === activeRole || user.accountType === "both";
+  if (!hasPermission) {
+    response.reason = `Role mismatch`;
+    return response;
+  }
+
+  if (user.isLoggedIn && user.loggedInDeviceId !== args.deviceId) {
+    response.reason = "Already logged in on another device";
+    return response;
+  }
+
+  await ctx.db.patch(user._id, {
+    isLoggedIn: true,
+    loggedInDeviceId: args.deviceId,
+    lastLoginAt: Date.now(),
+  });
+
+  response.success = true;
+  response.user = {
     id: user._id,
     phoneNumber: user.phoneNumber,
     name: user.name,
@@ -69,12 +94,50 @@ export async function loginSMSHandler(ctx: QueryCtx, args: { phoneNumber: string
     currentActiveRole: user.currentActiveRole,
     isVerified: user.isVerified,
   };
+
+  return response;
 }
 
-export const loginSMS = query({
+export const loginSMS = mutation({
   args: {
     phoneNumber: v.string(),
     password: v.string(),
+    deviceId: v.string(),
   },
   handler: loginSMSHandler,
+});
+
+export const logoutMutation = mutation({
+  args: {
+    userId: v.string(),
+    deviceId: v.string(),
+  },
+  handler: async (
+    ctx: MutationCtx,
+    { userId, deviceId }: { userId: string; deviceId: string }
+  ) => {
+    const response: any = { success: false, reason: null };
+
+    try {
+      const userIdConvex = userId as unknown as Id<"taxiTap_users">;
+      const user = await ctx.db.get(userIdConvex);
+      if (!user) {
+        response.reason = "User not found";
+        return response;
+      }
+
+      if ((user as any).loggedInDeviceId === deviceId) {
+        await ctx.db.patch(userIdConvex, {
+          isLoggedIn: false,
+          loggedInDeviceId: undefined,
+        });
+      }
+
+      response.success = true;
+      return response;
+    } catch (err: any) {
+      response.reason = "Failed to logout";
+      return response;
+    }
+  },
 });

@@ -9,7 +9,7 @@ export const migrateLocationSchema = mutation({
   args: {},
   handler: async (ctx) => {
     try {
-      console.log("🔄 Starting locations schema migration...");
+      console.log("Starting locations schema migration...");
       
       // Get all locations with string updatedAt
       const locations = await ctx.db.query("locations").collect();
@@ -30,24 +30,24 @@ export const migrateLocationSchema = mutation({
                              await ctx.db.patch(location._id, {
                  updatedAt: currentTime
                });
-              console.log(`🔄 Updated location ${location._id} with current timestamp: ${currentTime}`);
+              console.log(`Updated location ${location._id} with current timestamp: ${currentTime}`);
             } else {
               // Use the parsed timestamp
               await ctx.db.patch(location._id, {
                 updatedAt: timestamp
               });
-              console.log(`🔄 Updated location ${location._id} with parsed timestamp: ${timestamp}`);
+              console.log(`Updated location ${location._id} with parsed timestamp: ${timestamp}`);
             }
             updatedCount++;
           } else {
             skippedCount++;
           }
         } catch (error) {
-          console.error(`❌ Error updating location ${location._id}:`, error);
+          console.error(`Error updating location ${location._id}:`, error);
         }
       }
       
-      console.log(`✅ Migration completed: ${updatedCount} locations updated, ${skippedCount} skipped`);
+      console.log(`Migration completed: ${updatedCount} locations updated, ${skippedCount} skipped`);
       
       return {
         success: true,
@@ -57,7 +57,7 @@ export const migrateLocationSchema = mutation({
       };
       
     } catch (error) {
-      console.error("❌ Migration failed:", error);
+      console.error("Migration failed:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -75,7 +75,7 @@ export const migrateLocationSchemaAdvanced = mutation({
   args: {},
   handler: async (ctx) => {
     try {
-      console.log("🔄 Starting advanced locations schema migration...");
+      console.log("Starting advanced locations schema migration...");
       
       const locations = await ctx.db.query("locations").collect();
       
@@ -101,7 +101,7 @@ export const migrateLocationSchemaAdvanced = mutation({
               } else {
                 // If all parsing fails, use current timestamp
                 timestamp = Date.now();
-                console.log(`⚠️ Could not parse timestamp for location ${location._id}, using current time`);
+                console.log(`Could not parse timestamp for location ${location._id}, using current time`);
               }
             }
             
@@ -110,18 +110,18 @@ export const migrateLocationSchemaAdvanced = mutation({
             });
             
             updatedCount++;
-            console.log(`🔄 Updated location ${location._id}: "${location.updatedAt}" → ${timestamp}`);
+            console.log(`Updated location ${location._id}: "${location.updatedAt}" → ${timestamp}`);
             
           } else {
             skippedCount++;
           }
         } catch (error) {
           errorCount++;
-          console.error(`❌ Error updating location ${location._id}:`, error);
+          console.error(`Error updating location ${location._id}:`, error);
         }
       }
       
-      console.log(`✅ Advanced migration completed: ${updatedCount} updated, ${skippedCount} skipped, ${errorCount} errors`);
+      console.log(`Advanced migration completed: ${updatedCount} updated, ${skippedCount} skipped, ${errorCount} errors`);
       
       return {
         success: true,
@@ -132,7 +132,7 @@ export const migrateLocationSchemaAdvanced = mutation({
       };
       
     } catch (error) {
-      console.error("❌ Advanced migration failed:", error);
+      console.error("Advanced migration failed:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

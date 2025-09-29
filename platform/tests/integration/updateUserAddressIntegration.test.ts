@@ -271,7 +271,7 @@ describe('Integration tests for updateHomeAddressHandler', () => {
           latitude: 39.7817,
           longitude: -89.6501,
         },
-        nickname: 'My Cozy Home 🏠',
+        nickname: 'My Cozy Home',
       };
 
       const updateArgs = {

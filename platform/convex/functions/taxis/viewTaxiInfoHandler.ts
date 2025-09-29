@@ -18,11 +18,28 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     .first();
 
   if (!ride) {
-    throw new Error("No active reservation found for this passenger.");
+    return null; // Return null instead of throwing error when no active reservation
   }
 
+  // If no driver assigned yet, return ride info without driver details
   if (!ride.driverId) {
-    throw new Error("No driver assigned to this ride yet.");
+    return {
+      taxi: null,
+      driver: null,
+      rideId: ride.rideId,
+      rideDocId: ride._id,
+      status: ride.status,
+      plate: null,
+      fare: ride.estimatedFare,
+      tripPaid: ride.tripPaid,
+      startLocation: ride.startLocation,
+      endLocation: ride.endLocation,
+      finalFare: ride.finalFare,
+      amountPaid: ride.amountPaid,
+      changeDue: ride.changeDue,
+      amountOwed: ride.amountOwed,
+      paymentType: ride.paymentType,
+    };
   }
 
   // 2. Find the driver profile (to get the driver table _id)
@@ -32,7 +49,7 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     .first();
 
   if (!driverProfile) {
-    throw new Error("No driver profile found for this ride.");
+    return null; // Return null instead of throwing error when no driver profile found
   }
 
   // 3. Find the taxi for this driver
@@ -42,7 +59,7 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     .first();
 
   if (!taxi) {
-    throw new Error("No taxi found for this driver.");
+    return null; // Return null instead of throwing error when no taxi found
   }
 
   // 4. Optionally, get driver user info
@@ -62,6 +79,13 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     plate: taxi.licensePlate,
     fare: ride.estimatedFare,
     tripPaid: ride.tripPaid,
-    // ridePin removed - no longer needed
+    startLocation: ride.startLocation,
+    endLocation: ride.endLocation,
+    finalFare: ride.finalFare,
+    amountPaid: ride.amountPaid,
+    changeDue: ride.changeDue,
+    amountOwed: ride.amountOwed,
+    paymentType: ride.paymentType,
+    ridePin: ride.ridePin
   };
 } 

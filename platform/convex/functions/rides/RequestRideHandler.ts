@@ -13,12 +13,23 @@ export const requestRideHandler = async (
   }
 ) => {
   try {
-    console.log('🚕 Processing ride request:', {
-      passengerId: args.passengerId,
-      driverId: args.driverId,
-      startLocation: args.startLocation,
-      endLocation: args.endLocation
-    });
+
+    // Check if passenger already has an active ride
+    const existingActiveRide = await ctx.db
+      .query("rides")
+      .withIndex("by_passenger", (q: any) => q.eq("passengerId", args.passengerId))
+      .filter((q: any) => 
+        q.or(
+          q.eq(q.field("status"), "requested"),
+          q.eq(q.field("status"), "accepted"),
+          q.eq(q.field("status"), "in_progress")
+        )
+      )
+      .first();
+
+    if (existingActiveRide) {
+      throw new Error(`You already have an active ride (${existingActiveRide.status}). Please complete or cancel your current ride before requesting a new one.`);
+    }
 
     const rideId = `ride_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -61,12 +72,6 @@ export const requestRideHandler = async (
         calculatedDuration = matchedTaxi.routeInfo.estimatedDuration;
       }
 
-      console.log('📏 Passenger displacement and fare calculated:', {
-        passengerDisplacement: routeDistance,
-        calculatedFare,
-        routeName: matchedTaxi.routeInfo.routeName,
-        calculatedDuration
-      });
     } else {
       throw new Error('Unable to calculate passenger displacement for this journey');
     }
@@ -84,11 +89,6 @@ export const requestRideHandler = async (
       distance: Math.round(routeDistance * 100) / 100,
     });
 
-    console.log('💾 Ride created with passenger displacement and fare:', {
-      rideId,
-      passengerDisplacement: Math.round(routeDistance * 100) / 100,
-      calculatedFare: args.estimatedFare || Math.round(calculatedFare * 100) / 100
-    });
 
     // Notify the driver using the internal ride notification system
     await ctx.runMutation(
@@ -111,7 +111,7 @@ export const requestRideHandler = async (
     };
 
   } catch (error) {
-    console.error("❌ Error creating ride request:", error);
+    console.error("Error creating ride request:", error);
     throw new Error(`Failed to create ride request: ${error}`);
   }
 };

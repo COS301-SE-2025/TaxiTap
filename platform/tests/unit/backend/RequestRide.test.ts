@@ -1,5 +1,4 @@
-// Mock Convex validation functions before importing modules
-const v = {
+jest.mock('convex/values', () => ({ 
   id: jest.fn((table) => ({ table })),
   number: jest.fn(() => ({})),
   string: jest.fn(() => ({})),
@@ -8,8 +7,7 @@ const v = {
   array: jest.fn(() => ({})),
   optional: jest.fn((validator) => ({ validator })),
   union: jest.fn((...validators) => ({ validators })),
-};
-jest.mock('convex/values', () => ({ v }));
+}));
 
 jest.mock('../../../convex/_generated/server', () => ({
   mutation: (def: any) => def,
@@ -50,6 +48,11 @@ function createMockCtx() {
       }),
       query: jest.fn((table: any) => ({
         collect: jest.fn(async () => rides),
+        withIndex: jest.fn(() => ({
+          filter: jest.fn(() => ({
+            first: jest.fn(async () => null) // No existing active rides by default
+          }))
+        }))
       })),
       get: jest.fn(async (id: string) => {
         return rides.find(r => r._id === id) || null;

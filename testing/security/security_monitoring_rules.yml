@@ -1,0 +1,124 @@
+# TaxiTap Security Monitoring Configuration
+# Prometheus alerting rules for security monitoring
+
+groups:
+  - name: taxi_tap_security_critical
+    rules:
+      # Critical security alerts
+      - alert: AuthenticationBypass
+        expr: rate(http_requests_total{status="200",endpoint=~".*protected.*"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+          category: authentication
+        annotations:
+          summary: "Potential authentication bypass detected"
+          description: "High success rate on protected endpoints without proper authentication"
+
+      - alert: SQLInjectionAttempt
+        expr: rate(http_requests_total{endpoint=~".*login.*",status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          category: injection
+        annotations:
+          summary: "Potential SQL injection attempt detected"
+          description: "High error rate on login endpoint may indicate SQL injection attempts"
+
+      - alert: BruteForceAttack
+        expr: rate(http_requests_total{endpoint=~".*login.*",status="401"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+          category: brute_force
+        annotations:
+          summary: "Brute force attack detected"
+          description: "High rate of failed login attempts indicating brute force attack"
+
+      - alert: UnauthorizedAccess
+        expr: rate(http_requests_total{status="403"}[5m]) > 5
+        for: 3m
+        labels:
+          severity: critical
+          category: authorization
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "Multiple 403 responses indicating unauthorized access attempts"
+
+  - name: taxi_tap_security_warning
+    rules:
+      # Warning security alerts
+      - alert: SuspiciousActivity
+        expr: rate(http_requests_total{endpoint=~".*admin.*|.*config.*|.*debug.*"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: suspicious_activity
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "Access attempts to sensitive endpoints"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          category: error_rate
+        annotations:
+          summary: "High error rate detected"
+          description: "Elevated 5xx error rate may indicate security issues"
+
+      - alert: UnusualTrafficPattern
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: traffic_pattern
+        annotations:
+          summary: "Unusual traffic pattern detected"
+          description: "Traffic volume significantly higher than normal"
+
+      - alert: DataExposure
+        expr: rate(http_requests_total{endpoint=~".*logs.*|.*metrics.*|.*health.*"}[5m]) > 1
+        for: 3m
+        labels:
+          severity: warning
+          category: data_exposure
+        annotations:
+          summary: "Potential data exposure"
+          description: "Access to sensitive endpoints that may expose system information"
+
+  - name: taxi_tap_security_info
+    rules:
+      # Informational security alerts
+      - alert: SecurityScanDetected
+        expr: rate(http_requests_total{user_agent=~".*scanner.*|.*bot.*|.*crawler.*"}[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: info
+          category: security_scan
+        annotations:
+          summary: "Security scan detected"
+          description: "Automated security scanning activity detected"
+
+      - alert: NewIPAddress
+        expr: increase(http_requests_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: info
+          category: new_ip
+        annotations:
+          summary: "New IP address accessing system"
+          description: "First request from new IP address"
+
+      - alert: GeographicAnomaly
+        expr: rate(http_requests_total{country!="ZA"}[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: info
+          category: geographic
+        annotations:
+          summary: "Non-South African traffic detected"
+          description: "Traffic from outside South Africa"
+
+

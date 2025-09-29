@@ -18,6 +18,7 @@ import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import icon from '../assets/images/icon.png';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { getDeviceId } from '../contexts/UserContext';
 
 export default function Login() {
   const [number, setNumber] = useState('');
@@ -30,6 +31,8 @@ export default function Login() {
   const { showGlobalError } = useAlertHelpers();
 
   const handleLogin = async () => {
+    const deviceId = await getDeviceId();
+
     if (!number || !password) {
       showGlobalError('Error', 'Please fill all fields', {
         duration: 4000,
@@ -38,6 +41,7 @@ export default function Login() {
       });
       return;
     }
+
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(number)) {
       showGlobalError('Error', 'Invalid number format', {
@@ -47,29 +51,46 @@ export default function Login() {
       });
       return;
     }
+
     try {
       const fullNumber = '0' + number;
-      const result = await convex.query(api.functions.users.UserManagement.logInWithSMS.loginSMS, {
-        phoneNumber: fullNumber,
-        password,
-      });
+      const result = await convex.mutation(
+        api.functions.users.UserManagement.logInWithSMS.loginSMS,
+        { phoneNumber: fullNumber, password, deviceId }
+      );
 
-      // Use the context login function
-      await login(result);
-      
-      if (result.currentActiveRole === 'driver') {
-        router.push({
-        pathname: '/DriverOffline',
-        params: { userId: result.id.toString() }
-      });
-      } else if (result.currentActiveRole === 'passenger') {
-        router.push({
-        pathname: '/HomeScreen',
-        params: { userId: result.id.toString() }
-      });
+      if (!result.success) {
+        if (result.reason === "Already logged in on another device") {
+          showGlobalError('Login Error', 'You are already logged in on another device. Please log out first.', {
+            duration: 5000,
+            position: 'top',
+            animation: 'slide-down',
+          });
+        } else {
+          showGlobalError('Login Error', 'Phone number or password incorrect', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
+        }
+        return;
       }
-    } catch {
-      showGlobalError('Error', 'Phone number or password incorrect', {
+
+      await login(result.user);
+
+      if (result.user.currentActiveRole === 'driver') {
+        router.push({
+          pathname: '/DriverOffline',
+          params: { userId: result.user.id.toString() },
+        });
+      } else if (result.user.currentActiveRole === 'passenger') {
+        router.push({
+          pathname: '/HomeScreen',
+          params: { userId: result.user.id.toString() },
+        });
+      }
+    } catch (err) {
+      showGlobalError('Error', 'An unexpected error occurred', {
         duration: 4000,
         position: 'top',
         animation: 'slide-down',
@@ -180,10 +201,6 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
-          {/* Forgot password */}
-          <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
-          </TouchableOpacity>
 
           {/* Login Button */}
           <Pressable

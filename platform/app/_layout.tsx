@@ -9,10 +9,10 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Platform } from 'react-native';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import regular from '../assets/fonts/Amazon_Ember_Display.otf';
-import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
-import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
-import light from '../assets/fonts/Amazon_Ember_Display_Light.ttf';
+// import regular from '../assets/fonts/Amazon_Ember_Display.otf';
+// import bold from '../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf';
+// import medium from '../assets/fonts/Amazon_Ember_Display_Medium.ttf';
+// import light from '../assets/fonts/Amazon_Ember_Display_Light.ttf';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { UserProvider, useUser } from '../contexts/UserContext';
@@ -22,9 +22,9 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { AlertProvider } from '../contexts/AlertContext';
 import { AlertOverlay } from '../components/AlertOverlay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { Id } from '../convex/_generated/dataModel';
 import '../src/i18n/i18n';
 import { LanguageProvider } from '../contexts/LanguageContext';
+import { MultiLegJourneyProvider } from '../contexts/MultiLegJourneyContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -38,10 +38,10 @@ const convex = new ConvexReactClient('https://affable-goose-538.convex.cloud');
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    'AmazonEmber-Regular': regular,
-    'AmazonEmber-Bold': bold,
-    'AmazonEmber-Medium': medium,
-    'AmazonEmber-Light': light,
+    'AmazonEmber-Regular': require('../assets/fonts/Amazon_Ember_Display.otf'),
+    'AmazonEmber-Bold': require('../assets/fonts/Amazon_Ember_Display_Bold_Italic.ttf'),
+    'AmazonEmber-Medium': require('../assets/fonts/Amazon_Ember_Display_Medium.ttf'),
+    'AmazonEmber-Light': require('../assets/fonts/Amazon_Ember_Display_Light.ttf'),
     ...FontAwesome.font,
   });
 
@@ -67,12 +67,13 @@ export default function RootLayout() {
             <UserProvider>
               <MapProvider>
                 <RouteProvider>
-                  <AlertProvider>
-                    <NotificationProvider>
-                      <RootLayoutNav />
-                      <AlertOverlay />
-                    </NotificationProvider>
-                  </AlertProvider>
+                  <MultiLegJourneyProvider>
+                    <AlertProvider>
+                      <NotificationProvider>
+                        <RootLayoutNav />
+                      </NotificationProvider>
+                    </AlertProvider>
+                  </MultiLegJourneyProvider>
                 </RouteProvider>
               </MapProvider>
             </UserProvider>
@@ -85,7 +86,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
-  const { user, loading } = useUser();
+  const { loading } = useUser();
   
   // Configure Android Navigation Bar so it does not overlap content
   useEffect(() => {
@@ -98,7 +99,7 @@ function RootLayoutNav() {
           await NavigationBar.setPositionAsync('relative');
           await NavigationBar.setBackgroundColorAsync(theme.background);
           await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
-        } catch (e) {
+        } catch {
           // ignore if not available
         }
       })();
@@ -124,8 +125,9 @@ function RootLayoutNav() {
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AlertOverlay />
         <Stack
           screenOptions={{
             headerStyle: {
@@ -173,7 +175,7 @@ function RootLayoutNav() {
           <Stack.Screen
             name="DriverEdit"
             options={{
-              title: "Driver Personal Information",
+              title: "Ulwazi Lomshayeli",
               headerStyle: {
                 backgroundColor: theme.surface,
               },
@@ -359,17 +361,35 @@ function RootLayoutNav() {
           <Stack.Screen
             name="FeedbackHistoryScreen"
             options={{
-              headerShown: true,
-              title: "Feedback",
-              headerStyle: {
-                backgroundColor: theme.surface,
-              },
-              headerTintColor: theme.primary,
-              headerTitleStyle: {
-                fontWeight: "bold",
-                fontSize: 18,
-                color: "black",
-              },
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="PersonalInfoEdit"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="AddHomeAddress"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="AddWorkAddress"
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="Wallet"
+            options={{
+              headerShown: false,
             }}
           />
 
@@ -421,12 +441,10 @@ function RootLayoutNav() {
             }}
           />
           
-          {Platform.OS === 'android' && (
-            <Stack.Screen
-              name="index"
-              options={{ headerShown: false }}
-            />
-          )}
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false }}
+          />
         </Stack>
       </View>
     </NavigationThemeProvider>

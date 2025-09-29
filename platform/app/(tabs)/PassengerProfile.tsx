@@ -11,6 +11,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { Badge } from '../../components/Badge';
 
 export default function PassengerProfile() {
     const [name, setName] = useState('');
@@ -57,6 +58,12 @@ export default function PassengerProfile() {
         user?.id ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
     );
 
+    // Query loyal member status
+    const loyalMemberStatus = useQuery(
+        api.functions.users.UserManagement.getLoyalMemberStatus.getLoyalMemberStatus,
+        user?.id ? { userId: user.id as Id<'taxiTap_users'> } : 'skip'
+    );
+
     // Mutations for switching roles
     const switchPassengerToBoth = useMutation(api.functions.users.UserManagement.switchPassengertoBoth.switchPassengerToBoth);
     const switchActiveRole = useMutation(api.functions.users.UserManagement.switchActiveRole.switchActiveRole);
@@ -89,7 +96,7 @@ export default function PassengerProfile() {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateAccountType('both');
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Successfully switched to driver mode!');
+                          showGlobalSuccess(t('home:success'), t('profile:successfullySwitchedToDriver'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -99,8 +106,8 @@ export default function PassengerProfile() {
                 });
             } else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                  title: 'Switch Profile',
-                  message: 'Are you sure you want to switch to the driver profile?',
+                  title: t('profile:switchProfile'),
+                  message: t('profile:switchProfileMessage'),
                   type: 'info',
                   duration: 0,
                   position: 'top',
@@ -111,7 +118,7 @@ export default function PassengerProfile() {
                         try {
                           await switchActiveRole({ userId: user.id as Id<'taxiTap_users'>, newRole: 'driver' });
                           await updateUserRole('driver');
-                          showGlobalSuccess('Success', 'Switched to driver mode!');
+                          showGlobalSuccess(t('home:success'), t('profile:switchedToDriverMode'));
                           router.push('../DriverOffline');
                         } catch (error: any) {
                           showGlobalError('Error', error.message || 'Failed to switch to driver mode');
@@ -128,19 +135,31 @@ export default function PassengerProfile() {
     };
 
     const handlePersonalInfo = () => {
-        router.push('../PersonalInfoEdit');
+        router.push('/PersonalInfoEdit');
     };
 
     const handleAddHomeAddress = () => {
-        router.push('../AddHomeAddress');
+        router.push('/AddHomeAddress');
     };
 
     const handleAddWorkAddress = () => {
-        router.push('../AddWorkAddress');
+        router.push('/AddWorkAddress');
     };
 
     const handleViewFeedback = () => {
         router.push('/FeedbackHistoryScreen');
+    };
+
+    const handleWallet = () => {
+    if (!user?.id) {
+        showGlobalError('Error', 'User not found');
+        return;
+    }
+
+    router.push({
+        pathname: '/Wallet',
+        params: { passengerId: user.id },
+    });
     };
 
     type MenuItemProps = {
@@ -320,39 +339,12 @@ export default function PassengerProfile() {
         destructiveMenuItem: {
             // No special styling needed, handled by text and icon
         },
-        feedbackPreview: {
-            padding: 16,
-            borderRadius: 12,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-        },
-        feedbackPreviewHeader: {
+        badgesContainer: {
             flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 8,
-        },
-        feedbackPreviewTitle: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: theme.text,
-        },
-        feedbackPreviewRating: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: '#f90',
-        },
-        feedbackPreviewComment: {
-            fontSize: 14,
-            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-            marginBottom: 12,
-            fontStyle: 'italic',
-        },
-        feedbackCount: {
-            fontSize: 14,
-            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-            fontWeight: '500',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginTop: 12,
+            gap: 8,
         },
     });
     
@@ -394,8 +386,30 @@ export default function PassengerProfile() {
                 <Text style={dynamicStyles.userRole}>{t('profile:passenger')}</Text>
             </View>
 
+            {/* Badges Section */}
+            <View style={dynamicStyles.badgesContainer}>
+                {/* Custom Loyal Member Badge */}
+                {loyalMemberStatus?.isLoyalMember && (
+                    <View style={{
+                        backgroundColor: '#34C759',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        alignSelf: 'center',
+                        marginTop: 8,
+                    }}>
+                        <Ionicons name="trophy" size={16} color="white" style={{marginRight: 6}} />
+                        <Text style={{color: 'white', fontWeight: '600', fontSize: 14}}>
+                            Loyal Member
+                        </Text>
+                    </View>
+                )}
+            </View>
+
             {/* Account Section */}
-            <Text style={dynamicStyles.sectionHeader}>Account</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:account')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="person-outline"
@@ -415,8 +429,17 @@ export default function PassengerProfile() {
                 </View>
             </View>
 
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:wallet')}</Text>
+            <View style={dynamicStyles.section}>
+                <MenuItemComponent
+                    icon="wallet-outline"
+                    title={t('profile:My Wallet')}
+                    onPress={handleWallet}
+                />
+            </View>
+
             {/* Saved Places Section */}
-            <Text style={dynamicStyles.sectionHeader}>Saved Places</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:savedPlaces')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="home-outline"
@@ -437,45 +460,28 @@ export default function PassengerProfile() {
             </View>
 
             {/* Feedback History Section */}
-            <Text style={dynamicStyles.sectionHeader}>
-                Recent Feedback
-                {recentFeedback && recentFeedback.length > 0 && (
-                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} review{recentFeedback.length !== 1 ? 's' : ''}</Text>
-                )}
-            </Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:recentFeedback')}</Text>
             <View style={dynamicStyles.section}>
-                {recentFeedback && recentFeedback.length > 0 ? (
-                    <View style={dynamicStyles.feedbackPreview}>
-                        <View style={dynamicStyles.feedbackPreviewHeader}>
-                            <Text style={dynamicStyles.feedbackPreviewTitle}>Latest Review</Text>
-                            <Text style={dynamicStyles.feedbackPreviewRating}>
-                                ⭐ {recentFeedback[0].rating}/5
-                            </Text>
+                <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                    <View style={dynamicStyles.menuItemLeft}>
+                        <View style={dynamicStyles.iconContainer}>
+                            <Ionicons name="chatbubble-ellipses-outline" size={20} color={theme.text} />
                         </View>
-                        {recentFeedback[0].comment && (
-                            <Text style={dynamicStyles.feedbackPreviewComment} numberOfLines={2}>
-                                "{recentFeedback[0].comment}"
-                            </Text>
-                        )}
-                        <MenuItemComponent
-                            icon="chatbubble-ellipses-outline"
-                            title="View All Feedback"
-                            onPress={handleViewFeedback}
-                            showArrow={true}
-                        />
+                        <Text style={dynamicStyles.menuItemText}>
+                            {recentFeedback && recentFeedback.length > 0 
+                                ? t('profile:viewAllFeedback')
+                                : t('profile:noFeedbackYet')
+                            }
+                        </Text>
                     </View>
-                ) : (
-                    <MenuItemComponent
-                        icon="chatbubble-ellipses-outline"
-                        title="No feedback yet"
-                        onPress={handleViewFeedback}
-                        showArrow={true}
-                    />
-                )}
+                    <Pressable onPress={handleViewFeedback}>
+                        <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
+                    </Pressable>
+                </View>
             </View>
 
             {/* Settings Section */}
-            <Text style={dynamicStyles.sectionHeader}>Settings</Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:settings')}</Text>
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="log-out-outline"

@@ -41,11 +41,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
   
-  console.log('🧮 Distance calculation:', {
-    from: { lat: lat1, lon: lon1 },
-    to: { lat: lat2, lon: lon2 },
-    distance: distance.toFixed(3) + 'km'
-  });
+  // Distance calculation logging removed for cleaner output
   
   return distance;
 }
@@ -119,19 +115,6 @@ async function calculateRouteScore(
   endLat: number,
   endLon: number
 ): Promise<RouteScore> {
-  console.log('🔍 calculateRouteScore input:', {
-    routeId: route.routeId,
-    startLat,
-    startLon,
-    endLat,
-    endLon,
-    inputTypes: {
-      startLat: typeof startLat,
-      startLon: typeof startLon,
-      endLat: typeof endLat,
-      endLon: typeof endLon
-    }
-  });
 
   // Get enriched stops or fall back to original stops
   const enrichedRoute = await ctx.db
@@ -180,23 +163,10 @@ async function calculateRouteScore(
     // Fare based on passenger displacement from origin
     calculatedFare = calculateFare(passengerDisplacement);
     
-    console.log('📍 Route calculation debug:', {
-      startLat, startLon, endLat, endLon,
-      passengerDisplacement,
-      calculatedFare,
-      hasDirectRoute,
-      startStopName: closestToStart.stop.name,
-      endStopName: closestToEnd.stop.name
-    });
   } else {
     // Even if no direct route, we can still calculate fare based on displacement
     calculatedFare = calculateFare(passengerDisplacement);
     
-    console.log('⚠️ No direct route found, but calculated displacement:', {
-      startLat, startLon, endLat, endLon,
-      passengerDisplacement,
-      calculatedFare
-    });
   }
   
   return {
@@ -313,19 +283,11 @@ export const _findAvailableTaxisForJourneyHandler = async (
   }: FindAvailableTaxisArgs
 ): Promise<TaxiSearchResult> => {
   try {
-    console.log('🔍 Finding available taxis for journey:', {
-      origin: { lat: originLat, lng: originLng },
-      destination: { lat: destinationLat, lng: destinationLng }
-    });
 
     // Calculate passenger displacement once
     const passengerDisplacement = calculateDistance(originLat, originLng, destinationLat, destinationLng);
     const calculatedFare = calculateFare(passengerDisplacement);
     
-    console.log('🧪 Passenger displacement:', {
-      displacement: passengerDisplacement.toFixed(3) + 'km',
-      fare: 'R' + calculatedFare.toFixed(2)
-    });
 
     // Step 1: Get all drivers with current locations who are nearby
     const locations = await ctx.db.query("locations").collect();
@@ -355,7 +317,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       };
     }
 
-    console.log(`👥 Found ${nearbyDriverLocations.length} nearby drivers`);
 
     // Step 2: Get driver profiles for nearby drivers
     const driverUserIds = nearbyDriverLocations.map(loc => loc.userId);
@@ -394,7 +355,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       ))
       .collect();
 
-    console.log(`📊 Checking ${routes.length} routes for ${driverProfiles.length} drivers`);
 
     // Step 4: Only calculate route scores for routes that have drivers
     const validRoutes = [];
@@ -487,7 +447,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       }
     }
 
-    console.log(`✅ Found ${validRoutes.length} valid routes with ${availableTaxis.length} available taxis`);
 
     if (availableTaxis.length === 0) {
       return {
@@ -532,7 +491,6 @@ export const _findAvailableTaxisForJourneyHandler = async (
       calculatedFare: Math.round(calculatedFare * 100) / 100
     }));
 
-    console.log(`🎯 Final result: ${finalResults.length} available taxis found`);
 
     return {
       success: true,
@@ -553,7 +511,7 @@ export const _findAvailableTaxisForJourneyHandler = async (
     };
     
   } catch (error) {
-    console.error("❌ Error in _findAvailableTaxisForJourney:", error);
+    console.error("Error in _findAvailableTaxisForJourney:", error);
     return {
       success: false,
       availableTaxis: [],

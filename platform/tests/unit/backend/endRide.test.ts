@@ -12,6 +12,7 @@ describe("endRideHandler", () => {
     driverId: "user_driver456",
     passengerId: args.userId,
     status: "in_progress",
+    tripPaid: true,
   };
 
   let mockCtx: any;
@@ -24,6 +25,8 @@ describe("endRideHandler", () => {
         eq: jest.fn().mockReturnThis(),
         first: jest.fn(),
         patch: jest.fn(),
+        filter: jest.fn().mockReturnThis(),
+        collect: jest.fn().mockResolvedValue([]),
       },
       runMutation: jest.fn(),
     };
@@ -78,7 +81,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -98,7 +101,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -106,6 +109,7 @@ describe("endRideHandler", () => {
     const startedRideDoc = {
       ...rideDoc,
       status: "started",
+      tripPaid: true,
     };
 
     mockCtx.db.first.mockResolvedValueOnce(startedRideDoc);
@@ -119,7 +123,7 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 
@@ -127,6 +131,7 @@ describe("endRideHandler", () => {
     const acceptedRideDoc = {
       ...rideDoc,
       status: "accepted",
+      tripPaid: true,
     };
 
     mockCtx.db.first.mockResolvedValueOnce(acceptedRideDoc);
@@ -140,7 +145,20 @@ describe("endRideHandler", () => {
 
     expect(result).toEqual({
       _id: rideDoc._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
+  });
+
+  it("throws error if payment is not confirmed", async () => {
+    const unpaidRideDoc = {
+      ...rideDoc,
+      tripPaid: false,
+    };
+
+    mockCtx.db.first.mockResolvedValueOnce(unpaidRideDoc);
+
+    await expect(endRideHandler(mockCtx, args)).rejects.toThrow(
+      "Payment must be confirmed before ending the ride. Please use the payment confirmation screen first."
+    );
   });
 });

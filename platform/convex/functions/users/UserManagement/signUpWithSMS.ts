@@ -6,10 +6,8 @@ async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password);
 
-  // Generate a random salt
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
-  // Derive key
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     passwordBuffer,
@@ -26,10 +24,9 @@ async function hashPassword(password: string): Promise<string> {
       hash: "SHA-256",
     },
     keyMaterial,
-    64 * 8 // 64 bytes
+    64 * 8
   );
 
-  // Encode salt and derived key as hex for storage
   const saltHex = Array.from(salt)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -49,25 +46,28 @@ export const signUpSMSHandler = async (
     accountType: "passenger" | "driver" | "both";
     email?: string;
     age?: number;
+    deviceId: string;
   }
 ) => {
-  // Check if phone number already exists
-  const existingByPhone = await ctx.db
-    .query("taxiTap_users")
-    .withIndex("by_phone", (q) => q.eq("phoneNumber", args.phoneNumber))
-    .first();
-  if (existingByPhone) {
-    throw new Error("Phone number already exists");
-  }
-
-  const now = Date.now();
-
-  const effectiveRole: "passenger" | "driver" =
-    args.accountType === "both" ? "passenger" : args.accountType;
-
-  const hashedPassword = await hashPassword(args.password);
+  const response: any = { success: false, reason: null, userId: null };
 
   try {
+    // Check if phone number already exists
+    const existingByPhone = await ctx.db
+      .query("taxiTap_users")
+      .withIndex("by_phone", (q) => q.eq("phoneNumber", args.phoneNumber))
+      .first();
+    if (existingByPhone) {
+      response.reason = "Phone number already exists";
+      return response;
+    }
+
+    const now = Date.now();
+    const effectiveRole: "passenger" | "driver" =
+      args.accountType === "both" ? "passenger" : args.accountType;
+
+    const hashedPassword = await hashPassword(args.password);
+
     const userId = await ctx.db.insert("taxiTap_users", {
       phoneNumber: args.phoneNumber,
       name: args.name,
@@ -78,6 +78,8 @@ export const signUpSMSHandler = async (
       currentActiveRole: effectiveRole,
       isVerified: false,
       isActive: true,
+      isLoggedIn: true,
+      loggedInDeviceId: args.deviceId,
       createdAt: now,
       updatedAt: now,
     });
@@ -92,6 +94,7 @@ export const signUpSMSHandler = async (
         updatedAt: now,
       });
     }
+
     if (args.accountType === "driver" || args.accountType === "both") {
       await ctx.db.insert("drivers", {
         userId,
@@ -116,19 +119,15 @@ export const signUpSMSHandler = async (
       role: locationRole,
       latitude: 0,
       longitude: 0,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
-    return { success: true, userId };
+    response.success = true;
+    response.userId = userId;
+    return response;
   } catch (e) {
-    const exists = await ctx.db
-      .query("taxiTap_users")
-      .withIndex("by_phone", (q) => q.eq("phoneNumber", args.phoneNumber))
-      .first();
-    if (exists) {
-      throw new Error("Phone number already exists (race condition)");
-    }
-    throw e;
+    response.reason = "Signup failed";
+    return response;
   }
 };
 
@@ -145,6 +144,7 @@ export const signUpSMS = mutation({
     ),
     email: v.optional(v.string()),
     age: v.optional(v.number()),
+    deviceId: v.string(),
   },
   handler: signUpSMSHandler,
 });

@@ -1,97 +1,327 @@
 import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from "@expo/vector-icons";
 import { useUser } from '../../contexts/UserContext';
 import { useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
 import { useAlertHelpers } from '../../components/AlertHelpers';
+import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
+import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
+import { useMapContext } from '../../contexts/MapContext';
 
 export default function PaymentConfirmation() {
   const { user } = useUser();
   const router = useRouter();
   const userId = user?.id;
-  const { driverName, licensePlate, fare, rideId, startName, endName, driverId, passengerId } = useLocalSearchParams();
+  const {
+    driverName,
+    licensePlate,
+    fare,
+    rideId,
+    startName,
+    endName,
+    driverId,
+    passengerId,
+    // Location parameters
+    currentLat,
+    currentLng,
+    currentName,
+    destinationLat,
+    destinationLng,
+    destinationName,
+    // Route parameters
+    routeId,
+    estimatedFare,
+    availableTaxisCount,
+    routeMatchData,
+    // Multi-leg journey parameters
+    journeyId,
+    legIndex,
+    totalLegs,
+    isMultiLeg,
+    continueToNext,
+    routeName
+  } = useLocalSearchParams();
   const { showGlobalAlert, showGlobalSuccess, showGlobalError } = useAlertHelpers();
+  const { clearMapContext } = useMapContext();
+  
+  // Safe access to MultiLegJourneyProvider with fallback
+  let clearJourneyCache: (() => Promise<void>) | undefined;
+  try {
+    const multiLegJourneyContext = useMultiLegJourney();
+    clearJourneyCache = multiLegJourneyContext.clearJourneyCache;
+  } catch (error) {
+    // Provider not available, provide a no-op fallback
+    console.warn('MultiLegJourneyProvider not available, using fallback');
+    clearJourneyCache = async () => {};
+  }
 
   const markTripPaid = useMutation(api.functions.rides.tripPaid.tripPaid);
+  const processLegPayment = useMutation(api.functions.journeys.journeyStateManager.completeLegWithPayment);
+
+  // Get driver rating
+  const driverRating = useQuery(
+    api.functions.feedback.averageRating.getAverageRating,
+    driverId ? { driverId: driverId as Id<"taxiTap_users"> } : "skip"
+  );
 
   const handlePaid = async () => {
     try {
-      console.log('Marking trip as paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: true,
-      });
-
-      const result = await markTripPaid({
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: true,
-      });
-
-      console.log('Payment marking result:', result);
-
-      showGlobalSuccess(
-        'Payment Confirmed',
-        'Thank you for confirming your payment!',
-        {
-          duration: 2000,
-          position: 'top',
-          animation: 'slide-down',
-        }
-      );
-
-      // Navigate to feedback after confirming payment
-      setTimeout(() => {
-        router.push({
-          pathname: '/SubmitFeedback',
-          params: {
-            rideId: rideId as string,
-            startName: startName as string,
-            endName: endName as string,
-            passengerId: passengerId as string || userId as string,
-            driverId: driverId as string,
-          },
+      // Check if this is a multi-leg journey
+      if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+        // Use multi-leg payment handler
+        const result = await processLegPayment({
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          actualCost: parseFloat(fare as string),
         });
-      }, 2000);
+
+        const currentLeg = parseInt(legIndex as string) + 1;
+        const total = parseInt(totalLegs as string);
+
+        showGlobalSuccess(
+          'Leg Payment Confirmed',
+          `Payment for leg ${currentLeg} of ${total} confirmed!${!result.journeyComplete ? ' Ready for next leg.' : ' Journey completed!'}`,
+          { duration: 3000, position: 'top', animation: 'slide-down' }
+        );
+
+        setTimeout(async () => {
+          if (!result.journeyComplete) {
+            // Check if this is a continue to next leg flow
+            if (continueToNext === 'true') {
+              // Navigate to feedback first, then to TaxiInformation
+              router.push({
+                pathname: '/SubmitFeedback',
+                params: {
+                  rideId: rideId as string,
+                  startName: startName as string,
+                  endName: endName as string,
+                  passengerId: passengerId as string || userId as string,
+                  driverId: driverId as string,
+                  actualFare: fare as string,
+                  // Location parameters
+                  currentLat: currentLat as string,
+                  currentLng: currentLng as string,
+                  currentName: currentName as string,
+                  destinationLat: destinationLat as string,
+                  destinationLng: destinationLng as string,
+                  destinationName: destinationName as string,
+                  // Driver/taxi parameters
+                  driverName: driverName as string,
+                  licensePlate: licensePlate as string,
+                  fare: fare as string,
+                  estimatedFare: estimatedFare as string,
+                  // Route parameters
+                  routeId: routeId as string,
+                  availableTaxisCount: availableTaxisCount as string,
+                  routeMatchData: routeMatchData as string,
+                  // Multi-leg journey parameters
+                  isMultiLeg: 'true',
+                  journeyId: journeyId as string,
+                  legIndex: legIndex as string,
+                  totalLegs: totalLegs as string,
+                  routeName: routeName as string || '',
+                  continueToNext: 'true',
+                },
+              });
+            } else {
+              // Navigate back to journey progress or next leg preparation
+              // Clear states since this is likely an incomplete journey being abandoned
+              clearMapContext();
+              await clearJourneyCache();
+              router.push('/HomeScreen');
+            }
+          } else {
+            // Journey completed - go to feedback for the final leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters
+                isMultiLeg: 'true',
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
+              },
+            });
+          }
+        }, 3000);
+      } else {
+        // Original single-leg payment logic
+        const result = await markTripPaid({
+          rideId: rideId as string,
+          userId: userId as Id<"taxiTap_users">,
+          paid: true,
+        });
+
+        showGlobalSuccess(
+          'Payment Confirmed',
+          'Thank you for confirming your payment!',
+          { duration: 2000, position: 'top', animation: 'slide-down' }
+        );
+
+        setTimeout(() => {
+          if (continueToNext === 'true') {
+            // Navigate to feedback with continue flag for next leg
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters
+                isMultiLeg: isMultiLeg as string,
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
+                continueToNext: 'true',
+              },
+            });
+          } else {
+            // Standard single-leg payment flow
+            router.push({
+              pathname: '/SubmitFeedback',
+              params: {
+                rideId: rideId as string,
+                startName: startName as string,
+                endName: endName as string,
+                passengerId: passengerId as string || userId as string,
+                driverId: driverId as string,
+                actualFare: fare as string,
+                // Location parameters
+                currentLat: currentLat as string,
+                currentLng: currentLng as string,
+                currentName: currentName as string,
+                destinationLat: destinationLat as string,
+                destinationLng: destinationLng as string,
+                destinationName: destinationName as string,
+                // Driver/taxi parameters
+                driverName: driverName as string,
+                licensePlate: licensePlate as string,
+                fare: fare as string,
+                estimatedFare: estimatedFare as string,
+                // Route parameters
+                routeId: routeId as string,
+                availableTaxisCount: availableTaxisCount as string,
+                routeMatchData: routeMatchData as string,
+                // Multi-leg journey parameters (for single-leg rides, these will be undefined)
+                isMultiLeg: isMultiLeg as string,
+                journeyId: journeyId as string,
+                legIndex: legIndex as string,
+                totalLegs: totalLegs as string,
+                routeName: routeName as string || '',
+              },
+            });
+          }
+        }, 2000);
+      }
 
     } catch (error: any) {
-      console.error('Error marking trip as paid:', error);
-      
       showGlobalError(
         'Payment Confirmation Failed',
-        error?.message || 'Unable to confirm payment. Please try again or contact support.',
-        {
-          duration: 4000,
-          position: 'top',
-          animation: 'slide-down',
-        }
+        error?.message || 'Unable to confirm payment. Please try again.',
+        { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
   };
 
   const handleNotPaid = async () => {
     try {
-      console.log('Marking trip as not paid:', {
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
+      // Check if this is a multi-leg journey
+      if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+        // Use multi-leg payment handler for "not paid"
+        const result = await processLegPayment({
+          journeyId: journeyId as string,
+          legIndex: parseInt(legIndex as string),
+          actualCost: 0,
+        });
 
-      const result = await markTripPaid({
-        rideId: rideId as string,
-        userId: userId as Id<"taxiTap_users">,
-        paid: false,
-      });
+        const currentLeg = parseInt(legIndex as string) + 1;
+        const total = parseInt(totalLegs as string);
 
-      console.log('Payment marking result:', result);
+        showGlobalAlert({
+          title: 'Payment Required',
+          message: `Payment for leg ${currentLeg} of ${total} is required before continuing your journey. Please pay the driver to proceed.`,
+          type: 'warning',
+          duration: 0,
+          actions: [
+            {
+              label: 'I Will Pay Now',
+              onPress: () => {
+                // Stay on payment screen to try again
+              },
+              style: 'default',
+            },
+            {
+              label: 'Cancel Journey',
+              onPress: async () => {
+                clearMapContext();
+                await clearJourneyCache();
+                router.push('/HomeScreen');
+              },
+              style: 'cancel',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
+      } else {
+        // Original single-leg "not paid" logic
+        const result = await markTripPaid({
+          rideId: rideId as string,
+          userId: userId as Id<"taxiTap_users">,
+          paid: false,
+        });
 
-      showGlobalAlert({
-        title: 'Payment Not Confirmed',
-        message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
+        showGlobalAlert({
+          title: 'Payment Not Confirmed',
+          message: 'Please remember to pay your driver. You can still provide feedback about your ride.',
         type: 'warning',
         duration: 0,
         actions: [
@@ -106,6 +336,29 @@ export default function PaymentConfirmation() {
                   endName: endName as string,
                   passengerId: passengerId as string || userId as string,
                   driverId: driverId as string,
+                  actualFare: fare as string,
+                  // Location parameters
+                  currentLat: currentLat as string,
+                  currentLng: currentLng as string,
+                  currentName: currentName as string,
+                  destinationLat: destinationLat as string,
+                  destinationLng: destinationLng as string,
+                  destinationName: destinationName as string,
+                  // Driver/taxi parameters
+                  driverName: driverName as string,
+                  licensePlate: licensePlate as string,
+                  fare: fare as string,
+                  estimatedFare: estimatedFare as string,
+                  // Route parameters
+                  routeId: routeId as string,
+                  availableTaxisCount: availableTaxisCount as string,
+                  routeMatchData: routeMatchData as string,
+                  // Multi-leg journey parameters (for single-leg rides, these will be undefined)
+                  isMultiLeg: isMultiLeg as string,
+                  journeyId: journeyId as string,
+                  legIndex: legIndex as string,
+                  totalLegs: totalLegs as string,
+                  routeName: routeName as string || '',
                 },
               });
             },
@@ -113,55 +366,110 @@ export default function PaymentConfirmation() {
           },
           {
             label: 'Skip Feedback',
-            onPress: () => {
+            onPress: async () => {
+              clearMapContext();
               router.push('/HomeScreen');
             },
             style: 'cancel',
           }
         ],
-        position: 'top',
-        animation: 'slide-down',
-      });
-
-    } catch (error: any) {
-      console.error('Error marking trip as not paid:', error);
-      
-      showGlobalError(
-        'Update Failed',
-        error?.message || 'Unable to update payment status. Please try again or contact support.',
-        {
-          duration: 4000,
           position: 'top',
           animation: 'slide-down',
-        }
+        });
+      }
+
+    } catch (error: any) {
+      showGlobalError(
+        'Update Failed',
+        error?.message || 'Unable to update payment status. Please try again.',
+        { duration: 4000, position: 'top', animation: 'slide-down' }
       );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Payments</Text>
+    <View style={[styles.safeArea]}>
+      <View style={styles.container}>
+        <Text style={styles.headerTitle}>
+          {isMultiLeg === 'true' ? 'Leg Payment' : 'Trip Payment'}
+        </Text>
 
-        <View style={styles.infoRow}>
-          <Ionicons name="person" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>Driver: {driverName}</Text>
+        {/* Multi-leg progress indicator */}
+        {isMultiLeg === 'true' && legIndex !== undefined && totalLegs && (
+          <View style={styles.legProgressCard}>
+            <View style={styles.legProgressHeader}>
+              <Ionicons name="map-outline" size={20} color="#FF9900" />
+              <Text style={styles.legProgressText}>
+                Leg {parseInt(legIndex as string) + 1} of {totalLegs}
+              </Text>
+            </View>
+            <Text style={styles.legProgressSubtext}>Multi-leg journey in progress</Text>
+          </View>
+        )}
+
+        <View style={[styles.card, styles.tripDetails]}>
+          <View style={styles.detailRow}>
+            <Ionicons name="person" size={18} color="#2B2B2B" />
+            <View style={styles.driverInfoContainer}>
+              <Text style={styles.detailText}>Driver: {driverName}</Text>
+              <View style={styles.driverRating}>
+                <Text style={styles.ratingText}>
+                  {typeof driverRating === "number" && driverRating > 0
+                    ? driverRating.toFixed(1)
+                    : "No ratings"}
+                </Text>
+                <View style={styles.starsContainer}>
+                  {typeof driverRating === "number" && driverRating > 0
+                    ? [1, 2, 3, 4, 5].map((star, index) => {
+                        const full = driverRating >= star;
+                        const half = driverRating >= star - 0.5 && driverRating < star;
+
+                        return (
+                          <FontAwesome
+                            key={index}
+                            name={full ? "star" : half ? "star-half-full" : "star-o"}
+                            size={12}
+                            color="#FFD700"
+                            style={{ marginRight: 1 }}
+                          />
+                        );
+                      })
+                    : null}
+                </View>
+              </View>
+            </View>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="car-outline" size={18} color="#2B2B2B" />
+            <Text style={styles.detailText}>License: {licensePlate}</Text>
+          </View>
+          {isMultiLeg === 'true' && (
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={18} color="#2B2B2B" />
+              <Text style={styles.detailText}>This leg: {startName} → {endName}</Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            <Ionicons name="cash-outline" size={18} color="#FF9900" />
+            <View style={styles.fareInfo}>
+              <Text style={styles.fareLabel}>
+                {isMultiLeg === 'true' ? 'Leg Fare:' : 'Total Fare:'}
+              </Text>
+              <Text style={styles.fareAmount}>R{fare}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="card-outline" size={20} color="#2B2B2B" />
-          <Text style={[styles.paymentText, styles.infoText]}>License Plate: {licensePlate}</Text>
-        </View>
-        <Text style={styles.amount}>R{fare ?? 0}</Text>
 
         <Text style={styles.questionText}>Have you paid the driver?</Text>
 
-        <View style={styles.buttonRowHorizontal}>
+        <View style={styles.buttonRow}>
           <TouchableOpacity style={[styles.button, styles.paidButton]} onPress={handlePaid}>
-            <Ionicons name="checkmark" size={20} color="#fff" />
+            <Ionicons name="checkmark-circle" size={22} color="#fff" />
             <Text style={styles.buttonText}>Yes, I paid</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={[styles.button, styles.notPaidButton]} onPress={handleNotPaid}>
-            <Ionicons name="close" size={20} color="#fff" />
+            <Ionicons name="close-circle" size={22} color="#fff" />
             <Text style={styles.buttonText}>No, not yet</Text>
           </TouchableOpacity>
         </View>
@@ -171,91 +479,93 @@ export default function PaymentConfirmation() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
+  safeArea: { flex: 1, backgroundColor: "#fff" },
+  container: { padding: 24, flex: 1, justifyContent: "center" },
+  headerTitle: { fontSize: 28, fontWeight: "700", color: "#2B2B2B", marginBottom: 24, textAlign: "center" },
+  legProgressCard: {
+    backgroundColor: "#fff3e0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF9900",
   },
-  content: {
-    flex: 1,
-    justifyContent: "center",
+  legProgressHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    gap: 8,
+    marginBottom: 4,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2B2B2B",
-    marginBottom: 30,
-    marginTop: -10,
-    textAlign: "center",
-    width: "100%",
-  },
-  paymentText: {
-    fontSize: 16,
-    color: "#2B2B2B",
-    marginBottom: 15,
-    textAlign: "center",
-    width: "100%",
-    fontWeight: "bold",
-  },
-  amount: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#FF7B00",
-    marginBottom: 40,
-    textAlign: "center",
-    width: "100%",
-  },
-  debugText: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 10,
-  },
-  questionText: {
+  legProgressText: {
     fontSize: 18,
-    color: "#2B2B2B",
-    marginBottom: 30,
-    textAlign: "center",
-    width: "100%",
+    fontWeight: "700",
+    color: "#FF9900",
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 10,
-    width: "100%",
+  legProgressSubtext: {
+    fontSize: 14,
+    color: "#666",
+    fontStyle: "italic",
   },
-  infoText: {
-    marginBottom: 0,
-    textAlign: "left",
-    width: "auto",
-  },
-  buttonRowHorizontal: {
-    flexDirection: "row",
-    gap: 16,
-    justifyContent: "center",
-    width: "100%",
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
+  card: {
+    backgroundColor: "#f8f9fa",
     borderRadius: 16,
-    flex: 1,
-    justifyContent: "center",
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 2,
   },
-  paidButton: {
-    backgroundColor: "#2ECC71",
+  tripDetails: {},
+  detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 8 },
+  detailText: { fontSize: 16, fontWeight: "500", color: "#2B2B2B" },
+  driverInfoContainer: { flex: 1 },
+  driverRating: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 4 
   },
-  notPaidButton: {
-    backgroundColor: "#E74C3C",
+  ratingText: { 
+    fontSize: 12, 
+    fontWeight: "500", 
+    color: "#2B2B2B", 
+    marginRight: 4 
   },
-  buttonText: {
-    color: "#fff",
+  starsContainer: { 
+    flexDirection: 'row' 
+  },
+  fareInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "90%",
+    borderTopWidth: 1,
+    borderTopColor: "#e9ecef"
+  },
+  fareLabel: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#2B2B2B",
   },
+  fareAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FF9900",
+  },
+  questionText: { fontSize: 18, fontWeight: "500", color: "#2B2B2B", marginBottom: 24, textAlign: "center" },
+  buttonRow: { flexDirection: "row", gap: 16, justifyContent: "center" },
+  button: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  paidButton: { backgroundColor: "#2ECC71" },
+  notPaidButton: { backgroundColor: "#E74C3C" },
+  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
 });

@@ -20,6 +20,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { MultiLegJourneyPreview } from '../../components/MultiLegJourneyPreview';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useUser } from '../../contexts/UserContext';
@@ -31,10 +32,9 @@ import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
 
-const GOOGLE_MAPS_API_KEY =
-  Platform.OS === 'ios'
-    ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
-    : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
+  ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
+  : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
 
 
 
@@ -56,6 +56,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
+  const createMultiLegJourney = useMutation(api.functions.journeys.journeyStateManager.createMultiLegJourney);
   const shouldRunQuery = !!userId;
 
   const recentRoutes = useQuery(
@@ -70,7 +71,13 @@ export default function HomeScreen() {
     longitude: number;
   } | null>(null);
 
+  // Location loading state - moved here to fix declaration order
+  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
+
   useEffect(() => {
+    // Only run location detection if we're loading and don't have location yet
+    if (!isLoadingCurrentLocation || detectedLocation) return;
+
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -129,6 +136,9 @@ export default function HomeScreen() {
           latitude: latitude,
           longitude: longitude,
         });
+
+        // Stop loading state once location is detected
+        setIsLoadingCurrentLocation(false);
       } catch (error: any) {
         console.error('Error getting location:', error);
         
@@ -158,7 +168,7 @@ export default function HomeScreen() {
         setIsLoadingCurrentLocation(false);
       }
     })();
-  }, [showGlobalError]);
+  }, [showGlobalError, isLoadingCurrentLocation, detectedLocation]);
 
   const nearbyDrivers = useQuery(
     api.functions.locations.getNearbyTaxis.getNearbyDrivers,
@@ -175,7 +185,6 @@ export default function HomeScreen() {
   const [destinationAddress, setDestinationAddress] = useState('');
   const [isGeocodingOrigin, setIsGeocodingOrigin] = useState(false);
   const [isGeocodingDestination, setIsGeocodingDestination] = useState(false);
-  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(true);
 
   // NEW: Autocomplete states
   const [originSuggestions, setOriginSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -198,6 +207,7 @@ export default function HomeScreen() {
   const [availableTaxis, setAvailableTaxis] = useState<any[]>([]);
   const [isSearchingTaxis, setIsSearchingTaxis] = useState(false);
   const [routeMatchResults, setRouteMatchResults] = useState<any>(null);
+  const hasSuccessfulResults = useRef(false);
 
   // Enhanced state to trigger taxi search
   const [taxiSearchParams, setTaxiSearchParams] = useState<{
@@ -210,6 +220,12 @@ export default function HomeScreen() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const [manualDestinations, setManualDestinations] = useState<Record<string, any>>({});
+
+  // Multi-leg journey states
+  const [showMultiLegPreview, setShowMultiLegPreview] = useState(false);
+  const [multiLegOptions, setMultiLegOptions] = useState<any[]>([]);
+  const [isSearchingMultiLeg, setIsSearchingMultiLeg] = useState(false);
+  const [selectedMultiLegOption, setSelectedMultiLegOption] = useState<any>(null);
 
   // NEW: Keyboard event listeners
   useEffect(() => {
@@ -343,6 +359,7 @@ export default function HomeScreen() {
 
   // NEW: Handle origin suggestion selection
   const handleOriginSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    Keyboard.dismiss();
     setJustSelectedOrigin(true);
     setShowOriginSuggestions(false);
     setOriginSuggestions([]);
@@ -369,6 +386,7 @@ export default function HomeScreen() {
 
   // NEW: Handle destination suggestion selection
   const handleDestinationSuggestionSelect = async (suggestion: PlaceSuggestion) => {
+    Keyboard.dismiss();
     setJustSelectedDestination(true);
     setShowDestinationSuggestions(false);
     setDestinationSuggestions([]);
@@ -403,6 +421,19 @@ export default function HomeScreen() {
       maxDestinationDistance: 3.0, // 3km radius from destination
       maxTaxiDistance: 3.0,        // 3km radius for taxi proximity
       maxResults: 10
+    } : "skip"
+  );
+
+  useEffect(() => {
+  }, [taxiSearchParams]);
+
+  // Query for multi-leg journey options - only runs when direct routes fail
+  const multiLegSearchResult = useQuery(
+    api.functions.journeys.multiLegJourneyFinder.findMultiLegJourneyOptions,
+    (taxiSearchParams && isSearchingMultiLeg) ? {
+      ...taxiSearchParams,
+      maxWalkingDistance: 1.0,     // 1km max walking from origin/to destination
+      maxTransferDistance: 4.0,    // 4km max walking between transfer points
     } : "skip"
   );
   
@@ -520,15 +551,16 @@ export default function HomeScreen() {
   }, [detectedLocation, currentLocation]);
 
   // Auto-set origin to current location when detected
+  // But prevent this during the initial focus when we're clearing states
   useEffect(() => {
-    if (detectedLocation && !origin) {
+    if (detectedLocation && !origin && !isFirstLoad) {
       setOrigin({
         latitude: detectedLocation.latitude,
         longitude: detectedLocation.longitude,
         name: t('common:currentLocation')
       });
     }
-  }, [detectedLocation, origin]);
+  }, [detectedLocation, origin, isFirstLoad]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -542,7 +574,7 @@ export default function HomeScreen() {
             actions: [
               {
                 label: 'OK',
-                onPress: () => console.log('Location error acknowledged'),
+                onPress: () => {},
                 style: 'default',
               }
             ],
@@ -638,28 +670,61 @@ export default function HomeScreen() {
       r.routeName
   );
 
-  // Only clear state on first load, not every focus
+  // Clear state on focus to ensure fresh state when returning from completed rides
   useFocusEffect(
     React.useCallback(() => {
+      // Always reset state when focusing HomeScreen to ensure clean state for new bookings
+      setRouteLoaded(false);
+      setOrigin(null);
+      setDestination(null);
+      setRouteCoordinates([]);
+      setSelectedRouteId(null);
+      setOriginAddress('');
+      setDestinationAddress('');
+      setAvailableTaxis([]);
+      setRouteMatchResults(null);
+      setIsSearchingTaxis(false);
+      setShowMultiLegPreview(false);
+      setMultiLegOptions([]);
+      setSelectedMultiLegOption(null);
+      setIsSearchingMultiLeg(false);
+      setTaxiSearchParams(null);
+      setRouteProgrammaticallySelected(false);
+      setJustSelectedOrigin(false);
+      setJustSelectedDestination(false);
+      setShowOriginSuggestions(false);
+      setShowDestinationSuggestions(false);
+      hasSuccessfulResults.current = false;
+
+      // CRITICAL: Also reset loading route state to prevent hanging loading screen
+      setIsLoadingRoute(false);
+
+      // Reset location loading state to ensure fresh location detection
+      setIsLoadingCurrentLocation(true);
+      setDetectedLocation(null);
+
       if (isFirstLoad) {
-        setRouteLoaded(false);
-        setOrigin(null);
-        setDestination(null);
-        setRouteCoordinates([]);
-        setSelectedRouteId(null);
-        setOriginAddress('');
-        setDestinationAddress('');
-        setAvailableTaxis([]);
-        setRouteMatchResults(null);
-        setIsSearchingTaxis(false);
         setIsFirstLoad(false);
       }
-    }, [isFirstLoad, setRouteLoaded, setOrigin, setDestination, setRouteCoordinates])
+    }, [setRouteLoaded, setOrigin, setDestination, setRouteCoordinates, setIsLoadingRoute, isFirstLoad])
   );
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: t('navigation:home') });
-  }, [navigation, t]);
+    if (showMultiLegPreview) {
+      // Hide header and tab bar when MultiLeg preview is open
+      navigation.setOptions({ 
+        headerShown: false,
+        tabBarStyle: { display: 'none' }
+      });
+    } else {
+      // Show header and tab bar normally
+      navigation.setOptions({ 
+        title: t('navigation:home'),
+        headerShown: true,
+        tabBarStyle: undefined
+      });
+    }
+  }, [navigation, t, showMultiLegPreview]);
 
   // Geocoding function (fallback for manual entry)
   const geocodeAddress = async (address: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
@@ -703,12 +768,19 @@ export default function HomeScreen() {
     dest: { latitude: number; longitude: number; name: string }
   ) => {
     if (!userId) {
+      setIsSearchingTaxis(false);
+      return;
+    }
+
+    // Prevent duplicate searches if one is already in progress
+    if (isSearchingTaxis) {
       return;
     }
 
     setAvailableTaxis([]);
     setRouteMatchResults(null);
     setIsSearchingTaxis(true);
+    hasSuccessfulResults.current = false;
     
     try {
       setTaxiSearchParams({
@@ -718,13 +790,27 @@ export default function HomeScreen() {
         destinationLng: dest.longitude,
       });
       
+      // Fallback timeout in case the query doesn't respond
+      const timeoutId = setTimeout(() => {
+        // Only reset if we don't already have successful results
+        if (!hasSuccessfulResults.current) {
+          setIsSearchingTaxis(false);
+          setIsSearchingMultiLeg(false);
+          setIsLoadingRoute(false);
+          setRouteMatchResults({ success: false, availableTaxis: [], message: 'Search timeout' });
+        } else {
+          setIsSearchingTaxis(false);
+          setIsSearchingMultiLeg(false);
+          setIsLoadingRoute(false);
+        }
+      }, 5000); // 5 second timeout
+      
+      // Store timeout ID for cleanup
+      (window as any).taxiSearchTimeout = timeoutId;
+      
     } catch (error) {
+      console.error('Error in taxi search:', error);
       setIsSearchingTaxis(false);
-      Alert.alert(
-        t('home:searchError'), 
-        t('home:unableToFindTaxis'),
-        [{ text: t('common:ok') }]
-      );
       setAvailableTaxis([]);
       setRouteMatchResults(null);
     }
@@ -733,17 +819,56 @@ export default function HomeScreen() {
   // Handle taxi search results
   useEffect(() => {
     if (taxiSearchResult) {
-      setIsSearchingTaxis(false);
       
-      if (taxiSearchResult.success) { 
+      // Clear timeout since we got a response
+      if ((window as any).taxiSearchTimeout) {
+        clearTimeout((window as any).taxiSearchTimeout);
+        (window as any).taxiSearchTimeout = null;
+      }
+      
+      setIsSearchingTaxis(false);
+
+      if (taxiSearchResult.success && taxiSearchResult.availableTaxis.length > 0) {
         setAvailableTaxis(taxiSearchResult.availableTaxis);
         setRouteMatchResults(taxiSearchResult);
+        hasSuccessfulResults.current = true;
       } else {
+        // No direct routes found - trigger multi-leg journey search
         setAvailableTaxis([]);
         setRouteMatchResults(taxiSearchResult);
+        setIsSearchingMultiLeg(true);
       }
     }
   }, [taxiSearchResult]);
+
+  // Handle multi-leg search results
+  useEffect(() => {
+    if (multiLegSearchResult) {
+      setIsSearchingMultiLeg(false);
+
+      if (multiLegSearchResult.success && multiLegSearchResult.journeyOptions.length > 0) {
+        setMultiLegOptions(multiLegSearchResult.journeyOptions);
+        setShowMultiLegPreview(true);
+      } else {
+        setMultiLegOptions([]);
+        showGlobalAlert({
+          title: 'No Routes Available',
+          message: 'No direct or multi-leg route options are available for your selected origin and destination. Please try different locations.',
+          type: 'warning',
+          duration: 0,
+          actions: [
+            {
+              label: 'OK',
+              onPress: () => {},
+              style: 'default',
+            }
+          ],
+          position: 'top',
+          animation: 'slide-down',
+        });
+      }
+    }
+  }, [multiLegSearchResult]);
 
   // NEW: Handle address changes with programmatic flag reset
   const handleOriginAddressChange = (text: string) => {
@@ -814,6 +939,12 @@ export default function HomeScreen() {
       setSelectedRouteId(uniqueRouteId);
       
       await storeManualDestination(uniqueRouteId, destinationWithUserName);
+      
+      // Force trigger route calculation if we have origin
+      if (origin) {
+        getRoute(origin, destinationWithUserName);
+      }
+    } else {
     }
   };
 
@@ -858,7 +989,7 @@ export default function HomeScreen() {
         actions: [
           {
             label: 'OK',
-            onPress: () => console.log('No taxis acknowledged'),
+            onPress: () => {},
             style: 'default',
           }
         ],
@@ -1081,6 +1212,63 @@ export default function HomeScreen() {
     setJustSelectedDestination(true);
   };
 
+  // Multi-leg journey handlers
+  const handleMultiLegOptionSelect = async (option: any) => {
+    try {
+      if (!userId) {
+        showGlobalError('Authentication Required', 'Please log in to book a multi-leg journey.');
+        return;
+      }
+
+      setSelectedMultiLegOption(option);
+
+      // Create the multi-leg journey in the database
+
+      try {
+        const result = await createMultiLegJourney({
+          passengerId: userId as Id<"taxiTap_users">,
+          journeyOption: option,
+        });
+
+      } catch (error) {
+        console.error('Failed to create multi-leg journey:', error);
+        throw error; // Re-throw to trigger the outer catch block
+      }
+
+      // Navigate to TaxiInformation for the first leg
+      router.push({
+        pathname: '/(tabs)/TaxiInformation',
+        params: {
+          destinationName: option.leg1.destination.address,
+          destinationLat: option.leg1.destination.coordinates.latitude.toString(),
+          destinationLng: option.leg1.destination.coordinates.longitude.toString(),
+          currentName: option.leg1.origin.address,
+          currentLat: option.leg1.origin.coordinates.latitude.toString(),
+          currentLng: option.leg1.origin.coordinates.longitude.toString(),
+          routeId: option.journeyId,
+          estimatedFare: option.leg1.estimatedCost.toString(),
+          isMultiLeg: 'true',
+          journeyId: option.journeyId,
+          legIndex: '0',
+          totalLegs: '2',
+          routeName: option.leg1.routeName,
+        },
+      });
+
+      // Close the preview
+      setShowMultiLegPreview(false);
+    } catch (error) {
+      console.error('Error creating multi-leg journey:', error);
+      showGlobalError('Booking Error', 'Failed to create multi-leg journey. Please try again.');
+    }
+  };
+
+  const handleMultiLegPreviewClose = () => {
+    setShowMultiLegPreview(false);
+    setMultiLegOptions([]);
+    setSelectedMultiLegOption(null);
+  };
+
   // Show loading spinner if essential data is loading
   if (!user || recentRoutes === undefined || routes === undefined) {
     return <LoadingSpinner />;
@@ -1125,11 +1313,6 @@ export default function HomeScreen() {
       marginBottom: keyboardVisible ? 20 : 32,
       width: '100%',
       alignSelf: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.4 : 0.15,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 8,
-      elevation: 6,
     },
     locationIndicator: {
       marginRight: 16,
@@ -1147,11 +1330,6 @@ export default function HomeScreen() {
       marginBottom: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: theme.primary,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 3,
     },
     currentLocationDot: {
       width: 12,
@@ -1218,16 +1396,11 @@ export default function HomeScreen() {
       left: 0,
       right: 0,
       backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
+        ? 'rgba(30, 41, 59)' 
+        : 'rgba(255, 255, 255)',
       borderRadius: 16,
       maxHeight: 200,
       zIndex: 1000,
-      elevation: 12,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.5 : 0.2,
-      shadowOffset: { width: 0, height: 8 },
-      shadowRadius: 12,
       borderWidth: 1,
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.4)' 
@@ -1299,11 +1472,6 @@ export default function HomeScreen() {
       borderColor: isDark 
         ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
     },
     searchResultsText: {
       fontSize: 15,
@@ -1328,14 +1496,9 @@ export default function HomeScreen() {
       alignItems: 'center',
       padding: 20,
       marginBottom: 16,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 4,
       borderWidth: 1,
       borderColor: isDark 
-        ? 'rgba(25, 85, 105, 0.3)' 
+        ? 'rgba(71, 85, 105, 0.3)' 
         : 'rgba(226, 232, 240, 0.8)',
     },
     routeTitle: {
@@ -1367,11 +1530,6 @@ export default function HomeScreen() {
       paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: theme.shadow,
-      shadowOpacity: 0.4,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 12,
-      elevation: 8,
       minHeight: 56,
       borderWidth: 2,
       borderColor: availableTaxis.length > 0 ? '#D97706' : 'transparent',
@@ -1425,105 +1583,99 @@ export default function HomeScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={dynamicStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-    >
-
-      
-      {isLoadingCurrentLocation ? (
-        <View style={[dynamicStyles.map, { 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          backgroundColor: isDark 
-            ? 'rgba(30, 41, 59, 0.1)' 
-            : 'rgba(255, 255, 255, 0.1)'
-        }]}>
-          <View style={{
-            backgroundColor: isDark 
-              ? 'rgba(30, 41, 59, 0.9)' 
-              : 'rgba(255, 255, 255, 0.9)',
-            borderRadius: 24,
-            padding: 32,
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: isDark 
-              ? 'rgba(71, 85, 105, 0.3)' 
-              : 'rgba(226, 232, 240, 0.8)',
-            shadowColor: theme.shadow,
-            shadowOpacity: isDark ? 0.3 : 0.1,
-            shadowOffset: { width: 0, height: 8 },
-            shadowRadius: 16,
-            elevation: 8,
-          }}>
-            <LoadingSpinner />
-            <Text style={{ 
-              color: theme.text, 
-              marginTop: 16, 
-              fontSize: 16, 
-              fontWeight: '600',
-              letterSpacing: -0.2
-            }}>
-              {t('home:gettingLocation')}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <MapView
-          ref={mapRef}
-          style={dynamicStyles.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={getInitialRegion()}
-          customMapStyle={isDark ? darkMapStyle : []}
-        >
-          {origin && 
-            typeof origin.latitude === 'number' &&
-            typeof origin.longitude === 'number' && (
-              <Marker coordinate={origin} title="Origin" pinColor="blue" />
-            )}
-
-          {destination &&
-            typeof destination.latitude === 'number' &&
-            typeof destination.longitude === 'number' && (
-              <Marker coordinate={destination} title={destination.name} pinColor="orange" />
-            )}
-          
-          {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
-            .filter(driver => 
-              typeof driver.latitude === 'number' && 
-              typeof driver.longitude === 'number'
-            )
-            .map((driver, index) => (
-              <Marker
-                key={`${driver._id}_${availableTaxis.length > 0 ? 'available' : 'nearby'}_${index}`}
-                coordinate={{
-                  latitude: driver.latitude,
-                  longitude: driver.longitude,
-                }}
-                title={driver.name || "Available Driver"}
-              >
-                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="car" size={36} color="green" />
-                </View>
-              </Marker>
-            ))}
-
-          {routeLoaded && routeCoordinates.length > 0 && (
-            <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
-          )}
-        </MapView>
-      )}
-
-      <ScrollView 
-        style={dynamicStyles.bottomSheet}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ 
-          paddingBottom: keyboardVisible ? 20 : 100,
-          flexGrow: 1 
-        }}
+    <View style={dynamicStyles.container}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
+        {isLoadingCurrentLocation ? (
+          <View style={[dynamicStyles.map, { 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            backgroundColor: isDark 
+              ? 'rgba(30, 41, 59, 0.1)' 
+              : 'rgba(255, 255, 255, 0.1)'
+          }]}>
+            <View style={{
+              backgroundColor: isDark 
+                ? 'rgba(30, 41, 59, 0.9)' 
+                : 'rgba(255, 255, 255, 0.9)',
+              borderRadius: 24,
+              padding: 32,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: isDark 
+                ? 'rgba(71, 85, 105, 0.3)' 
+                : 'rgba(226, 232, 240, 0.8)',
+            }}>
+              <LoadingSpinner />
+              <Text style={{ 
+                color: theme.text, 
+                marginTop: 16, 
+                fontSize: 16, 
+                fontWeight: '600',
+                letterSpacing: -0.2
+              }}>
+                {t('home:gettingLocation')}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <MapView
+            ref={mapRef}
+            style={dynamicStyles.map}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={getInitialRegion()}
+            customMapStyle={isDark ? darkMapStyle : []}
+          >
+            {origin && 
+              typeof origin.latitude === 'number' &&
+              typeof origin.longitude === 'number' && (
+                <Marker coordinate={origin} title="Origin" pinColor="blue" />
+              )}
+
+            {destination &&
+              typeof destination.latitude === 'number' &&
+              typeof destination.longitude === 'number' && (
+                <Marker coordinate={destination} title={destination.name} pinColor="orange" />
+              )}
+            
+            {(availableTaxis.length > 0 ? availableTaxis : nearbyDrivers || [])
+              .filter(driver => 
+                typeof driver.latitude === 'number' && 
+                typeof driver.longitude === 'number'
+              )
+              .map((driver, index) => (
+                <Marker
+                  key={`${driver._id}_${availableTaxis.length > 0 ? 'available' : 'nearby'}_${index}`}
+                  coordinate={{
+                    latitude: driver.latitude,
+                    longitude: driver.longitude,
+                  }}
+                  title={driver.name || "Available Driver"}
+                >
+                  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="car" size={36} color="green" />
+                  </View>
+                </Marker>
+              ))}
+
+            {routeLoaded && routeCoordinates.length > 0 && (
+              <Polyline coordinates={routeCoordinates} strokeColor={theme.primary} strokeWidth={4} />
+            )}
+          </MapView>
+        )}
+
+        <ScrollView 
+          style={dynamicStyles.bottomSheet}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ 
+            paddingBottom: keyboardVisible ? 20 : 100,
+            flexGrow: 1 
+          }}
+        >
         <View style={dynamicStyles.locationBox}>
           <View style={dynamicStyles.locationIndicator}>
             <View style={dynamicStyles.currentLocationCircle}>
@@ -1577,7 +1729,7 @@ export default function HomeScreen() {
               )}
 
               {/* Origin Suggestions */}
-              {showOriginSuggestions && originSuggestions.length > 0 && (
+              {showOriginSuggestions && originSuggestions.length > 0 && !routeLoaded && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
                     style={dynamicStyles.suggestionScrollView}
@@ -1655,15 +1807,7 @@ export default function HomeScreen() {
                   {t('home:loadingRoute')}
                 </Text>
               )}
-              {routeLoaded && !isLoadingRoute && !isSearchingTaxis && (
-                <Text style={[dynamicStyles.routeLoadingText, { 
-                  color: '#10B981', 
-                  fontWeight: '600',
-                  fontSize: 13
-                }]}>
-                  {t('home:routeLoaded')}
-                </Text>
-              )}
+              {/* Route loaded text removed - no longer needed */}
               {isSearchingTaxis && (
                 <Text style={[dynamicStyles.routeLoadingText, { 
                   color: '#3B82F6', 
@@ -1675,7 +1819,7 @@ export default function HomeScreen() {
               )}
 
               {/* Destination Suggestions */}
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+              {showDestinationSuggestions && destinationSuggestions.length > 0 && !routeLoaded && (
                 <View style={dynamicStyles.inputSuggestionsContainer}>
                   <ScrollView 
                     style={dynamicStyles.suggestionScrollView}
@@ -1713,11 +1857,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Journey Status */}
-        {routeMatchResults && !keyboardVisible && !routeLoaded && (
+        {/* Journey Status - REMOVED to prevent showing after ride completion */}
+        {false && routeMatchResults && !keyboardVisible && !routeLoaded && (
           <View style={dynamicStyles.searchResultsContainer}>
             <Text style={dynamicStyles.searchResultsTitle}>
-              🚗 {t('home:journeyStatus')}
+              {t('home:journeyStatus')}
             </Text>
             <View style={dynamicStyles.searchResultsCard}>
               <View style={{
@@ -1849,7 +1993,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {!keyboardVisible && !routeLoaded && (
+        {!keyboardVisible && (!routeLoaded || (routeLoaded && availableTaxis.length === 0 && !isSearchingTaxis && !isSearchingMultiLeg)) && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
               Recently Used Routes
@@ -1961,41 +2105,62 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Reserve a Seat Button */}
-      {routeLoaded && !isLoadingRoute && !keyboardVisible && (
+      {(() => {
+        const shouldShowButton = routeLoaded && !isLoadingRoute && !keyboardVisible && !isSearchingTaxis && !isSearchingMultiLeg && availableTaxis.length > 0;
+        return shouldShowButton;
+      })() && (
         <Animated.View style={{ opacity: buttonOpacity }}>
           <TouchableOpacity 
             style={dynamicStyles.reserveButton} 
             onPress={handleReserveSeat}
             activeOpacity={0.9}
           >
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {isSearchingTaxis ? (
-                <Icon name="search" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              ) : (
-                <Icon name="location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              )}
-              <Text style={dynamicStyles.reserveButtonText}>
-                {isSearchingTaxis 
-                  ? t('home:findingTaxis')
-                  : availableTaxis.length > 0 
-                    ? t('home:reserveSeatWithCount').replace('{count}', availableTaxis.length.toString())
-                    : t('home:reserveSeat')
-                }
-              </Text>
-            </View>
-            {isSearchingTaxis && (
-              <Text style={dynamicStyles.reserveButtonSubtext}>
-                {t('home:searchingDrivers')}
-              </Text>
-            )}
+            <Text style={dynamicStyles.reserveButtonText}>
+              {t('home:reserveSeat')}
+            </Text>
           </TouchableOpacity>
         </Animated.View>
       )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+
+      {/* Loading Overlay - Same as login loading screen */}
+      {(() => {
+        const shouldShowLoading = isLoadingRoute || isSearchingTaxis || isSearchingMultiLeg;
+        return shouldShowLoading;
+      })() && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1000,
+        }}>
+          <LoadingSpinner />
+        </View>
+      )}
+
+      {/* Multi-leg journey preview overlay - Fullscreen */}
+      {showMultiLegPreview && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme.background,
+          zIndex: 1000,
+          flex: 1,
+        }}>
+          <MultiLegJourneyPreview
+            journeyOptions={multiLegOptions}
+            isLoading={isSearchingMultiLeg}
+            onSelectOption={handleMultiLegOptionSelect}
+            onClose={handleMultiLegPreviewClose}
+          />
+        </View>
+      )}
+    </View>
   );
 }
 

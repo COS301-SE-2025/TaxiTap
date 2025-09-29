@@ -11,6 +11,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import * as ImagePicker from 'expo-image-picker';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { Badge } from '../components/Badge';
 
 export default function DriverProfile() {   
     const [name, setName] = useState('');
@@ -34,6 +35,13 @@ export default function DriverProfile() {
         api.functions.users.UserManagement.getUserById.getUserById, 
         user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
     );
+
+    // Query driver badges
+    const driverBadges = useQuery(
+        api.functions.badges.getUserBadges.getUserBadgesQuery,
+        user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+
     useEffect(() => {
         if (!loading && !user) {
             router.replace('/LandingPage');
@@ -125,7 +133,7 @@ export default function DriverProfile() {
             // User already has both account types - just switch active role
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
-                    title: 'Switch Profile',
+                    title: t('profile:switchProfile'),
                     message: 'Are you sure you want to switch to the passenger profile?',
                     type: 'info',
                     duration: 0,
@@ -337,6 +345,15 @@ export default function DriverProfile() {
         destructiveMenuItem: {
             // No special styling needed, handled by text and icon
         },
+        badgesContainer: {
+            padding: 16,
+        },
+        badgesRow: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-start',
+            gap: 8,
+        },
     });
     
     if (!user) {
@@ -406,6 +423,31 @@ export default function DriverProfile() {
                         onPress={handleEarnings}
                     />
                 </View>
+
+                {/* Driver Badges */}
+                {driverBadges && driverBadges.length > 0 && (
+                    <>
+                        <Text style={dynamicStyles.sectionHeader}>Achievements</Text>
+                        <View style={dynamicStyles.section}>
+                            <View style={dynamicStyles.badgesContainer}>
+                                <View style={dynamicStyles.badgesRow}>
+                                    {driverBadges.map((badge, index) => (
+                                        <Badge
+                                            key={index}
+                                            badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
+                                            name={badge.name}
+                                            description={badge.description}
+                                            icon={badge.icon}
+                                            color={badge.color}
+                                            size="medium"
+                                            showDescription={true}
+                                        />
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
+                    </>
+                )}
 
                 {/* Settings Section */}
                 <Text style={dynamicStyles.sectionHeader}>Settings</Text>

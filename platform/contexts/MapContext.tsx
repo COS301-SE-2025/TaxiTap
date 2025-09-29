@@ -25,6 +25,9 @@ interface MapContextType {
   cachedRoutes: Map<string, { latitude: number; longitude: number }[]>;
   setCachedRoute: (key: string, coords: { latitude: number; longitude: number }[]) => void;
   getCachedRoute: (key: string) => { latitude: number; longitude: number }[] | null;
+  
+  // Clear all map context state
+  clearMapContext: () => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -37,6 +40,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [routeLoaded, setRouteLoaded] = useState(false);
   const [cachedRoutes] = useState(new Map<string, { latitude: number; longitude: number }[]>());
+  
 
   const setCachedRoute = (key: string, coords: { latitude: number; longitude: number }[]) => {
     cachedRoutes.set(key, coords);
@@ -44,6 +48,16 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const getCachedRoute = (key: string) => {
     return cachedRoutes.get(key) || null;
+  };
+
+  const clearMapContext = () => {
+    setCurrentLocation(null);
+    setOrigin(null);
+    setDestination(null);
+    setRouteCoordinates([]);
+    setIsLoadingRoute(false);
+    setRouteLoaded(false);
+    cachedRoutes.clear();
   };
 
   const value: MapContextType = {
@@ -62,6 +76,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     cachedRoutes,
     setCachedRoute,
     getCachedRoute,
+    clearMapContext,
   };
 
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
@@ -79,3 +94,4 @@ export const useMapContext = () => {
 export const createRouteKey = (origin: Location, destination: Location) => {
   return `${origin.latitude},${origin.longitude}-${destination.latitude},${destination.longitude}`;
 };
+

@@ -20,6 +20,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { useUser } from '../contexts/UserContext';
+import * as Device from 'expo-device';
+
+const deviceId = Device.osInternalBuildId || Device.osBuildId || 'unknown-device';
 
 const convex = new ConvexReactClient("https://affable-goose-538.convex.cloud");
 
@@ -36,7 +39,6 @@ function SignUpComponent() {
   const [localNumber, setLocalNumber] = useState('');
   const { login } = useUser();
 
-  // Dynamic role data based on current language
   const getRoleData = () => {
     switch(currentLanguage) {
       case 'zu':
@@ -65,55 +67,86 @@ function SignUpComponent() {
 
   const handleSignup = async () => {
     if (!localNumber || !password || !nameSurname || !confirmPassword) {
-      showGlobalError(t('common:error'), t('common:pleaseFillAllFields'), { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(
+        t('common:error'),
+        t('common:pleaseFillAllFields'),
+        { duration: 4000, position: 'top', animation: 'slide-down' }
+      );
       return;
     }
 
     if (!selectedRole) {
-      showGlobalError(t('common:error'), t('common:pleaseSelectRole'), { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(
+        t('common:error'),
+        t('common:pleaseSelectRole'),
+        { duration: 4000, position: 'top', animation: 'slide-down' }
+      );
       return;
     }
 
     const saNumberRegex = /^(6|7|8)[0-9]{8}$/;
     if (!saNumberRegex.test(localNumber)) {
-      showGlobalError(t('common:error'), t('common:invalidNumber'), { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(
+        t('common:error'),
+        t('common:invalidNumber'),
+        { duration: 4000, position: 'top', animation: 'slide-down' }
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      showGlobalError(t('common:error'), t('common:passwordMismatch'), { duration: 4000, position: 'top', animation: 'slide-down' });
+      showGlobalError(
+        t('common:error'),
+        t('common:passwordMismatch'),
+        { duration: 4000, position: 'top', animation: 'slide-down' }
+      );
       return;
     }
 
-    try {
-      const accountType: 'passenger' | 'driver' | 'both' = selectedRole === 'driver' ? 'both' : selectedRole;
-      const fullNumber = '0' + localNumber;
+    const accountType: 'passenger' | 'driver' | 'both' = selectedRole === 'driver' ? 'both' : selectedRole;
+    const fullNumber = '0' + localNumber;
 
-      const result = await signUpWithSMS({ phoneNumber: fullNumber, name: nameSurname, password, accountType });
-      await AsyncStorage.setItem('userId', result.userId);
+    const result = await signUpWithSMS({
+      phoneNumber: fullNumber,
+      name: nameSurname,
+      password,
+      accountType,
+      deviceId
+    });
 
-      const userObject = {
-        id: result.userId,
-        name: nameSurname,
-        phoneNumber: fullNumber,
-        currentActiveRole: selectedRole,
-        accountType: accountType
-      };
-
-      await login(userObject);
-
-      if (selectedRole === 'driver') {
-        router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
-      } else if (selectedRole === 'passenger') {
-        router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
-      }
-    } catch (err: any) {
-      const message = (err?.data?.message) || (err?.message) || "Something went wrong";
-      if (message.includes('Phone number already exists')) {
-        showGlobalError('Phone Number In Use', 'This phone number is already registered. Try logging in or use a different number.', { duration: 5000, position: 'top', animation: 'slide-down' });
+    if (!result.success) {
+      if (result.reason === "Phone number already exists") {
+        showGlobalError(
+          'Phone Number In Use',
+          'This phone number is already registered. Try logging in or use a different number.',
+          { duration: 5000, position: 'top', animation: 'slide-down' }
+        );
       } else {
-        console.log('Signup Error', message);
+        showGlobalError(
+          t('common:error'),
+          result.reason || 'Signup failed. Please try again.',
+          { duration: 4000, position: 'top', animation: 'slide-down' }
+        );
       }
+      return;
+    }
+
+    await AsyncStorage.setItem('userId', result.userId);
+
+    const userObject = {
+      id: result.userId,
+      name: nameSurname,
+      phoneNumber: fullNumber,
+      currentActiveRole: selectedRole,
+      accountType: accountType
+    };
+
+    await login(userObject);
+
+    if (selectedRole === 'driver') {
+      router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
+    } else if (selectedRole === 'passenger') {
+      router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
     }
   };
 

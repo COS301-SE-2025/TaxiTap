@@ -16,6 +16,8 @@ describe("Integration-like: endRideHandler", () => {
           passengerId: "user_passenger789",
           status: "in_progress",
           completedAt: null,
+          tripPaid: true,
+          estimatedFare: 25.50,
         },
       ],
     };
@@ -29,6 +31,7 @@ describe("Integration-like: endRideHandler", () => {
               return dbData.rides.find((r: any) => r.rideId === rideId);
             },
           }),
+          collect: async () => Object.values(dbData[table] || {}),
         }),
         patch: jest.fn((id, data) => {
           const index = dbData.rides.findIndex((r: any) => r._id === id);
@@ -98,7 +101,7 @@ describe("Integration-like: endRideHandler", () => {
 
     expect(result).toEqual({
       _id: dbData.rides[0]._id,
-      message: "Ride completed successfully",
+      message: "Ride ended successfully.",
     });
   });
 });

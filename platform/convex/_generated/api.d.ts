@@ -13,7 +13,14 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as cors from "../cors.js";
 import type * as crons from "../crons.js";
+import type * as functions_badges_awardTrustedPayerBadge from "../functions/badges/awardTrustedPayerBadge.js";
+import type * as functions_badges_badgeService from "../functions/badges/badgeService.js";
+import type * as functions_badges_checkTrustedPayerEligibility from "../functions/badges/checkTrustedPayerEligibility.js";
+import type * as functions_badges_getDriverBadges from "../functions/badges/getDriverBadges.js";
+import type * as functions_badges_getUserBadges from "../functions/badges/getUserBadges.js";
+import type * as functions_badges_updateTopEarners from "../functions/badges/updateTopEarners.js";
 import type * as functions_earnings_earnings from "../functions/earnings/earnings.js";
 import type * as functions_earnings_endTrip from "../functions/earnings/endTrip.js";
 import type * as functions_earnings_endTripHandler from "../functions/earnings/endTripHandler.js";
@@ -27,6 +34,11 @@ import type * as functions_feedback_saveFeedback from "../functions/feedback/sav
 import type * as functions_feedback_saveFeedbackHandler from "../functions/feedback/saveFeedbackHandler.js";
 import type * as functions_feedback_showFeedback from "../functions/feedback/showFeedback.js";
 import type * as functions_feedback_showFeedbackHandler from "../functions/feedback/showFeedbackHandler.js";
+import type * as functions_journeys_getNextLegInfo from "../functions/journeys/getNextLegInfo.js";
+import type * as functions_journeys_journeyStateManager from "../functions/journeys/journeyStateManager.js";
+import type * as functions_journeys_multiLegJourneyFinder from "../functions/journeys/multiLegJourneyFinder.js";
+import type * as functions_journeys_transferProximityAction from "../functions/journeys/transferProximityAction.js";
+import type * as functions_journeys_transferProximityMonitor from "../functions/journeys/transferProximityMonitor.js";
 import type * as functions_locations_createLocation from "../functions/locations/createLocation.js";
 import type * as functions_locations_getNearbyTaxis from "../functions/locations/getNearbyTaxis.js";
 import type * as functions_locations_getNearbyTaxisOnRoute from "../functions/locations/getNearbyTaxisOnRoute.js";
@@ -55,12 +67,16 @@ import type * as functions_rides_declineRide from "../functions/rides/declineRid
 import type * as functions_rides_declineRideHandler from "../functions/rides/declineRideHandler.js";
 import type * as functions_rides_endRide from "../functions/rides/endRide.js";
 import type * as functions_rides_endRideHandler from "../functions/rides/endRideHandler.js";
+import type * as functions_rides_forceCancelStuckRides from "../functions/rides/forceCancelStuckRides.js";
 import type * as functions_rides_getActiveRideByDriver from "../functions/rides/getActiveRideByDriver.js";
+import type * as functions_rides_getActiveRideByPassenger from "../functions/rides/getActiveRideByPassenger.js";
 import type * as functions_rides_getActiveTrips from "../functions/rides/getActiveTrips.js";
 import type * as functions_rides_getActiveTripsHandler from "../functions/rides/getActiveTripsHandler.js";
+import type * as functions_rides_getChange from "../functions/rides/getChange.js";
 import type * as functions_rides_getDriverPin from "../functions/rides/getDriverPin.js";
 import type * as functions_rides_getRideById from "../functions/rides/getRideById.js";
 import type * as functions_rides_proximityUtils from "../functions/rides/proximityUtils.js";
+import type * as functions_rides_setFrontPassenger from "../functions/rides/setFrontPassenger.js";
 import type * as functions_rides_startRide from "../functions/rides/startRide.js";
 import type * as functions_rides_testProximityCheck from "../functions/rides/testProximityCheck.js";
 import type * as functions_rides_tripPaid from "../functions/rides/tripPaid.js";
@@ -87,6 +103,7 @@ import type * as functions_taxis_updateTaxiInfo from "../functions/taxis/updateT
 import type * as functions_taxis_updateTaxiInfoHandler from "../functions/taxis/updateTaxiInfoHandler.js";
 import type * as functions_taxis_viewTaxiInfo from "../functions/taxis/viewTaxiInfo.js";
 import type * as functions_taxis_viewTaxiInfoHandler from "../functions/taxis/viewTaxiInfoHandler.js";
+import type * as functions_users_UserManagement_getLoyalMemberStatus from "../functions/users/UserManagement/getLoyalMemberStatus.js";
 import type * as functions_users_UserManagement_getUserById from "../functions/users/UserManagement/getUserById.js";
 import type * as functions_users_UserManagement_logInWithSMS from "../functions/users/UserManagement/logInWithSMS.js";
 import type * as functions_users_UserManagement_signUpWithSMS from "../functions/users/UserManagement/signUpWithSMS.js";
@@ -99,6 +116,7 @@ import type * as functions_users_UserManagement_updateHomeAddress from "../funct
 import type * as functions_users_UserManagement_updateUserProfile from "../functions/users/UserManagement/updateUserProfile.js";
 import type * as functions_users_UserManagement_updateWorkAddress from "../functions/users/UserManagement/updateWorkAddress.js";
 import type * as functions_users_updateLocationSchema from "../functions/users/updateLocationSchema.js";
+import type * as functions_users_wallet from "../functions/users/wallet.js";
 import type * as functions_work_sessions_endWorkSession from "../functions/work_sessions/endWorkSession.js";
 import type * as functions_work_sessions_endWorkSessionHandler from "../functions/work_sessions/endWorkSessionHandler.js";
 import type * as functions_work_sessions_startWorkSession from "../functions/work_sessions/startWorkSession.js";
@@ -113,7 +131,14 @@ import type * as functions_work_sessions_startWorkSessionHandler from "../functi
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  cors: typeof cors;
   crons: typeof crons;
+  "functions/badges/awardTrustedPayerBadge": typeof functions_badges_awardTrustedPayerBadge;
+  "functions/badges/badgeService": typeof functions_badges_badgeService;
+  "functions/badges/checkTrustedPayerEligibility": typeof functions_badges_checkTrustedPayerEligibility;
+  "functions/badges/getDriverBadges": typeof functions_badges_getDriverBadges;
+  "functions/badges/getUserBadges": typeof functions_badges_getUserBadges;
+  "functions/badges/updateTopEarners": typeof functions_badges_updateTopEarners;
   "functions/earnings/earnings": typeof functions_earnings_earnings;
   "functions/earnings/endTrip": typeof functions_earnings_endTrip;
   "functions/earnings/endTripHandler": typeof functions_earnings_endTripHandler;
@@ -127,6 +152,11 @@ declare const fullApi: ApiFromModules<{
   "functions/feedback/saveFeedbackHandler": typeof functions_feedback_saveFeedbackHandler;
   "functions/feedback/showFeedback": typeof functions_feedback_showFeedback;
   "functions/feedback/showFeedbackHandler": typeof functions_feedback_showFeedbackHandler;
+  "functions/journeys/getNextLegInfo": typeof functions_journeys_getNextLegInfo;
+  "functions/journeys/journeyStateManager": typeof functions_journeys_journeyStateManager;
+  "functions/journeys/multiLegJourneyFinder": typeof functions_journeys_multiLegJourneyFinder;
+  "functions/journeys/transferProximityAction": typeof functions_journeys_transferProximityAction;
+  "functions/journeys/transferProximityMonitor": typeof functions_journeys_transferProximityMonitor;
   "functions/locations/createLocation": typeof functions_locations_createLocation;
   "functions/locations/getNearbyTaxis": typeof functions_locations_getNearbyTaxis;
   "functions/locations/getNearbyTaxisOnRoute": typeof functions_locations_getNearbyTaxisOnRoute;
@@ -155,12 +185,16 @@ declare const fullApi: ApiFromModules<{
   "functions/rides/declineRideHandler": typeof functions_rides_declineRideHandler;
   "functions/rides/endRide": typeof functions_rides_endRide;
   "functions/rides/endRideHandler": typeof functions_rides_endRideHandler;
+  "functions/rides/forceCancelStuckRides": typeof functions_rides_forceCancelStuckRides;
   "functions/rides/getActiveRideByDriver": typeof functions_rides_getActiveRideByDriver;
+  "functions/rides/getActiveRideByPassenger": typeof functions_rides_getActiveRideByPassenger;
   "functions/rides/getActiveTrips": typeof functions_rides_getActiveTrips;
   "functions/rides/getActiveTripsHandler": typeof functions_rides_getActiveTripsHandler;
+  "functions/rides/getChange": typeof functions_rides_getChange;
   "functions/rides/getDriverPin": typeof functions_rides_getDriverPin;
   "functions/rides/getRideById": typeof functions_rides_getRideById;
   "functions/rides/proximityUtils": typeof functions_rides_proximityUtils;
+  "functions/rides/setFrontPassenger": typeof functions_rides_setFrontPassenger;
   "functions/rides/startRide": typeof functions_rides_startRide;
   "functions/rides/testProximityCheck": typeof functions_rides_testProximityCheck;
   "functions/rides/tripPaid": typeof functions_rides_tripPaid;
@@ -187,6 +221,7 @@ declare const fullApi: ApiFromModules<{
   "functions/taxis/updateTaxiInfoHandler": typeof functions_taxis_updateTaxiInfoHandler;
   "functions/taxis/viewTaxiInfo": typeof functions_taxis_viewTaxiInfo;
   "functions/taxis/viewTaxiInfoHandler": typeof functions_taxis_viewTaxiInfoHandler;
+  "functions/users/UserManagement/getLoyalMemberStatus": typeof functions_users_UserManagement_getLoyalMemberStatus;
   "functions/users/UserManagement/getUserById": typeof functions_users_UserManagement_getUserById;
   "functions/users/UserManagement/logInWithSMS": typeof functions_users_UserManagement_logInWithSMS;
   "functions/users/UserManagement/signUpWithSMS": typeof functions_users_UserManagement_signUpWithSMS;
@@ -199,6 +234,7 @@ declare const fullApi: ApiFromModules<{
   "functions/users/UserManagement/updateUserProfile": typeof functions_users_UserManagement_updateUserProfile;
   "functions/users/UserManagement/updateWorkAddress": typeof functions_users_UserManagement_updateWorkAddress;
   "functions/users/updateLocationSchema": typeof functions_users_updateLocationSchema;
+  "functions/users/wallet": typeof functions_users_wallet;
   "functions/work_sessions/endWorkSession": typeof functions_work_sessions_endWorkSession;
   "functions/work_sessions/endWorkSessionHandler": typeof functions_work_sessions_endWorkSessionHandler;
   "functions/work_sessions/startWorkSession": typeof functions_work_sessions_startWorkSession;

@@ -1,3 +1,5 @@
+import { checkAndAwardMarathonDriverBadge } from "../badges/badgeService";
+
 export const completeRideHandler = async (ctx: any, args: any) => {
   // Find the ride
   const ride = await ctx.db
@@ -20,6 +22,13 @@ export const completeRideHandler = async (ctx: any, args: any) => {
     status: "completed",
     completedAt: Date.now(),
   });
+
+  // Check and award Marathon Driver badge if eligible
+  try {
+    await checkAndAwardMarathonDriverBadge(ctx, args.driverId);
+  } catch (error) {
+    console.warn("Failed to check Marathon Driver badge eligibility:", error);
+  }
 
   // Notify the passenger and driver using the internal ride notification system
   await ctx.runMutation(

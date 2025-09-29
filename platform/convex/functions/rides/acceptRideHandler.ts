@@ -18,6 +18,22 @@ export const acceptRideHandler = async (
     throw new Error("Ride is not available for acceptance");
   }
 
+  // Check for existing active rides by this driver (commented out to allow multiple rides)
+  // const existingActiveRide = await ctx.db
+  //   .query("rides")
+  //   .withIndex("by_driver", (q: any) => q.eq("driverId", args.driverId))
+  //   .filter((q: any) =>
+  //     q.or(
+  //       q.eq(q.field("status"), "accepted"),
+  //       q.eq(q.field("status"), "in_progress")
+  //     )
+  //   )
+  //   .first();
+
+  // if (existingActiveRide) {
+  //   throw new Error("Driver already has an active ride");
+  // }
+
   // Get the driver's PIN from their profile
   const driver = await ctx.db.get(args.driverId);
   if (!driver) {

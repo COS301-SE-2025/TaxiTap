@@ -10,6 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import { Id } from "../convex/_generated/dataModel";
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAlertHelpers } from '../components/AlertHelpers';
+import { useTranslation } from 'react-i18next';
 
 export default () => {
     const params = useLocalSearchParams();
@@ -18,6 +19,7 @@ export default () => {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { user } = useUser();
     const { showError, showSuccess } = useAlertHelpers();
+    const { t } = useTranslation();
 
     // Get rideId from navigation params
     const rideId = params.rideId as string;
@@ -265,7 +267,7 @@ export default () => {
             case 'completed':
                 return <Text style={dynamicStyles.statusText}>Ride Completed</Text>;
             case 'cancelled':
-                return <Text style={dynamicStyles.statusText}>Ride Cancelled</Text>;
+                return <Text style={dynamicStyles.statusText}>{t('home:rideCancelled')}</Text>;
             default:
                 return null;
         }

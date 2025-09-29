@@ -1,5 +1,6 @@
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
+import { Id } from "../../_generated/dataModel";
 
 export const getRideByIdHandler = async (ctx: any, args: { rideId: string }) => {
   if (!args.rideId) {
@@ -18,4 +19,16 @@ export const getRideById = query({
     rideId: v.string(),
   },
   handler: getRideByIdHandler,
-}); 
+});
+
+// Internal version for actions
+export const getRideByDocId = internalQuery({
+  args: {
+    rideDocId: v.id("rides"),
+  },
+  handler: async (ctx, { rideDocId }) => {
+    const ride = await ctx.db.get(rideDocId);
+    if (!ride) throw new Error("Ride not found");
+    return ride;
+  },
+});

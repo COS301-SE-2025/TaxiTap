@@ -8,8 +8,11 @@ import {
   Modal,
   StatusBar,
   SafeAreaView,
+  Pressable,
+  Platform,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapViewDirections from 'react-native-maps-directions';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as Location from 'expo-location';
 import { useNavigation, useRouter } from 'expo-router';
@@ -19,6 +22,8 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Id } from '../convex/_generated/dataModel';
+// @ts-ignore - No types available for @mapbox/polyline
+import { decode } from '@mapbox/polyline';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
@@ -33,6 +38,27 @@ interface LocationData {
   latitude: number;
   longitude: number;
   name: string;
+}
+
+interface RouteStop {
+  id: string;
+  name: string;
+  coordinates: [number, number];
+  order: number;
+}
+
+interface DriverRoute {
+  _id: string;
+  routeId: string;
+  name: string;
+  geometry: string;
+  stops: RouteStop[];
+  fare: number;
+  estimatedDuration: number;
+  estimatedDistance?: number;
+  isActive: boolean;
+  taxiAssociation: string;
+  taxiAssociationRegistrationNumber: string;
 }
 
 export default function DriverOnline({ 
@@ -57,6 +83,8 @@ export default function DriverOnline({
   const [showMenu, setShowMenu] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [routeCoordinates, setRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
+  const [processedRouteCoordinates, setProcessedRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
   
   const mapRef = useRef<MapView | null>(null);
   const { notifications, markAsRead } = useNotifications();
@@ -97,12 +125,22 @@ export default function DriverOnline({
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
+  const driverRoute = useQuery(
+    api.functions.routes.queries.getDriverAssignedRoute,
+    user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
+  ) as DriverRoute | null;
+
   const acceptRide = useMutation(api.functions.rides.acceptRide.acceptRide);
   const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
   const declineRide = useMutation(api.functions.rides.declineRide.declineRide);
 
   // Get driver PIN from the query result
   const driverPin = driverPinData?.pin || '';
+
+  // Google Maps API key - you'll need to add this to your environment
+  const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
+    ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
+    : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -153,6 +191,77 @@ export default function DriverOnline({
 
     getCurrentLocation();
   }, []);
+
+  // Track route coordinates as driver moves
+  useEffect(() => {
+    if (streamedLocation) {
+      const newCoordinate = {
+        latitude: streamedLocation.latitude,
+        longitude: streamedLocation.longitude,
+      };
+
+      setRouteCoordinates(prev => {
+        // Limit to last 100 coordinates to avoid performance issues
+        const updated = [...prev, newCoordinate];
+        return updated.slice(-100);
+      });
+    }
+  }, [streamedLocation]);
+
+  // Process route coordinates only when driverRoute changes
+  useEffect(() => {
+    if (driverRoute && driverRoute.stops && driverRoute.stops.length > 0) {
+      // Create route polyline from stops coordinates
+      const stopCoordinates = driverRoute.stops
+        .sort((a, b) => a.order - b.order)
+        .map((stop: RouteStop) => ({
+          latitude: stop.coordinates[0],
+          longitude: stop.coordinates[1],
+        }));
+
+      // Try to decode geometry if available
+      let geometryCoordinates: {latitude: number, longitude: number}[] = [];
+      if (driverRoute.geometry) {
+        try {
+          const decodedCoordinates = decode(driverRoute.geometry) as [number, number][];
+          geometryCoordinates = decodedCoordinates.map(([lat, lng]: [number, number]) => ({
+            latitude: lat,
+            longitude: lng,
+          }));
+        } catch (error) {
+          console.error('Error decoding route geometry:', error);
+        }
+      }
+
+      // Use geometry coordinates if available, otherwise connect the stops
+      const finalCoordinates = geometryCoordinates.length > 0 ? geometryCoordinates : stopCoordinates;
+      setProcessedRouteCoordinates(finalCoordinates);
+    } else {
+      setProcessedRouteCoordinates([]);
+    }
+  }, [driverRoute]);
+
+  // Update current location when streamed location changes
+  useEffect(() => {
+    if (streamedLocation) {
+      const newLocation: LocationData = {
+        latitude: streamedLocation.latitude,
+        longitude: streamedLocation.longitude,
+        name: 'Current Location',
+      };
+      setCurrentLocation(newLocation);
+
+      // Animate map to new location if map is visible (throttled)
+      if (showMap && mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: streamedLocation.latitude,
+          longitude: streamedLocation.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 500); // Reduced animation time
+      }
+    }
+  }, [streamedLocation, showMap]);
 
   // Handle notifications
   const shownRequests = useRef<Set<string>>(new Set());
@@ -257,6 +366,11 @@ export default function DriverOnline({
     { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
   ];
 
+  const activeTrips = useQuery(
+      api.functions.rides.getActiveTrips.getActiveTrips,
+      user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+    );
+    
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -312,12 +426,11 @@ export default function DriverOnline({
       marginRight: 4,
     },
     offlineButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: '#EF4444',
+      height: 52,
+      borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: '#EF4444',
     },
     
     // Main Content
@@ -353,11 +466,6 @@ export default function DriverOnline({
       fontWeight: '700',
       color: theme.text,
     },
-    earningsValue: {
-      color: '#22C55E',
-    },
-    
-    // Seat Control
     seatControlContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -463,6 +571,7 @@ export default function DriverOnline({
       borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
+      marginBottom: 20,
     },
     primaryButtonText: {
       color: '#FFFFFF',
@@ -643,30 +752,25 @@ export default function DriverOnline({
               <Icon name="information-circle-outline" size={16} color={theme.primary} />
             </TouchableOpacity>
           )}
-          
-          <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
-            <Icon name="power" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.mainContent}>
         {/* Stats */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Today's Earnings</Text>
-            <Text style={[styles.statValue, styles.earningsValue]}>
-              R{(earnings?.[0]?.todayEarnings ?? 0).toFixed(2)}
-            </Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Available Seats</Text>
-            <Text style={styles.statValue}>
-              {taxiInfo?.capacity?.toString() ?? "0"}
-            </Text>
-          </View>
+          <Pressable style={styles.statCard} onPress={() => router.push("/ActiveRides")}>
+            <Text style={styles.statLabel}>Active Rides</Text>
+            <Text style={styles.statValue}>{activeTrips?.activeCount || 0}</Text>
+          </Pressable>
+
+          <Pressable style={styles.statCard} onPress={() => router.push("/UnpaidPayments")}>
+            <Text style={styles.statLabel}>Unpaid Accounts</Text>
+            <Text style={styles.statValue}>{activeTrips?.unpaidCount || 0}</Text>
+          </Pressable>
         </View>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
+          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        </TouchableOpacity>
 
         {/* Seat Control */}
         <View style={styles.seatControlContainer}>
@@ -712,9 +816,8 @@ export default function DriverOnline({
             <Text style={styles.mapButtonText}>View Map</Text>
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
-          <Text style={styles.primaryButtonText}>View Statistics</Text>
+        <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
+          <Icon name="power" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -732,14 +835,66 @@ export default function DriverOnline({
               longitudeDelta: 0.01,
             }}
             showsUserLocation={true}
+            showsMyLocationButton={true}
+            followsUserLocation={true}
           >
+            {/* Driver's current location marker */}
             <Marker
               coordinate={{
                 latitude: currentLocation.latitude,
                 longitude: currentLocation.longitude,
               }}
               title="Your Location"
+              pinColor="blue"
             />
+
+            {/* Show driver's assigned route */}
+            {driverRoute && driverRoute.stops && driverRoute.stops.length > 0 && (
+              <>
+                {/* Route polyline connecting stops */}
+                {processedRouteCoordinates.length > 1 && (
+                  <Polyline
+                    coordinates={processedRouteCoordinates}
+                    strokeColor={theme.primary}
+                    strokeWidth={5}
+                  />
+                )}
+
+                {/* Route stops as markers */}
+                {driverRoute.stops.map((stop: RouteStop, index: number) => (
+                  <Marker
+                    key={stop.id}
+                    coordinate={{
+                      latitude: stop.coordinates[0],
+                      longitude: stop.coordinates[1],
+                    }}
+                    title={stop.name}
+                    description={`Stop ${stop.order + 1} on ${driverRoute.name}`}
+                    pinColor={index === 0 ? 'green' : index === driverRoute.stops.length - 1 ? 'red' : 'orange'}
+                  />
+                ))}
+
+                {/* Driver's traveled path on the route */}
+                {routeCoordinates.length > 1 && (
+                  <Polyline
+                    coordinates={routeCoordinates}
+                    strokeColor="#007AFF"
+                    strokeWidth={3}
+                    lineDashPattern={[5, 5]}
+                  />
+                )}
+              </>
+            )}
+
+            {/* If no route assigned, just show the driver's traveled path */}
+            {!driverRoute && routeCoordinates.length > 1 && (
+              <Polyline
+                coordinates={routeCoordinates}
+                strokeColor="#007AFF"
+                strokeWidth={3}
+                lineDashPattern={[5, 5]}
+              />
+            )}
           </MapView>
           
           <TouchableOpacity style={styles.mapCloseButton} onPress={() => setShowMap(false)}>

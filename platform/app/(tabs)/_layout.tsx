@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Image, View, Platform } from 'react-native';
+import { TouchableOpacity, Image, View, Platform, Dimensions } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { router } from 'expo-router';
@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NotificationButton: React.FC = () => {
   const { theme, isDark } = useTheme();
+  const { width: screenWidth } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
 
   const handleNotificationPress = () => {
     router.push('../NotificationsScreen');
@@ -22,19 +24,27 @@ const NotificationButton: React.FC = () => {
   return (
     <TouchableOpacity
       style={{
-        padding: 8,
-        borderRadius: 20,
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-        marginRight: 12,
+        width: isSmallScreen ? 36 : 40,
+        height: isSmallScreen ? 36 : 40,
+        borderRadius: isSmallScreen ? 18 : 20,
+        backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
+        marginRight: isSmallScreen ? 8 : 12,
         justifyContent: 'center',
         alignItems: 'center',
+        // Platform-specific shadows (iOS only)
+        ...(Platform.OS === 'ios' && {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        }),
       }}
       onPress={handleNotificationPress}
       activeOpacity={0.7}
     >
       <Ionicons 
         name="notifications-outline" 
-        size={24} 
+        size={isSmallScreen ? 20 : 22} 
         color={theme.text} 
       />
     </TouchableOpacity>
@@ -42,7 +52,9 @@ const NotificationButton: React.FC = () => {
 };
 
 const ThemeToggleButton: React.FC = () => {
-  const { isDark, setThemeMode } = useTheme();
+  const { isDark, setThemeMode, theme } = useTheme();
+  const { width: screenWidth } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
 
   const toggleTheme = () => {
     setThemeMode(isDark ? 'light' : 'dark');
@@ -51,27 +63,44 @@ const ThemeToggleButton: React.FC = () => {
   return (
     <TouchableOpacity
       style={{
-        padding: 8,
-        marginRight: 12,
-        borderRadius: 20,
+        width: isSmallScreen ? 36 : 40,
+        height: isSmallScreen ? 36 : 40,
+        borderRadius: isSmallScreen ? 18 : 20,
+        backgroundColor: Platform.OS === 'android' ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
+        marginRight: isSmallScreen ? 8 : 12,
         justifyContent: 'center',
         alignItems: 'center',
+        // Platform-specific shadows (iOS only)
+        ...(Platform.OS === 'ios' && {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        }),
       }}
       onPress={toggleTheme}
       activeOpacity={0.7}
     >
       <MaterialIcons
         name={isDark ? 'light-mode' : 'dark-mode'}
-        size={24}
-        color={isDark ? '#FFFFFF' : '#232F3E'}
+        size={isSmallScreen ? 20 : 22}
+        color={theme.text}
       />
     </TouchableOpacity>
   );
 };
 
 const HeaderRightButtons: React.FC = () => {
+  const { width: screenWidth } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ 
+      flexDirection: 'row', 
+      alignItems: 'center',
+      paddingRight: isSmallScreen ? 12 : 16,
+      gap: isSmallScreen ? 6 : 8,
+    }}>
       <NotificationButton />
       <ThemeToggleButton />
     </View>
@@ -81,6 +110,9 @@ const HeaderRightButtons: React.FC = () => {
 const TabNavigation: React.FC = () => {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -88,50 +120,90 @@ const TabNavigation: React.FC = () => {
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 10,
+          height: Platform.OS === 'ios' ? (isSmallScreen ? 78 : 84) : (isSmallScreen ? 68 : 72),
+          paddingBottom: Platform.OS === 'ios' ? (insets.bottom > 0 ? 8 : 12) : 10,
+          paddingTop: 8,
           backgroundColor: theme.tabBarBackground,
-          borderTopColor: theme.border,
+          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
           borderTopWidth: 1,
+          // iOS-style shadows
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: -2 },
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontFamily: 'AmazonEmber-Medium',
-          fontSize: 12,
-          marginBottom: 4,
+          fontSize: isSmallScreen ? 11 : 12,
+          fontWeight: '600',
+          marginBottom: Platform.OS === 'ios' ? 2 : 4,
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
         },
         headerTitle: () => (
-          <Image
-            source={isDark 
-              ? dark
-              : light
-            }
-            style={{ 
-              width: Platform.OS === 'ios' ? 130 : 150,
-              height: Platform.OS === 'ios' ? 130 : 150,
-              resizeMode: 'contain',
-            }}
-          />
+          <View style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 6,
+            paddingHorizontal: 20,
+            flex: 1,
+          }}>
+            <Image
+              source={isDark ? dark : light}
+              style={{ 
+                width: isSmallScreen ? 110 : 130,
+                height: isSmallScreen ? 110 : 130,
+                resizeMode: 'contain',
+              }}
+            />
+          </View>
         ),
         headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: theme.headerBackground,
           shadowOpacity: isDark ? 0.3 : 0.1,
-          elevation: 2,
-          borderBottomColor: theme.border,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 8,
+          elevation: 4,
+          borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
           borderBottomWidth: 1,
-          // Slightly increase header height on iOS for better spacing
-          height: Platform.OS === 'ios' ? 100 : undefined,
+          height: Platform.OS === 'ios' ? 
+            (screenHeight > 800 ? 110 : 100) : 
+            (isSmallScreen ? 85 : 95),
         },
         headerTintColor: theme.text,
         headerRight: () => <HeaderRightButtons />,
+        headerLeftContainerStyle: {
+          paddingLeft: isSmallScreen ? 12 : 16,
+        },
+        headerRightContainerStyle: {
+          paddingRight: 0, // HeaderRightButtons handles its own padding
+        },
       }}
     >
       <Tabs.Screen
         name="HomeScreen"
         options={{
           title: t('navigation:home'),
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="home" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: isSmallScreen ? 28 : 32,
+              height: isSmallScreen ? 28 : 32,
+            }}>
+              <FontAwesome 
+                name="home" 
+                size={isSmallScreen ? 20 : 22} 
+                color={color}
+                style={{
+                  opacity: focused ? 1 : 0.8,
+                }}
+              />
+            </View>
           ),
         }}
       />
@@ -140,8 +212,22 @@ const TabNavigation: React.FC = () => {
         name="PassengerRoute"
         options={{
           title: t('navigation:routes'),
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="map" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: isSmallScreen ? 28 : 32,
+              height: isSmallScreen ? 28 : 32,
+            }}>
+              <MaterialIcons 
+                name="map" 
+                size={isSmallScreen ? 20 : 22} 
+                color={color}
+                style={{
+                  opacity: focused ? 1 : 0.8,
+                }}
+              />
+            </View>
           ),
         }}
       />
@@ -150,8 +236,22 @@ const TabNavigation: React.FC = () => {
         name="PassengerProfile"
         options={{
           title: t('navigation:profile'),
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="user" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: isSmallScreen ? 28 : 32,
+              height: isSmallScreen ? 28 : 32,
+            }}>
+              <FontAwesome 
+                name="user" 
+                size={isSmallScreen ? 20 : 22} 
+                color={color}
+                style={{
+                  opacity: focused ? 1 : 0.8,
+                }}
+              />
+            </View>
           ),
         }}
       />
@@ -160,8 +260,22 @@ const TabNavigation: React.FC = () => {
         name="HelpPage"
         options={{
           title: t('navigation:help'),
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="question-circle" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: isSmallScreen ? 28 : 32,
+              height: isSmallScreen ? 28 : 32,
+            }}>
+              <FontAwesome 
+                name="question-circle" 
+                size={isSmallScreen ? 20 : 22} 
+                color={color}
+                style={{
+                  opacity: focused ? 1 : 0.8,
+                }}
+              />
+            </View>
           ),
         }}
       />
@@ -172,6 +286,7 @@ const TabNavigation: React.FC = () => {
           href: null,
         }}
       />
+
 
       <Tabs.Screen
         name="index"
@@ -215,26 +330,7 @@ const TabNavigation: React.FC = () => {
         }}
       />
 
-      <Tabs.Screen
-        name="AddHomeAddress"
-        options={{
-          href: null,
-        }}
-      />
 
-      <Tabs.Screen
-        name="AddWorkAddress"
-        options={{
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="PersonalInfoEdit"
-        options={{
-          href: null,
-        }}
-      />
 
       <Tabs.Screen
         name="PaymentsConfirm"
@@ -250,29 +346,33 @@ export default function TabLayout() {
   const { notifications, markAsRead } = useNotifications();
   const { t } = useTranslation();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
-  let currentLocation, destination;
-  
+
+  // Safely get map context
+  let currentLocation: any = undefined;
+  let destination: any = undefined;
+
   try {
-    ({ currentLocation, destination } = useMapContext());
-  } catch (e) {
-    currentLocation = undefined;
-    destination = undefined;
+    const mapContext = useMapContext();
+    currentLocation = mapContext.currentLocation;
+    destination = mapContext.destination;
+  } catch {
+    console.warn('MapContext not available in TabLayout');
   }
 
   const processedNotificationsRef = useRef(new Set<string>());
   
   // Ride declined notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideDeclined = notifications.find(
-			n => n.type === 'ride_declined' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-        );
+    const rideDeclined = notifications.find(
+      n => n.type === 'ride_declined' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     if (rideDeclined) {
-
-      processedNotificationsRef.current.add(rideDeclined._id);// Mark as processed
+      processedNotificationsRef.current.add(rideDeclined._id); // Mark as processed
 
       showGlobalError(
         t('notifications:rideDeclined'),
@@ -296,14 +396,15 @@ export default function TabLayout() {
     }
   }, [notifications, markAsRead, showGlobalError]);
 
-  // Ride accepted notification handler  
+  // Ride accepted notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideAccepted = notifications.find(
-			n => n.type === 'ride_accepted' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-		);
+    const rideAccepted = notifications.find(
+      n => n.type === 'ride_accepted' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     
     if (rideAccepted) {
@@ -344,12 +445,13 @@ export default function TabLayout() {
 
   // Ride cancelled notification handler
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
 
-   const rideCancelled = notifications.find(
-			n => n.type === 'ride_cancelled' && 
-				!n.isRead && 
-				!processedNotificationsRef.current.has(n._id) // Add this check
-		);
+    const rideCancelled = notifications.find(
+      n => n.type === 'ride_cancelled' &&
+        !n.isRead &&
+        !processedNotificationsRef.current.has(n._id)
+    );
 
     if (rideCancelled) {
 

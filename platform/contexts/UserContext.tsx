@@ -1,8 +1,10 @@
-// contexts/UserContext.tsx - Simple version without auto-navigation
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// @ts-ignore
+import { v4 as uuidv4 } from 'uuid';
+import { api } from '@/convex/_generated/api';
+import { useMutation } from "convex/react";
 
-// Type definitions (keep your existing types)
 interface User {
   id: string;
   name: string;
@@ -37,6 +39,17 @@ interface UserProviderProps {
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const getDeviceId = async (): Promise<string> => {
+  const DEVICE_ID_KEY = 'deviceId';
+  let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+  if (!deviceId) {
+    const newDeviceId = uuidv4();
+    await AsyncStorage.setItem(DEVICE_ID_KEY, newDeviceId);
+    return newDeviceId;
+  }
+  return deviceId;
+};
 
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
@@ -99,15 +112,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     // REMOVED: Automatic navigation - let Login component handle navigation
   };
 
+  const logoutMutation = useMutation(api.functions.users.UserManagement.logInWithSMS.logoutMutation);
+
   const logout = async (): Promise<void> => {
     try {
-      // Clear user state
+      if (user) {
+        const deviceId = await getDeviceId();
+        await logoutMutation({ userId: user.id, deviceId });
+      }
+
       setUser(null);
       
-      // Clear AsyncStorage
       await AsyncStorage.multiRemove(['userId', 'userName', 'userRole', 'userAccountType', 'userNumber']);
-      
-      // REMOVED: Automatic navigation - let Logout component handle navigation
       
     } catch (error) {
       console.error('Error during logout:', error);

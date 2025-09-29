@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert, Pressable, Dimensions } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -8,11 +8,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useMapContext, createRouteKey } from '../../contexts/MapContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { FontAwesome } from "@expo/vector-icons";
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { Badge } from '../../components/Badge';
+import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
 
 // Get platform-specific API key
 const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
@@ -20,12 +23,71 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
-	const [useLiveLocation, setUseLiveLocation] = useState(false);
-	const params = useLocalSearchParams();
 	const navigation = useNavigation();
+
+	// Hide header and tab bar like TaxiInformation page
+	React.useLayoutEffect(() => {
+		navigation.setOptions({
+			headerShown: false,
+			tabBarStyle: { display: 'none' }
+		});
+	}, [navigation]);
+
+
+	// Add error boundary state for crash prevention
+	const [hasError, setHasError] = useState(false);
+	const [errorMessage, setErrorMessage] = useState('');
+
+	// Global error handler for the component
+	const handleError = (error: Error, errorInfo?: any) => {
+		console.error('SeatReserved component error:', error, errorInfo);
+		setErrorMessage(error.message);
+		setHasError(true);
+		// Don't crash the app - show error state instead
+	};
+
+	const [useLiveLocation, setUseLiveLocation] = useState(false);
+	const params = useLocalSearchParams<{
+		currentLat?: string;
+		currentLng?: string;
+		currentName?: string;
+		destinationLat?: string;
+		destinationLng?: string;
+		destinationName?: string;
+		driverId?: string;
+		driverName?: string;
+		fare?: string;
+		rideId?: string;
+		// Route parameters
+		routeId?: string;
+		estimatedFare?: string;
+		availableTaxisCount?: string;
+		routeMatchData?: string;
+		// Multi-leg journey parameters
+		isMultiLeg?: string;
+		journeyId?: string;
+		legIndex?: string;
+		totalLegs?: string;
+		routeName?: string;
+		// Legacy parameters
+		plate?: string;
+		time?: string;
+		seats?: string;
+		price?: string;
+		selectedVehicleId?: string;
+		userId?: string;
+	}>();
+
+
+	// Context hooks need to be declared before any queries that use them
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { 
+	const { t } = useLanguage();
+
+	// Screen dimensions for responsive design (matching TaxiInformation)
+	const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+	const isSmallScreen = screenWidth < 375;
+	const {
 		currentLocation,
 		destination,
 		routeCoordinates,
@@ -42,24 +104,74 @@ export default function SeatReserved() {
 	const { notifications, markAsRead } = useNotifications();
 
 	const mapRef = useRef<MapView | null>(null);
-	
+
+	// State to track if ride has ended to prevent query errors
+	const [rideJustEnded, setRideJustEnded] = useState(false);
+	const [isEndingRide, setIsEndingRide] = useState(false);
+
 	// Fetch taxi and driver info for the current reservation using Convex
-	let taxiInfo: { rideId?: string; status?: string; driver?: any; taxi?: any; rideDocId?: string; ridePin?: string; } | undefined, taxiInfoError: unknown;
-	try {
-		taxiInfo = useQuery(
-			api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
-			user ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
-		);
-	} catch (err) {
-		taxiInfoError = err;
-	}
+	// Wrap taxi info query with error handling
+	const taxiInfo = useQuery(
+		api.functions.taxis.viewTaxiInfo.viewTaxiInfo,
+		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Get driver rating
+	const driverRating = useQuery(
+		api.functions.feedback.averageRating.getAverageRating,
+		taxiInfo?.driver?.userId ? { driverId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Helper to determine ride status - declared immediately after taxiInfo to ensure it's available for all useEffects
+	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
+
+	// Multi-leg journey parameters handling
+	useEffect(() => {
+		const multiLegCheck = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+		const lastLegCheck = isLastLeg(params.legIndex, params.totalLegs);
+	}, [params, rideStatus]);
+
+	// Handle query errors
+	useEffect(() => {
+		try {
+			if (taxiInfo === undefined) {
+				// Still loading - this is normal
+				return;
+			}
+		} catch (error) {
+			console.error('Error in taxiInfo query:', error);
+			handleError(error as Error);
+		}
+	}, [taxiInfo]);
+
+	// Fetch driver badges
+	const driverBadges = useQuery(
+		api.functions.badges.getUserBadges.getUserBadgesQuery,
+		taxiInfo?.driver?.userId ? { userId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
+	);
+
+	// Handle query errors gracefully
+	useEffect(() => {
+	}, [taxiInfo, rideJustEnded, isEndingRide, user]);
+
+	// Automatically set rideJustEnded when ride is completed or cancelled with safety checks
+	useEffect(() => {
+		try {
+			if (rideStatus === 'completed' || rideStatus === 'cancelled') {
+				setRideJustEnded(true);
+				setIsEndingRide(false);
+			}
+		} catch (error) {
+			console.error('Error in ride status update:', error);
+			// Don't crash the app
+		}
+	}, [rideStatus]);
+
 
 	const cancelRide = useMutation(api.functions.rides.cancelRide.cancelRide);
 	const endRide = useMutation(api.functions.rides.endRide.endRide);
 	const verifyDriverPin = useMutation(api.functions.rides.verifyDriverPin.verifyDriverPin);
 
-	// Helper to determine ride status
-	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 	const updateTaxiSeatAvailability = useMutation(api.functions.taxis.updateAvailableSeats.updateTaxiSeatAvailability);
 
 	const [hasFittedRoute, setHasFittedRoute] = useState(false);
@@ -74,10 +186,61 @@ export default function SeatReserved() {
 
 	// Remove averageRating usage if not available
 	const [hasShownDeclinedAlert, setHasShownDeclinedAlert] = useState(false);
-	const [rideJustEnded, setRideJustEnded] = useState(false);
 
 	const startTripConvex = useMutation(api.functions.earnings.startTrip.startTrip);
 	const endTripConvex = useMutation(api.functions.earnings.endTrip.endTrip);
+
+	// Distance calculation function for transfer window monitoring
+	const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+		const R = 6371; // Earth's radius in kilometers
+		const dLat = (lat2 - lat1) * Math.PI / 180;
+		const dLng = (lng2 - lng1) * Math.PI / 180;
+		const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+			Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+			Math.sin(dLng/2) * Math.sin(dLng/2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		return R * c;
+	};
+
+	// Safety function to validate location updates and prevent crashes from sudden jumps
+	const validateLocationUpdate = (newLocation: { latitude: number; longitude: number }, currentLocation: { latitude: number; longitude: number } | null): boolean => {
+		try {
+			// Basic coordinate validation
+			if (!newLocation || typeof newLocation.latitude !== 'number' || typeof newLocation.longitude !== 'number') {
+				console.warn('Invalid location data received:', newLocation);
+				return false;
+			}
+
+			// Check for valid coordinate ranges
+			if (newLocation.latitude < -90 || newLocation.latitude > 90 ||
+				newLocation.longitude < -180 || newLocation.longitude > 180) {
+				console.warn('Location coordinates out of valid range:', newLocation);
+				return false;
+			}
+
+			// If we have a previous location, check for unreasonable jumps (>100km in one update)
+			if (currentLocation) {
+				const distance = calculateDistance(
+					currentLocation.latitude,
+					currentLocation.longitude,
+					newLocation.latitude,
+					newLocation.longitude
+				);
+
+				if (distance > 100) { // More than 100km jump
+					console.warn(`Location jump detected: ${distance.toFixed(2)}km. This might be due to fake GPS.`);
+					// Allow the update but log it - don't block fake GPS for testing
+					console.warn('Allowing location update despite large jump for testing purposes');
+				}
+			}
+
+			return true;
+		} catch (error) {
+			console.error('Error validating location update:', error);
+			return false;
+		}
+	};
+
 
 	useLayoutEffect(() => {
 		navigation.setOptions({
@@ -103,39 +266,60 @@ export default function SeatReserved() {
 		setUseLiveLocation(false);
 	}, []);
 
-	// Parse location data from params and update context
+	// Parse location data from params and update context with safety checks
 	useEffect(() => {
-		if (!useLiveLocation) {
-			const rawCurrentLat = getParamAsString(params.currentLat);
-			const rawCurrentLng = getParamAsString(params.currentLng);
-			const rawDestLat = getParamAsString(params.destinationLat);
-			const rawDestLng = getParamAsString(params.destinationLng);
+		try {
+			if (!useLiveLocation) {
+				const rawCurrentLat = getParamAsString(params.currentLat);
+				const rawCurrentLng = getParamAsString(params.currentLng);
+				const rawDestLat = getParamAsString(params.destinationLat);
+				const rawDestLng = getParamAsString(params.destinationLng);
 
-			console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
-			const currentLat = parseFloat(rawCurrentLat);
-			const currentLng = parseFloat(rawCurrentLng);
-			const destLat = parseFloat(rawDestLat);
-			const destLng = parseFloat(rawDestLng);
+				const currentLat = parseFloat(rawCurrentLat);
+				const currentLng = parseFloat(rawCurrentLng);
+				const destLat = parseFloat(rawDestLat);
+				const destLng = parseFloat(rawDestLng);
 
-			if (
-				isNaN(currentLat) || isNaN(currentLng) ||
-				isNaN(destLat) || isNaN(destLng)
-			) {
-				console.warn('Skipping update due to invalid coordinates.');
-				return;
+				if (
+					isNaN(currentLat) || isNaN(currentLng) ||
+					isNaN(destLat) || isNaN(destLng)
+				) {
+					console.warn('Skipping update due to invalid coordinates.');
+					return;
+				}
+
+				const newCurrentLocation = {
+					latitude: currentLat,
+					longitude: currentLng,
+				};
+
+				const newDestination = {
+					latitude: destLat,
+					longitude: destLng,
+				};
+
+				// Validate location updates before applying them
+				if (validateLocationUpdate(newCurrentLocation, currentLocation) &&
+					validateLocationUpdate(newDestination, destination)) {
+
+					setCurrentLocation({
+						latitude: currentLat,
+						longitude: currentLng,
+						name: getParamAsString(params.currentName, "Current Location")
+					});
+					setDestination({
+						latitude: destLat,
+						longitude: destLng,
+						name: getParamAsString(params.destinationName, "")
+					});
+				} else {
+					console.warn('Location update blocked due to validation failure');
+				}
 			}
-
-			setCurrentLocation({
-				latitude: currentLat,
-				longitude: currentLng,
-				name: getParamAsString(params.currentName, "Current Location")
-			});
-			setDestination({
-				latitude: destLat,
-				longitude: destLng,
-				name: getParamAsString(params.destinationName, "")
-			});
+		} catch (error) {
+			console.error('Error in location update useEffect:', error);
+			// Don't crash the app - just log the error
 		}
 	}, [useLiveLocation]);
 
@@ -226,8 +410,6 @@ export default function SeatReserved() {
 			
 			const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
 			
-			console.log('Fetching route from:', url);
-			console.log('Platform:', Platform.OS);
 			
 			const response = await fetch(url);
 			
@@ -239,7 +421,6 @@ export default function SeatReserved() {
 			
 			const data = await response.json();
 			
-			console.log('Directions API response status:', data.status);
 			
 			if (data.status !== 'OK') {
 				console.error('Directions API Error:', data);
@@ -254,7 +435,6 @@ export default function SeatReserved() {
 				}
 				
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
-				console.log('Decoded coordinates count:', decodedCoords.length);
 				
 				// Cache the route
 				setCachedRoute(routeKey, decodedCoords);
@@ -279,7 +459,6 @@ export default function SeatReserved() {
 			console.error('Error fetching route:', error);
 			
 			// Fallback: use straight line between origin and destination
-			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
 				{ latitude: dest.latitude, longitude: dest.longitude }
@@ -357,6 +536,7 @@ export default function SeatReserved() {
 			);
 		}
 	}, [currentLocation, rideStatus, isFollowing]);
+
 
 	// PIN entry functions
 	const handleNumberPress = (number: string) => {
@@ -505,45 +685,70 @@ export default function SeatReserved() {
 	useEffect(() => {
 		if (rideJustEnded) return;
 		
-		if (taxiInfoError && !hasShownDeclinedAlert) {
-			Alert.alert(
-				'Ride Declined',
-				'No active reservation found. Your ride may have been cancelled or declined.',
-				[
-					{
-						text: 'OK',
-						onPress: () => {
-							setHasShownDeclinedAlert(true);
-							router.push('/HomeScreen');
-						},
-						style: 'default',
-					},
-				],
-				{ cancelable: false }
-			);
-		}
-	}, [taxiInfoError, hasShownDeclinedAlert]);
+		// Handle taxi info loading states
+	}, [hasShownDeclinedAlert, taxiInfo]);
 
 	const handleEndRide = async () => {
 		if (!taxiInfo?.rideId || !user?.id) {
 			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
+		// Set this FIRST to prevent the query from being executed
+		setIsEndingRide(true);
+		setRideJustEnded(true);
+
 		try {
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
+
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			
 			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			
 			if (!currentLocation || !destination) {
-				return;
+					return;
 			}
+			
 			router.push({
 				pathname: './SubmitFeedback',
 				params: {
@@ -552,11 +757,184 @@ export default function SeatReserved() {
 					passengerId: passengerId,
 					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
+					actualFare: result.fare.toString(), // Pass actual fare for payment validation
+					// Location parameters
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					// Driver/taxi parameters
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+					licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+					fare: taxiInfo?.fare?.toString() || '0',
+					estimatedFare: params.estimatedFare,
+					// Route parameters
+					routeId: params.routeId,
+					availableTaxisCount: params.availableTaxisCount,
+					routeMatchData: params.routeMatchData,
+					// Pass multi-leg journey parameters if applicable
+					...(params.isMultiLeg && {
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+					}),
 				},
 			});
-			setRideJustEnded(true);
 		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to end ride.');
+			// Reset the flags if there's an error
+			setIsEndingRide(false);
+			setRideJustEnded(false);
+			console.error('Error ending ride:', error);
+			Alert.alert('Error', error?.message || 'Failed to end ride. Please try again.');
+		}
+	};
+
+	const handleContinueToNextLeg = async () => {
+		if (!taxiInfo?.rideId || !user?.id) {
+			Alert.alert('Error', 'No ride or user information available.');
+			return;
+		}
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen for this leg
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
+		// Set this FIRST to prevent the query from being executed
+		setIsEndingRide(true);
+		setRideJustEnded(true);
+
+		try {
+
+			// Call endTrip first to get the fare before the ride status changes
+			const result = await endTripConvex({
+				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
+			});
+
+
+			// Then end the ride and update seat availability
+			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
+			
+			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
+			
+			if (!currentLocation || !destination) {
+					return;
+			}
+			
+			// Check if payment is required
+			const hasAlreadyPaid = taxiInfo.tripPaid === true;
+			
+			if (hasAlreadyPaid) {
+				// User has already paid, go directly to feedback then TaxiInformation
+				router.push({
+					pathname: './SubmitFeedback',
+					params: {
+						startName: currentLocation.name,
+						endName: destination.name,
+						passengerId: passengerId,
+						rideId: taxiInfo?.rideDocId,
+						driverId: driverId,
+						actualFare: result.fare.toString(),
+						continueToNext: 'true', // Flag to indicate this should continue to next leg
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Driver/taxi parameters
+						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						fare: taxiInfo?.fare?.toString() || '0',
+						estimatedFare: params.estimatedFare,
+						// Route parameters
+						routeId: params.routeId,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Pass multi-leg journey parameters if applicable
+						...(params.isMultiLeg && {
+							isMultiLeg: params.isMultiLeg,
+							journeyId: params.journeyId,
+							legIndex: params.legIndex,
+							totalLegs: params.totalLegs,
+							routeName: params.routeName,
+						}),
+					},
+				});
+			} else {
+				// Payment confirmation is needed first
+				router.push({
+					pathname: './PaymentsConfirm',
+					params: {
+						rideId: taxiInfo?.rideDocId,
+						startName: currentLocation?.name || 'Current Location',
+						endName: destination?.name || 'Destination',
+						passengerId: user.id,
+						driverId: driverId || '',
+						fare: result.fare.toString(),
+						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
+						isMultiLeg: params.isMultiLeg,
+						journeyId: params.journeyId,
+						legIndex: params.legIndex,
+						totalLegs: params.totalLegs,
+						routeName: params.routeName,
+						continueToNext: 'true', // Flag to indicate this should continue to next leg
+					},
+				});
+			}
+			
+		} catch (error: any) {
+			// Reset the flags if there's an error
+			setIsEndingRide(false);
+			setRideJustEnded(false);
+			console.error('Error continuing to next leg:', error);
+			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
 		}
 	};
 
@@ -566,14 +944,20 @@ export default function SeatReserved() {
 			return;
 		}
 		try {
+			// Set this FIRST to prevent the error alert from triggering
+			setRideJustEnded(true);
+			
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			Alert.alert('Success', 'Ride cancelled.');
+			Alert.alert(t('home:success'), t('home:rideCancelled'));
 			router.push('/HomeScreen');
 		} catch (error: any) {
+			// Reset the flag if there's an error
+			setRideJustEnded(false);
 			Alert.alert('Error', error?.message || 'Failed to cancel ride.');
 		}
 	};
+
 
 	// Create dynamic styles based on theme
 	const dynamicStyles = StyleSheet.create({
@@ -581,13 +965,40 @@ export default function SeatReserved() {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
+		header: {
+			paddingHorizontal: isSmallScreen ? 16 : 20,
+			paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+			paddingBottom: 20,
+			backgroundColor: theme.background,
+			borderBottomWidth: 1,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+		},
+		headerRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+		},
+		backButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 16,
+		},
+		headerTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: theme.text,
+			flex: 1,
+		},
 		scrollView: {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
 		loadingContainer: {
-			flex: 1, 
-			justifyContent: 'center', 
+			flex: 1,
+			justifyContent: 'center',
 			alignItems: 'center'
 		},
 		loadingText: {
@@ -601,78 +1012,108 @@ export default function SeatReserved() {
 			alignItems: "center",
 		},
 		arrivalTimeBox: {
-			backgroundColor: isDark ? theme.surface : "#121212",
-			borderRadius: 30,
-			paddingVertical: 16,
-			paddingHorizontal: 20,
+			backgroundColor: theme.card,
+			borderRadius: 16,
+			paddingVertical: 12,
+			paddingHorizontal: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		arrivalTimeText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 			textAlign: "center",
 		},
 		routeLoadingText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 11,
+			color: theme.textSecondary,
+			fontSize: 12,
 			fontStyle: 'italic',
 			textAlign: "center",
 			marginTop: 4,
 		},
 		bottomSection: {
 			alignItems: "center",
-			backgroundColor: theme.surface,
-			borderRadius: 30,
-			paddingTop: 47,
-			paddingBottom: 60,
+			backgroundColor: theme.card,
+			borderTopLeftRadius: 24,
+			borderTopRightRadius: 24,
+			paddingTop: 24,
+			paddingBottom: 100, // Add more bottom padding to account for fixed button positioning
+			paddingHorizontal: isSmallScreen ? 16 : 20,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderBottomWidth: 0,
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
+					shadowOffset: { width: 0, height: -2 },
+					shadowRadius: 8,
+				},
+				android: {
+					elevation: 4,
+				},
+			}),
 		},
 		driverDetailsHeader: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 33,
+			marginBottom: 20,
 			width: '100%',
 		},
 		driverDetailsTitle: {
-			color: theme.textSecondary,
+			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
+			fontWeight: "600",
 			flex: 1,
 		},
 		contactButton: {
-			width: 35,
-			height: 35,
-			backgroundColor: isDark ? theme.primary : "#121212",
-			borderRadius: 17.5,
+			width: 36,
+			height: 36,
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
+			borderRadius: 18,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 5,
+			marginLeft: 8,
 		},
 		driverInfoSection: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 36,
+			marginBottom: 24,
 			width: '100%',
-			paddingHorizontal: 15,
 		},
 		driverAvatar: {
 			width: 60,
 			height: 60,
-			backgroundColor: isDark ? theme.primary : "#121212",
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
 			borderRadius: 30,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 11,
+			marginRight: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		driverName: {
 			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
-			marginBottom: 1,
+			fontWeight: "600",
+			marginBottom: 4,
 		},
 		driverVehicle: {
 			color: theme.textSecondary,
-			fontSize: 12,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		ratingText: {
 			color: theme.text,
@@ -682,41 +1123,47 @@ export default function SeatReserved() {
 		},
 		licensePlateSection: {
 			flexDirection: "row",
-			marginBottom: 26,
+			marginBottom: 20,
 			width: '100%',
-			paddingHorizontal: 35,
 			justifyContent: 'space-between',
+			backgroundColor: theme.background,
+			borderRadius: 12,
+			padding: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		licensePlateLabel: {
 			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 		},
 		locationBox: {
 			flexDirection: "row",
 			alignItems: "center",
-			backgroundColor: isDark ? theme.surface : "#ECD9C3",
-			borderColor: isDark ? theme.border : "#D4A57D",
-			borderRadius: 20,
+			backgroundColor: theme.background,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderRadius: 16,
 			borderWidth: 1,
-			paddingVertical: 11,
-			paddingHorizontal: 13,
-			marginBottom: 36,
-			width: '90%',
-			alignSelf: 'center',
-			shadowColor: theme.shadow,
-			shadowOpacity: isDark ? 0.3 : 0.15,
-			shadowOffset: {
-				width: 0,
-				height: 4
-			},
-			shadowRadius: 4,
-			elevation: 4,
+			paddingVertical: 16,
+			paddingHorizontal: 16,
+			marginBottom: 24,
+			width: '100%',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		locationIndicator: {
 			marginRight: 10,
@@ -758,27 +1205,37 @@ export default function SeatReserved() {
 			flex: 1,
 		},
 		currentLocationText: {
-			color: isDark ? theme.primary : "#A66400",
-			fontSize: 14,
-			fontWeight: "bold",
-			marginBottom: 17,
+			color: theme.text,
+			fontSize: 15,
+			fontWeight: "600",
+			marginBottom: 16,
+			lineHeight: 20,
 		},
 		locationSeparator: {
 			height: 1,
-			backgroundColor: isDark ? theme.border : "#D4A57D",
-			marginBottom: 19,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			marginBottom: 16,
 			marginHorizontal: 2,
 		},
 		destinationText: {
 			color: theme.text,
-			fontSize: 14,
-			fontWeight: "bold",
+			fontSize: 15,
+			fontWeight: "600",
 			marginLeft: 2,
+			lineHeight: 20,
 		},
 		actionButtonsContainer: {
 			width: '100%',
 			alignItems: 'center',
-			marginTop: 10,
+			marginTop: 16,
+			paddingHorizontal: 0,
+		},
+		// Add button container for better positioning like TaxiInformation
+		buttonContainer: {
+			position: 'absolute',
+			bottom: 80,
+			left: 24,
+			right: 24,
 		},
 		// PIN entry styles
 		pinEntryOverlay: {
@@ -875,31 +1332,76 @@ export default function SeatReserved() {
 			fontSize: 16,
 		},
 		startRideButton: {
-			alignItems: "center",
-			backgroundColor: theme.primary,
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
-			marginBottom: 15,
+			backgroundColor: '#F59E0B',
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: '#D97706',
+			width: '100%',
+			marginBottom: 12,
 		},
 		startRideButtonText: {
-			color: isDark ? "#121212" : "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		cancelButton: {
-			alignItems: "center",
 			backgroundColor: isDark ? "#FF4444" : "#FF6B6B",
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: isDark ? "#CC3333" : "#FF5555",
+			width: '100%',
+			marginBottom: 8,
+			// Cross-platform shadow handling to match TaxiInformation
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 3,
+				},
+			}),
 		},
 		cancelButtonText: {
-			color: "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 	});
+
+	// Early return for error state
+	if (hasError) {
+		return (
+			<SafeAreaView style={dynamicStyles.container}>
+				<View style={dynamicStyles.loadingContainer}>
+					<Text style={{ color: theme.text, textAlign: 'center', margin: 20 }}>
+						Error: {errorMessage}
+					</Text>
+					<TouchableOpacity
+						onPress={() => {
+							setHasError(false);
+							setErrorMessage('');
+						}}
+						style={{ padding: 10, backgroundColor: theme.primary, borderRadius: 5 }}
+					>
+						<Text style={{ color: 'white' }}>Retry</Text>
+					</TouchableOpacity>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	// Early return for loading state - but ensure all hooks are called first
 	if (!currentLocation || !destination) {
@@ -914,45 +1416,109 @@ export default function SeatReserved() {
 
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
-			<ScrollView style={dynamicStyles.scrollView}>
+			{/* Header */}
+			<View style={dynamicStyles.header}>
+				<View style={dynamicStyles.headerRow}>
+					<Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+						<Icon name="arrow-back" size={20} color={theme.text} />
+					</Pressable>
+					<Text style={dynamicStyles.headerTitle}>
+						Ride in Progress
+					</Text>
+				</View>
+			</View>
+
+			<ScrollView 
+				style={dynamicStyles.scrollView}
+				contentContainerStyle={{ paddingBottom: rideStatus === 'requested' ? 100 : 20 }}
+				showsVerticalScrollIndicator={false}>
 				<View>
-					{/* Map Section with Route */}
+					{/* Map Section with Route - Add error boundary */}
 					<View style={{ height: 300, position: 'relative' }}>
-						<MapView
-							ref={mapRef}
-							style={{ flex: 1 }}
-							provider={PROVIDER_GOOGLE}
-							initialRegion={{
-								latitude: (currentLocation.latitude + destination.latitude) / 2,
-								longitude: (currentLocation.longitude + destination.longitude) / 2,
-								latitudeDelta: Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01,
-								longitudeDelta: Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01,
-							}}
-							customMapStyle={isDark ? darkMapStyle : []}
-							onPanDrag={() => setIsFollowing(false)}
-							onRegionChangeComplete={() => setIsFollowing(false)}
-						>
-							<Marker
-								coordinate={currentLocation}
-								title="You are here"
-								pinColor="blue"
-							>
-							</Marker>
-							<Marker
-								coordinate={destination}
-								title={destination.name}
-								pinColor="orange"
-							>
-							</Marker>
-							{/* Render the route polyline */}
-							{routeCoordinates.length > 0 && (
-								<Polyline
-									coordinates={routeCoordinates}
-									strokeColor={theme.primary}
-									strokeWidth={4}
-								/>
-							)}
-						</MapView>
+						{(() => {
+							try {
+								// Validate coordinates before rendering map
+								const isValidCoordinates = (coord: any) => {
+									return coord &&
+										typeof coord.latitude === 'number' &&
+										typeof coord.longitude === 'number' &&
+										coord.latitude >= -90 && coord.latitude <= 90 &&
+										coord.longitude >= -180 && coord.longitude <= 180 &&
+										!isNaN(coord.latitude) && !isNaN(coord.longitude);
+								};
+
+								if (!isValidCoordinates(currentLocation) || !isValidCoordinates(destination)) {
+									console.warn('Invalid coordinates for map rendering:', { currentLocation, destination });
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								// Calculate safe region values
+								const centerLat = (currentLocation.latitude + destination.latitude) / 2;
+								const centerLng = (currentLocation.longitude + destination.longitude) / 2;
+								const latDelta = Math.max(Math.abs(currentLocation.latitude - destination.latitude) * 2 + 0.01, 0.01);
+								const lngDelta = Math.max(Math.abs(currentLocation.longitude - destination.longitude) * 2 + 0.01, 0.01);
+
+								// Validate region values
+								if (isNaN(centerLat) || isNaN(centerLng) || isNaN(latDelta) || isNaN(lngDelta)) {
+									console.warn('Invalid region calculation');
+									return (
+										<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+											<Text style={{ color: theme.text }}>Map temporarily unavailable</Text>
+										</View>
+									);
+								}
+
+								return (
+									<MapView
+										ref={mapRef}
+										style={{ flex: 1 }}
+										provider={PROVIDER_GOOGLE}
+										initialRegion={{
+											latitude: centerLat,
+											longitude: centerLng,
+											latitudeDelta: latDelta,
+											longitudeDelta: lngDelta,
+										}}
+										customMapStyle={isDark ? darkMapStyle : []}
+										onPanDrag={() => setIsFollowing(false)}
+										onRegionChangeComplete={() => setIsFollowing(false)}
+									>
+										<Marker
+											coordinate={currentLocation}
+											title="You are here"
+											pinColor="blue"
+										>
+										</Marker>
+										<Marker
+											coordinate={destination}
+											title={destination.name}
+											pinColor="orange"
+										>
+										</Marker>
+										{/* Render the route polyline */}
+										{routeCoordinates.length > 0 && (
+											<Polyline
+												coordinates={routeCoordinates}
+												strokeColor={theme.primary}
+												strokeWidth={4}
+											/>
+										)}
+									</MapView>
+								);
+							} catch (error) {
+								console.error('Error rendering map:', error);
+								handleError(error as Error);
+								return (
+									<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+										<Text style={{ color: theme.text }}>Map error - please retry</Text>
+									</View>
+								);
+							}
+						})()}
 
 						{/* Arrival Time Overlay */}
 						<View style={dynamicStyles.arrivalTimeOverlay}>
@@ -970,30 +1536,44 @@ export default function SeatReserved() {
 					</View>
 
 					<View style={dynamicStyles.bottomSection}>
+						
 						<View style={dynamicStyles.driverDetailsHeader}>
-							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								Driver Details
 							</Text>
-							<View style={dynamicStyles.contactButton}>
-								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
-							<View style={[dynamicStyles.contactButton, { marginRight: 10 }]}>
-								<Icon name="chatbubble" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="call" size={16} color={theme.primary} />
+							</TouchableOpacity>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="chatbubble" size={16} color={theme.primary} />
+							</TouchableOpacity>
 						</View>
 						
-						{!taxiInfoError && (
+						{taxiInfo === undefined ? (
 							<View style={dynamicStyles.driverInfoSection}>
 								<View style={dynamicStyles.driverAvatar}>
 									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
 								</View>
 								<View style={{ marginRight: 35 }}>
 									<Text style={dynamicStyles.driverName}>
-										{taxiInfo?.driver?.name || "Tshepo Mthembu"}
+										Loading ride information...
 									</Text>
 									<Text style={dynamicStyles.driverVehicle}>
-										{taxiInfo?.taxi?.model || "Hiace-Sesfikile"}
+										Please wait while we fetch your ride details
+									</Text>
+								</View>
+							</View>
+						) : taxiInfo && taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										{taxiInfo.driver.name || "Driver details not available"}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										{taxiInfo.taxi?.model || "Vehicle details not available"}
 									</Text>
 									<TouchableOpacity onPress={() => router.push({pathname: '/TaxiInfoPage', params: { userId: vehicleInfo.userId }})}>
 										<Icon name="information-circle" size={30} color={isDark ? "#121212" : "#FF9900"} />
@@ -1001,24 +1581,75 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 									<Text style={dynamicStyles.ratingText}>
-										{(taxiInfo?.driver?.averageRating ?? 0).toFixed(1)}
+										{typeof driverRating === "number" && driverRating > 0
+											? driverRating.toFixed(1)
+											: "No ratings"}
 									</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-										{[1, 2, 3, 4, 5].map((star, index) => {
-											const full = (taxiInfo?.driver?.averageRating ?? 0) >= star;
-											const half = (taxiInfo?.driver?.averageRating ?? 0) >= star - 0.5 && !full;
+										{typeof driverRating === "number" && driverRating > 0
+											? [1, 2, 3, 4, 5].map((star, index) => {
+												const full = driverRating >= star;
+												const half = driverRating >= star - 0.5 && driverRating < star;
 
-											return (
-												<FontAwesome
-													key={index}
-													name={full ? "star" : half ? "star-half-full" : "star-o"}
-													size={12}
-													color={theme.primary}
-													style={{ marginRight: 1 }}
-												/>
-											);
-										})}
+												return (
+													<FontAwesome
+														key={index}
+														name={full ? "star" : half ? "star-half-full" : "star-o"}
+														size={12}
+														color="#FFD700"
+														style={{ marginRight: 1 }}
+													/>
+												);
+											})
+											: null}
 									</View>
+								</View>
+								
+								{/* Driver Badges */}
+								{driverBadges && driverBadges.length > 0 && (
+									<View style={{ marginTop: 10, marginBottom: 10 }}>
+										<View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+											{driverBadges.map((badge: any, index: number) => (
+												<Badge
+													key={index}
+													badgeType={badge.badgeType as "trusted_payer" | "frequent_rider" | "loyal_member" | "marathon_driver" | "top_earner"}
+													name={badge.name}
+													description={badge.description}
+													icon={badge.icon}
+													color={badge.color}
+													size="small"
+												/>
+											))}
+										</View>
+									</View>
+								)}
+							</View>
+						) : taxiInfo && !taxiInfo.driver ? (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+{t('home:waitingForDriver')}
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Your ride request has been sent. A driver will be assigned soon.
+									</Text>
+								</View>
+							</View>
+						) : (
+							<View style={dynamicStyles.driverInfoSection}>
+								<View style={dynamicStyles.driverAvatar}>
+									<Icon name="person" size={30} color={isDark ? "#121212" : "#FF9900"} />
+								</View>
+								<View style={{ marginRight: 35 }}>
+									<Text style={dynamicStyles.driverName}>
+										No active reservation found
+									</Text>
+									<Text style={dynamicStyles.driverVehicle}>
+										Please book a ride to see driver details
+									</Text>
 								</View>
 							</View>
 						)}
@@ -1054,10 +1685,12 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{/* Action Buttons */}
-						<View style={dynamicStyles.actionButtonsContainer}>
-							{/* Before ride is accepted: show only Cancel Request */}
-							{rideStatus === 'requested' && (
+						{/* Action Buttons - Inline for accepted status, fixed for requested status */}
+						{rideStatus === 'accepted' && (
+							<View style={dynamicStyles.actionButtonsContainer}>
+								<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
+									Driver will show you their PIN to verify and start the ride
+								</Text>
 								<TouchableOpacity 
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
@@ -1065,24 +1698,11 @@ export default function SeatReserved() {
 										{"Cancel Request"}
 									</Text>
 								</TouchableOpacity>
-							)}
-							{/* When ride is accepted: show message and Cancel Request */}
-							{rideStatus === 'accepted' && (
-								<>
-									<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
-										Driver will show you their PIN to verify and start the ride
-									</Text>
-									<TouchableOpacity 
-										style={dynamicStyles.cancelButton} 
-										onPress={handleCancelRequest}>
-										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
-										</Text>
-									</TouchableOpacity>
-								</>
-							)}
-							{/* Only show End Ride when ride is started or in progress */}
-							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
+							</View>
+						)}
+						{/* Only show End Ride when ride is started or in progress */}
+						{(rideStatus === 'started' || rideStatus === 'in_progress') && (
+							<View style={dynamicStyles.actionButtonsContainer}>
 								<TouchableOpacity 
 									style={dynamicStyles.cancelButton} 
 									onPress={handleEndRide}>
@@ -1090,11 +1710,42 @@ export default function SeatReserved() {
 										{"End Ride"}
 									</Text>
 								</TouchableOpacity>
-							)}
-						</View>
+								
+								{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
+								{(() => {
+									const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+									const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
+
+									// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
+									return isMultiLeg && legIndex === 0;
+								})() && (
+									<TouchableOpacity
+										style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
+										onPress={handleContinueToNextLeg}>
+										<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
+											{"Continue to Next Leg"}
+										</Text>
+									</TouchableOpacity>
+								)}
+							</View>
+						)}
 					</View>
 				</View>
 			</ScrollView>
+			
+			{/* Fixed Cancel Request Button - Only show when ride is requested */}
+			{rideStatus === 'requested' && (
+				<View style={dynamicStyles.buttonContainer}>
+					<TouchableOpacity 
+						style={dynamicStyles.cancelButton} 
+						onPress={handleCancelRequest}
+						activeOpacity={0.8}>
+						<Text style={dynamicStyles.cancelButtonText}>
+							Cancel Request
+						</Text>
+					</TouchableOpacity>
+				</View>
+			)}
 			
 			{/* PIN Entry Modal */}
 			{showPinEntry && (

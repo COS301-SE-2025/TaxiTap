@@ -23,11 +23,19 @@ export default function StatsPage() {
     user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
   );
 
+  // Use getPassengersNeedingChange for more accurate change due count
+  const changeDueData = useQuery(
+    api.functions.rides.getActiveTrips.getPassengersNeedingChange,
+    user?.id ? { driverId: user.id as Id<"taxiTap_users"> } : "skip"
+  );
+
+  const changeDueCount = changeDueData?.count ?? 0;
+
   const handleBackPress = () => {
     router.back();
   };
 
-  if (!user || activeTrips === undefined) {
+  if (!user || activeTrips === undefined || changeDueData === undefined) {
     return (
       <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
         <View style={dynamicStyles.container}>
@@ -69,6 +77,14 @@ export default function StatsPage() {
           >
             <Text style={dynamicStyles.statNumber}>{activeTrips?.activeCount || 0}</Text>
             <Text style={dynamicStyles.statLabel}>Active Rides</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[dynamicStyles.statCard4, dynamicStyles.changeDueCard]}
+            onPress={() => router.push("/ChangePage")}
+          >
+            <Text style={dynamicStyles.statNumber}>{changeDueCount || 0}</Text>
+            <Text style={dynamicStyles.statLabel}>Change Due and Money Owed</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -189,6 +205,22 @@ const dynamicStyles = StyleSheet.create({
     borderColor: '#EF4444',
     marginBottom: 16,
   },
+  statCard4: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFFF00',
+    marginBottom: 16,
+  },
   statNumber: {
     fontSize: 28,
     fontWeight: '700',
@@ -213,6 +245,10 @@ const dynamicStyles = StyleSheet.create({
   unpaidAccountsCard: {
     borderTopWidth: 3,
     borderTopColor: '#ef4444',
+  },
+  changeDueCard: {
+    borderTopWidth: 3,
+    borderTopColor: '#FFFF00',
   },
   summarySection: {
     backgroundColor: '#fff',
