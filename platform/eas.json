@@ -6,12 +6,28 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "$EXPO_PUBLIC_CONVEX_URL",
+        "EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY": "$EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY",
+        "EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY": "$EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY",
+        "EXPO_PUBLIC_IOS_BUNDLE_ID": "$EXPO_PUBLIC_IOS_BUNDLE_ID",
+        "EXPO_PUBLIC_ANDROID_PACKAGE_NAME": "$EXPO_PUBLIC_ANDROID_PACKAGE_NAME",
+        "CONVEX_DEPLOYMENT": "$CONVEX_DEPLOYMENT"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "$EXPO_PUBLIC_CONVEX_URL",
+        "EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY": "$EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY",
+        "EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY": "$EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY",
+        "EXPO_PUBLIC_IOS_BUNDLE_ID": "$EXPO_PUBLIC_IOS_BUNDLE_ID",
+        "EXPO_PUBLIC_ANDROID_PACKAGE_NAME": "$EXPO_PUBLIC_ANDROID_PACKAGE_NAME",
+        "CONVEX_DEPLOYMENT": "$CONVEX_DEPLOYMENT"
       }
     },
     "production": {

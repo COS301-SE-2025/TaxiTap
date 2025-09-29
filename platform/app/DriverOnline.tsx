@@ -9,6 +9,7 @@ import {
   StatusBar,
   SafeAreaView,
   Pressable,
+  Platform,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
@@ -137,7 +138,9 @@ export default function DriverOnline({
   const driverPin = driverPinData?.pin || '';
 
   // Google Maps API key - you'll need to add this to your environment
-  const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY';
+  const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
+    ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
+    : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
 
   useLayoutEffect(() => {
     navigation.setOptions({
