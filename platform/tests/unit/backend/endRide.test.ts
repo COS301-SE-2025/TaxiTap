@@ -12,6 +12,7 @@ describe("endRideHandler", () => {
     driverId: "user_driver456",
     passengerId: args.userId,
     status: "in_progress",
+    tripPaid: true,
   };
 
   let mockCtx: any;
@@ -108,6 +109,7 @@ describe("endRideHandler", () => {
     const startedRideDoc = {
       ...rideDoc,
       status: "started",
+      tripPaid: true,
     };
 
     mockCtx.db.first.mockResolvedValueOnce(startedRideDoc);
@@ -129,6 +131,7 @@ describe("endRideHandler", () => {
     const acceptedRideDoc = {
       ...rideDoc,
       status: "accepted",
+      tripPaid: true,
     };
 
     mockCtx.db.first.mockResolvedValueOnce(acceptedRideDoc);
@@ -144,5 +147,18 @@ describe("endRideHandler", () => {
       _id: rideDoc._id,
       message: "Ride ended successfully.",
     });
+  });
+
+  it("throws error if payment is not confirmed", async () => {
+    const unpaidRideDoc = {
+      ...rideDoc,
+      tripPaid: false,
+    };
+
+    mockCtx.db.first.mockResolvedValueOnce(unpaidRideDoc);
+
+    await expect(endRideHandler(mockCtx, args)).rejects.toThrow(
+      "Payment must be confirmed before ending the ride. Please use the payment confirmation screen first."
+    );
   });
 });

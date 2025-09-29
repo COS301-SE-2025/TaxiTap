@@ -46,7 +46,6 @@ export default function PassengerPinEntry() {
   const startName = params.startName as string;
   const endName = params.endName as string;
 
-  // Debug logging
   useEffect(() => {
     console.log('PassengerPinEntry mounted with params:', {
       rideId,
@@ -58,7 +57,7 @@ export default function PassengerPinEntry() {
       endName,
       user: user?.id
     });
-    console.log('🔍 PassengerPinEntry - Multi-leg params check:', {
+    console.log('PassengerPinEntry - Multi-leg params check:', {
       isMultiLeg: params.isMultiLeg,
       journeyId: params.journeyId,
       legIndex: params.legIndex,

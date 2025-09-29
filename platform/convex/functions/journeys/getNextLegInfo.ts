@@ -51,7 +51,7 @@ export const getNextLegInfo = query({
       .withIndex("by_is_available", (q) => q.eq("isAvailable", true))
       .collect();
 
-    console.log(`🔍 getNextLegInfo DEBUG - Found ${availableTaxis.length} available taxis total`);
+    console.log(`getNextLegInfo DEBUG - Found ${availableTaxis.length} available taxis total`);
 
     // First, find the route ID by route name
     const route = await ctx.db
@@ -60,7 +60,7 @@ export const getNextLegInfo = query({
       .first();
     
     if (!route) {
-      console.log(`❌ No route found with name: ${nextLeg.routeName}`);
+      console.log(`No route found with name: ${nextLeg.routeName}`);
       return {
         hasNextLeg: true,
         nextLeg: {
@@ -82,7 +82,7 @@ export const getNextLegInfo = query({
       };
     }
 
-    console.log(`🔍 Found route ID ${route._id} for route name "${nextLeg.routeName}"`);
+    console.log(`Found route ID ${route._id} for route name "${nextLeg.routeName}"`);
 
     // Get driver profiles for those available taxis that match the route
     const availableDrivers = [];
@@ -98,7 +98,7 @@ export const getNextLegInfo = query({
       // Check if driver is on the correct route (now using route ID)
       const isOnRoute = driver.assignedRoute === route._id;
       
-      console.log(`🚗 Driver ${driver.userId} route check:`, {
+      console.log(`Driver ${driver.userId} route check:`, {
         routeName: nextLeg.routeName,
         routeId: route._id,
         driverTaxiAssociation: driver.taxiAssociation,
@@ -113,7 +113,7 @@ export const getNextLegInfo = query({
       
       locationMatchAttempts++;
       
-      console.log(`📍 Driver ${driver.userId} location check:`, {
+      console.log(`Driver ${driver.userId} location check:`, {
         hasLocation: !!driverLocation,
         hasProfile: !!userProfile,
         locationData: driverLocation ? { lat: driverLocation.latitude, lng: driverLocation.longitude } : null
@@ -140,7 +140,7 @@ export const getNextLegInfo = query({
       }
     }
     
-    console.log(`✅ getNextLegInfo SUMMARY:`, {
+    console.log(`getNextLegInfo SUMMARY:`, {
       totalAvailableTaxis: availableTaxis.length,
       routeMatchAttempts,
       locationMatchAttempts,

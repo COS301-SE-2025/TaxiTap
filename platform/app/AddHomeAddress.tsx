@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { useUser } from '../../contexts/UserContext';
-import { Id } from '../../convex/_generated/dataModel';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useAlertHelpers } from '../../components/AlertHelpers';
+import { api } from '../convex/_generated/api';
+import { useUser } from '../contexts/UserContext';
+import { Id } from '../convex/_generated/dataModel';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAlertHelpers } from '../components/AlertHelpers';
 import * as Location from 'expo-location';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
-export default function AddWorkAddress() {
+export default function AddHomeAddress() {
     const [address, setAddress] = useState('');
-    const [nickname, setNickname] = useState('Work');
+    const [nickname, setNickname] = useState('Home');
     const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +25,12 @@ export default function AddWorkAddress() {
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const { showGlobalError, showGlobalSuccess, showConfirm } = useAlertHelpers();
+    
+    // Screen dimensions for responsive design
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const isSmallScreen = screenWidth < 375;
+    const isMediumScreen = screenWidth >= 375 && screenWidth < 414;
+    const isLargeScreen = screenWidth >= 414;
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -32,16 +38,16 @@ export default function AddWorkAddress() {
         user?.id ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
     );
 
-    // Mutation to update work address
-    const updateWorkAddress = useMutation(api.functions.users.UserManagement.updateWorkAddress.updateWorkAddress);
+    // Mutation to update home address
+    const updateHomeAddress = useMutation(api.functions.users.UserManagement.updateHomeAddress.updateHomeAddress);
     
 
-    // Initialize with existing work address if available
+    // Initialize with existing home address if available
     useEffect(() => {
-        if (convexUser && convexUser.workAddress) {
-            setAddress(convexUser.workAddress.address);
-            setNickname(convexUser.workAddress.nickname || 'Work');
-            setCoordinates(convexUser.workAddress.coordinates);
+        if (convexUser && convexUser.homeAddress) {
+            setAddress(convexUser.homeAddress.address);
+            setNickname(convexUser.homeAddress.nickname || 'Home');
+            setCoordinates(convexUser.homeAddress.coordinates);
             setHasExistingAddress(true);
         }
     }, [convexUser]);
@@ -123,9 +129,9 @@ export default function AddWorkAddress() {
         }
         setIsLoading(true);
         try {
-            await updateWorkAddress({
+            await updateHomeAddress({
                 userId: user.id as Id<'taxiTap_users'>,
-                workAddress: {
+                homeAddress: {
                     address: address.trim(),
                     nickname: nickname.trim(),
                     coordinates,
@@ -133,7 +139,7 @@ export default function AddWorkAddress() {
             });
             showGlobalSuccess(
                 t('address:success'),
-                t('address:workAddressSaved'),
+                t('address:homeAddressSaved'),
                 { duration: 2000 }
             );
             setTimeout(() => {
@@ -162,18 +168,18 @@ export default function AddWorkAddress() {
         }
         
         showConfirm(
-            t('address:deleteWorkAddress'),
+            t('address:deleteHomeAddress'),
             t('address:deleteAddressConfirm'),
             async () => {
                 try {
                     setIsLoading(true);
-                    await updateWorkAddress({
+                    await updateHomeAddress({
                         userId: user.id as Id<'taxiTap_users'>,
-                        workAddress: null,
+                        homeAddress: null,
                     });
                     showGlobalSuccess(
                         t('address:success'),
-                        t('address:workAddressDeleted'),
+                        t('address:homeAddressDeleted'),
                         { duration: 2000 }
                     );
                     setTimeout(() => {
@@ -197,102 +203,116 @@ export default function AddWorkAddress() {
     };
 
     const dynamicStyles = StyleSheet.create({
-        safeArea: {
+        container: {
             flex: 1,
             backgroundColor: theme.background,
         },
-        container: {
-            backgroundColor: theme.background,
-            paddingHorizontal: 16,
-            paddingTop: 20,
-            paddingBottom: 40,
-        },
         header: {
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+            paddingBottom: 20,
+            backgroundColor: theme.background,
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        },
+        headerRow: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 24,
         },
         backButton: {
-            width: 40,
-            height: 40,
-            borderRadius: 20,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
             backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 16,
         },
         headerTitle: {
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: '600',
             color: theme.text,
             flex: 1,
         },
-        sectionHeader: {
-            fontSize: 13,
-            fontWeight: '600',
-            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            marginBottom: 8,
-            marginTop: 8,
-            paddingHorizontal: 4,
+        content: {
+            flex: 1,
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: 16,
         },
-        section: {
+        sectionTitle: {
+            fontSize: 16,
+            fontWeight: '600',
+            color: theme.text,
+            marginBottom: 16,
+            marginTop: 8,
+        },
+        card: {
             backgroundColor: theme.card,
             borderRadius: 16,
-            marginBottom: 16,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
-            overflow: 'hidden',
+            padding: isSmallScreen ? 12 : 16,
+            marginBottom: isSmallScreen ? 12 : 16,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+            // iOS-style shadows for both platforms
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+            elevation: 4,
         },
         fieldContainer: {
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            marginBottom: 20,
         },
         lastField: {
-            borderBottomWidth: 0,
+            marginBottom: 0,
         },
         label: {
-            fontSize: 17,
-            fontWeight: '400',
+            fontSize: 15,
+            fontWeight: '600',
             color: theme.text,
             marginBottom: 8,
+            lineHeight: 20,
         },
         input: {
-            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-            borderRadius: 8,
-            paddingHorizontal: 15,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            borderRadius: 12,
+            paddingHorizontal: 16,
             paddingVertical: 12,
-            fontSize: 17,
-            borderWidth: 0,
+            fontSize: 16,
             color: theme.text,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
         },
         addressInput: {
             minHeight: 80,
             textAlignVertical: 'top',
         },
-        locationButtonContainer: {
-            marginTop: 12,
+        locationCard: {
+            backgroundColor: theme.card,
+            borderRadius: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+            overflow: 'hidden',
+            // iOS-style shadows for both platforms
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+            elevation: 4,
         },
         locationButton: {
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: theme.card,
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            borderRadius: 16,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            padding: 16,
         },
         locationButtonDisabled: {
             opacity: 0.6,
         },
         locationIconContainer: {
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
             backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             alignItems: 'center',
             justifyContent: 'center',
@@ -300,19 +320,29 @@ export default function AddWorkAddress() {
         },
         locationButtonText: {
             color: theme.text,
-            fontWeight: '400',
-            fontSize: 17,
+            fontWeight: '500',
+            fontSize: 16,
             flex: 1,
+            lineHeight: 20,
         },
-        buttonSection: {
-            marginTop: 8,
+        locationSubtext: {
+            fontSize: 13,
+            color: theme.textSecondary,
+            marginTop: 2,
         },
-        buttonContainer: {
+        buttonCard: {
             backgroundColor: theme.card,
             borderRadius: 16,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             overflow: 'hidden',
+            // iOS-style shadows for both platforms
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+            elevation: 4,
         },
         saveButton: {
             backgroundColor: theme.primary,
@@ -321,7 +351,6 @@ export default function AddWorkAddress() {
             alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'center',
-            borderRadius: 16,
         },
         deleteButton: {
             backgroundColor: 'transparent',
@@ -330,62 +359,82 @@ export default function AddWorkAddress() {
             alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'center',
+            borderTopWidth: 1,
+            borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
         },
         buttonDisabled: {
             opacity: 0.6,
         },
         saveButtonText: {
             color: isDark ? "#121212" : "#FFFFFF",
-            fontWeight: 'bold',
+            fontWeight: '600',
             fontSize: 16,
+            marginLeft: 8,
         },
         deleteButtonText: {
             color: '#FF3B30',
-            fontWeight: '400',
-            fontSize: 17,
+            fontWeight: '500',
+            fontSize: 16,
+            marginLeft: 8,
         },
-        buttonIcon: {
-            marginRight: 8,
+        loadingContainer: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: 80,
+        },
+        loadingText: {
+            fontSize: 14,
+            color: theme.textSecondary,
+            marginTop: 16,
+            textAlign: 'center',
         },
     });
 
     if (!user) {
         return (
-            <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={dynamicStyles.container}>
+                <View style={dynamicStyles.loadingContainer}>
                     <LoadingSpinner size="large" />
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={dynamicStyles.safeArea}>
-            <ScrollView 
-                contentContainerStyle={dynamicStyles.container}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header */}
-                <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
+        <View style={dynamicStyles.container}>
+            {/* Header */}
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
                     <Text style={dynamicStyles.headerTitle}>
-                        {hasExistingAddress ? t('address:editWorkAddress') : t('address:addWorkAddress')}
+                        {hasExistingAddress ? t('address:editHomeAddress') : t('address:addHomeAddress')}
                     </Text>
                 </View>
+            </View>
+
+            {/* Content */}
+            <View style={dynamicStyles.content}>
+                <ScrollView 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ 
+                        paddingBottom: Platform.OS === 'ios' ? 40 : 20 
+                    }}
+                >
 
                 {/* Address Information Section */}
-                <Text style={dynamicStyles.sectionHeader}>{t('address:addressInformation')}</Text>
-                <View style={dynamicStyles.section}>
+                <Text style={dynamicStyles.sectionTitle}>{t('address:addressInformation')}</Text>
+                <View style={dynamicStyles.card}>
                     <View style={dynamicStyles.fieldContainer}>
                         <Text style={dynamicStyles.label}>{t('address:addressNickname')}</Text>
                         <TextInput
                             style={dynamicStyles.input}
                             value={nickname}
                             onChangeText={setNickname}
-                            placeholder="e.g., Work, Office, Company"
-                            placeholderTextColor={isDark ? '#999' : '#aaa'}
+                            placeholder="e.g., Home, House, Apartment"
+                            placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
@@ -395,8 +444,8 @@ export default function AddWorkAddress() {
                             style={[dynamicStyles.input, dynamicStyles.addressInput]}
                             value={address}
                             onChangeText={setAddress}
-                            placeholder="Enter your work address"
-                            placeholderTextColor={isDark ? '#999' : '#aaa'}
+                            placeholder="Enter your home address"
+                            placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             multiline
                             numberOfLines={3}
                         />
@@ -404,8 +453,8 @@ export default function AddWorkAddress() {
                 </View>
 
                 {/* Location Section */}
-                <Text style={dynamicStyles.sectionHeader}>{t('address:location')}</Text>
-                <View style={dynamicStyles.locationButtonContainer}>
+                <Text style={dynamicStyles.sectionTitle}>{t('address:location')}</Text>
+                <View style={dynamicStyles.locationCard}>
                     <Pressable
                         style={[dynamicStyles.locationButton, isLoadingLocation && dynamicStyles.locationButtonDisabled]}
                         onPress={getCurrentLocation}
@@ -413,63 +462,76 @@ export default function AddWorkAddress() {
                         android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                     >
                         <View style={dynamicStyles.locationIconContainer}>
-                            <Ionicons 
-                                name={isLoadingLocation ? "hourglass" : "location-outline"} 
-                                size={20} 
-                                color="#FF8C00" 
-                            />
+                            {isLoadingLocation ? (
+                                <LoadingSpinner size="small" />
+                            ) : (
+                                <Ionicons 
+                                    name="location-outline" 
+                                    size={20} 
+                                    color={theme.primary} 
+                                />
+                            )}
                         </View>
-                        <Text style={dynamicStyles.locationButtonText}>
-                            {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
-                        </Text>
+                        <View style={{ flex: 1 }}>
+                            <Text style={dynamicStyles.locationButtonText}>
+                                {isLoadingLocation ? t('home:gettingLocation') : t('home:useCurrentLocation')}
+                            </Text>
+                            <Text style={dynamicStyles.locationSubtext}>
+                                {isLoadingLocation 
+                                    ? 'Please wait while we get your location...'
+                                    : 'Automatically fill address from GPS location'
+                                }
+                            </Text>
+                        </View>
                         <Ionicons 
                             name="chevron-forward" 
                             size={16} 
-                            color={isDark ? theme.border : '#C7C7CC'} 
+                            color={theme.textSecondary} 
                         />
                     </Pressable>
                 </View>
 
                 {/* Action Buttons Section */}
-                <Text style={dynamicStyles.sectionHeader}>{t('address:actions')}</Text>
-                <View style={dynamicStyles.buttonSection}>
-                    <View style={dynamicStyles.buttonContainer}>
-                        <Pressable
-                            style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
-                            onPress={handleSave}
-                            disabled={isLoading}
-                            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                        >
+                <Text style={dynamicStyles.sectionTitle}>{t('address:actions')}</Text>
+                <View style={dynamicStyles.buttonCard}>
+                    <Pressable
+                        style={[dynamicStyles.saveButton, isLoading && dynamicStyles.buttonDisabled]}
+                        onPress={handleSave}
+                        disabled={isLoading}
+                        android_ripple={{ color: isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)' }}
+                    >
+                        {isLoading ? (
+                            <LoadingSpinner size="small" />
+                        ) : (
                             <Ionicons 
                                 name="checkmark" 
                                 size={20} 
                                 color={isDark ? "#121212" : "#FFFFFF"} 
-                                style={dynamicStyles.buttonIcon}
                             />
-                            <Text style={dynamicStyles.saveButtonText}>
-                                {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
-                            </Text>
-                        </Pressable>
-
-                        {hasExistingAddress && (
-                            <Pressable
-                                style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
-                                onPress={handleDelete}
-                                disabled={isLoading}
-                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                            >
-                                <Ionicons 
-                                    name="trash-outline" 
-                                    size={20} 
-                                    color="#FF3B30" 
-                                    style={dynamicStyles.buttonIcon}
-                                />
-                                <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
-                            </Pressable>
                         )}
-                    </View>
+                        <Text style={dynamicStyles.saveButtonText}>
+                            {isLoading ? t('address:saving') : hasExistingAddress ? t('address:updateAddress') : t('address:saveAddress')}
+                        </Text>
+                    </Pressable>
+
+                    {hasExistingAddress && (
+                        <Pressable
+                            style={[dynamicStyles.deleteButton, isLoading && dynamicStyles.buttonDisabled]}
+                            onPress={handleDelete}
+                            disabled={isLoading}
+                            android_ripple={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+                        >
+                            <Ionicons 
+                                name="trash-outline" 
+                                size={20} 
+                                color="#FF3B30" 
+                            />
+                            <Text style={dynamicStyles.deleteButtonText}>{t('address:delete')}</Text>
+                        </Pressable>
+                    )}
                 </View>
-            </ScrollView>
-        </SafeAreaView>
+                </ScrollView>
+            </View>
+        </View>
     );
 }

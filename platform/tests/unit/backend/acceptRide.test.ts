@@ -1,17 +1,18 @@
 import { acceptRideHandler } from "../../../convex/functions/rides/acceptRideHandler";
 
-// Mock Convex validation functions before importing modules
-const v = {
-  id: jest.fn((table) => ({ table })),
-  number: jest.fn(() => ({})),
-  string: jest.fn(() => ({})),
-  boolean: jest.fn(() => ({})),
-  object: jest.fn(() => ({})),
-  array: jest.fn(() => ({})),
-  optional: jest.fn((validator) => ({ validator })),
-  union: jest.fn((...validators) => ({ validators })),
-};
-jest.mock('convex/values', () => ({ v }));
+jest.mock('convex/values', () => {
+  const v = {
+    id: jest.fn((table) => ({ table })),
+    number: jest.fn(() => ({})),
+    string: jest.fn(() => ({})),
+    boolean: jest.fn(() => ({})),
+    object: jest.fn(() => ({})),
+    array: jest.fn(() => ({})),
+    optional: jest.fn((validator) => ({ validator })),
+    union: jest.fn((...validators) => ({ validators })),
+  };
+  return { v };
+});
 
 jest.mock('../../../convex/_generated/server', () => ({
   mutation: (def: any) => def,

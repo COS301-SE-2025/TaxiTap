@@ -216,11 +216,11 @@ export const TransferWindowCountdown: React.FC<TransferWindowCountdownProps> = (
 
   const getMessage = () => {
     if (minutesLeft <= 1) {
-      return "⚠️ Transfer window expires in less than 1 minute! Board your next taxi immediately or your journey will be cancelled.";
+      return "Transfer window expires in less than 1 minute! Board your next taxi immediately or your journey will be cancelled.";
     } else if (minutesLeft <= 2) {
-      return "🚶‍♂️ Hurry! Make your way to the next taxi stop. Your transfer window expires soon.";
+      return "Hurry! Make your way to the next taxi stop. Your transfer window expires soon.";
     } else {
-      return "🚕 You have time to walk to your next taxi. Follow the directions to the transfer point.";
+      return "You have time to walk to your next taxi. Follow the directions to the transfer point.";
     }
   };
 

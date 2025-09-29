@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
-import { useAlertHelpers } from '../../components/AlertHelpers';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image, Platform, Dimensions } from 'react-native';
+import { useAlertHelpers } from '../components/AlertHelpers';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { useUser } from '../../contexts/UserContext';
-import { Id } from '../../convex/_generated/dataModel';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { api } from '../convex/_generated/api';
+import { useUser } from '../contexts/UserContext';
+import { Id } from '../convex/_generated/dataModel';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function PersonalInfoEdit() {
     const [name, setName] = useState('');
@@ -27,6 +27,12 @@ export default function PersonalInfoEdit() {
     const { theme, isDark } = useTheme();
     const { t } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+    
+    // Screen dimensions for responsive design
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const isSmallScreen = screenWidth < 375;
+    const isMediumScreen = screenWidth >= 375 && screenWidth < 414;
+    const isLargeScreen = screenWidth >= 414;
 
     // Query user data from Convex
     const convexUser = useQuery(
@@ -155,36 +161,41 @@ export default function PersonalInfoEdit() {
     };
 
     const dynamicStyles = StyleSheet.create({
-        safeArea: {
+        container: {
             flex: 1,
             backgroundColor: theme.background,
-            borderTopWidth: 0,
-        },
-        container: {
-            backgroundColor: theme.background,
-            paddingHorizontal: 16,
-            paddingTop: 20,
-            paddingBottom: 40,
         },
         header: {
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+            paddingBottom: 20,
+            backgroundColor: theme.background,
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        },
+        headerRow: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 24,
         },
         backButton: {
-            width: 40,
-            height: 40,
-            borderRadius: 20,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
             backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 16,
         },
         headerTitle: {
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: '600',
             color: theme.text,
             flex: 1,
+        },
+        content: {
+            flex: 1,
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: 16,
         },
         photoSection: {
             alignItems: 'center',
@@ -217,11 +228,17 @@ export default function PersonalInfoEdit() {
         section: {
             backgroundColor: theme.card,
             borderRadius: 16,
-            padding: 20,
-            marginBottom: 16,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+            padding: isSmallScreen ? 16 : 20,
+            marginBottom: isSmallScreen ? 12 : 16,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             overflow: 'hidden',
+            // iOS-style shadows for both platforms
+            shadowColor: theme.shadow,
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+            elevation: 4,
         },
         sectionTitle: {
             fontSize: 13,
@@ -275,24 +292,34 @@ export default function PersonalInfoEdit() {
 
     if (!user) {
         return (
-            <SafeAreaView style={dynamicStyles.safeArea}>
-                <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={dynamicStyles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <LoadingSpinner size="large" />
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={dynamicStyles.safeArea}>
-            <ScrollView contentContainerStyle={dynamicStyles.container}>
-                {/* Header */}
-                <View style={dynamicStyles.header}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.push('../PassengerProfile')}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
+        <View style={dynamicStyles.container}>
+            {/* Header */}
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
                     </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>{t('personalInfo:personalInformation')}</Text>
+                    <Text style={dynamicStyles.headerTitle}>Ulwazi Lwakho</Text>
                 </View>
+            </View>
+
+            {/* Content */}
+            <View style={dynamicStyles.content}>
+                <ScrollView 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ 
+                        paddingBottom: Platform.OS === 'ios' ? 40 : 20 
+                    }}
+                >
 
                 {/* Profile Photo Section */}
                 <View style={dynamicStyles.photoSection}>
@@ -403,7 +430,8 @@ export default function PersonalInfoEdit() {
                         {isLoading ? t('personalInfo:saving') : t('personalInfo:saveChanges')}
                     </Text>
                 </Pressable>
-            </ScrollView>
-        </SafeAreaView>
+                </ScrollView>
+            </View>
+        </View>
     );
 }

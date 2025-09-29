@@ -5,11 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface MultiLegJourneyOption {
   journeyId: string;
@@ -66,6 +68,10 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  
+  // Screen dimensions for responsive design
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
 
   const formatWalkingTime = (minutes: number): string => {
     if (minutes < 1) return '< 1 min';
@@ -84,170 +90,227 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
 
   const dynamicStyles = StyleSheet.create({
     container: {
-      backgroundColor: isDark
-        ? 'rgba(30, 41, 59, 0.95)'
-        : 'rgba(255, 255, 255, 0.95)',
-      borderRadius: 20,
-      padding: 24,
-      maxHeight: '80%',
-      borderWidth: 1,
-      borderColor: isDark
-        ? 'rgba(71, 85, 105, 0.3)'
-        : 'rgba(226, 232, 240, 0.8)',
+      flex: 1,
+      backgroundColor: theme.background,
+      width: '100%',
+      height: '100%',
     },
     header: {
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+      paddingBottom: 20,
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.text,
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: 16,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 16,
+      marginTop: 8,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginTop: 16,
+      textAlign: 'center',
+    },
+    noOptionsContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+      paddingHorizontal: 24,
+    },
+    noOptionsIcon: {
+      marginBottom: 16,
+      opacity: 0.5,
+    },
+    noOptionsTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    noOptionsText: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    optionCard: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      // Cross-platform shadow handling
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+          shadowColor: theme.shadow,
+          shadowOpacity: isDark ? 0.2 : 0.08,
+          shadowOffset: { width: 0, height: 2 },
+          shadowRadius: 4,
+        },
+      }),
+    },
+    optionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 20,
       paddingBottom: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark
-        ? 'rgba(71, 85, 105, 0.3)'
-        : 'rgba(226, 232, 240, 0.5)',
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
     },
-    title: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: theme.text,
-      flex: 1,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: isDark
-        ? 'rgba(71, 85, 105, 0.3)'
-        : 'rgba(226, 232, 240, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingContainer: {
-      alignItems: 'center',
-      paddingVertical: 32,
-    },
-    loadingText: {
-      marginTop: 16,
-      fontSize: 16,
-      color: theme.textSecondary,
-    },
-    noOptionsContainer: {
-      alignItems: 'center',
-      paddingVertical: 32,
-    },
-    noOptionsText: {
-      fontSize: 16,
-      color: theme.textSecondary,
-      textAlign: 'center',
-      marginTop: 16,
-    },
-    scrollContainer: {
-      maxHeight: 400,
-    },
-    optionCard: {
-      backgroundColor: isDark
-        ? 'rgba(30, 41, 59, 0.8)'
-        : 'rgba(255, 255, 255, 0.9)',
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: isDark
-        ? 'rgba(71, 85, 105, 0.3)'
-        : 'rgba(226, 232, 240, 0.8)',
-    },
-    optionHeader: {
+    totalCostContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 12,
+    },
+    totalCostLabel: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginRight: 8,
+      fontWeight: '500',
     },
     totalCost: {
       fontSize: 18,
-      fontWeight: '700',
-      color: '#10B981',
+      fontWeight: '600',
+      color: theme.text,
+    },
+    optionIndex: {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    optionIndexText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.textSecondary,
     },
     legContainer: {
-      marginBottom: 12,
+      marginBottom: 16,
     },
     legHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 8,
     },
-    legNumber: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: '#F59E0B',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 8,
+    legIndicator: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 16,
     },
-    legNumberText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: '#FFFFFF',
+    leg1Indicator: {
+      backgroundColor: theme.primary,
+    },
+    leg2Indicator: {
+      backgroundColor: '#FF6B6B',
+    },
+    legContent: {
+      flex: 1,
     },
     routeName: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '600',
       color: theme.text,
-      flex: 1,
+      marginBottom: 4,
+      lineHeight: 20,
+    },
+    routeDetails: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      lineHeight: 18,
     },
     legCost: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#10B981',
-    },
-    routeDetails: {
-      marginLeft: 32,
-    },
-    routeText: {
-      fontSize: 12,
-      color: theme.textSecondary,
-      marginBottom: 2,
+      color: theme.text,
+      marginLeft: 12,
     },
     transferContainer: {
-      marginTop: 8,
-      padding: 12,
-      backgroundColor: isDark
-        ? 'rgba(59, 130, 246, 0.1)'
-        : 'rgba(59, 130, 246, 0.05)',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: isDark
-        ? 'rgba(59, 130, 246, 0.2)'
-        : 'rgba(59, 130, 246, 0.1)',
+      marginVertical: 12,
+      padding: 16,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+      borderRadius: 12,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.primary,
     },
     transferHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 4,
     },
-    transferIcon: {
-      marginRight: 6,
-    },
     transferTitle: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
-      color: '#3B82F6',
+      color: theme.text,
+      marginLeft: 6,
     },
     transferDetails: {
-      fontSize: 11,
+      fontSize: 12,
       color: theme.textSecondary,
+      marginLeft: 22,
     },
     selectButton: {
       backgroundColor: '#F59E0B',
       borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      marginTop: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      marginTop: 16,
       alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
     },
     selectButtonText: {
       color: '#FFFFFF',
-      fontSize: 14,
+      fontSize: 16,
       fontWeight: '600',
     },
   });
@@ -256,16 +319,20 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     return (
       <View style={dynamicStyles.container}>
         <View style={dynamicStyles.header}>
-          <Text style={dynamicStyles.title}>Finding Multi-Leg Routes...</Text>
-          <TouchableOpacity style={dynamicStyles.closeButton} onPress={onClose}>
-            <Icon name="close" size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
+          <View style={dynamicStyles.headerRow}>
+            <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+            </TouchableOpacity>
+            <Text style={dynamicStyles.headerTitle}>Finding Multi-Leg Routes</Text>
+          </View>
         </View>
-        <View style={dynamicStyles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F59E0B" />
-          <Text style={dynamicStyles.loadingText}>
-            Calculating transfer points...
-          </Text>
+        <View style={dynamicStyles.content}>
+          <View style={dynamicStyles.loadingContainer}>
+            <LoadingSpinner size="large" />
+            <Text style={dynamicStyles.loadingText}>
+              Calculating transfer points and route options...
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -275,18 +342,30 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
     return (
       <View style={dynamicStyles.container}>
         <View style={dynamicStyles.header}>
-          <Text style={dynamicStyles.title}>No Multi-Leg Options</Text>
-          <TouchableOpacity style={dynamicStyles.closeButton} onPress={onClose}>
-            <Icon name="close" size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
+          <View style={dynamicStyles.headerRow}>
+            <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+            </TouchableOpacity>
+            <Text style={dynamicStyles.headerTitle}>No Multi-Leg Options</Text>
+          </View>
         </View>
-        <View style={dynamicStyles.noOptionsContainer}>
-          <Icon name="map-outline" size={48} color={theme.textSecondary} />
-          <Text style={dynamicStyles.noOptionsText}>
-            No multi-leg journey options are available between your origin and destination.
-            {'\n\n'}
-            Try selecting different locations or check again later.
-          </Text>
+        <View style={dynamicStyles.content}>
+          <View style={dynamicStyles.noOptionsContainer}>
+            <Ionicons
+              name="map-outline"
+              size={48}
+              color={theme.textSecondary}
+              style={dynamicStyles.noOptionsIcon}
+            />
+            <Text style={dynamicStyles.noOptionsTitle}>
+              No Multi-Leg Routes Available
+            </Text>
+            <Text style={dynamicStyles.noOptionsText}>
+              No multi-leg journey options are available between your origin and destination.
+              {'\n\n'}
+              Try selecting different locations or check direct routes instead.
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -295,96 +374,104 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   return (
     <View style={dynamicStyles.container}>
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.title}>Multi-Leg Journey Options</Text>
-        <TouchableOpacity style={dynamicStyles.closeButton} onPress={onClose}>
-          <Icon name="close" size={20} color={theme.textSecondary} />
-        </TouchableOpacity>
+        <View style={dynamicStyles.headerRow}>
+          <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={dynamicStyles.headerTitle}>Multi-Leg Journey Options</Text>
+        </View>
       </View>
 
-      <ScrollView
-        style={dynamicStyles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {journeyOptions.map((option, index) => (
-          <TouchableOpacity
-            key={option.journeyId}
-            style={dynamicStyles.optionCard}
-            onPress={() => handleSelectOption(option)}
-            activeOpacity={0.7}
-          >
-            <View style={dynamicStyles.optionHeader}>
-              <Text style={dynamicStyles.totalCost}>
-                R{option.totalEstimatedCost.toFixed(2)}
-              </Text>
-            </View>
-
-            {/* Leg 1 */}
-            <View style={dynamicStyles.legContainer}>
-              <View style={dynamicStyles.legHeader}>
-                <View style={dynamicStyles.legNumber}>
-                  <Text style={dynamicStyles.legNumberText}>1</Text>
-                </View>
-                <Text style={dynamicStyles.routeName} numberOfLines={1}>
-                  {option.leg1.routeName}
-                </Text>
-                <Text style={dynamicStyles.legCost}>
-                  R{option.leg1.estimatedCost.toFixed(2)}
-                </Text>
-              </View>
-              <View style={dynamicStyles.routeDetails}>
-                <Text style={dynamicStyles.routeText} numberOfLines={1}>
-                  {option.leg1.origin.address} → {option.leg1.destination.address}
-                </Text>
-              </View>
-            </View>
-
-            {/* Transfer Point */}
-            <View style={dynamicStyles.transferContainer}>
-              <View style={dynamicStyles.transferHeader}>
-                <Icon
-                  name="walk"
-                  size={14}
-                  color="#3B82F6"
-                  style={dynamicStyles.transferIcon}
-                />
-                <Text style={dynamicStyles.transferTitle}>Transfer</Text>
-              </View>
-              <Text style={dynamicStyles.transferDetails}>
-                Walk {formatDistance(option.transferPoint.walkingDistance)} • {formatWalkingTime(option.transferPoint.estimatedWalkingTime)}
-              </Text>
-            </View>
-
-            {/* Leg 2 */}
-            <View style={dynamicStyles.legContainer}>
-              <View style={dynamicStyles.legHeader}>
-                <View style={dynamicStyles.legNumber}>
-                  <Text style={dynamicStyles.legNumberText}>2</Text>
-                </View>
-                <Text style={dynamicStyles.routeName} numberOfLines={1}>
-                  {option.leg2.routeName}
-                </Text>
-                <Text style={dynamicStyles.legCost}>
-                  R{option.leg2.estimatedCost.toFixed(2)}
-                </Text>
-              </View>
-              <View style={dynamicStyles.routeDetails}>
-                <Text style={dynamicStyles.routeText} numberOfLines={1}>
-                  {option.leg2.origin.address} → {option.leg2.destination.address}
-                </Text>
-              </View>
-            </View>
-
+      <View style={dynamicStyles.content}>
+        <Text style={dynamicStyles.sectionTitle}>
+          Available Journey Options
+        </Text>
+        <ScrollView
+          style={dynamicStyles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ 
+            paddingBottom: Platform.OS === 'ios' ? 40 : 20
+          }}
+        >
+          {journeyOptions.map((option, index) => (
             <TouchableOpacity
-              style={dynamicStyles.selectButton}
+              key={option.journeyId}
+              style={dynamicStyles.optionCard}
               onPress={() => handleSelectOption(option)}
+              activeOpacity={0.7}
             >
-              <Text style={dynamicStyles.selectButtonText}>
-                Select This Route
-              </Text>
+              <View style={dynamicStyles.optionHeader}>
+                <View style={dynamicStyles.totalCostContainer}>
+                  <Text style={dynamicStyles.totalCostLabel}>Total:</Text>
+                  <Text style={dynamicStyles.totalCost}>
+                    R{option.totalEstimatedCost.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={dynamicStyles.optionIndex}>
+                  <Text style={dynamicStyles.optionIndexText}>{index + 1}</Text>
+                </View>
+              </View>
+
+               {/* Leg 1 */}
+               <View style={dynamicStyles.legContainer}>
+                 <View style={dynamicStyles.legHeader}>
+                   <View style={[dynamicStyles.legIndicator, dynamicStyles.leg1Indicator]} />
+                   <View style={dynamicStyles.legContent}>
+                     <Text style={dynamicStyles.routeName} numberOfLines={1}>
+                       {option.leg1.routeName}
+                     </Text>
+                     <Text style={dynamicStyles.routeDetails} numberOfLines={2}>
+                       {option.leg1.origin.address} → {option.leg1.destination.address}
+                     </Text>
+                   </View>
+                   <Text style={dynamicStyles.legCost}>
+                     R{option.leg1.estimatedCost.toFixed(2)}
+                   </Text>
+                 </View>
+               </View>
+
+              {/* Transfer Point */}
+              <View style={dynamicStyles.transferContainer}>
+                <View style={dynamicStyles.transferHeader}>
+                  <Ionicons name="walk" size={16} color={theme.primary} />
+                  <Text style={dynamicStyles.transferTitle}>Transfer Required</Text>
+                </View>
+                <Text style={dynamicStyles.transferDetails}>
+                  Walk {formatDistance(option.transferPoint.walkingDistance)} • {formatWalkingTime(option.transferPoint.estimatedWalkingTime)}
+                </Text>
+              </View>
+
+               {/* Leg 2 */}
+               <View style={dynamicStyles.legContainer}>
+                 <View style={dynamicStyles.legHeader}>
+                   <View style={[dynamicStyles.legIndicator, dynamicStyles.leg2Indicator]} />
+                   <View style={dynamicStyles.legContent}>
+                     <Text style={dynamicStyles.routeName} numberOfLines={1}>
+                       {option.leg2.routeName}
+                     </Text>
+                     <Text style={dynamicStyles.routeDetails} numberOfLines={2}>
+                       {option.leg2.origin.address} → {option.leg2.destination.address}
+                     </Text>
+                   </View>
+                   <Text style={dynamicStyles.legCost}>
+                     R{option.leg2.estimatedCost.toFixed(2)}
+                   </Text>
+                 </View>
+               </View>
+
+              <TouchableOpacity
+                style={dynamicStyles.selectButton}
+                onPress={() => handleSelectOption(option)}
+                activeOpacity={0.8}
+              >
+                <Text style={dynamicStyles.selectButtonText}>
+                  Select This Route
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 };

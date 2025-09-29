@@ -184,4 +184,195 @@ describe("Wallet & Transaction Handlers", () => {
       expect(result.totalTrips).toBe(2);
     });
   });
+
+  describe("Wallet & Transaction Handlers - Extra Edge Cases", () => {
+  let ctx: any;
+
+  beforeEach(() => {
+    ctx = {
+      db: {
+        query: jest.fn().mockReturnThis(),
+        withIndex: jest.fn().mockReturnThis(),
+        filter: jest.fn().mockReturnThis(),
+        collect: jest.fn(),
+        get: jest.fn(),
+        patch: jest.fn(),
+      },
+    };
+  });
+
+  test("getWalletSummaryHandler counts not_paid rides correctly", async () => {
+    const rides: Ride[] = [
+      {
+        _id: "1", rideId: "ride-1", passengerId: "user-1", status: "completed", finalFare: 50,
+        startLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        endLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        requestedAt: 0
+      },
+    ];
+    ctx.db.collect.mockResolvedValue(rides);
+
+    const result = await getWalletSummaryHandler(ctx, "user-1");
+
+    expect(result.paymentTypes).toEqual({ not_paid: 1 });
+  });
+
+  test("getTransactionHistoryHandler limits results correctly", async () => {
+    const rides: Ride[] = Array.from({ length: 5 }, (_, i) => ({
+      _id: `${i}`,
+      rideId: `ride-${i}`,
+      passengerId: "user-1",
+      status: "completed",
+      requestedAt: i,
+      completedAt: i,
+      finalFare: 10,
+      startLocation: { coordinates: { latitude: 0, longitude: 0 }, address: `Start ${i}` },
+      endLocation: { coordinates: { latitude: 0, longitude: 0 }, address: `End ${i}` },
+    }));
+
+    ctx.db.collect.mockResolvedValue(rides);
+    ctx.db.get.mockResolvedValue(null);
+
+    const result = await getTransactionHistoryHandler(ctx, "user-1", 3);
+    expect(result).toHaveLength(3);
+  });
+
+  test("markPaymentCompletedHandler handles exact zero payment", async () => {
+    const ride: Ride = {
+      _id: "ride-1", finalFare: 50,
+      rideId: "",
+      passengerId: "",
+      startLocation: {
+        coordinates: {
+          latitude: 0,
+          longitude: 0
+        },
+        address: ""
+      },
+      endLocation: {
+        coordinates: {
+          latitude: 0,
+          longitude: 0
+        },
+        address: ""
+      },
+      status: "completed",
+      requestedAt: 0
+    };
+    ctx.db.get.mockResolvedValue(ride);
+    ctx.db.patch.mockResolvedValue({});
+
+    const result = await markPaymentCompletedHandler(ctx, "ride-1", 0);
+
+    expect(result.amountOwed).toBe(50);
+    expect(result.changeDue).toBe(0);
+    expect(result.paymentType).toBe("not_paid");
+  });
+
+  test("getWalletBalanceHandler handles rides with missing fields", async () => {
+    const rides: Ride[] = [
+      {
+        _id: "1", rideId: "ride-1", passengerId: "user-1", status: "completed",
+        startLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        endLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        requestedAt: 0
+      },
+    ];
+    ctx.db.collect.mockResolvedValue(rides);
+
+    const result = await getWalletBalanceHandler(ctx, "user-1");
+
+    expect(result.totalSpent).toBe(0);
+    expect(result.totalPaid).toBe(0);
+    expect(result.totalOwed).toBe(0);
+    expect(result.totalChangeDue).toBe(0);
+    expect(result.balance).toBe(0);
+    expect(result.totalTrips).toBe(1);
+  });
+
+  test("getSpendingAnalyticsHandler returns correct structure", async () => {
+    const now = Date.now();
+    const rides: Ride[] = [
+      {
+        _id: "1", rideId: "ride-1", passengerId: "user-1", status: "completed", completedAt: now, finalFare: 100,
+        startLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        endLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        requestedAt: 0
+      },
+    ];
+    ctx.db.collect.mockResolvedValue(rides);
+
+    const result = await getSpendingAnalyticsHandler(ctx, "user-1");
+
+    expect(result.last7Days.totalSpent).toBe(100);
+    expect(result.last7Days.totalTrips).toBe(1);
+    expect(result.last7Days.dailySpending[0].amount).toBe(100);
+
+    expect(result.last30Days.totalSpent).toBe(100);
+    expect(result.last30Days.totalTrips).toBe(1);
+  });
+
+  test("getTransactionHistoryHandler returns duration null if startedAt missing", async () => {
+    const rides: Ride[] = [
+      {
+        _id: "1", rideId: "ride-1", passengerId: "user-1", status: "completed", requestedAt: 0, completedAt: Date.now(), finalFare: 100,
+        startLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        },
+        endLocation: {
+          coordinates: {
+            latitude: 0,
+            longitude: 0
+          },
+          address: ""
+        }
+      },
+    ];
+    ctx.db.collect.mockResolvedValue(rides);
+    ctx.db.get.mockResolvedValue(null);
+
+    const result = await getTransactionHistoryHandler(ctx, "user-1");
+    expect(result[0].duration).toBeNull();
+  });
+});
 });

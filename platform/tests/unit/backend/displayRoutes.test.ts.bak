@@ -14,8 +14,8 @@ jest.mock('convex/values', () => ({
 
 // Mock the Convex server functions
 jest.mock('../../../convex/_generated/server', () => ({
-  query: jest.fn((handler) => handler),
-  action: jest.fn((handler) => handler),
+  query: jest.fn((config) => ({ _handler: config.handler })),
+  action: jest.fn((config) => ({ _handler: config.handler })),
 }));
 
 // Mock the internal API
@@ -36,10 +36,10 @@ const { createQueryCtx, createActionCtx } = require('../../mocks/convex-server')
 // Import the actual handler functions directly
 const displayRoutesModule = require('../../../convex/functions/routes/displayRoutes');
 // Extract the handler functions from the module
-const getEnrichedStopName = displayRoutesModule.getEnrichedStopName?.handler;
-const getEnrichedStopsForRoute = displayRoutesModule.getEnrichedStopsForRoute?.handler;
+const getEnrichedStopName = displayRoutesModule.getEnrichedStopName?._handler;
+const getEnrichedStopsForRoute = displayRoutesModule.getEnrichedStopsForRoute?._handler;
 const displayRoutes = displayRoutesModule.displayRoutesHandler;
-const displayRoutesPaginated = displayRoutesModule.displayRoutesPaginated?.handler;
+const displayRoutesPaginated = displayRoutesModule.displayRoutesPaginated?._handler;
 
 // Mock data for testing
 const mockRoutes = [

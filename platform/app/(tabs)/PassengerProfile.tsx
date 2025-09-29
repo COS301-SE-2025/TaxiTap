@@ -135,15 +135,15 @@ export default function PassengerProfile() {
     };
 
     const handlePersonalInfo = () => {
-        router.push('../PersonalInfoEdit');
+        router.push('/PersonalInfoEdit');
     };
 
     const handleAddHomeAddress = () => {
-        router.push('../AddHomeAddress');
+        router.push('/AddHomeAddress');
     };
 
     const handleAddWorkAddress = () => {
-        router.push('../AddWorkAddress');
+        router.push('/AddWorkAddress');
     };
 
     const handleViewFeedback = () => {
@@ -339,40 +339,6 @@ export default function PassengerProfile() {
         destructiveMenuItem: {
             // No special styling needed, handled by text and icon
         },
-        feedbackPreview: {
-            padding: 16,
-            borderRadius: 12,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-        },
-        feedbackPreviewHeader: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 8,
-        },
-        feedbackPreviewTitle: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: theme.text,
-        },
-        feedbackPreviewRating: {
-            fontSize: 16,
-            fontWeight: '600',
-            color: '#f90',
-        },
-        feedbackPreviewComment: {
-            fontSize: 14,
-            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-            marginBottom: 12,
-            fontStyle: 'italic',
-        },
-        feedbackCount: {
-            fontSize: 14,
-            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-            fontWeight: '500',
-        },
         badgesContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -494,41 +460,24 @@ export default function PassengerProfile() {
             </View>
 
             {/* Feedback History Section */}
-            <Text style={dynamicStyles.sectionHeader}>
-                {t('profile:recentFeedback')}
-                {recentFeedback && recentFeedback.length > 0 && (
-                    <Text style={dynamicStyles.feedbackCount}> • {recentFeedback.length} {t('profile:reviews')}</Text>
-                )}
-            </Text>
+            <Text style={dynamicStyles.sectionHeader}>{t('profile:recentFeedback')}</Text>
             <View style={dynamicStyles.section}>
-                {recentFeedback && recentFeedback.length > 0 ? (
-                    <View style={dynamicStyles.feedbackPreview}>
-                        <View style={dynamicStyles.feedbackPreviewHeader}>
-                            <Text style={dynamicStyles.feedbackPreviewTitle}>{t('profile:latestReview')}</Text>
-                            <Text style={dynamicStyles.feedbackPreviewRating}>
-                                ⭐ {recentFeedback[0].rating}/5
-                            </Text>
+                <View style={[dynamicStyles.menuItem, dynamicStyles.lastMenuItem]}>
+                    <View style={dynamicStyles.menuItemLeft}>
+                        <View style={dynamicStyles.iconContainer}>
+                            <Ionicons name="chatbubble-ellipses-outline" size={20} color={theme.text} />
                         </View>
-                        {recentFeedback[0].comment && (
-                            <Text style={dynamicStyles.feedbackPreviewComment} numberOfLines={2}>
-                                "{recentFeedback[0].comment}"
-                            </Text>
-                        )}
-                        <MenuItemComponent
-                            icon="chatbubble-ellipses-outline"
-                            title={t('profile:viewAllFeedback')}
-                            onPress={handleViewFeedback}
-                            showArrow={true}
-                        />
+                        <Text style={dynamicStyles.menuItemText}>
+                            {recentFeedback && recentFeedback.length > 0 
+                                ? t('profile:viewAllFeedback')
+                                : t('profile:noFeedbackYet')
+                            }
+                        </Text>
                     </View>
-                ) : (
-                    <MenuItemComponent
-                        icon="chatbubble-ellipses-outline"
-                        title={t('profile:noFeedbackYet')}
-                        onPress={handleViewFeedback}
-                        showArrow={true}
-                    />
-                )}
+                    <Pressable onPress={handleViewFeedback}>
+                        <Ionicons name="chevron-forward" size={16} color={isDark ? theme.border : '#C7C7CC'} />
+                    </Pressable>
+                </View>
             </View>
 
             {/* Settings Section */}

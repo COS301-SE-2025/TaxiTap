@@ -201,10 +201,6 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
-          {/* Forgot password */}
-          <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
-            <Text style={{ color: '#ccc', fontSize: 16 }}>{t('auth:forgotPassword')}</Text>
-          </TouchableOpacity>
 
           {/* Login Button */}
           <Pressable

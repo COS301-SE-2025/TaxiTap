@@ -53,7 +53,7 @@ export class ProximityAlertService {
     
     this.checkIntervals.set(rideData.rideId, interval as unknown as NodeJS.Timeout);
     
-    console.log(`🚗 Started proximity monitoring for ride ${rideData.rideId}`);
+    console.log(`Started proximity monitoring for ride ${rideData.rideId}`);
   }
 
   /**
@@ -67,7 +67,7 @@ export class ProximityAlertService {
     }
     
     this.activeRides.delete(rideId);
-    console.log(`🛑 Stopped proximity monitoring for ride ${rideId}`);
+    console.log(`Stopped proximity monitoring for ride ${rideId}`);
   }
 
   /**
@@ -236,7 +236,7 @@ export class ProximityAlertService {
         alert.message,
         alert.metadata
       );
-      console.log(`📱 Sent push notification: ${alert.title}`);
+      console.log(`Sent push notification: ${alert.title}`);
     } catch (error) {
       console.error('Failed to send push notification:', error);
     }

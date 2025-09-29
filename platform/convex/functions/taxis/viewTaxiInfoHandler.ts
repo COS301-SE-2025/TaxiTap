@@ -32,6 +32,13 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
       plate: null,
       fare: ride.estimatedFare,
       tripPaid: ride.tripPaid,
+      startLocation: ride.startLocation,
+      endLocation: ride.endLocation,
+      finalFare: ride.finalFare,
+      amountPaid: ride.amountPaid,
+      changeDue: ride.changeDue,
+      amountOwed: ride.amountOwed,
+      paymentType: ride.paymentType,
     };
   }
 
@@ -72,6 +79,13 @@ export async function viewTaxiInfoHandler(ctx: QueryCtx, args: { passengerId: Id
     plate: taxi.licensePlate,
     fare: ride.estimatedFare,
     tripPaid: ride.tripPaid,
-    // ridePin removed - no longer needed
+    startLocation: ride.startLocation,
+    endLocation: ride.endLocation,
+    finalFare: ride.finalFare,
+    amountPaid: ride.amountPaid,
+    changeDue: ride.changeDue,
+    amountOwed: ride.amountOwed,
+    paymentType: ride.paymentType,
+    ridePin: ride.ridePin
   };
 } 

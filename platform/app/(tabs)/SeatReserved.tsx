@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useRef, useEffect } from "react";
-import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { SafeAreaView, View, ScrollView, Text, TouchableOpacity, StyleSheet, Platform, Alert, Pressable, Dimensions } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -23,8 +23,16 @@ const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
   : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
 
 export default function SeatReserved() {
-	// IMMEDIATE DEBUG - This should show up in logs right away
-	console.log('🟢 SeatReserved component loaded - checking for multi-leg params');
+	const navigation = useNavigation();
+
+	// Hide header and tab bar like TaxiInformation page
+	React.useLayoutEffect(() => {
+		navigation.setOptions({
+			headerShown: false,
+			tabBarStyle: { display: 'none' }
+		});
+	}, [navigation]);
+
 
 	// Add error boundary state for crash prevention
 	const [hasError, setHasError] = useState(false);
@@ -50,6 +58,11 @@ export default function SeatReserved() {
 		driverName?: string;
 		fare?: string;
 		rideId?: string;
+		// Route parameters
+		routeId?: string;
+		estimatedFare?: string;
+		availableTaxisCount?: string;
+		routeMatchData?: string;
 		// Multi-leg journey parameters
 		isMultiLeg?: string;
 		journeyId?: string;
@@ -65,20 +78,15 @@ export default function SeatReserved() {
 		userId?: string;
 	}>();
 
-	// IMMEDIATE DEBUG - Log params as soon as they're available
-	console.log('🔍 SeatReserved IMMEDIATE - Raw params received:', params);
-	console.log('🔍 SeatReserved IMMEDIATE - Multi-leg check:', {
-		isMultiLeg: params.isMultiLeg,
-		totalLegs: params.totalLegs,
-		legIndex: params.legIndex,
-		journeyId: params.journeyId
-	});
 
 	// Context hooks need to be declared before any queries that use them
-	const navigation = useNavigation();
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
 	const { t } = useLanguage();
+
+	// Screen dimensions for responsive design (matching TaxiInformation)
+	const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+	const isSmallScreen = screenWidth < 375;
 	const {
 		currentLocation,
 		destination,
@@ -108,31 +116,19 @@ export default function SeatReserved() {
 		user && !rideJustEnded && !isEndingRide ? { passengerId: user.id as Id<"taxiTap_users"> } : "skip"
 	);
 
+	// Get driver rating
+	const driverRating = useQuery(
+		api.functions.feedback.averageRating.getAverageRating,
+		taxiInfo?.driver?.userId ? { driverId: taxiInfo.driver.userId as Id<"taxiTap_users"> } : "skip"
+	);
+
 	// Helper to determine ride status - declared immediately after taxiInfo to ensure it's available for all useEffects
 	const rideStatus = taxiInfo?.status as 'requested' | 'accepted' | 'in_progress' | 'started' | 'completed' | 'cancelled' | undefined;
 
-	// Debug logging for multi-leg journey parameters
+	// Multi-leg journey parameters handling
 	useEffect(() => {
-		console.log('🔍 SeatReserved DEBUG - Multi-leg journey parameters:', {
-			isMultiLeg: params.isMultiLeg,
-			journeyId: params.journeyId,
-			legIndex: params.legIndex,
-			totalLegs: params.totalLegs,
-			routeName: params.routeName,
-			allParams: params,
-		});
-		
 		const multiLegCheck = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
 		const lastLegCheck = isLastLeg(params.legIndex, params.totalLegs);
-		
-		console.log('🔍 SeatReserved DEBUG - Button visibility logic:', {
-			isMultiLegJourney: multiLegCheck,
-			isLastLeg: lastLegCheck,
-			shouldShowContinueButton: multiLegCheck && !lastLegCheck,
-			rideStatus: rideStatus,
-			currentLegIndex: params.legIndex ? parseInt(params.legIndex) : undefined,
-			totalLegsCount: params.totalLegs ? parseInt(params.totalLegs) : undefined,
-		});
 	}, [params, rideStatus]);
 
 	// Handle query errors
@@ -156,16 +152,12 @@ export default function SeatReserved() {
 
 	// Handle query errors gracefully
 	useEffect(() => {
-		if (taxiInfo === null && !rideJustEnded && !isEndingRide && user) {
-			console.log('No active reservation found - this is normal when no ride is active');
-		}
 	}, [taxiInfo, rideJustEnded, isEndingRide, user]);
 
 	// Automatically set rideJustEnded when ride is completed or cancelled with safety checks
 	useEffect(() => {
 		try {
 			if (rideStatus === 'completed' || rideStatus === 'cancelled') {
-				console.log(`Ride status changed to: ${rideStatus}`);
 				setRideJustEnded(true);
 				setIsEndingRide(false);
 			}
@@ -283,7 +275,6 @@ export default function SeatReserved() {
 				const rawDestLat = getParamAsString(params.destinationLat);
 				const rawDestLng = getParamAsString(params.destinationLng);
 
-				console.log('Params:', { rawCurrentLat, rawCurrentLng, rawDestLat, rawDestLng });
 
 				const currentLat = parseFloat(rawCurrentLat);
 				const currentLng = parseFloat(rawCurrentLng);
@@ -419,8 +410,6 @@ export default function SeatReserved() {
 			
 			const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
 			
-			console.log('Fetching route from:', url);
-			console.log('Platform:', Platform.OS);
 			
 			const response = await fetch(url);
 			
@@ -432,7 +421,6 @@ export default function SeatReserved() {
 			
 			const data = await response.json();
 			
-			console.log('Directions API response status:', data.status);
 			
 			if (data.status !== 'OK') {
 				console.error('Directions API Error:', data);
@@ -447,7 +435,6 @@ export default function SeatReserved() {
 				}
 				
 				const decodedCoords = decodePolyline(route.overview_polyline.points);
-				console.log('Decoded coordinates count:', decodedCoords.length);
 				
 				// Cache the route
 				setCachedRoute(routeKey, decodedCoords);
@@ -472,7 +459,6 @@ export default function SeatReserved() {
 			console.error('Error fetching route:', error);
 			
 			// Fallback: use straight line between origin and destination
-			console.log('Falling back to straight line route');
 			const fallbackRoute = [
 				{ latitude: origin.latitude, longitude: origin.longitude },
 				{ latitude: dest.latitude, longitude: dest.longitude }
@@ -700,9 +686,6 @@ export default function SeatReserved() {
 		if (rideJustEnded) return;
 		
 		// Handle taxi info loading states
-		if (taxiInfo === null && !hasShownDeclinedAlert) {
-			console.log('No active reservation found');
-		}
 	}, [hasShownDeclinedAlert, taxiInfo]);
 
 	const handleEndRide = async () => {
@@ -710,33 +693,60 @@ export default function SeatReserved() {
 			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
-		
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
 		// Set this FIRST to prevent the query from being executed
 		setIsEndingRide(true);
 		setRideJustEnded(true);
-		
+
 		try {
-			console.log('🚗 Ending ride:', { rideId: taxiInfo.rideId, userId: user.id });
-			
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
-			console.log('💰 Trip ended, fare calculated:', result);
-			
+
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			console.log('✅ Ride ended successfully');
 			
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			console.log('🔄 Seat availability updated');
 			
 			Alert.alert('Ride Ended', `Fare: R${result.fare}`);
 			
 			if (!currentLocation || !destination) {
-				console.log('⚠️ Missing location data, cannot navigate to feedback');
-				return;
+					return;
 			}
 			
 			router.push({
@@ -748,6 +758,22 @@ export default function SeatReserved() {
 					rideId: taxiInfo?.rideDocId, // Use internal Convex document ID instead of external rideId
 					driverId: driverId,
 					actualFare: result.fare.toString(), // Pass actual fare for payment validation
+					// Location parameters
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					// Driver/taxi parameters
+					driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+					licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+					fare: taxiInfo?.fare?.toString() || '0',
+					estimatedFare: params.estimatedFare,
+					// Route parameters
+					routeId: params.routeId,
+					availableTaxisCount: params.availableTaxisCount,
+					routeMatchData: params.routeMatchData,
 					// Pass multi-leg journey parameters if applicable
 					...(params.isMultiLeg && {
 						isMultiLeg: params.isMultiLeg,
@@ -762,7 +788,7 @@ export default function SeatReserved() {
 			// Reset the flags if there's an error
 			setIsEndingRide(false);
 			setRideJustEnded(false);
-			console.error('❌ Error ending ride:', error);
+			console.error('Error ending ride:', error);
 			Alert.alert('Error', error?.message || 'Failed to end ride. Please try again.');
 		}
 	};
@@ -772,31 +798,58 @@ export default function SeatReserved() {
 			Alert.alert('Error', 'No ride or user information available.');
 			return;
 		}
-		
+
+		// Check if payment has been confirmed BEFORE trying to end the ride
+		const hasAlreadyPaid = taxiInfo.tripPaid === true;
+
+		if (!hasAlreadyPaid) {
+			// Payment not confirmed - redirect to payment screen for this leg
+			router.push({
+				pathname: '/Payments',
+				params: {
+					driverName: taxiInfo.driver?.name || 'Unknown',
+					licensePlate: taxiInfo.plate || 'Unknown',
+					fare: taxiInfo.fare?.toString() || '0',
+					rideId: taxiInfo.rideId,
+					startName: taxiInfo.startLocation?.address || 'Start Location',
+					endName: taxiInfo.endLocation?.address || 'Destination',
+					driverId: taxiInfo.driver?.userId || '',
+					currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+					currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+					currentName: params.currentName,
+					destinationLat: params.destinationLat || destination?.latitude?.toString(),
+					destinationLng: params.destinationLng || destination?.longitude?.toString(),
+					destinationName: params.destinationName,
+					isMultiLeg: params.isMultiLeg,
+					journeyId: params.journeyId,
+					legIndex: params.legIndex,
+					totalLegs: params.totalLegs,
+					routeName: params.routeName,
+				}
+			});
+			return;
+		}
+
 		// Set this FIRST to prevent the query from being executed
 		setIsEndingRide(true);
 		setRideJustEnded(true);
-		
+
 		try {
-			console.log('🚗 Continuing to next leg:', { rideId: taxiInfo.rideId, userId: user.id });
-			
+
 			// Call endTrip first to get the fare before the ride status changes
 			const result = await endTripConvex({
 				passengerId: user.id as Id<'taxiTap_users'>,
+				rideId: taxiInfo.rideId,
 			});
-			
-			console.log('💰 Trip ended, fare calculated:', result);
-			
+
+
 			// Then end the ride and update seat availability
 			await endRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
-			console.log('✅ Ride ended successfully');
 			
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
-			console.log('🔄 Seat availability updated');
 			
 			if (!currentLocation || !destination) {
-				console.log('⚠️ Missing location data, cannot navigate to next leg');
-				return;
+					return;
 			}
 			
 			// Check if payment is required
@@ -813,12 +866,31 @@ export default function SeatReserved() {
 						rideId: taxiInfo?.rideDocId,
 						driverId: driverId,
 						actualFare: result.fare.toString(),
-						isMultiLeg: params.isMultiLeg,
-						journeyId: params.journeyId,
-						legIndex: params.legIndex,
-						totalLegs: params.totalLegs,
-						routeName: params.routeName,
 						continueToNext: 'true', // Flag to indicate this should continue to next leg
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Driver/taxi parameters
+						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
+						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						fare: taxiInfo?.fare?.toString() || '0',
+						estimatedFare: params.estimatedFare,
+						// Route parameters
+						routeId: params.routeId,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Pass multi-leg journey parameters if applicable
+						...(params.isMultiLeg && {
+							isMultiLeg: params.isMultiLeg,
+							journeyId: params.journeyId,
+							legIndex: params.legIndex,
+							totalLegs: params.totalLegs,
+							routeName: params.routeName,
+						}),
 					},
 				});
 			} else {
@@ -834,6 +906,19 @@ export default function SeatReserved() {
 						fare: result.fare.toString(),
 						driverName: taxiInfo?.driver?.name || 'Unknown Driver',
 						licensePlate: taxiInfo?.taxi?.licensePlate || 'Unknown Plate',
+						// Location parameters
+						currentLat: params.currentLat || currentLocation?.latitude?.toString(),
+						currentLng: params.currentLng || currentLocation?.longitude?.toString(),
+						currentName: params.currentName,
+						destinationLat: params.destinationLat || destination?.latitude?.toString(),
+						destinationLng: params.destinationLng || destination?.longitude?.toString(),
+						destinationName: params.destinationName,
+						// Route parameters
+						routeId: params.routeId,
+						estimatedFare: params.estimatedFare,
+						availableTaxisCount: params.availableTaxisCount,
+						routeMatchData: params.routeMatchData,
+						// Multi-leg journey parameters
 						isMultiLeg: params.isMultiLeg,
 						journeyId: params.journeyId,
 						legIndex: params.legIndex,
@@ -848,7 +933,7 @@ export default function SeatReserved() {
 			// Reset the flags if there's an error
 			setIsEndingRide(false);
 			setRideJustEnded(false);
-			console.error('❌ Error continuing to next leg:', error);
+			console.error('Error continuing to next leg:', error);
 			Alert.alert('Error', error?.message || 'Failed to continue to next leg. Please try again.');
 		}
 	};
@@ -880,13 +965,40 @@ export default function SeatReserved() {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
+		header: {
+			paddingHorizontal: isSmallScreen ? 16 : 20,
+			paddingTop: Platform.OS === 'ios' ? (screenHeight > 800 ? 80 : 70) : 60,
+			paddingBottom: 20,
+			backgroundColor: theme.background,
+			borderBottomWidth: 1,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+		},
+		headerRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+		},
+		backButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 16,
+		},
+		headerTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: theme.text,
+			flex: 1,
+		},
 		scrollView: {
 			flex: 1,
 			backgroundColor: theme.background,
 		},
 		loadingContainer: {
-			flex: 1, 
-			justifyContent: 'center', 
+			flex: 1,
+			justifyContent: 'center',
 			alignItems: 'center'
 		},
 		loadingText: {
@@ -900,78 +1012,108 @@ export default function SeatReserved() {
 			alignItems: "center",
 		},
 		arrivalTimeBox: {
-			backgroundColor: isDark ? theme.surface : "#121212",
-			borderRadius: 30,
-			paddingVertical: 16,
-			paddingHorizontal: 20,
+			backgroundColor: theme.card,
+			borderRadius: 16,
+			paddingVertical: 12,
+			paddingHorizontal: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		arrivalTimeText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 			textAlign: "center",
 		},
 		routeLoadingText: {
-			color: isDark ? theme.text : "#FFFFFF",
-			fontSize: 11,
+			color: theme.textSecondary,
+			fontSize: 12,
 			fontStyle: 'italic',
 			textAlign: "center",
 			marginTop: 4,
 		},
 		bottomSection: {
 			alignItems: "center",
-			backgroundColor: theme.surface,
-			borderRadius: 30,
-			paddingTop: 47,
-			paddingBottom: 60,
+			backgroundColor: theme.card,
+			borderTopLeftRadius: 24,
+			borderTopRightRadius: 24,
+			paddingTop: 24,
+			paddingBottom: 100, // Add more bottom padding to account for fixed button positioning
+			paddingHorizontal: isSmallScreen ? 16 : 20,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderBottomWidth: 0,
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
+					shadowOffset: { width: 0, height: -2 },
+					shadowRadius: 8,
+				},
+				android: {
+					elevation: 4,
+				},
+			}),
 		},
 		driverDetailsHeader: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 33,
+			marginBottom: 20,
 			width: '100%',
 		},
 		driverDetailsTitle: {
-			color: theme.textSecondary,
+			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
+			fontWeight: "600",
 			flex: 1,
 		},
 		contactButton: {
-			width: 35,
-			height: 35,
-			backgroundColor: isDark ? theme.primary : "#121212",
-			borderRadius: 17.5,
+			width: 36,
+			height: 36,
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
+			borderRadius: 18,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 5,
+			marginLeft: 8,
 		},
 		driverInfoSection: {
 			flexDirection: "row",
 			alignItems: "center",
-			marginBottom: 36,
+			marginBottom: 24,
 			width: '100%',
-			paddingHorizontal: 15,
 		},
 		driverAvatar: {
 			width: 60,
 			height: 60,
-			backgroundColor: isDark ? theme.primary : "#121212",
+			backgroundColor: isDark ? `${theme.primary}20` : `${theme.primary}10`,
 			borderRadius: 30,
 			justifyContent: "center",
 			alignItems: "center",
-			marginRight: 11,
+			marginRight: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		driverName: {
 			color: theme.text,
 			fontSize: 16,
-			fontWeight: "bold",
-			marginBottom: 1,
+			fontWeight: "600",
+			marginBottom: 4,
 		},
 		driverVehicle: {
 			color: theme.textSecondary,
-			fontSize: 12,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		ratingText: {
 			color: theme.text,
@@ -981,41 +1123,47 @@ export default function SeatReserved() {
 		},
 		licensePlateSection: {
 			flexDirection: "row",
-			marginBottom: 26,
+			marginBottom: 20,
 			width: '100%',
-			paddingHorizontal: 35,
 			justifyContent: 'space-between',
+			backgroundColor: theme.background,
+			borderRadius: 12,
+			padding: 16,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
 		},
 		licensePlateLabel: {
 			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			fontSize: 14,
+			fontWeight: "500",
 		},
 		licensePlateValue: {
-			color: theme.textSecondary,
-			fontSize: 13,
-			fontWeight: "bold",
+			color: theme.text,
+			fontSize: 14,
+			fontWeight: "600",
 		},
 		locationBox: {
 			flexDirection: "row",
 			alignItems: "center",
-			backgroundColor: isDark ? theme.surface : "#ECD9C3",
-			borderColor: isDark ? theme.border : "#D4A57D",
-			borderRadius: 20,
+			backgroundColor: theme.background,
+			borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			borderRadius: 16,
 			borderWidth: 1,
-			paddingVertical: 11,
-			paddingHorizontal: 13,
-			marginBottom: 36,
-			width: '90%',
-			alignSelf: 'center',
-			shadowColor: theme.shadow,
-			shadowOpacity: isDark ? 0.3 : 0.15,
-			shadowOffset: {
-				width: 0,
-				height: 4
-			},
-			shadowRadius: 4,
-			elevation: 4,
+			paddingVertical: 16,
+			paddingHorizontal: 16,
+			marginBottom: 24,
+			width: '100%',
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.2 : 0.05,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 2,
+				},
+			}),
 		},
 		locationIndicator: {
 			marginRight: 10,
@@ -1057,27 +1205,37 @@ export default function SeatReserved() {
 			flex: 1,
 		},
 		currentLocationText: {
-			color: isDark ? theme.primary : "#A66400",
-			fontSize: 14,
-			fontWeight: "bold",
-			marginBottom: 17,
+			color: theme.text,
+			fontSize: 15,
+			fontWeight: "600",
+			marginBottom: 16,
+			lineHeight: 20,
 		},
 		locationSeparator: {
 			height: 1,
-			backgroundColor: isDark ? theme.border : "#D4A57D",
-			marginBottom: 19,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+			marginBottom: 16,
 			marginHorizontal: 2,
 		},
 		destinationText: {
 			color: theme.text,
-			fontSize: 14,
-			fontWeight: "bold",
+			fontSize: 15,
+			fontWeight: "600",
 			marginLeft: 2,
+			lineHeight: 20,
 		},
 		actionButtonsContainer: {
 			width: '100%',
 			alignItems: 'center',
-			marginTop: 10,
+			marginTop: 16,
+			paddingHorizontal: 0,
+		},
+		// Add button container for better positioning like TaxiInformation
+		buttonContainer: {
+			position: 'absolute',
+			bottom: 80,
+			left: 24,
+			right: 24,
 		},
 		// PIN entry styles
 		pinEntryOverlay: {
@@ -1174,29 +1332,52 @@ export default function SeatReserved() {
 			fontSize: 16,
 		},
 		startRideButton: {
-			alignItems: "center",
-			backgroundColor: theme.primary,
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
-			marginBottom: 15,
+			backgroundColor: '#F59E0B',
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: '#D97706',
+			width: '100%',
+			marginBottom: 12,
 		},
 		startRideButtonText: {
-			color: isDark ? "#121212" : "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 		cancelButton: {
-			alignItems: "center",
 			backgroundColor: isDark ? "#FF4444" : "#FF6B6B",
-			borderRadius: 30,
-			paddingVertical: 24,
-			width: 330,
+			borderRadius: 28,
+			paddingVertical: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+			borderWidth: 2,
+			borderColor: isDark ? "#CC3333" : "#FF5555",
+			width: '100%',
+			marginBottom: 8,
+			// Cross-platform shadow handling to match TaxiInformation
+			...Platform.select({
+				ios: {
+					shadowColor: theme.shadow,
+					shadowOpacity: isDark ? 0.3 : 0.1,
+					shadowOffset: { width: 0, height: 2 },
+					shadowRadius: 4,
+				},
+				android: {
+					elevation: 3,
+				},
+			}),
 		},
 		cancelButtonText: {
-			color: "#FFFFFF",
-			fontSize: 20,
-			fontWeight: "bold",
+			color: '#FFFFFF',
+			fontSize: 18,
+			fontWeight: '700',
+			letterSpacing: 0.5,
 		},
 	});
 
@@ -1235,7 +1416,22 @@ export default function SeatReserved() {
 
 	return (
 		<SafeAreaView style={dynamicStyles.container}>
-			<ScrollView style={dynamicStyles.scrollView}>
+			{/* Header */}
+			<View style={dynamicStyles.header}>
+				<View style={dynamicStyles.headerRow}>
+					<Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+						<Icon name="arrow-back" size={20} color={theme.text} />
+					</Pressable>
+					<Text style={dynamicStyles.headerTitle}>
+						Ride in Progress
+					</Text>
+				</View>
+			</View>
+
+			<ScrollView 
+				style={dynamicStyles.scrollView}
+				contentContainerStyle={{ paddingBottom: rideStatus === 'requested' ? 100 : 20 }}
+				showsVerticalScrollIndicator={false}>
 				<View>
 					{/* Map Section with Route - Add error boundary */}
 					<View style={{ height: 300, position: 'relative' }}>
@@ -1342,16 +1538,15 @@ export default function SeatReserved() {
 					<View style={dynamicStyles.bottomSection}>
 						
 						<View style={dynamicStyles.driverDetailsHeader}>
-							<View style={{ width: 20, height: 20, marginRight: 3 }}></View>
 							<Text style={dynamicStyles.driverDetailsTitle}>
-								{"Driver Details"}
+								Driver Details
 							</Text>
-							<View style={dynamicStyles.contactButton}>
-								<Icon name="call" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
-							<View style={[dynamicStyles.contactButton, { marginRight: 10 }]}>
-								<Icon name="chatbubble" size={18} color={isDark ? "#121212" : "#FF9900"} />
-							</View>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="call" size={16} color={theme.primary} />
+							</TouchableOpacity>
+							<TouchableOpacity style={dynamicStyles.contactButton}>
+								<Icon name="chatbubble" size={16} color={theme.primary} />
+							</TouchableOpacity>
 						</View>
 						
 						{taxiInfo === undefined ? (
@@ -1386,23 +1581,27 @@ export default function SeatReserved() {
 								</View>
 								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 									<Text style={dynamicStyles.ratingText}>
-										{(taxiInfo?.driver?.rating ?? 0).toFixed(1)}
+										{typeof driverRating === "number" && driverRating > 0
+											? driverRating.toFixed(1)
+											: "No ratings"}
 									</Text>
 									<View style={{ flexDirection: 'row', marginLeft: 4 }}>
-										{[1, 2, 3, 4, 5].map((star, index) => {
-											const full = (taxiInfo?.driver?.rating ?? 0) >= star;
-											const half = (taxiInfo?.driver?.rating ?? 0) >= star - 0.5 && !full;
+										{typeof driverRating === "number" && driverRating > 0
+											? [1, 2, 3, 4, 5].map((star, index) => {
+												const full = driverRating >= star;
+												const half = driverRating >= star - 0.5 && driverRating < star;
 
-											return (
-												<FontAwesome
-													key={index}
-													name={full ? "star" : half ? "star-half-full" : "star-o"}
-													size={12}
-													color={theme.primary}
-													style={{ marginRight: 1 }}
-												/>
-											);
-										})}
+												return (
+													<FontAwesome
+														key={index}
+														name={full ? "star" : half ? "star-half-full" : "star-o"}
+														size={12}
+														color="#FFD700"
+														style={{ marginRight: 1 }}
+													/>
+												);
+											})
+											: null}
 									</View>
 								</View>
 								
@@ -1486,10 +1685,12 @@ export default function SeatReserved() {
 							</View>
 						</View>
 						
-						{/* Action Buttons */}
-						<View style={dynamicStyles.actionButtonsContainer}>
-							{/* Before ride is accepted: show only Cancel Request */}
-							{rideStatus === 'requested' && (
+						{/* Action Buttons - Inline for accepted status, fixed for requested status */}
+						{rideStatus === 'accepted' && (
+							<View style={dynamicStyles.actionButtonsContainer}>
+								<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
+									Driver will show you their PIN to verify and start the ride
+								</Text>
 								<TouchableOpacity 
 									style={dynamicStyles.cancelButton} 
 									onPress={handleCancelRequest}>
@@ -1497,67 +1698,54 @@ export default function SeatReserved() {
 										{"Cancel Request"}
 									</Text>
 								</TouchableOpacity>
-							)}
-							{/* When ride is accepted: show message and Cancel Request */}
-							{rideStatus === 'accepted' && (
-								<>
-									<Text style={[dynamicStyles.driverName, { marginBottom: 20, textAlign: 'center' }]}>
-										Driver will show you their PIN to verify and start the ride
+							</View>
+						)}
+						{/* Only show End Ride when ride is started or in progress */}
+						{(rideStatus === 'started' || rideStatus === 'in_progress') && (
+							<View style={dynamicStyles.actionButtonsContainer}>
+								<TouchableOpacity 
+									style={dynamicStyles.cancelButton} 
+									onPress={handleEndRide}>
+									<Text style={dynamicStyles.cancelButtonText}>
+										{"End Ride"}
 									</Text>
-									<TouchableOpacity 
-										style={dynamicStyles.cancelButton} 
-										onPress={handleCancelRequest}>
-										<Text style={dynamicStyles.cancelButtonText}>
-											{"Cancel Request"}
+								</TouchableOpacity>
+								
+								{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
+								{(() => {
+									const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
+									const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
+
+									// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
+									return isMultiLeg && legIndex === 0;
+								})() && (
+									<TouchableOpacity
+										style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
+										onPress={handleContinueToNextLeg}>
+										<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
+											{"Continue to Next Leg"}
 										</Text>
 									</TouchableOpacity>
-								</>
-							)}
-							{/* Only show End Ride when ride is started or in progress */}
-							{(rideStatus === 'started' || rideStatus === 'in_progress') && (
-								<>
-									<TouchableOpacity 
-										style={dynamicStyles.cancelButton} 
-										onPress={handleEndRide}>
-										<Text style={dynamicStyles.cancelButtonText}>
-											{"End Ride"}
-										</Text>
-									</TouchableOpacity>
-									
-									{/* Show Continue to Next Leg button only for first leg of multi-leg journey */}
-									{(() => {
-										const isMultiLeg = isMultiLegJourney(params.isMultiLeg, params.totalLegs);
-										const legIndex = params.legIndex ? parseInt(params.legIndex) : 0;
-
-										console.log('🔍 SeatReserved BUTTON DEBUG:', {
-											isMultiLeg,
-											legIndex,
-											totalLegs: params.totalLegs,
-											shouldShow: isMultiLeg && legIndex === 0,
-											params: {
-												isMultiLeg: params.isMultiLeg,
-												legIndex: params.legIndex,
-												totalLegs: params.totalLegs
-											}
-										});
-
-										// Only show if it's a multi-leg journey AND we're on the first leg (index 0)
-										return isMultiLeg && legIndex === 0;
-									})() && (
-										<TouchableOpacity
-											style={[dynamicStyles.cancelButton, { backgroundColor: theme.primary, marginTop: 10 }]}
-											onPress={handleContinueToNextLeg}>
-											<Text style={[dynamicStyles.cancelButtonText, { color: '#FFFFFF' }]}>
-												{"Continue to Next Leg"}
-											</Text>
-										</TouchableOpacity>
-									)}
-								</>
-							)}
-						</View>
+								)}
+							</View>
+						)}
 					</View>
 				</View>
 			</ScrollView>
+			
+			{/* Fixed Cancel Request Button - Only show when ride is requested */}
+			{rideStatus === 'requested' && (
+				<View style={dynamicStyles.buttonContainer}>
+					<TouchableOpacity 
+						style={dynamicStyles.cancelButton} 
+						onPress={handleCancelRequest}
+						activeOpacity={0.8}>
+						<Text style={dynamicStyles.cancelButtonText}>
+							Cancel Request
+						</Text>
+					</TouchableOpacity>
+				</View>
+			)}
 			
 			{/* PIN Entry Modal */}
 			{showPinEntry && (

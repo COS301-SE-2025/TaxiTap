@@ -137,7 +137,6 @@ async function getRoutesWithAvailableDrivers(
     });
 
     if (nearbyDriverLocations.length === 0) {
-      console.log('⚠️ No drivers found in general journey area');
       return [];
     }
 
@@ -149,7 +148,6 @@ async function getRoutesWithAvailableDrivers(
       .collect();
 
     if (driverProfiles.length === 0) {
-      console.log('⚠️ No driver profiles found for nearby drivers');
       return [];
     }
 
@@ -159,7 +157,6 @@ async function getRoutesWithAvailableDrivers(
       routeIdsWithDrivers.includes(route._id)
     );
 
-    console.log(`🚗 Filtered routes: ${allRoutes.length} → ${routesWithDrivers.length} (routes with drivers in journey area)`);
 
     return routesWithDrivers;
   } catch (error) {
@@ -303,10 +300,6 @@ export const findMultiLegJourneyOptionsHandler = async (
   }
 ) => {
   try {
-    console.log('🔍 Finding multi-leg journey options:', {
-      origin: { lat: originLat, lng: originLng },
-      destination: { lat: destinationLat, lng: destinationLng }
-    });
 
     // Step 1: Filter routes to those with drivers in the journey area (performance optimization)
     const routesWithDrivers = await getRoutesWithAvailableDrivers(
@@ -317,7 +310,6 @@ export const findMultiLegJourneyOptionsHandler = async (
       destinationLng
     );
 
-    console.log(`📊 Found ${routesWithDrivers.length} routes with drivers available in journey area`);
 
     if (routesWithDrivers.length < 2) {
       return {
@@ -344,18 +336,7 @@ export const findMultiLegJourneyOptionsHandler = async (
       destinationLng
     );
 
-    console.log(`🔄 Found ${transferPoints.length} potential transfer points`);
 
-    // Log the transfer points for debugging
-    if (transferPoints.length > 0) {
-      console.log('🔍 Transfer points found:', transferPoints.map(tp => ({
-        route1: tp.stop1.routeName,
-        route2: tp.stop2.routeName,
-        stop1: tp.stop1.name,
-        stop2: tp.stop2.name,
-        walkingDistance: tp.walkingDistance.toFixed(3) + 'km'
-      })));
-    }
 
     if (transferPoints.length === 0) {
       return {
@@ -374,14 +355,12 @@ export const findMultiLegJourneyOptionsHandler = async (
     const journeyOptions: MultiLegOption[] = [];
 
     for (const transferPoint of transferPoints) {
-      console.log(`🔍 Processing transfer: ${transferPoint.stop1.name} → ${transferPoint.stop2.name}`);
 
       // Get route details for both legs from filtered routes
       const route1 = routesWithDrivers.find(r => r.routeId === transferPoint.stop1.routeId);
       const route2 = routesWithDrivers.find(r => r.routeId === transferPoint.stop2.routeId);
 
       if (!route1 || !route2) {
-        console.log(`❌ Route not found: route1=${!!route1}, route2=${!!route2}`);
         continue;
       }
 
@@ -413,10 +392,8 @@ export const findMultiLegJourneyOptionsHandler = async (
         return distance <= maxWalkingDistance;
       });
 
-      console.log(`📍 Origin candidates (${route1.name}): ${originCandidates.length}, Destination candidates (${route2.name}): ${destinationCandidates.length}`);
 
       if (originCandidates.length === 0 || destinationCandidates.length === 0) {
-        console.log(`❌ Insufficient candidates: origin=${originCandidates.length}, dest=${destinationCandidates.length}`);
         continue;
       }
 
@@ -497,7 +474,6 @@ export const findMultiLegJourneyOptionsHandler = async (
       .sort((a, b) => a.totalEstimatedCost - b.totalEstimatedCost)
       .slice(0, 5); // Limit to top 5 options
 
-    console.log(`✅ Found ${sortedOptions.length} valid multi-leg journey options`);
 
     return {
       success: true,
@@ -512,7 +488,7 @@ export const findMultiLegJourneyOptionsHandler = async (
     };
 
   } catch (error) {
-    console.error("❌ Error in findMultiLegJourneyOptions:", error);
+    console.error("Error in findMultiLegJourneyOptions:", error);
     return {
       success: false,
       journeyOptions: [],

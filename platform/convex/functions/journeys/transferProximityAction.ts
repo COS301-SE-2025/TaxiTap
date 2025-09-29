@@ -20,11 +20,11 @@ export const monitorTransferProximity = action({
       );
 
       if (proximityAlerts.length === 0) {
-        console.log("🔍 No transfer point proximity alerts");
+        console.log("No transfer point proximity alerts");
         return { alertsProcessed: 0 };
       }
 
-      console.log(`🚨 Processing ${proximityAlerts.length} transfer proximity alerts`);
+      console.log(`Processing ${proximityAlerts.length} transfer proximity alerts`);
 
       let alertsProcessed = 0;
 
@@ -36,27 +36,27 @@ export const monitorTransferProximity = action({
           });
 
           if (!ride) {
-            console.log(`⚠️ Ride ${alert.rideId} not found, skipping transfer alert`);
+            console.log(`Ride ${alert.rideId} not found, skipping transfer alert`);
             continue;
           }
 
           // DISABLED: Automatic transfer logic removed for new manual flow
           // Passengers now manually choose "End Ride" or "Continue to Next Leg"
-          console.log(`🛑 SKIP: Automatic transfer disabled for manual multi-leg flow (ride ${alert.rideId})`);
+          console.log(`SKIP: Automatic transfer disabled for manual multi-leg flow (ride ${alert.rideId})`);
           
           // Note: With the new flow, passengers control when to end each leg
           // - "End Ride" button ends the journey completely 
           // - "Continue to Next Leg" button handles payment → feedback → next leg setup
         } catch (error) {
-          console.error(`❌ Error processing transfer alert for journey ${alert.journeyId}:`, error);
+          console.error(`Error processing transfer alert for journey ${alert.journeyId}:`, error);
         }
       }
 
-      console.log(`✅ Processed ${alertsProcessed} transfer proximity alerts`);
+      console.log(`Processed ${alertsProcessed} transfer proximity alerts`);
 
       return { alertsProcessed };
     } catch (error) {
-      console.error("❌ Error in transfer proximity monitoring:", error);
+      console.error("Error in transfer proximity monitoring:", error);
       return {
         alertsProcessed: 0,
         error: error instanceof Error ? error.message : "Unknown error"

@@ -6,7 +6,7 @@ import {
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -14,8 +14,19 @@ import { useAlertHelpers } from '../../components/AlertHelpers';
 import { Id } from '../../convex/_generated/dataModel';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMapContext } from '../../contexts/MapContext';
+import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
 
 export default function SubmitFeedbackScreen() {
+  const navigation = useNavigation();
+
+  // Hide header and tab bar like TaxiInformation page
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+      tabBarStyle: { display: 'none' }
+    });
+  }, [navigation]);
+
   const [name, setName] = useState('');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -26,6 +37,17 @@ export default function SubmitFeedbackScreen() {
   const router = useRouter();
   const { clearMapContext } = useMapContext();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
+  
+  // Safe access to MultiLegJourneyProvider with fallback
+  let clearJourneyCache: (() => Promise<void>) | undefined;
+  try {
+    const multiLegJourneyContext = useMultiLegJourney();
+    clearJourneyCache = multiLegJourneyContext.clearJourneyCache;
+  } catch (error) {
+    // Provider not available, provide a no-op fallback
+    console.warn('MultiLegJourneyProvider not available, using fallback');
+    clearJourneyCache = async () => {};
+  }
 
   const {
     rideId,
@@ -96,16 +118,37 @@ export default function SubmitFeedbackScreen() {
 
       // Handle multi-leg journey progression
       if (isMultiLegJourney && journeyId) {
-        console.log(`🔄 Completing leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
-
-        // Complete the current leg with payment using actual fare from ride completion
-        const legResult = await completeLegWithPayment({
+        console.log(`Completing leg ${currentLegIndex + 1} of multi-leg journey ${journeyId}`);
+        console.log('Multi-leg parameters:', {
+          isMultiLegJourney,
           journeyId,
-          legIndex: currentLegIndex,
-          actualCost: actualFare ? parseFloat(actualFare) : 0,
+          legIndex,
+          totalLegs,
+          currentLegIndex,
+          totalLegsCount,
+          actualFare,
+          isLastLeg: currentLegIndex === totalLegsCount - 1
         });
 
-        if (legResult.success && !legResult.journeyComplete && legResult.nextLeg) {
+        try {
+          // Complete the current leg with payment
+          // The backend will verify payment status and auto-confirm if needed
+          const legResult = await completeLegWithPayment({
+            journeyId,
+            legIndex: currentLegIndex,
+            actualCost: actualFare ? parseFloat(actualFare) : 0,
+          });
+
+          console.log('Multi-leg completion result:', legResult);
+          console.log('Journey completion analysis:', {
+            success: legResult.success,
+            journeyComplete: legResult.journeyComplete,
+            hasNextLeg: !!legResult.nextLeg,
+            currentLegIndex,
+            totalLegsCount
+          });
+
+          if (legResult.success && !legResult.journeyComplete && legResult.nextLeg) {
           // Journey continues - navigate to next leg
           const nextLeg = legResult.nextLeg;
 
@@ -119,7 +162,7 @@ export default function SubmitFeedbackScreen() {
                   label: 'Continue to Next Leg',
                   onPress: () => {
                     router.replace({
-                      pathname: '/TaxiInformation',
+                      pathname: '/(tabs)/TaxiInformation',
                       params: {
                         destinationName: nextLeg.destination.address,
                         destinationLat: nextLeg.destination.coordinates.latitude.toString(),
@@ -141,7 +184,7 @@ export default function SubmitFeedbackScreen() {
                 },
                 {
                   label: 'Cancel Journey',
-                  onPress: () => router.replace('/HomeScreen'),
+                  onPress: () => router.replace('/(tabs)/HomeScreen'),
                   style: 'cancel',
                 },
               ],
@@ -149,15 +192,88 @@ export default function SubmitFeedbackScreen() {
           );
           return;
         } else if (legResult.success && legResult.journeyComplete) {
-          // Journey complete
-          showGlobalSuccess(
-            'Journey Complete!',
-            `Multi-leg journey completed successfully! Total cost: R${legResult.totalActualCost?.toFixed(2) || '0.00'}`,
+          // Journey complete - clear all states before navigating home
+          console.log('Journey complete! Clearing states and navigating to HomeScreen');
+
+          try {
+            // Clear all journey and map states immediately
+            console.log('🧹 Clearing multi-leg journey states after completion');
+            clearMapContext();
+            if (clearJourneyCache) {
+              await clearJourneyCache();
+            }
+            console.log('Multi-leg journey cache cleared successfully');
+          } catch (error) {
+            console.error('Error clearing journey states:', error);
+            // Continue with navigation even if clearing fails
+          }
+
+          // Navigate immediately without showing success message first to avoid conflicts
+          console.log('Navigating to HomeScreen after journey completion');
+          try {
+            // Navigate to HomeScreen without passing any parameters that might cause crashes
+            router.push({ pathname: './HomeScreen' });
+            console.log('Navigation to HomeScreen initiated with clean parameters');
+          } catch (error) {
+            console.error('Navigation error:', error);
+            // Fallback: try with replace
+            try {
+              router.replace({ pathname: './HomeScreen' });
+              console.log('Fallback navigation to HomeScreen successful');
+            } catch (fallbackError) {
+              console.error('All navigation attempts failed:', fallbackError);
+              // Last resort: try basic navigation without object syntax
+              try {
+                router.push('./HomeScreen');
+              } catch (basicError) {
+                console.error('Even basic navigation failed:', basicError);
+              }
+            }
+          }
+          return;
+        } else {
+          // If journey doesn't have nextLeg or other issue, show error
+          console.error('Multi-leg journey completion failed or missing nextLeg:', legResult);
+          console.error('This else case should not happen for final leg. Expected journeyComplete: true');
+          console.error('Debug values:', {
+            legResultSuccess: legResult.success,
+            legResultJourneyComplete: legResult.journeyComplete,
+            legResultNextLeg: legResult.nextLeg,
+            actualCurrentLegIndex: currentLegIndex,
+            actualTotalLegsCount: totalLegsCount,
+            isLastLeg: currentLegIndex === totalLegsCount - 1
+          });
+          showGlobalError('Multi-leg Journey Error', 'Unable to continue to next leg. Please try again or contact support.', {
+            duration: 0,
+            actions: [
+              {
+                label: 'Go to Home',
+                onPress: () => {
+                  clearMapContext();
+                  router.replace('/(tabs)/HomeScreen');
+                },
+                style: 'default'
+              }
+            ]
+          });
+          return;
+        }
+      } catch (multiLegError: any) {
+          console.error('Multi-leg journey completion error:', multiLegError);
+          showGlobalError('Multi-leg Journey Error',
+            multiLegError.message || 'Failed to complete leg. Please ensure payment is confirmed and try again.',
             {
               duration: 0,
               actions: [
-                { label: 'OK', onPress: () => router.replace('/HomeScreen'), style: 'default' },
-              ],
+                {
+                  label: 'Go to Home',
+                  onPress: () => {
+                    clearMapContext();
+                    router.replace('/(tabs)/HomeScreen');
+                  },
+                  style: 'default'
+                }
+              ]
             }
           );
           return;
@@ -168,24 +284,44 @@ export default function SubmitFeedbackScreen() {
       if (continueToNext === 'true' && journeyId && legIndex) {
         // Navigate to TaxiInformation for next leg
         const nextLegIndex = parseInt(legIndex) + 1;
-        showGlobalSuccess('Feedback submitted!', 'Continuing to next leg...', {
-          duration: 2000,
-          position: 'top',
-          animation: 'slide-down',
-        });
-        
-        setTimeout(() => {
-          router.push({
-            pathname: '/TaxiInformation',
-            params: {
-              isMultiLeg: 'true',
-              journeyId,
-              legIndex: nextLegIndex.toString(),
-              totalLegs,
-              routeName: routeName || '',
-            },
+
+        // Get the next leg information from journey state
+        if (getJourneyState && getJourneyState.legs && getJourneyState.legs[nextLegIndex]) {
+          const nextLeg = getJourneyState.legs[nextLegIndex];
+
+          showGlobalSuccess('Feedback submitted!', 'Continuing to next leg...', {
+            duration: 2000,
+            position: 'top',
+            animation: 'slide-down',
           });
-        }, 2000);
+
+          setTimeout(() => {
+            router.push({
+              pathname: '/(tabs)/TaxiInformation',
+              params: {
+                destinationName: nextLeg.destination.address,
+                destinationLat: nextLeg.destination.coordinates.latitude.toString(),
+                destinationLng: nextLeg.destination.coordinates.longitude.toString(),
+                currentName: nextLeg.origin.address,
+                currentLat: nextLeg.origin.coordinates.latitude.toString(),
+                currentLng: nextLeg.origin.coordinates.longitude.toString(),
+                routeId: journeyId,
+                estimatedFare: nextLeg.estimatedCost.toString(),
+                isMultiLeg: 'true',
+                journeyId,
+                legIndex: nextLegIndex.toString(),
+                totalLegs,
+                routeName: nextLeg.routeName,
+              },
+            });
+          }, 2000);
+        } else {
+          showGlobalError('Navigation Error', 'Unable to get next leg information. Please try again.', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
+        }
         return;
       }
 
@@ -201,7 +337,7 @@ export default function SubmitFeedbackScreen() {
             label: 'OK',
             onPress: () => {
               clearMapContext();
-              router.replace('/HomeScreen');
+              router.replace('/(tabs)/HomeScreen');
             },
             style: 'default'
           },
@@ -393,10 +529,9 @@ export default function SubmitFeedbackScreen() {
       marginTop: 8,
     },
     submitButton: {
-      backgroundColor: '#f90',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
+      backgroundColor: '#F59E0B',
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 56,
@@ -405,26 +540,27 @@ export default function SubmitFeedbackScreen() {
     },
     submitButtonText: {
       color: '#FFFFFF',
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
     skipButton: {
       backgroundColor: isDark 
         ? 'rgba(255,255,255,0.1)' 
         : 'rgba(0,0,0,0.05)',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
+      borderRadius: 28,
+      paddingVertical: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      borderWidth: 2,
+      borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
       minHeight: 56,
     },
     skipButtonText: {
       color: theme.text,
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
     },
   });
 
@@ -533,24 +669,65 @@ export default function SubmitFeedbackScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={() => {
+            onPress={async () => {
               // Check if this is a continue to next leg flow
               if (continueToNext === 'true' && journeyId && legIndex) {
                 // Navigate to TaxiInformation for next leg
                 const nextLegIndex = parseInt(legIndex) + 1;
-                router.push({
-                  pathname: '/TaxiInformation',
-                  params: {
-                    isMultiLeg: 'true',
-                    journeyId,
-                    legIndex: nextLegIndex.toString(),
-                    totalLegs,
-                    routeName: routeName || '',
-                  },
-                });
+
+                // Get the next leg information from journey state
+                if (getJourneyState && getJourneyState.legs && getJourneyState.legs[nextLegIndex]) {
+                  const nextLeg = getJourneyState.legs[nextLegIndex];
+
+                  router.push({
+                    pathname: '/(tabs)/TaxiInformation',
+                    params: {
+                      destinationName: nextLeg.destination.address,
+                      destinationLat: nextLeg.destination.coordinates.latitude.toString(),
+                      destinationLng: nextLeg.destination.coordinates.longitude.toString(),
+                      currentName: nextLeg.origin.address,
+                      currentLat: nextLeg.origin.coordinates.latitude.toString(),
+                      currentLng: nextLeg.origin.coordinates.longitude.toString(),
+                      routeId: journeyId,
+                      estimatedFare: nextLeg.estimatedCost.toString(),
+                      isMultiLeg: 'true',
+                      journeyId,
+                      legIndex: nextLegIndex.toString(),
+                      totalLegs,
+                      routeName: nextLeg.routeName,
+                    },
+                  });
+                } else {
+                  showGlobalError('Navigation Error', 'Unable to get next leg information. Please try again.', {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                  });
+                }
               } else {
-                // Standard skip feedback flow
-                router.replace('/HomeScreen');
+                // Standard skip feedback flow - clear states for multi-leg journeys
+                if (isMultiLegJourney && journeyId) {
+                  // For multi-leg journeys, always clear states to prevent loading screen hanging
+                  // This covers cases where the journey might be completed but state check fails
+                  console.log('🧹 Clearing multi-leg journey states on skip feedback');
+                  try {
+                    clearMapContext();
+                    if (clearJourneyCache) {
+                      await clearJourneyCache();
+                    }
+                    console.log('Multi-leg journey cache cleared successfully');
+                  } catch (error) {
+                    console.error('Error clearing journey states on skip:', error);
+                  }
+
+                  // Add a small delay to ensure cache clearing propagates before navigation
+                  setTimeout(() => {
+                    router.replace('/(tabs)/HomeScreen');
+                  }, 100);
+                } else {
+                  // For non-multi-leg journeys, navigate immediately
+                  router.replace('/(tabs)/HomeScreen');
+               }
               }
             }}
             style={dynamicStyles.skipButton}
