@@ -70,7 +70,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getRouteStopsWithEnrichment as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getRouteStopsWithEnrichment as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result).toEqual({
         stops: mockEnrichedStops.stops,
@@ -111,7 +111,7 @@ describe('Route Queries', () => {
           collect: jest.fn()
         });
 
-      const result = await (getRouteStopsWithEnrichment as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getRouteStopsWithEnrichment as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result).toEqual({
         stops: mockOriginalRoute.stops,
@@ -132,7 +132,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      await expect((getRouteStopsWithEnrichment as any).handler(mockCtx, { routeId: 'nonexistent_route' }))
+      await expect((getRouteStopsWithEnrichment as any)._handler(mockCtx, { routeId: 'nonexistent_route' }))
         .rejects.toThrow('Route nonexistent_route not found');
     });
   });
@@ -171,7 +171,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getAllRoutesWithEnrichmentStatus as any).handler(mockCtx, {});
+      const result = await (getAllRoutesWithEnrichmentStatus as any)._handler(mockCtx, {});
 
       expect(result).toHaveLength(2);
       expect(result[0].hasEnrichedStops).toBe(true);
@@ -220,7 +220,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getAllAvailableRoutesForPassenger as any).handler(mockCtx, {});
+      const result = await (getAllAvailableRoutesForPassenger as any)._handler(mockCtx, {});
 
       expect(result).toHaveLength(2);
       expect(result[0].start).toBe('Cape Town'); // Should be sorted by start location
@@ -262,7 +262,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getAllAvailableRoutesForPassenger as any).handler(mockCtx, {});
+      const result = await (getAllAvailableRoutesForPassenger as any)._handler(mockCtx, {});
 
       expect(result).toHaveLength(1);
       expect(result[0].routeId).toBe('route_a');
@@ -297,7 +297,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getRoutesByTaxiAssociationForPassenger as any).handler(mockCtx, { 
+      const result = await (getRoutesByTaxiAssociationForPassenger as any)._handler(mockCtx, { 
         taxiAssociation: 'Association A' 
       });
 
@@ -317,7 +317,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getRoutesByTaxiAssociationForPassenger as any).handler(mockCtx, { 
+      const result = await (getRoutesByTaxiAssociationForPassenger as any)._handler(mockCtx, { 
         taxiAssociation: 'Nonexistent Association' 
       });
 
@@ -369,7 +369,7 @@ describe('Route Queries', () => {
       mockDb.query.mockReturnValue(mockQuery);
       mockDb.get.mockResolvedValue(mockUser);
 
-      const result = await (getRouteDetailsWithDrivers as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getRouteDetailsWithDrivers as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result.success).toBe(true);
       expect(result.route.routeId).toBe('route_a');
@@ -388,7 +388,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getRouteDetailsWithDrivers as any).handler(mockCtx, { routeId: 'nonexistent_route' });
+      const result = await (getRouteDetailsWithDrivers as any)._handler(mockCtx, { routeId: 'nonexistent_route' });
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('Route not found');
@@ -436,7 +436,7 @@ describe('Route Queries', () => {
       mockDb.query.mockReturnValue(mockQuery);
       mockDb.get.mockResolvedValue(mockUser);
 
-      const result = await (getRouteDetailsWithDrivers as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getRouteDetailsWithDrivers as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result.success).toBe(true);
       expect(result.activeDrivers).toHaveLength(0);
@@ -469,7 +469,7 @@ describe('Route Queries', () => {
       mockDb.query.mockReturnValue(mockQuery);
       mockDb.get.mockResolvedValue(mockRoute);
 
-      const result = await (getDriverAssignedRoute as any).handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
+      const result = await (getDriverAssignedRoute as any)._handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
 
       expect(result).toEqual(mockRoute);
     });
@@ -486,7 +486,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getDriverAssignedRoute as any).handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
+      const result = await (getDriverAssignedRoute as any)._handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
 
       expect(result).toBeNull();
     });
@@ -509,7 +509,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getDriverAssignedRoute as any).handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
+      const result = await (getDriverAssignedRoute as any)._handler(mockCtx, { userId: 'user_1' as Id<'taxiTap_users'> });
 
       expect(result).toBeNull();
     });
@@ -543,7 +543,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getAllTaxiAssociations as any).handler(mockCtx, {});
+      const result = await (getAllTaxiAssociations as any)._handler(mockCtx, {});
 
       expect(result).toEqual(['Association A', 'Association B']);
     });
@@ -556,7 +556,7 @@ describe('Route Queries', () => {
       };
       mockDb.query.mockReturnValue(mockQuery);
 
-      const result = await (getAllTaxiAssociations as any).handler(mockCtx, {});
+      const result = await (getAllTaxiAssociations as any)._handler(mockCtx, {});
 
       expect(result).toEqual([]);
     });

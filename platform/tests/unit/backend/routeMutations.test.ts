@@ -64,7 +64,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockResolvedValue('driver_1');
 
-      const result = await (assignRandomRouteToDriver as any).handler(mockCtx, {
+      const result = await (assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       });
@@ -87,7 +87,7 @@ describe('Route Mutations', () => {
         })
       });
 
-      await expect((assignRandomRouteToDriver as any).handler(mockCtx, {
+      await expect((assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Nonexistent Association'
       })).rejects.toThrow('No active routes found for taxi association: Nonexistent Association');
@@ -117,7 +117,7 @@ describe('Route Mutations', () => {
           })
         });
 
-      await expect((assignRandomRouteToDriver as any).handler(mockCtx, {
+      await expect((assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       })).rejects.toThrow('Driver record not found');
@@ -162,7 +162,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockResolvedValue('driver_1');
 
-      const result = await (assignRandomRouteToDriver as any).handler(mockCtx, {
+      const result = await (assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       });
@@ -202,7 +202,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockResolvedValue('driver_1');
 
-      const result = await (assignRandomRouteToDriver as any).handler(mockCtx, {
+      const result = await (assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       });
@@ -242,7 +242,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockResolvedValue('driver_1');
 
-      await (assignRandomRouteToDriver as any).handler(mockCtx, {
+      await (assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       });
@@ -285,7 +285,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockRejectedValue(new Error('Database error'));
 
-      await expect((assignRandomRouteToDriver as any).handler(mockCtx, {
+      await expect((assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association A'
       })).rejects.toThrow('Database error');
@@ -322,7 +322,7 @@ describe('Route Mutations', () => {
 
       mockDb.patch.mockResolvedValue('driver_1');
 
-      const result = await (assignRandomRouteToDriver as any).handler(mockCtx, {
+      const result = await (assignRandomRouteToDriver as any)._handler(mockCtx, {
         userId: 'user_1' as Id<'taxiTap_users'>,
         taxiAssociation: 'Association B'
       });

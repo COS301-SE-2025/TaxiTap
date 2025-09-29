@@ -300,7 +300,7 @@ describe('Display Routes', () => {
         collect: jest.fn().mockResolvedValue(mockRoutes)
       });
 
-      const result = await (displayRoutesPaginated as any).handler(mockCtx, { page: 2, limit: 10 });
+      const result = await (displayRoutesPaginated as any)._handler(mockCtx, { page: 2, limit: 10 });
 
       expect(result.routes).toHaveLength(10);
       expect(result.pagination).toEqual({
@@ -333,7 +333,7 @@ describe('Display Routes', () => {
         collect: jest.fn().mockResolvedValue(mockRoutes)
       });
 
-      const result = await (displayRoutesPaginated as any).handler(mockCtx, {});
+      const result = await (displayRoutesPaginated as any)._handler(mockCtx, {});
 
       expect(result.routes).toHaveLength(5);
       expect(result.pagination.currentPage).toBe(1);
@@ -345,7 +345,7 @@ describe('Display Routes', () => {
         collect: jest.fn().mockResolvedValue([])
       });
 
-      const result = await (displayRoutesPaginated as any).handler(mockCtx, { page: 1, limit: 10 });
+      const result = await (displayRoutesPaginated as any)._handler(mockCtx, { page: 1, limit: 10 });
 
       expect(result.routes).toHaveLength(0);
       expect(result.pagination.totalRoutes).toBe(0);
@@ -370,7 +370,7 @@ describe('Display Routes', () => {
         })
       });
 
-      const result = await (getEnrichedStopsForRoute as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getEnrichedStopsForRoute as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Johannesburg CBD');
@@ -395,7 +395,7 @@ describe('Display Routes', () => {
         })
       });
 
-      const result = await (getEnrichedStopsForRoute as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getEnrichedStopsForRoute as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Johannesburg CBD');
@@ -409,7 +409,7 @@ describe('Display Routes', () => {
         })
       });
 
-      const result = await (getEnrichedStopsForRoute as any).handler(mockCtx, { routeId: 'route_a' });
+      const result = await (getEnrichedStopsForRoute as any)._handler(mockCtx, { routeId: 'route_a' });
 
       expect(result).toHaveLength(0);
     });
@@ -419,7 +419,7 @@ describe('Display Routes', () => {
     it('should return enriched stop name from coordinates', async () => {
       mockCtx.runAction.mockResolvedValue('Johannesburg CBD');
 
-      const result = await (getEnrichedStopName as any).handler(mockCtx, { lat: -26.2041, lon: 28.0473 });
+      const result = await (getEnrichedStopName as any)._handler(mockCtx, { lat: -26.2041, lon: 28.0473 });
 
       expect(result).toBe('Johannesburg CBD');
       expect(mockCtx.runAction).toHaveBeenCalled();
@@ -428,7 +428,7 @@ describe('Display Routes', () => {
     it('should return fallback name when geocoding fails', async () => {
       mockCtx.runAction.mockRejectedValue(new Error('Geocoding failed'));
 
-      const result = await (getEnrichedStopName as any).handler(mockCtx, { lat: -26.2041, lon: 28.0473 });
+      const result = await (getEnrichedStopName as any)._handler(mockCtx, { lat: -26.2041, lon: 28.0473 });
 
       expect(result).toBe('Unnamed Stop');
     });

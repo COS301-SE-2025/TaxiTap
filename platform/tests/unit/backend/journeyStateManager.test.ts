@@ -91,7 +91,7 @@ describe('Journey State Manager', () => {
         }
       };
 
-      const result = await (createMultiLegJourney as any).handler(mockCtx, args);
+      const result = await (createMultiLegJourney as any)._handler(mockCtx, args);
 
       expect(mockDb.insert).toHaveBeenCalledWith('multiLegJourneys', expect.objectContaining({
         journeyId: mockJourneyId,
@@ -153,7 +153,7 @@ describe('Journey State Manager', () => {
         }
       };
 
-      await expect((createMultiLegJourney as any).handler(mockCtx, args)).rejects.toThrow('Database error');
+      await expect((createMultiLegJourney as any)._handler(mockCtx, args)).rejects.toThrow('Database error');
     });
   });
 
@@ -186,7 +186,7 @@ describe('Journey State Manager', () => {
         driverId: 'driver_123' as Id<'taxiTap_users'>
       };
 
-      const result = await (startJourneyLeg as any).handler(mockCtx, args);
+      const result = await (startJourneyLeg as any)._handler(mockCtx, args);
 
       expect(mockDb.patch).toHaveBeenCalledWith('journey_db_123', expect.objectContaining({
         status: 'in_progress',
@@ -216,7 +216,7 @@ describe('Journey State Manager', () => {
         driverId: 'driver_123' as Id<'taxiTap_users'>
       };
 
-      await expect((startJourneyLeg as any).handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
+      await expect((startJourneyLeg as any)._handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
     });
   });
 
@@ -269,7 +269,7 @@ describe('Journey State Manager', () => {
         actualCost: 25.50
       };
 
-      const result = await (completeLegWithPayment as any).handler(mockCtx, args);
+      const result = await (completeLegWithPayment as any)._handler(mockCtx, args);
 
       // The function makes multiple patch calls - check that journey was updated
       expect(mockDb.patch).toHaveBeenCalledWith('journey_db_123', expect.objectContaining({
@@ -336,7 +336,7 @@ describe('Journey State Manager', () => {
         actualCost: 25.50
       };
 
-      const result = await (completeLegWithPayment as any).handler(mockCtx, args);
+      const result = await (completeLegWithPayment as any)._handler(mockCtx, args);
 
       // Should auto-confirm payment
       expect(mockDb.patch).toHaveBeenCalledWith('ride_123', expect.objectContaining({
@@ -386,7 +386,7 @@ describe('Journey State Manager', () => {
         actualCost: 0
       };
 
-      await expect((completeLegWithPayment as any).handler(mockCtx, args)).rejects.toThrow(
+      await expect((completeLegWithPayment as any)._handler(mockCtx, args)).rejects.toThrow(
         'Payment must be confirmed before completing this leg of the journey'
       );
     });
@@ -417,7 +417,7 @@ describe('Journey State Manager', () => {
         reason: 'User cancelled'
       };
 
-      const result = await (cancelJourney as any).handler(mockCtx, args);
+      const result = await (cancelJourney as any)._handler(mockCtx, args);
 
       expect(mockDb.patch).toHaveBeenCalledWith('journey_db_123', expect.objectContaining({
         status: 'cancelled',
@@ -438,7 +438,7 @@ describe('Journey State Manager', () => {
         reason: 'User cancelled'
       };
 
-      await expect((cancelJourney as any).handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
+      await expect((cancelJourney as any)._handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
     });
   });
 
@@ -463,7 +463,7 @@ describe('Journey State Manager', () => {
         journeyId: 'journey_123'
       };
 
-      const result = await (handleTransferTimeout as any).handler(mockCtx, args);
+      const result = await (handleTransferTimeout as any)._handler(mockCtx, args);
 
       expect(mockDb.patch).toHaveBeenCalledWith('journey_db_123', expect.objectContaining({
         status: 'timeout',
@@ -494,7 +494,7 @@ describe('Journey State Manager', () => {
         journeyId: 'journey_123'
       };
 
-      const result = await (getJourneyState as any).handler(mockCtx, args);
+      const result = await (getJourneyState as any)._handler(mockCtx, args);
 
       expect(result).toEqual(mockJourney);
     });
@@ -506,7 +506,7 @@ describe('Journey State Manager', () => {
         journeyId: 'nonexistent_journey'
       };
 
-      const result = await (getJourneyState as any).handler(mockCtx, args);
+      const result = await (getJourneyState as any)._handler(mockCtx, args);
 
       expect(result).toBeNull();
     });
@@ -534,7 +534,7 @@ describe('Journey State Manager', () => {
         passengerId: 'user_123' as Id<'taxiTap_users'>
       };
 
-      const result = await (getActiveJourneyForPassenger as any).handler(mockCtx, args);
+      const result = await (getActiveJourneyForPassenger as any)._handler(mockCtx, args);
 
       expect(result).toEqual(mockActiveJourney);
     });
@@ -560,7 +560,7 @@ describe('Journey State Manager', () => {
         passengerId: 'user_123' as Id<'taxiTap_users'>
       };
 
-      const result = await (getActiveJourneyForPassenger as any).handler(mockCtx, args);
+      const result = await (getActiveJourneyForPassenger as any)._handler(mockCtx, args);
 
       expect(result).toEqual(mockPlannedJourney);
     });
@@ -580,7 +580,7 @@ describe('Journey State Manager', () => {
         passengerId: 'user_123' as Id<'taxiTap_users'>
       };
 
-      const result = await (getActiveJourneyForPassenger as any).handler(mockCtx, args);
+      const result = await (getActiveJourneyForPassenger as any)._handler(mockCtx, args);
 
       expect(result).toBeNull();
     });
@@ -588,7 +588,7 @@ describe('Journey State Manager', () => {
 
   describe('cleanupExpiredTransfers', () => {
     it('should return disabled status for manual flow', async () => {
-      const result = await (cleanupExpiredTransfers as any).handler(mockCtx, {});
+      const result = await (cleanupExpiredTransfers as any)._handler(mockCtx, {});
 
       expect(result).toEqual({
         cleanedCount: 0,

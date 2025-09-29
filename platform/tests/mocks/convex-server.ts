@@ -62,19 +62,21 @@ export const createMutationCtx = (): MutationCtx => ({
   runMutation: jest.fn(),
 });
 
-// Mock the query function to return an object with handler property
+// Mock the query function to return an object with _handler property
 export const query = (config: any) => ({
-  handler: config.handler
+  _handler: config.handler
 });
 
-export const action = (handler: any) => handler;
+export const action = (config: any) => ({
+  _handler: config.handler
+});
 
 export const mutation = (config: any) => ({
-  handler: config.handler
+  _handler: config.handler
 });
 
 export const internalMutation = (config: any) => ({
-  handler: config.handler
+  _handler: config.handler
 });
 
 // Export as both default and named exports to support different import styles

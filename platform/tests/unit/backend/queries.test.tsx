@@ -15,9 +15,9 @@ jest.mock('convex/values', () => ({
 }));
 
 jest.mock('../../../convex/_generated/server', () => ({
-  query: (def: any) => def,
-  mutation: (def: any) => def,
-  action: (def: any) => def,
+  query: (def: any) => ({ _handler: def.handler }),
+  mutation: (def: any) => ({ _handler: def.handler }),
+  action: (def: any) => ({ _handler: def.handler }),
 }));
 
 // ----------------- Imports -----------------
@@ -141,8 +141,8 @@ const createMockQueryCtx = () => {
 
 // ----------------- Helper to call Convex Queries -----------------
 const callQuery = async (queryObj: any, ctx: any, args: any) => {
-  if (queryObj && typeof queryObj.handler === 'function') {
-    return queryObj.handler(ctx, args);
+  if (queryObj && typeof queryObj._handler === 'function') {
+    return queryObj._handler(ctx, args);
   }
   throw new Error('Query handler not found');
 };

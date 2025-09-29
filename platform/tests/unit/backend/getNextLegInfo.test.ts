@@ -1,6 +1,7 @@
 import { getNextLegInfo } from '../../../convex/functions/journeys/getNextLegInfo';
 import { Id } from '../../../convex/_generated/dataModel';
 
+
 describe('Get Next Leg Info', () => {
   let mockCtx: any;
   let mockDb: any;
@@ -35,7 +36,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      await expect((getNextLegInfo as any).handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
+      await expect((getNextLegInfo as any)._handler(mockCtx, args)).rejects.toThrow('Journey nonexistent_journey not found');
     });
 
     it('should return no next leg when at final leg', async () => {
@@ -61,7 +62,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 1
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(false);
       expect(result.message).toBe('This is the final leg of your journey');
@@ -90,7 +91,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(false);
       expect(result.message).toBe('Next leg information not found');
@@ -195,7 +196,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(true);
       expect(result.nextLeg.legIndex).toBe(1);
@@ -261,7 +262,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(true);
       expect(result.nextLeg.legIndex).toBe(1);
@@ -388,7 +389,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(true);
       expect(result.availableDrivers).toHaveLength(1); // Only driver_1 should be included
@@ -487,7 +488,7 @@ describe('Get Next Leg Info', () => {
         currentLegIndex: 0
       };
 
-      const result = await (getNextLegInfo as any).handler(mockCtx, args);
+      const result = await (getNextLegInfo as any)._handler(mockCtx, args);
 
       expect(result.hasNextLeg).toBe(true);
       expect(result.availableDrivers).toHaveLength(0); // No drivers should be included due to missing user profile
