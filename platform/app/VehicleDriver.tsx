@@ -19,8 +19,8 @@ export default function VehicleDriver() {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [color, setColor] = useState('');
     const [year, setYear] = useState('');
+    const [isNewTaxi, setIsNewTaxi] = useState(false);
 
-    // Use 'skip' instead of undefined to avoid type error, and cast user.id to Id<"taxiTap_users"> for Convex
     const taxiData = useQuery(
         api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
         user ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -35,6 +35,10 @@ export default function VehicleDriver() {
             setImageUri(taxiData.image || null);
             setColor(taxiData.color);
             setYear(taxiData.year.toString());
+            setIsNewTaxi(false);
+        } else if (taxiData === null) {
+            // No taxi found - this is a new taxi
+            setIsNewTaxi(true);
         }
     }, [taxiData]);
 
@@ -80,35 +84,79 @@ export default function VehicleDriver() {
             return;
         }
 
+        // Validate required fields for new taxi
+        if (isNewTaxi) {
+            if (!vehicleType || !licensePlate || !color || !year || !seats) {
+                showGlobalError("Missing Information", "Please fill in all fields to register your taxi.", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+                return;
+            }
+        }
+
         // Validate seats - maximum 14 seats allowed
         const seatsNumber = parseInt(seats, 10);
+        if (isNaN(seatsNumber) || seatsNumber < 1) {
+            showGlobalError("Invalid Seats", "Please enter a valid number of seats.", {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
         if (seatsNumber > 14) {
             showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
-              duration: 4000,
-              position: 'top',
-              animation: 'slide-down',
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
+        // Validate year
+        const yearNumber = parseInt(year, 10);
+        const currentYear = new Date().getFullYear();
+        if (isNaN(yearNumber) || yearNumber < 1900 || yearNumber > currentYear + 1) {
+            showGlobalError("Invalid Year", `Please enter a valid year between 1900 and ${currentYear + 1}.`, {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
             });
             return;
         }
 
         try {
-            await updateTaxi({
+            const result = await updateTaxi({
                 userId: user.id as Id<"taxiTap_users">,
                 model: vehicleType,
                 licensePlate,
                 capacity: seatsNumber,
                 image: imageUri || undefined,
                 color,
-                year: parseInt(year, 10)
+                year: yearNumber
             });
-            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
-                duration: 4000,
-                position: 'top',
-                animation: 'slide-down',
-            });
+
+            if (result.created) {
+                showGlobalSuccess("Success", "Your taxi has been registered successfully!", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+                setIsNewTaxi(false);
+            } else {
+                showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+            }
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            showGlobalError("Error", "Failed to update vehicle information.", {
+            const errorMessage = error instanceof Error ? error.message : "Failed to update vehicle information.";
+            showGlobalError("Error", errorMessage, {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -145,6 +193,18 @@ export default function VehicleDriver() {
             fontWeight: '500',
             textAlign: 'center',
         },
+        newTaxiBadge: {
+            backgroundColor: '#f90',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            marginTop: 8,
+        },
+        newTaxiBadgeText: {
+            color: 'white',
+            fontSize: 14,
+            fontWeight: '600',
+        },
         section: {
             backgroundColor: theme.card,
             borderRadius: 16,
@@ -172,6 +232,10 @@ export default function VehicleDriver() {
             fontWeight: '600',
             color: theme.text,
             marginBottom: 8,
+        },
+        requiredMark: {
+            color: '#ff4444',
+            marginLeft: 4,
         },
         textInput: {
             backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -247,25 +311,36 @@ export default function VehicleDriver() {
                 {/* Header Section */}
                 <View style={dynamicStyles.headerSection}>
                     <Text style={dynamicStyles.headerTitle}>Vehicle Information</Text>
-                    <Text style={dynamicStyles.headerSubtitle}>Update your taxi details</Text>
+                    <Text style={dynamicStyles.headerSubtitle}>
+                        {isNewTaxi ? 'Register your taxi' : 'Update your taxi details'}
+                    </Text>
+                    {isNewTaxi && (
+                        <View style={dynamicStyles.newTaxiBadge}>
+                            <Text style={dynamicStyles.newTaxiBadgeText}>NEW REGISTRATION</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Vehicle Details Form */}
                 <Text style={dynamicStyles.sectionHeader}>Vehicle Details</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Vehicle Type</Text>
+                        <Text style={dynamicStyles.fieldLabel}>
+                            Vehicle Type{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
+                        </Text>
                         <TextInput
                             value={vehicleType}
                             onChangeText={setVehicleType}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., Toyota Camry"
+                            placeholder="e.g., Toyota Quantum"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>License Plate</Text>
+                        <Text style={dynamicStyles.fieldLabel}>
+                            License Plate{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
+                        </Text>
                         <TextInput
                             value={licensePlate}
                             onChangeText={setLicensePlate}
@@ -277,7 +352,9 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Color</Text>
+                        <Text style={dynamicStyles.fieldLabel}>
+                            Color{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
+                        </Text>
                         <TextInput
                             value={color}
                             onChangeText={setColor}
@@ -288,7 +365,9 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Year</Text>
+                        <Text style={dynamicStyles.fieldLabel}>
+                            Year{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
+                        </Text>
                         <TextInput
                             value={year}
                             onChangeText={setYear}
@@ -300,12 +379,14 @@ export default function VehicleDriver() {
                     </View>
 
                     <View style={dynamicStyles.formField}>
-                        <Text style={dynamicStyles.fieldLabel}>Total Seats</Text>
+                        <Text style={dynamicStyles.fieldLabel}>
+                            Total Seats (Max 14){isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
+                        </Text>
                         <TextInput
                             value={seats}
                             onChangeText={setSeats}
                             style={dynamicStyles.textInput}
-                            placeholder="e.g., 4"
+                            placeholder="e.g., 14"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             keyboardType="numeric"
                         />
@@ -340,7 +421,9 @@ export default function VehicleDriver() {
                     onPress={handleSaveChanges}
                     style={dynamicStyles.saveButton}
                 >
-                    <Text style={dynamicStyles.saveButtonText}>Save Changes</Text>
+                    <Text style={dynamicStyles.saveButtonText}>
+                        {isNewTaxi ? 'Register Taxi' : 'Save Changes'}
+                    </Text>
                 </Pressable>
             </ScrollView>
         </SafeAreaView>
