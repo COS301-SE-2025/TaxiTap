@@ -1418,9 +1418,6 @@ export default function SeatReserved() {
 		},
 		bottomSection: {
 			alignItems: "center",
-			backgroundColor: theme.surface,
-			borderTopLeftRadius: 20,
-			borderTopRightRadius: 20,
 			paddingTop: 30,
 			paddingBottom: 40,
 			paddingHorizontal: 20,
