@@ -137,22 +137,6 @@ export default function NotificationsScreen() {
       marginBottom: isSmallScreen ? 12 : 16,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-      // Cross-platform shadow handling
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.shadow,
-          shadowOpacity: isDark ? 0.3 : 0.1,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 2,
-          shadowColor: theme.shadow,
-          shadowOpacity: isDark ? 0.2 : 0.08,
-          shadowOffset: { width: 0, height: 2 },
-          shadowRadius: 4,
-        },
-      }),
     },
     unreadCard: {
       borderLeftWidth: 4,
