@@ -295,9 +295,6 @@ export default function PassengerPinEntry() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingSpinner size="large" />
-          <Text style={{ marginTop: 20, color: theme.text, fontSize: 16 }}>
-            Verifying PIN...
-          </Text>
         </View>
       </SafeAreaView>
     );
