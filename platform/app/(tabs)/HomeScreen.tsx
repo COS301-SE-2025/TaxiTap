@@ -1284,11 +1284,6 @@ export default function HomeScreen() {
     },
     bottomSheet: {
       flex: 1,
-      backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
-      borderTopLeftRadius: 25,
-      borderTopRightRadius: 25,
       padding: 24,
       paddingTop: 32,
       paddingBottom: keyboardVisible ? Math.max(keyboardHeight - 100, 24) : 24,
