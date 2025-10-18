@@ -1,7 +1,9 @@
 # TaxiTap
 
 <div align="center">
-  <img src="assets/images/taxi.gif" alt="TaxiTap Animation" width="120" height="120"/>
+  <img src="assets/images/Logo_nobg.png" alt="Git It Done Logo" width="180"/>
+  <br>
+  <img src="assets/images/taxi.gif" alt="TaxiTap Animation" width="200" height="200"/>
 
   **Revolutionizing South Africa's Minibus Taxi Industry**
 
@@ -34,11 +36,53 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 
 ## <img src="https://api.iconify.design/mdi/tools.svg" width="20" height="20"/> Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React Native • TypeScript • Expo | Cross-platform mobile (Android, iOS, Web) |
-| **Backend** | Convex • TypeScript | Serverless with real-time sync |
-| **Database** | Convex DB | Document-oriented real-time database |
+<div align="center">
+
+| **Layer** | **Technology** | **Purpose** |
+|-----------|----------------|-------------|
+| **Frontend** | ![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white) | Cross-platform mobile (Android, iOS, Web) |
+| **Backend** | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Convex](https://img.shields.io/badge/Convex-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Serverless backend with real-time capabilities |
+| **Database** | ![Convex](https://img.shields.io/badge/Convex_DB-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Document-oriented with real-time sync |
+| **Hosting** | ![Convex Cloud](https://img.shields.io/badge/Convex_Cloud-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) ![Expo](https://img.shields.io/badge/Expo_Cloud-000020?style=for-the-badge&logo=expo&logoColor=white) | Cloud infrastructure & OTA updates |
+
+</div>
+
+---
+
+## <img src="https://api.iconify.design/mdi/star-circle.svg" width="20" height="20"/> Key Features
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/map-marker-radius.svg" width="24" height="24"/> <strong>Location-Aware Booking</strong>
+      <br><sub>Smart taxi requests based on real-time GPS location</sub>
+    </td>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/map-marker-path.svg" width="24" height="24"/> <strong>Live Tracking</strong>
+      <br><sub>Real-time vehicle location and route updates</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/routes.svg" width="24" height="24"/> <strong>Flexible Routing</strong>
+      <br><sub>Multi-passenger system with dynamic route adjustments</sub>
+    </td>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/volume-off.svg" width="24" height="24"/> <strong>No Hooting</strong>
+      <br><sub>Digital communication eliminates noise pollution</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/star-outline.svg" width="24" height="24"/> <strong>Rating System</strong>
+      <br><sub>Two-way ratings for drivers and passengers</sub>
+    </td>
+    <td width="50%">
+      <img src="https://api.iconify.design/mdi/bell-ring.svg" width="24" height="24"/> <strong>Push Notifications</strong>
+      <br><sub>Real-time alerts for ride updates and arrivals</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -46,35 +90,67 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 
 <table align="center">
   <tr>
-    <td align="center" width="200">
-      <a href="https://github.com/Ann-Mari-Oberholzer"><img src="assets/images/annie.png" width="100" height="100" style="border-radius: 50%"/></a>
-      <br><strong><a href="https://github.com/Ann-Mari-Oberholzer">Ann-Marí Oberholzer</a></strong>
+    <td align="center" width="220">
+      <a href="https://github.com/Ann-Mari-Oberholzer"><img src="assets/images/annie.png" width="110" height="110" style="border-radius: 50%"/></a>
+      <br><br>
+      <strong><a href="https://github.com/Ann-Mari-Oberholzer">Ann-Marí Oberholzer</a></strong>
       <br><em>Project Manager</em>
       <br><sub>Leadership • Full-stack Development</sub>
-      <br><a href="https://linkedin.com/ann-mari-oberholzer-967982354/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
+      <br><br>
+      <a href="https://github.com/Ann-Mari-Oberholzer">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+      </a>
+      <br>
+      <a href="https://linkedin.com/ann-mari-oberholzer-967982354/">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+      </a>
     </td>
-    <td align="center" width="200">
-      <a href="https://github.com/un4thi"><img src="assets/images/unathi.png" width="100" height="100" style="border-radius: 50%"/></a>
-      <br><strong><a href="https://github.com/un4thi">Unathi Dlamini</a></strong>
+    <td align="center" width="220">
+      <a href="https://github.com/un4thi"><img src="assets/images/unathi.png" width="110" height="110" style="border-radius: 50%"/></a>
+      <br><br>
+      <strong><a href="https://github.com/un4thi">Unathi Dlamini</a></strong>
       <br><em>Backend Engineer</em>
       <br><sub>Backend Systems • Cybersecurity</sub>
-      <br><a href="https://linkedin.com/unathi-dlamini-237007224/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
+      <br><br>
+      <a href="https://github.com/un4thi">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+      </a>
+      <br>
+      <a href="https://linkedin.com/unathi-dlamini-237007224/">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+      </a>
     </td>
   </tr>
   <tr>
-    <td align="center" width="200">
-      <a href="https://github.com/habohamese"><img src="assets/images/tebogo.png" width="100" height="100" style="border-radius: 50%"/></a>
-      <br><strong><a href="https://github.com/habohamese">Moyahabo Hamese</a></strong>
+    <td align="center" width="220">
+      <a href="https://github.com/habohamese"><img src="assets/images/tebogo.png" width="110" height="110" style="border-radius: 50%"/></a>
+      <br><br>
+      <strong><a href="https://github.com/habohamese">Moyahabo Hamese</a></strong>
       <br><em>Frontend Engineer</em>
       <br><sub>UI/UX • Frontend Development</sub>
-      <br><a href="https://www.linkedin.com/in/moyahabo-hamese/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
+      <br><br>
+      <a href="https://github.com/habohamese">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+      </a>
+      <br>
+      <a href="https://www.linkedin.com/in/moyahabo-hamese/">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+      </a>
     </td>
-    <td align="center" width="200">
-      <a href="https://github.com/rsnevan"><img src="assets/images/nev.png" width="100" height="100" style="border-radius: 50%"/></a>
-      <br><strong><a href="https://github.com/rsnevan">Nevan Rahman</a></strong>
+    <td align="center" width="220">
+      <a href="https://github.com/rsnevan"><img src="assets/images/nev.png" width="110" height="110" style="border-radius: 50%"/></a>
+      <br><br>
+      <strong><a href="https://github.com/rsnevan">Nevan Rahman</a></strong>
       <br><em>Fullstack/Data Engineer</em>
       <br><sub>Full-stack • Data Science • ML</sub>
-      <br><a href="https://linkedin.com/in/nevanrahman"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
+      <br><br>
+      <a href="https://github.com/rsnevan">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+      </a>
+      <br>
+      <a href="https://linkedin.com/in/nevanrahman">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+      </a>
     </td>
   </tr>
 </table>
@@ -83,16 +159,54 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 
 ## <img src="https://api.iconify.design/mdi/rocket-launch.svg" width="20" height="20"/> Getting Started
 
+### <img src="https://api.iconify.design/mdi/download.svg" width="18" height="18"/> Installation
+
 ```bash
 # Clone repository
 git clone https://github.com/COS301-SE-2025/TaxiTap.git
 cd TaxiTap
 
-# Install dependencies and start
-npm install && expo start
+# Install dependencies
+npm install
+
+# Start development server
+expo start
 ```
 
-**Prerequisites:** Node.js v18+, Expo CLI, Android Studio/Xcode • See [Installation Manual](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf) for details
+### <img src="https://api.iconify.design/mdi/cog.svg" width="18" height="18"/> Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn package manager
+- Expo CLI (`npm install -g expo-cli`)
+- Android Studio (for Android development)
+- Xcode (for iOS development - macOS only)
+
+### <img src="https://api.iconify.design/mdi/play-circle.svg" width="18" height="18"/> Running the App
+
+```bash
+# Android
+expo run:android
+
+# iOS (macOS only)
+expo run:ios
+
+# Web
+expo start --web
+```
+
+For detailed setup instructions, see the [Installation Manual](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf).
+
+---
+
+## <img src="https://api.iconify.design/mdi/git.svg" width="20" height="20"/> Development Workflow
+
+We follow **GitFlow** branching strategy:
+- `main` - Production-ready code
+- `dev` - Integration branch for features
+- `feature/*` - New feature development
+- `hotfix/*` - Critical bug fixes
+- `release/*` - Release preparation
+
+See our [Project Board](https://github.com/orgs/COS301-SE-2025/projects/265) for active development tasks.
 
 ---
 
