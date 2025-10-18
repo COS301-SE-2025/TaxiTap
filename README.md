@@ -1,13 +1,16 @@
 # TaxiTap
 
 <div align="center">
-  <img src="assets/images/Logo_nobg.png" alt="Git It Done Logo" width="180"/>
+  <img src="assets/images/transparent-whitetext.png" alt="Git It Done Logo" width="250"/>
   <br>
   <img src="assets/images/taxi.gif" alt="TaxiTap Animation" width="200" height="200"/>
+  <br><br>
 
-  **Revolutionizing South Africa's Minibus Taxi Industry**
+  ### Revolutionizing South Africa's Minibus Taxi Industry
 
   *A modern mobile platform that digitizes route information, eliminates constant hooting, and creates a semi-structured booking system while preserving the flexibility that makes taxis essential.*
+
+  <br>
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
   [![GitHub issues](https://img.shields.io/github/issues/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/issues)
@@ -36,124 +39,68 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 
 ## <img src="https://api.iconify.design/mdi/tools.svg" width="20" height="20"/> Tech Stack
 
-<div align="center">
+**Frontend** - Cross-platform mobile development (Android, iOS, Web)
+<br>
+![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)
 
-| **Layer** | **Technology** | **Purpose** |
-|-----------|----------------|-------------|
-| **Frontend** | ![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white) | Cross-platform mobile (Android, iOS, Web) |
-| **Backend** | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Convex](https://img.shields.io/badge/Convex-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Serverless backend with real-time capabilities |
-| **Database** | ![Convex](https://img.shields.io/badge/Convex_DB-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Document-oriented with real-time sync |
-| **Hosting** | ![Convex Cloud](https://img.shields.io/badge/Convex_Cloud-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) ![Expo](https://img.shields.io/badge/Expo_Cloud-000020?style=for-the-badge&logo=expo&logoColor=white) | Cloud infrastructure & OTA updates |
+**Backend** - Serverless backend with real-time capabilities
+<br>
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Convex](https://img.shields.io/badge/Convex-FF6B6B?style=for-the-badge&logo=convex&logoColor=white)
 
-</div>
+**Database** - Document-oriented with real-time sync
+<br>
+![Convex](https://img.shields.io/badge/Convex_DB-FF6B6B?style=for-the-badge&logo=convex&logoColor=white)
+
+**Hosting** - Cloud infrastructure & OTA updates
+<br>
+![Convex Cloud](https://img.shields.io/badge/Convex_Cloud-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) ![Expo](https://img.shields.io/badge/Expo_Cloud-000020?style=for-the-badge&logo=expo&logoColor=white)
 
 ---
 
 ## <img src="https://api.iconify.design/mdi/star-circle.svg" width="20" height="20"/> Key Features
 
-<table>
-  <tr>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/map-marker-radius.svg" width="24" height="24"/> <strong>Location-Aware Booking</strong>
-      <br><sub>Smart taxi requests based on real-time GPS location</sub>
-    </td>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/map-marker-path.svg" width="24" height="24"/> <strong>Live Tracking</strong>
-      <br><sub>Real-time vehicle location and route updates</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/routes.svg" width="24" height="24"/> <strong>Flexible Routing</strong>
-      <br><sub>Multi-passenger system with dynamic route adjustments</sub>
-    </td>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/volume-off.svg" width="24" height="24"/> <strong>No Hooting</strong>
-      <br><sub>Digital communication eliminates noise pollution</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/star-outline.svg" width="24" height="24"/> <strong>Rating System</strong>
-      <br><sub>Two-way ratings for drivers and passengers</sub>
-    </td>
-    <td width="50%">
-      <img src="https://api.iconify.design/mdi/bell-ring.svg" width="24" height="24"/> <strong>Push Notifications</strong>
-      <br><sub>Real-time alerts for ride updates and arrivals</sub>
-    </td>
-  </tr>
-</table>
+<img src="https://api.iconify.design/mdi/map-marker-radius.svg" width="18" height="18"/> **Location-Aware Booking** - Smart taxi requests based on real-time GPS location
+
+<img src="https://api.iconify.design/mdi/map-marker-path.svg" width="18" height="18"/> **Live Tracking** - Real-time vehicle location and route updates
+
+<img src="https://api.iconify.design/mdi/routes.svg" width="18" height="18"/> **Flexible Routing** - Multi-passenger system with dynamic route adjustments
+
+<img src="https://api.iconify.design/mdi/volume-off.svg" width="18" height="18"/> **No Hooting** - Digital communication eliminates noise pollution
+
+<img src="https://api.iconify.design/mdi/star-outline.svg" width="18" height="18"/> **Rating System** - Two-way ratings for drivers and passengers
+
+<img src="https://api.iconify.design/mdi/bell-ring.svg" width="18" height="18"/> **Push Notifications** - Real-time alerts for ride updates and arrivals
 
 ---
 
 ## <img src="https://api.iconify.design/mdi/account-group.svg" width="20" height="20"/> Team: Git It Done
 
-<table align="center">
-  <tr>
-    <td align="center" width="220">
-      <a href="https://github.com/Ann-Mari-Oberholzer"><img src="assets/images/annie.png" width="110" height="110" style="border-radius: 50%"/></a>
-      <br><br>
-      <strong><a href="https://github.com/Ann-Mari-Oberholzer">Ann-Marí Oberholzer</a></strong>
-      <br><em>Project Manager</em>
-      <br><sub>Leadership • Full-stack Development</sub>
-      <br><br>
-      <a href="https://github.com/Ann-Mari-Oberholzer">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/ann-mari-oberholzer-967982354/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
-    </td>
-    <td align="center" width="220">
-      <a href="https://github.com/un4thi"><img src="assets/images/unathi.png" width="110" height="110" style="border-radius: 50%"/></a>
-      <br><br>
-      <strong><a href="https://github.com/un4thi">Unathi Dlamini</a></strong>
-      <br><em>Backend Engineer</em>
-      <br><sub>Backend Systems • Cybersecurity</sub>
-      <br><br>
-      <a href="https://github.com/un4thi">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/unathi-dlamini-237007224/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="220">
-      <a href="https://github.com/habohamese"><img src="assets/images/tebogo.png" width="110" height="110" style="border-radius: 50%"/></a>
-      <br><br>
-      <strong><a href="https://github.com/habohamese">Moyahabo Hamese</a></strong>
-      <br><em>Frontend Engineer</em>
-      <br><sub>UI/UX • Frontend Development</sub>
-      <br><br>
-      <a href="https://github.com/habohamese">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://www.linkedin.com/in/moyahabo-hamese/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
-    </td>
-    <td align="center" width="220">
-      <a href="https://github.com/rsnevan"><img src="assets/images/nev.png" width="110" height="110" style="border-radius: 50%"/></a>
-      <br><br>
-      <strong><a href="https://github.com/rsnevan">Nevan Rahman</a></strong>
-      <br><em>Fullstack/Data Engineer</em>
-      <br><sub>Full-stack • Data Science • ML</sub>
-      <br><br>
-      <a href="https://github.com/rsnevan">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/in/nevanrahman">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/Ann-Mari-Oberholzer"><img src="assets/images/annie.png" width="100" height="100" style="border-radius: 50%; margin: 10px;"/></a>
+  <a href="https://github.com/un4thi"><img src="assets/images/unathi.png" width="100" height="100" style="border-radius: 50%; margin: 10px;"/></a>
+  <a href="https://github.com/habohamese"><img src="assets/images/tebogo.png" width="100" height="100" style="border-radius: 50%; margin: 10px;"/></a>
+  <a href="https://github.com/rsnevan"><img src="assets/images/nev.png" width="100" height="100" style="border-radius: 50%; margin: 10px;"/></a>
+</p>
+
+<div align="center">
+
+**[Ann-Marí Oberholzer](https://github.com/Ann-Mari-Oberholzer)** - *Project Manager* • Leadership & Full-stack Development
+<br>
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Ann-Mari-Oberholzer) [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/ann-mari-oberholzer-967982354/)
+
+**[Unathi Dlamini](https://github.com/un4thi)** - *Backend Engineer* • Backend Systems & Cybersecurity
+<br>
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/un4thi) [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/unathi-dlamini-237007224/)
+
+**[Moyahabo Hamese](https://github.com/habohamese)** - *Frontend Engineer* • UI/UX & Frontend Development
+<br>
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/habohamese) [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/moyahabo-hamese/)
+
+**[Nevan Rahman](https://github.com/rsnevan)** - *Fullstack/Data Engineer* • Full-stack, Data Science & ML
+<br>
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rsnevan) [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/nevanrahman)
+
+</div>
 
 ---
 
