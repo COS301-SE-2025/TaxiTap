@@ -31,10 +31,10 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
-
-const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
-  ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
-  : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
+// Use Web API key for HTTP fetch calls (Places, Directions, Geocoding)
+// The Android native key is configured in app.config.js for MapView
+// NOTE: Hardcoded due to EAS build environment variable issues
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCGyNPeaSv5jKBVMXJ9YeOYY0gHq6jz8ns';
 
 
 

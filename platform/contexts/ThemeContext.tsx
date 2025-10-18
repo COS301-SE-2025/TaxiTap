@@ -105,9 +105,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
     
     setIsDark(newIsDark);
-    
-    // Update system UI (status bar, navigation bar)
-    SystemUI.setBackgroundColorAsync(newIsDark ? darkTheme.background : lightTheme.background);
+
+    // Note: SystemUI.setBackgroundColorAsync not supported in Expo SDK 54+ (edge-to-edge by default)
+    // Keeping this commented out to avoid warnings
+    // SystemUI.setBackgroundColorAsync(newIsDark ? darkTheme.background : lightTheme.background);
   }, [themeMode, systemColorScheme]);
 
   const setThemeMode = async (mode: ThemeMode) => {

@@ -18,11 +18,10 @@ import { useProximityAlerts } from '../../hooks/useProximityAlerts';
 import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { isMultiLegJourney, isLastLeg } from '../../utils/multiLegJourneyHelpers';
-
-// Get platform-specific API key
-const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios' 
-  ? process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY
-  : process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY;
+// Use Web API key for HTTP fetch calls (Directions API)
+// The Android native key is configured in app.config.js for MapView
+// NOTE: Hardcoded due to EAS build environment variable issues
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCGyNPeaSv5jKBVMXJ9YeOYY0gHq6jz8ns';
 
 // Dark map style for better dark mode experience
 const darkMapStyle = [
