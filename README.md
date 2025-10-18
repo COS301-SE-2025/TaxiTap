@@ -1,10 +1,10 @@
-# TaxiTap 🚕
+# TaxiTap
 
 <div align="center">
-  <img src="assets/images/taxi.gif" alt="TaxiTap Animation" width="150" height="150"/>
-  
+  <img src="assets/images/taxi.gif" alt="TaxiTap Animation" width="120" height="120"/>
+
   **Revolutionizing South Africa's Minibus Taxi Industry**
-  
+
   *A modern mobile platform that digitizes route information, eliminates constant hooting, and creates a semi-structured booking system while preserving the flexibility that makes taxis essential.*
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -12,327 +12,90 @@
   [![codecov](https://codecov.io/gh/COS301-SE-2025/TaxiTap/branch/main/graph/badge.svg)](https://codecov.io/gh/COS301-SE-2025/TaxiTap)
   [![Build Status](https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/TaxiTap/platform.yml?branch=main)](https://github.com/COS301-SE-2025/TaxiTap/actions)
   [![Dependencies](https://img.shields.io/librariesio/github/COS301-SE-2025/TaxiTap)](https://libraries.io/github/COS301-SE-2025/TaxiTap)
-  
   [![Languages](https://img.shields.io/github/languages/count/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap)
   [![Top Language](https://img.shields.io/github/languages/top/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap)
   [![Repo Size](https://img.shields.io/github/repo-size/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap)
-  [![Pull Requests](https://img.shields.io/github/issues-pr/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/pulls)
-  [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/commits)
-  [![Commit Activity](https://img.shields.io/github/commit-activity/m/COS301-SE-2025/TaxiTap)](https://github.com/COS301-SE-2025/TaxiTap/graphs/commit-activity)
-
-  **[📋 Project Board](https://github.com/orgs/COS301-SE-2025/projects/265/views/1)** • **[📖 Documentation](docs/)** • **[🌐 Website](http://gititdone2025.site)**
 </div>
 
 ---
 
-## 🎯 Project Overview
+## <img src="https://api.iconify.design/mdi/target.svg" width="20" height="20"/> Project Overview
 
-TaxiTap is a revolutionary mobile platform designed to transform South Africa's minibus taxi industry. Our solution bridges the gap between traditional taxi operations and modern technology, creating a seamless experience for both passengers and operators.
+TaxiTap transforms South Africa's minibus taxi industry through digital innovation. Features include real-time tracking, location-aware booking, flexible routing, digital communication (no hooting), and comprehensive rating systems.
 
-### Key Features
-- **📍 Location-Aware Requests** - Smart taxi booking based on real-time location
-- **📱 Real-Time Tracking** - Live vehicle location and route updates
-- **🔄 Flexible Routing** - Maintains the multi-passenger, flexible nature of traditional taxis
-- **🚫 No More Hooting** - Digital communication eliminates noise pollution
-- **⭐ Rating System** - Driver and passenger rating system for quality assurance
+**<img src="https://api.iconify.design/mdi/folder-open.svg" width="18" height="18"/> [View All Documentation & Resources](docs/)** | **<img src="https://api.iconify.design/mdi/video.svg" width="18" height="18"/> [Watch Full Demo Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link)** | **<img src="https://api.iconify.design/mdi/web.svg" width="18" height="18"/> [Live Deployment](http://gititdone2025.site)** | **<img src="https://api.iconify.design/mdi/clipboard-check.svg" width="18" height="18"/> [Project Management](https://github.com/orgs/COS301-SE-2025/projects/265)**
 
-## 📋 Project Documentation
-
-### 📊 Demo 1
-| Resource | Link |
-|----------|------|
-| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1ARU9fvIyPMoXSzPPKUsij37qSIwM2xVQ/view?usp=drive_link) |
-| **🚀 Live Demo** | [Watch Video](https://drive.google.com/file/d/1LZjudVO8O2SHSQI3N5NrFANh6n-567mr/view?usp=drive_link) |
-| **📄 SRS Document** | [View PDF](docs/SRS.pdf) |
-
-### 📊 Demo 2
-| Resource | Link |
-|----------|------|
-| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1Drq_TwIEtVKRozfLV-BxJGurt6ZTwGnA/view?usp=sharing) |
-| **🚀 Live Demo** | [Watch Video](https://drive.google.com/file/d/11mDZAy1Mt7-55KsPhjvOCNG1LzdTNvwG/view?usp=sharing) |
-| **📄 SRS Document** | [View PDF](docs/SRS%20Demo%202.pdf) |
-| **🏗️ Architecture Document** | [View PDF](docs/Architectural%20Requirements.pdf) |
-| **📝 Coding Standards** | [View PDF](docs/Coding%20Standards.pdf) |
-| **📖 User Manual** | [View PDF](docs/Taxi%20Tap%20User%20Manual.pdf) |
-
-### 📊 Demo 3
-| Resource | Link |
-|----------|------|
-| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1rjfv6kMCcu7E4tIUm8bzvzDWVmagnSBz/view?usp=drive_link) |
-| **🚀 Live Demo** | [Watch Video](https://drive.google.com/file/d/15MRPuIiESY16Hri2QC5YofEiCCjHwn0R/view?usp=sharing) |
-| **📄 SRS Document** | [View PDF](https://drive.google.com/file/d/1cVcnNRBMGz8FHW-sJ4GjtsidP9-ZwlGq/view?usp=drive_link) |
-| **🏗️ Architecture Document** | [View PDF](https://drive.google.com/file/d/1tdwLBUg0rqhwuDzBwusLdB9wAielVv7W/view?usp=drive_link) |
-| **📝 Coding Standards** | [View PDF](https://drive.google.com/file/d/146BTwZXbjiIoXnUQvd8RJXFtnq2DKrnk/view?usp=drive_link) |
-| **📖 User Manual** | [View PDF](https://drive.google.com/file/d/1jbRkhZWS7fsNdYvHlI6o9QoXA5lHsZj4/view?usp=drive_link) |
-| **📄 Technical Installation Manual** | [View PDF](https://drive.google.com/file/d/1bQVSCOg5YIk8BMPRdcnYcna9q9_5RH1I/view?usp=drive_link) |
-| **📄 Service Contracts** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/main/docs/ServiceContracts.pdf) |
-| **🗠 Domain Model** | [View Diagram](https://drive.google.com/file/d/1_2hOXEPfQb0cWvu6iWpEnHbJC_Izsk2P/view?usp=drive_link) |
-| **🗠 Architecture Diagram** | [View Diagram](https://drive.google.com/file/d/1Zr1sdzwk3v1HNTBNvswXvv6wGQvxZbjq/view?usp=drive_link) |
-| **🗠 Deployment Diagram** | [View Diagram](https://drive.google.com/file/d/1dCMVTM4NRoEbgOD886oPib4O09xFEatC/view?usp=drive_link) |
-| **👥👥 Project Management** | [View Project Board](https://github.com/orgs/COS301-SE-2025/projects/265/views/1) |
+### <img src="https://api.iconify.design/mdi/file-document-multiple.svg" width="18" height="18"/> Latest Documentation (Demo 4)
+- **Requirements & Design:** [SRS Document](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/SRS_Demo4.pdf) • [Architecture](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architectural_Document_Demo4.pdf)
+- **Standards & Testing:** [Coding Standards](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Coding%20Standards.pdf) • [Testing Policy](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/TestingPolicy.pdf)
+- **Manuals:** [User Manual](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Capstone_Demo_4_User_Manual.pdf) • [Installation Guide](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf)
 
 ---
 
-### 📊 Demo 4
-| Resource | Link |
-|----------|------|
-| **🎥 Presentation** | [Watch Video](https://drive.google.com/file/d/1yjJ8O9Y-pEzPHc2W1ztmisCIg2oq1Tri/view?usp=drive_link) |
-| **🚀 Live Demo** | [Watch Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link) |
-| **📄 SRS Document** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/SRS_Demo4.pdf) |
-| **🏗️ Architecture Document** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architectural_Document_Demo4.pdf) |
-| **📝 Coding Standards** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Coding%20Standards.pdf) |
-| **📖 User Manual** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Capstone_Demo_4_User_Manual.pdf) |
-| **📄 Technical Installation Manual** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf) |
-| **📄 Service Contracts** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/ServiceContracts_Demo4.pdf) |
-| **📄 Testing Policy** | [View PDF](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/TestingPolicy.pdf) |
-| **📄 Code Coverage** | [View Page](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/platform/coverage/lcov-report/index.html) |
-| **🗠 Domain Model** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/DomainModel_Demo4.jpg) |
-| **🗠 Architecture Diagram** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architecural%20Diagram.png) |
-| **🗠 Deployment Diagram** | [View Diagram](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Deployment%20Model%20Updated.png) |
-| **👥👥 Project Management** | [View Project Board](https://github.com/orgs/COS301-SE-2025/projects/265) |
+## <img src="https://api.iconify.design/mdi/tools.svg" width="20" height="20"/> Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | React Native • TypeScript • Expo | Cross-platform mobile (Android, iOS, Web) |
+| **Backend** | Convex • TypeScript | Serverless with real-time sync |
+| **Database** | Convex DB | Document-oriented real-time database |
 
 ---
 
-## 🛠️ Technology Stack
-
-<div align="center">
-  
-  | **Layer** | **Technology** | **Purpose** |
-  |-----------|----------------|-------------|
-  | **Frontend** | ![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white) | Cross-platform mobile development |
-  | **Backend** | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Convex](https://img.shields.io/badge/Convex-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Serverless backend with real-time capabilities |
-  | **Database** | ![Convex](https://img.shields.io/badge/Convex_DB-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) | Document-oriented database with real-time sync |
-  | **Hosting** | ![Convex Cloud](https://img.shields.io/badge/Convex_Cloud-FF6B6B?style=for-the-badge&logo=convex&logoColor=white) ![Expo](https://img.shields.io/badge/Expo_Cloud-000020?style=for-the-badge&logo=expo&logoColor=white) | Cloud infrastructure and OTA updates |
-
-</div>
-
-### 📱 Frontend: Expo (React Native with TypeScript)
-- **Cross-platform development** for Android, iOS, and web
-- **Fast iteration** with Expo Go for development
-- **Native features** including GPS, camera, push notifications, and QR scanning
-- **Modern UI components** with responsive design
-
-### ⚡ Backend: Convex (TypeScript Serverless)
-- **Real-time reactive backend** with automatic data synchronization
-- **Built-in authentication** and user management
-- **Scheduled functions** for background tasks
-- **Business logic** handling ride requests, GPS updates, and notifications
-
-### 🗄️ Database: Convex Document-Oriented Database
-- **Schema-defined collections** (`users`, `rides`, `taxis`, `routes`)
-- **Relational support** via `v.id()` references
-- **Real-time subscriptions** for live data updates
-- **Automatic indexing** and query optimization
-
-### ☁️ Hosting: Convex Cloud (Managed)
-- **Serverless deployment** with automatic scaling
-- **Built-in CI/CD** with `convex deploy`
-- **No infrastructure management** required
-- **Frontend hosting** via Expo Cloud and app stores
-
----
-
-
-
-## 🔄 Development Workflow
-
-### 🌿 Branching Strategy: GitFlow
-```
-main           ──────●──────●──────●──────●─────► (Production)
-                      │      │      │      │
-develop        ──●────┼──●───┼──●───┼──●───┼─────► (Development)
-                 │    │  │   │  │   │  │   │
-feature/login    ●────┘  │   │  │   │  │   │
-                         │   │  │   │  │   │
-feature/payment  ────────●───┘  │   │  │   │
-                                │   │  │   │
-hotfix/critical  ───────────────●───┘  │   │
-                                       │   │
-release/v1.0     ──────────────────────●───┘
-```
-
-**Branch Types:**
-- `main` - Production-ready code
-- `develop` - Integration branch for features
-- `feature/*` - New feature development
-- `hotfix/*` - Critical bug fixes
-- `release/*` - Release preparation
-
----
-
-## 👥 Team: Git It Done
-
-<div align="center">
-  <a href="http://gititdone2025.site">
-    <img src="assets/images/Logo_nobg.png" alt="Git It Done Logo" width="200"/>
-  </a>
-</div>
+## <img src="https://api.iconify.design/mdi/account-group.svg" width="20" height="20"/> Team: Git It Done
 
 <table align="center">
   <tr>
-    <td align="center" width="250">
-      <img src="assets/images/annie.png" width="120" height="120" style="border-radius: 50%"/>
-      <br><br>
-      <strong>Ann-Marí Oberholzer</strong>
-      <br>
-      <em>Project Manager</em>
-      <br><br>
-      <a href="https://github.com/Ann-Mari-Oberholzer">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/ann-mari-oberholzer-967982354/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
+    <td align="center" width="200">
+      <a href="https://github.com/Ann-Mari-Oberholzer"><img src="assets/images/annie.png" width="100" height="100" style="border-radius: 50%"/></a>
+      <br><strong><a href="https://github.com/Ann-Mari-Oberholzer">Ann-Marí Oberholzer</a></strong>
+      <br><em>Project Manager</em>
+      <br><sub>Leadership • Full-stack Development</sub>
+      <br><a href="https://linkedin.com/ann-mari-oberholzer-967982354/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
     </td>
-    <td align="center" width="250">
-      <img src="assets/images/unathi.png" width="120" height="120" style="border-radius: 50%"/>
-      <br><br>
-      <strong>Unathi Dlamini</strong>
-      <br>
-      <em>Backend Engineer</em>
-      <br><br>
-      <a href="https://github.com/un4thi">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/unathi-dlamini-237007224/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
+    <td align="center" width="200">
+      <a href="https://github.com/un4thi"><img src="assets/images/unathi.png" width="100" height="100" style="border-radius: 50%"/></a>
+      <br><strong><a href="https://github.com/un4thi">Unathi Dlamini</a></strong>
+      <br><em>Backend Engineer</em>
+      <br><sub>Backend Systems • Cybersecurity</sub>
+      <br><a href="https://linkedin.com/unathi-dlamini-237007224/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
     </td>
   </tr>
   <tr>
-    <td align="center" width="250">
-      <img src="assets/images/tebogo.png" width="120" height="120" style="border-radius: 50%"/>
-      <br><br>
-      <strong>Moyahabo Hamese</strong>
-      <br>
-      <em>Frontend Engineer</em>
-      <br><br>
-      <a href="https://github.com/habohamese">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://www.linkedin.com/in/moyahabo-hamese/">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
+    <td align="center" width="200">
+      <a href="https://github.com/habohamese"><img src="assets/images/tebogo.png" width="100" height="100" style="border-radius: 50%"/></a>
+      <br><strong><a href="https://github.com/habohamese">Moyahabo Hamese</a></strong>
+      <br><em>Frontend Engineer</em>
+      <br><sub>UI/UX • Frontend Development</sub>
+      <br><a href="https://www.linkedin.com/in/moyahabo-hamese/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
     </td>
-    <td align="center" width="250">
-      <img src="assets/images/nev.png" width="120" height="120" style="border-radius: 50%"/>
-      <br><br>
-      <strong>Nevan Rahman</strong>
-      <br>
-      <em>Fullstack/Data Engineer</em>
-      <br><br>
-      <a href="https://github.com/rsnevan">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-      </a>
-      <br>
-      <a href="https://linkedin.com/in/nevanrahman">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-      </a>
+    <td align="center" width="200">
+      <a href="https://github.com/rsnevan"><img src="assets/images/nev.png" width="100" height="100" style="border-radius: 50%"/></a>
+      <br><strong><a href="https://github.com/rsnevan">Nevan Rahman</a></strong>
+      <br><em>Fullstack/Data Engineer</em>
+      <br><sub>Full-stack • Data Science • ML</sub>
+      <br><a href="https://linkedin.com/in/nevanrahman"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn"/></a>
     </td>
   </tr>
 </table>
 
-### Team Member Profiles
-
-<details>
-<summary><strong>Ann-Marí Oberholzer - Project Manager</strong></summary>
-<br>
-As a third-year Computer Science student, I have gained a strong foundation in the various areas of the field through both coursework and hands-on experience. I have experience in programming languages such as Java and C++, allowing me to tackle backend development. In addition to the previously mentioned, I also know of web technologies - including HTML, CSS, JavaScript, PHP and React. Having served as a team leader in previous projects, I was assigned the leadership role for this project as well. I'm excited to further develop my leadership abilities while guiding the team toward success. Throughout my studies, various team projects have allowed me to enhance my teamwork and communication skills. This has also given me the chance to adapt in diverse group settings. I am eager to expand my programming knowledge further and believe my mindset makes me a good asset to the team.
-</details>
-
-<details>
-<summary><strong>Unathi Dlamini - Backend Engineer</strong></summary>
-<br>
-A third-year Computer Science student at the University of Pretoria with a strong passion for programming, web design, and continuous learning. I enjoy working in teams, tackling challenges collaboratively, and expanding my skill set through hands-on projects. Currently exploring areas like cybersecurity and software engineering, I'm always eager to take on new technologies and improve both my technical and problem-solving abilities.
-</details>
-
-<details>
-<summary><strong>Moyahabo Hamese - Frontend Engineer</strong></summary>
-<br>
-I am a Computer Science student interested in front-end development and cybersecurity. I enjoy working in collaborative teams and solving real-world problems through thoughtful and practical solutions. My experiences include, but are not limited to: (1) contributing to a community sensor project for education, (2) engaging with the UP Consulting Society to tackle case-based challenges, and (3) designing applications that provide users with a positive and intuitive experience. Passionate about continuous learning and innovation, I bring a balance of technical skills, creativity, and a problem-solving mindset to every project.
-</details>
-
-<details>
-<summary><strong>Nevan Rahman - Fullstack/Data Engineer</strong></summary>
-<br>
-As a final-year BSc Computer Science (with Data Science) student, I combine technical proficiency with strong leadership skills developed through my role as a Senior Team Lead in a university IT Lab. I excel in handling client issues while maintaining complex IT environments. My expertise spans Frontend Development, Backend Systems, API Integration, and Data Science with a focus on creating responsive web applications. I've collaborated on diverse projects that have sharpened my technical abilities across various development environments. I'm known for exceptional communication skills and a team-oriented work ethic, consistently putting in the necessary effort to achieve success. My passion lies in software architecture, full-stack development, database technologies, and machine learning applications.
-</details>
-
-
-
-## ✨ Features
-
-### 🎯 Current Features
-- ✅ **Real-time taxi tracking** with live GPS updates
-- ✅ **Trip history and receipts** for record keeping
-- ✅ **Driver and passenger ratings** for quality assurance
-- ✅ **Push notifications** for ride updates and alerts
-
-### 🚀 Upcoming Features
-- 🔄 **Multi-language support** for diverse user base
-- 🔄 **Advanced analytics** for operators and passengers
-
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn package manager
-- Expo CLI
-- Android Studio (for Android development)
-- Xcode (for iOS development - macOS only)
-
-### Installation
+## <img src="https://api.iconify.design/mdi/rocket-launch.svg" width="20" height="20"/> Getting Started
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/COS301-SE-2025/TaxiTap.git
-
-# Navigate to project directory
 cd TaxiTap
 
-# Install dependencies
-npm install
-
-# Start the development server
-npm start
+# Install dependencies and start
+npm install && expo start
 ```
 
-### Running the App
-
-```bash
-# Start Expo development server
-expo start
-
-# Run on Android
-expo run:android
-
-# Run on iOS
-expo run:ios
-
-# Run on web
-expo start --web
-```
-
-### Configuration
-1. Set up your Convex backend configuration
-2. Configure environment variables
-3. Set up authentication providers
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Prerequisites:** Node.js v18+, Expo CLI, Android Studio/Xcode • See [Installation Manual](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf) for details
 
 ---
 
 <div align="center">
-  <strong>Made with ❤️ by Team Git It Done</strong>
-  <br>
-  <em>Transforming South Africa's transportation landscape, one tap at a time.</em>
+  <sub>MIT License • Made by Team Git It Done • <em>Transforming South Africa's transportation, one tap at a time.</em></sub>
 </div>
