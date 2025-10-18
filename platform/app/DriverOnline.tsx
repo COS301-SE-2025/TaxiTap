@@ -27,7 +27,6 @@ import { decode } from '@mapbox/polyline';
 import { useThrottledLocationStreaming } from './hooks/useLocationStreaming';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import { AlertType } from '@/contexts/AlertContext';
-
 interface DriverOnlineProps {
   onGoOffline: () => void;
   todaysEarnings: number;
@@ -137,10 +136,10 @@ export default function DriverOnline({
   // Get driver PIN from the query result
   const driverPin = driverPinData?.pin || '';
 
-  // Google Maps API key - you'll need to add this to your environment
-  const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
-    ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
-    : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
+  // Use Web API key for HTTP fetch calls (not used in this component but kept for consistency)
+  // The Android native key is configured in app.config.js for MapView
+  // NOTE: Hardcoded due to EAS build environment variable issues
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyCGyNPeaSv5jKBVMXJ9YeOYY0gHq6jz8ns';
 
   useLayoutEffect(() => {
     navigation.setOptions({
