@@ -32,11 +32,11 @@ export default {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
       },
-      edgeToEdgeEnabled: true,
       package: "com.gititdone.taxitap",
       config: {
         googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY || "AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA"
+          // NOTE: Hardcoded due to EAS build environment variable issues
+          apiKey: "AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA"
         }
       }
     },
