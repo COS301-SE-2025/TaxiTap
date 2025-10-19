@@ -266,7 +266,7 @@ export default function PaymentConfirmation() {
       backgroundColor: isDark ? "#27ae60" : "#2ECC71",
     },
     cancelButton: {
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f3f4',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FF9900',
       flex: 1,
       flexDirection: "row",
       alignItems: "center",

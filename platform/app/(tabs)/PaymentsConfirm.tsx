@@ -369,8 +369,36 @@ export default function PaymentConfirmation() {
           {
             label: 'Skip Feedback',
             onPress: async () => {
-              clearMapContext();
-              router.push('/HomeScreen');
+              // For multi-leg journeys, we need to handle completion properly
+              if (isMultiLeg === 'true' && journeyId && legIndex !== undefined) {
+                try {
+                  // Complete the leg even when skipping feedback
+                  console.log(`Completing leg ${parseInt(legIndex as string) + 1} without feedback (skip from payment)`);
+                  const legResult = await processLegPayment({
+                    journeyId: journeyId as string,
+                    legIndex: parseInt(legIndex as string),
+                    actualCost: 0, // No payment confirmed
+                  });
+
+                  clearMapContext();
+                  if (clearJourneyCache) {
+                    await clearJourneyCache();
+                  }
+                  router.push('/HomeScreen');
+                } catch (error) {
+                  console.error('Error completing leg on skip:', error);
+                  // Even if backend fails, still clear and navigate
+                  clearMapContext();
+                  if (clearJourneyCache) {
+                    await clearJourneyCache();
+                  }
+                  router.push('/HomeScreen');
+                }
+              } else {
+                // Standard single-leg skip
+                clearMapContext();
+                router.push('/HomeScreen');
+              }
             },
             style: 'cancel',
           }
