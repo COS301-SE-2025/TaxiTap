@@ -104,6 +104,81 @@ These are the most current and comprehensive documents for the TaxiTap project:
 
 ---
 
+## 📋 Demo Deliverables
+
+<details>
+<summary><b>📦 Demo 1 Deliverables (May 2025)</b></summary>
+
+### Documentation
+- [SRS Demo 2.pdf](SRS%20Demo%202.pdf) - Initial Requirements Specification
+- [Architectural Requirements.pdf](Architectural%20Requirements.pdf) - Initial Architecture
+- [Domain Model.jpg](Domain%20Model.jpg) - Domain Model Diagram
+- [Sprint 1 Wireframes - Finalized.pdf](Sprint%201%20Wireframes%20-%20Finalized.pdf) - UI Wireframes
+
+### Requirements
+- Live demo with 3 working use cases
+- Unit testing implementation
+- Functional requirements documentation
+- Use case diagrams
+- GitHub setup with branching strategy and badges
+
+</details>
+
+<details>
+<summary><b>📦 Demo 2 Deliverables (June 2025)</b></summary>
+
+### Documentation
+- [SRS.pdf](SRS.pdf) - Updated Requirements (Version 2)
+- [ServiceContracts.pdf](ServiceContracts.pdf) - Service Contracts
+- [Coding Standards.pdf](Coding%20Standards.pdf) - Coding Standards
+- [Taxi Tap User Manual.pdf](Taxi%20Tap%20User%20Manual.pdf) - User Manual
+- [Updated_Domain_Model.jpg](Updated_Domain_Model.jpg) - Updated Domain Model
+
+### Architecture Diagrams
+- [Login System.png](Login%20System.png)
+- [Signup System.png](Signup%20System.png)
+- [Ride Request System.png](Ride%20Request%20System.png)
+- [Notification System.png](Notification%20System.png)
+- [Payment System.png](Payment%20System.png)
+
+### Requirements
+- 3 fully implemented components (different from Demo 1)
+- 5 quantified quality requirements
+- Technology choices justification
+- Landing page implementation
+- Help menu implementation
+- CI/CD pipeline setup
+
+</details>
+
+<details>
+<summary><b>📦 Demo 3 Deliverables (August 2025)</b></summary>
+
+### Documentation
+- [Arch Doc Demo 3.pdf](Arch%20Doc%20Demo%203.pdf) - Architecture Document
+- [Taxi Tap User Manual (Demo 3).pdf](Taxi%20Tap%20User%20Manual%20(Demo%203).pdf) - User Manual
+- [COS 301 - Technical Installation.pdf](COS%20301%20-%20Technical%20Installation.pdf) - Installation Manual
+- [TestingPolicy.pdf](TestingPolicy.pdf) - Testing Policy
+
+### Architecture Diagrams
+- [Architecural Diagram.png](Architecural%20Diagram.png) - Complete Architectural Structure
+- [Deployment Model.png](Deployment%20Model.png) - Deployment Model
+- [Overall System.png](Overall%20System.png) - System Overview
+- [Route Management System.png](Route%20Management%20System.png)
+- [Location System.png](Location%20System.png)
+- [Feedback.png](Feedback.png)
+
+### Requirements
+- 80% complete system (Beta Phase)
+- Architectural diagram with 3+ patterns
+- Integration testing of all subsystems
+- Service contracts documentation
+- Technical installation manual
+
+</details>
+
+---
+
 ## 📝 Source Files
 
 For developers looking to modify documentation:

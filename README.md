@@ -138,7 +138,7 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
     <td>
       <h3>Nevan Rahman</h3>
       <b>Fullstack/Data Engineer</b><br>
-      <i>Full-stack & Data Science</i>
+      <i>Full-stack, Data Science & DevOps</i>
       <br><br>
       <a href="https://github.com/rsnevan">
         <img src="https://img.shields.io/badge/-rsnevan-181717?style=flat-square&logo=github&logoColor=white"/>
@@ -192,7 +192,22 @@ For detailed setup instructions, see the [Installation Manual](https://github.co
 
 ---
 
-## Development Workflow
+## 🔄 Development Workflow
+
+### 🌿 Branching Strategy: GitFlow
+```
+main           ──────●──────●──────●──────●─────► (Production)
+                      │      │      │      │
+develop        ──●────┼──●───┼──●───┼──●───┼─────► (Development)
+                 │    │  │   │  │   │  │   │
+feature/login    ●────┘  │   │  │   │  │   │
+                         │   │  │   │  │   │
+feature/payment  ────────●───┘  │   │  │   │
+                                │   │  │   │
+hotfix/critical  ───────────────●───┘  │   │
+                                       │   │
+release/v1.0     ──────────────────────●───┘
+```
 
 We follow **GitFlow** branching strategy:
 - `main` - Production-ready code
