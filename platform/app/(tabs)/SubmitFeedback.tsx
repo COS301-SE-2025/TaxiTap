@@ -391,7 +391,6 @@ export default function SubmitFeedbackScreen() {
     headerSection: {
       alignItems: 'center',
       paddingVertical: 32,
-      marginBottom: 24,
     },
     profileImageContainer: {
       position: 'relative',
@@ -483,7 +482,6 @@ export default function SubmitFeedbackScreen() {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginBottom: 8,
-      marginTop: 8,
       paddingHorizontal: 4,
     },
     section: {
@@ -514,18 +512,8 @@ export default function SubmitFeedbackScreen() {
       padding: 8,
     },
     commentSection: {
-      padding: 20,
-    },
-    commentTitle: {
-      fontSize: 17,
-      fontWeight: '400',
-      color: theme.text,
-      marginBottom: 16,
     },
     commentInput: {
-      backgroundColor: isDark 
-        ? 'rgba(255,255,255,0.05)' 
-        : 'rgba(0,0,0,0.03)',
       color: theme.text,
       height: 120,
       borderRadius: 12,
@@ -534,7 +522,7 @@ export default function SubmitFeedbackScreen() {
       fontSize: 16,
       borderWidth: 1,
       borderColor: isDark 
-        ? 'rgba(255,255,255,0.1)' 
+        ? 'rgba(255,255,255,0)' 
         : 'rgba(0,0,0,0.08)',
     },
     buttonContainer: {

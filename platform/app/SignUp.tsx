@@ -106,49 +106,57 @@ function SignUpComponent() {
     const accountType: 'passenger' | 'driver' | 'both' = selectedRole === 'driver' ? 'both' : selectedRole;
     const fullNumber = '0' + localNumber;
 
-    const result = await signUpWithSMS({
-      phoneNumber: fullNumber,
-      name: nameSurname,
-      password,
-      accountType,
-      deviceId
-    });
+      try {
+        const result = await signUpWithSMS({
+          phoneNumber: fullNumber,
+          name: nameSurname,
+          password,
+          accountType,
+          deviceId
+        });
 
-    if (!result.success) {
-      if (result.reason === "Phone number already exists") {
-        showGlobalError(
-          'Phone Number In Use',
-          'This phone number is already registered. Try logging in or use a different number.',
-          { duration: 5000, position: 'top', animation: 'slide-down' }
-        );
-      } else {
+        if (!result.success) {
+          if (result.reason === "Phone number already exists") {
+            showGlobalError(
+              'Phone Number In Use',
+              'This phone number is already registered. Try logging in or use a different number.',
+              { duration: 5000, position: 'top', animation: 'slide-down' }
+            );
+          } else {
+            showGlobalError(
+              t('common:error'),
+              result.reason || 'Signup failed. Please try again.',
+              { duration: 4000, position: 'top', animation: 'slide-down' }
+            );
+          }
+          return;
+        }
+
+        await AsyncStorage.setItem('userId', result.userId);
+
+        const userObject = {
+          id: result.userId,
+          name: nameSurname,
+          phoneNumber: fullNumber,
+          currentActiveRole: selectedRole,
+          accountType: accountType
+        };
+
+        await login(userObject);
+
+        if (selectedRole === 'driver') {
+          router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
+        } else if (selectedRole === 'passenger') {
+          router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
+        }
+      } catch (error) {
         showGlobalError(
           t('common:error'),
-          result.reason || 'Signup failed. Please try again.',
+          'An unexpected error occurred. Please try again.',
           { duration: 4000, position: 'top', animation: 'slide-down' }
         );
       }
-      return;
-    }
-
-    await AsyncStorage.setItem('userId', result.userId);
-
-    const userObject = {
-      id: result.userId,
-      name: nameSurname,
-      phoneNumber: fullNumber,
-      currentActiveRole: selectedRole,
-      accountType: accountType
     };
-
-    await login(userObject);
-
-    if (selectedRole === 'driver') {
-      router.push({ pathname: '/DriverOffline', params: { userId: result.userId } });
-    } else if (selectedRole === 'passenger') {
-      router.push({ pathname: '/HomeScreen', params: { userId: result.userId } });
-    }
-  };
 
   const currentRoleData = getRoleData();
 

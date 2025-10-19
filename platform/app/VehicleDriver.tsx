@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, SafeAreaView, Platform, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAlertHelpers } from '../components/AlertHelpers';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,20 +7,11 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Id } from '../convex/_generated/dataModel';
-import { useRouter, useNavigation } from 'expo-router';
 
 export default function VehicleDriver() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { currentLanguage } = useLanguage();
-    const router = useRouter();
-    const navigation = useNavigation();
-
-    // Screen dimensions for responsive design
-    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-    const isSmallScreen = screenWidth < 375;
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     const [vehicleType, setVehicleType] = useState('');
     const [licensePlate, setLicensePlate] = useState('');
@@ -28,8 +19,8 @@ export default function VehicleDriver() {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [color, setColor] = useState('');
     const [year, setYear] = useState('');
+    const [isNewTaxi, setIsNewTaxi] = useState(false);
 
-    // Use 'skip' instead of undefined to avoid type error, and cast user.id to Id<"taxiTap_users"> for Convex
     const taxiData = useQuery(
         api.functions.taxis.getTaxiForDriver.getTaxiForDriver,
         user ? { userId: user.id as Id<"taxiTap_users"> } : "skip"
@@ -44,6 +35,10 @@ export default function VehicleDriver() {
             setImageUri(taxiData.image || null);
             setColor(taxiData.color);
             setYear(taxiData.year.toString());
+            setIsNewTaxi(false);
+        } else if (taxiData === null) {
+            // No taxi found - this is a new taxi
+            setIsNewTaxi(true);
         }
     }, [taxiData]);
 
@@ -59,12 +54,6 @@ export default function VehicleDriver() {
             }
         })();
     }, []);
-
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerShown: false,
-        });
-    }, [navigation]);
 
     const handleUploadPhoto = async () => {
         try {
@@ -95,35 +84,79 @@ export default function VehicleDriver() {
             return;
         }
 
+        // Validate required fields for new taxi
+        if (isNewTaxi) {
+            if (!vehicleType || !licensePlate || !color || !year || !seats) {
+                showGlobalError("Missing Information", "Please fill in all fields to register your taxi.", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+                return;
+            }
+        }
+
         // Validate seats - maximum 14 seats allowed
         const seatsNumber = parseInt(seats, 10);
+        if (isNaN(seatsNumber) || seatsNumber < 1) {
+            showGlobalError("Invalid Seats", "Please enter a valid number of seats.", {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
         if (seatsNumber > 14) {
             showGlobalError("Invalid Seats", "Maximum 14 seats are allowed for taxis.", {
-              duration: 4000,
-              position: 'top',
-              animation: 'slide-down',
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
+            });
+            return;
+        }
+
+        // Validate year
+        const yearNumber = parseInt(year, 10);
+        const currentYear = new Date().getFullYear();
+        if (isNaN(yearNumber) || yearNumber < 1900 || yearNumber > currentYear + 1) {
+            showGlobalError("Invalid Year", `Please enter a valid year between 1900 and ${currentYear + 1}.`, {
+                duration: 4000,
+                position: 'top',
+                animation: 'slide-down',
             });
             return;
         }
 
         try {
-            await updateTaxi({
+            const result = await updateTaxi({
                 userId: user.id as Id<"taxiTap_users">,
                 model: vehicleType,
                 licensePlate,
                 capacity: seatsNumber,
                 image: imageUri || undefined,
                 color,
-                year: parseInt(year, 10)
+                year: yearNumber
             });
-            showGlobalSuccess("Success", "Vehicle information updated successfully.", {
-                duration: 4000,
-                position: 'top',
-                animation: 'slide-down',
-            });
+
+            if (result.created) {
+                showGlobalSuccess("Success", "Your taxi has been registered successfully!", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+                setIsNewTaxi(false);
+            } else {
+                showGlobalSuccess("Success", "Vehicle information updated successfully.", {
+                    duration: 4000,
+                    position: 'top',
+                    animation: 'slide-down',
+                });
+            }
         } catch (error) {
             console.error('Failed to update vehicle info:', error);
-            showGlobalError("Error", "Failed to update vehicle information.", {
+            const errorMessage = error instanceof Error ? error.message : "Failed to update vehicle information.";
+            showGlobalError("Error", errorMessage, {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
@@ -135,33 +168,6 @@ export default function VehicleDriver() {
         safeArea: {
             flex: 1,
             backgroundColor: theme.background,
-        },
-        header: {
-            paddingHorizontal: isSmallScreen ? 16 : 20,
-            paddingTop: Platform.OS === 'ios' ? 50 : 16,
-            paddingBottom: 20,
-            backgroundColor: theme.background,
-            borderBottomWidth: 1,
-            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-        },
-        headerRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        backButton: {
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 16,
-        },
-        headerTitle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: theme.text,
-            flex: 1,
         },
         container: {
             backgroundColor: theme.background,
@@ -175,7 +181,7 @@ export default function VehicleDriver() {
             marginBottom: 24,
         },
         headerTitle: {
-            fontSize: 22,
+            fontSize: 28,
             fontWeight: '600',
             color: theme.text,
             marginBottom: 8,
@@ -186,6 +192,18 @@ export default function VehicleDriver() {
             color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
             fontWeight: '500',
             textAlign: 'center',
+        },
+        newTaxiBadge: {
+            backgroundColor: '#f90',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            marginTop: 8,
+        },
+        newTaxiBadgeText: {
+            color: 'white',
+            fontSize: 14,
+            fontWeight: '600',
         },
         section: {
             backgroundColor: theme.card,
@@ -210,10 +228,14 @@ export default function VehicleDriver() {
             marginBottom: 20,
         },
         fieldLabel: {
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: '600',
             color: theme.text,
             marginBottom: 8,
+        },
+        requiredMark: {
+            color: '#ff4444',
+            marginLeft: 4,
         },
         textInput: {
             backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -252,7 +274,7 @@ export default function VehicleDriver() {
         uploadButtonText: {
             color: theme.text,
             fontWeight: '600',
-            fontSize: 13,
+            fontSize: 16,
             marginLeft: 8,
         },
         saveButton: {
@@ -266,7 +288,7 @@ export default function VehicleDriver() {
         saveButtonText: {
             color: 'white',
             fontWeight: '600',
-            fontSize: 13,
+            fontSize: 16,
         },
     });
 
@@ -282,67 +304,48 @@ export default function VehicleDriver() {
 
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
-            {/* Header */}
-            <View style={dynamicStyles.header}>
-                <View style={dynamicStyles.headerRow}>
-                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={20} color={theme.text} />
-                    </Pressable>
-                    <Text style={dynamicStyles.headerTitle}>
-                        {currentLanguage === 'zu' ? 'Ulwazi Lwemoto' :
-                         currentLanguage === 'tn' ? 'Tshedimosetso ya Koloi' :
-                         currentLanguage === 'af' ? 'Voertuig Inligting' :
-                         'Vehicle Information'}
-                    </Text>
-                </View>
-            </View>
-
-            <ScrollView
+            <ScrollView 
                 contentContainerStyle={dynamicStyles.container}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Header Section */}
+                <View style={dynamicStyles.headerSection}>
+                    <Text style={dynamicStyles.headerTitle}>Vehicle Information</Text>
+                    <Text style={dynamicStyles.headerSubtitle}>
+                        {isNewTaxi ? 'Register your taxi' : 'Update your taxi details'}
+                    </Text>
+                    {isNewTaxi && (
+                        <View style={dynamicStyles.newTaxiBadge}>
+                            <Text style={dynamicStyles.newTaxiBadgeText}>NEW REGISTRATION</Text>
+                        </View>
+                    )}
+                </View>
+
                 {/* Vehicle Details Form */}
-                <Text style={dynamicStyles.sectionHeader}>
-                    {currentLanguage === 'zu' ? 'Imininingwane Yemoto' :
-                     currentLanguage === 'tn' ? 'Dintlha tsa Koloi' :
-                     currentLanguage === 'af' ? 'Voertuig Besonderhede' :
-                     'Vehicle Details'}
-                </Text>
+                <Text style={dynamicStyles.sectionHeader}>Vehicle Details</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.formField}>
                         <Text style={dynamicStyles.fieldLabel}>
-                            {currentLanguage === 'zu' ? 'Uhlobo Lwemoto' :
-                             currentLanguage === 'tn' ? 'Mofuta wa Koloi' :
-                             currentLanguage === 'af' ? 'Voertuig Tipe' :
-                             'Vehicle Type'}
+                            Vehicle Type{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
                         </Text>
                         <TextInput
                             value={vehicleType}
                             onChangeText={setVehicleType}
                             style={dynamicStyles.textInput}
-                            placeholder={currentLanguage === 'zu' ? 'isib., Toyota Camry' :
-                                       currentLanguage === 'tn' ? 'sekai, Toyota Camry' :
-                                       currentLanguage === 'af' ? 'bv., Toyota Camry' :
-                                       'e.g., Toyota Camry'}
+                            placeholder="e.g., Toyota Quantum"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
                         <Text style={dynamicStyles.fieldLabel}>
-                            {currentLanguage === 'zu' ? 'Inombolo Yokuqeqesha' :
-                             currentLanguage === 'tn' ? 'Nomoro ya Laesense' :
-                             currentLanguage === 'af' ? 'Lisensie Plaat' :
-                             'License Plate'}
+                            License Plate{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
                         </Text>
                         <TextInput
                             value={licensePlate}
                             onChangeText={setLicensePlate}
                             style={dynamicStyles.textInput}
-                            placeholder={currentLanguage === 'zu' ? 'isib., ABC 123 GP' :
-                                       currentLanguage === 'tn' ? 'sekai, ABC 123 GP' :
-                                       currentLanguage === 'af' ? 'bv., ABC 123 GP' :
-                                       'e.g., ABC 123 GP'}
+                            placeholder="e.g., ABC 123 GP"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             autoCapitalize="characters"
                         />
@@ -350,38 +353,26 @@ export default function VehicleDriver() {
 
                     <View style={dynamicStyles.formField}>
                         <Text style={dynamicStyles.fieldLabel}>
-                            {currentLanguage === 'zu' ? 'Umbala' :
-                             currentLanguage === 'tn' ? 'Mmala' :
-                             currentLanguage === 'af' ? 'Kleur' :
-                             'Color'}
+                            Color{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
                         </Text>
                         <TextInput
                             value={color}
                             onChangeText={setColor}
                             style={dynamicStyles.textInput}
-                            placeholder={currentLanguage === 'zu' ? 'isib., Mhlophe' :
-                                       currentLanguage === 'tn' ? 'sekai, Tshweu' :
-                                       currentLanguage === 'af' ? 'bv., Wit' :
-                                       'e.g., White'}
+                            placeholder="e.g., White"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                         />
                     </View>
 
                     <View style={dynamicStyles.formField}>
                         <Text style={dynamicStyles.fieldLabel}>
-                            {currentLanguage === 'zu' ? 'Unyaka' :
-                             currentLanguage === 'tn' ? 'Ngwaga' :
-                             currentLanguage === 'af' ? 'Jaar' :
-                             'Year'}
+                            Year{isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
                         </Text>
                         <TextInput
                             value={year}
                             onChangeText={setYear}
                             style={dynamicStyles.textInput}
-                            placeholder={currentLanguage === 'zu' ? 'isib., 2020' :
-                                       currentLanguage === 'tn' ? 'sekai, 2020' :
-                                       currentLanguage === 'af' ? 'bv., 2020' :
-                                       'e.g., 2020'}
+                            placeholder="e.g., 2020"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             keyboardType="numeric"
                         />
@@ -389,19 +380,13 @@ export default function VehicleDriver() {
 
                     <View style={dynamicStyles.formField}>
                         <Text style={dynamicStyles.fieldLabel}>
-                            {currentLanguage === 'zu' ? 'Izihlalo Eziphelele' :
-                             currentLanguage === 'tn' ? 'Ditulo Tsotlhe' :
-                             currentLanguage === 'af' ? 'Totale Sitplekke' :
-                             'Total Seats'}
+                            Total Seats (Max 14){isNewTaxi && <Text style={dynamicStyles.requiredMark}> *</Text>}
                         </Text>
                         <TextInput
                             value={seats}
                             onChangeText={setSeats}
                             style={dynamicStyles.textInput}
-                            placeholder={currentLanguage === 'zu' ? 'isib., 4' :
-                                       currentLanguage === 'tn' ? 'sekai, 4' :
-                                       currentLanguage === 'af' ? 'bv., 4' :
-                                       'e.g., 4'}
+                            placeholder="e.g., 14"
                             placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                             keyboardType="numeric"
                         />
@@ -409,12 +394,7 @@ export default function VehicleDriver() {
                 </View>
 
                 {/* Vehicle Photo Section */}
-                <Text style={dynamicStyles.sectionHeader}>
-                    {currentLanguage === 'zu' ? 'Isithombe Semoto' :
-                     currentLanguage === 'tn' ? 'Setshwantsho sa Koloi' :
-                     currentLanguage === 'af' ? 'Voertuig Foto' :
-                     'Vehicle Photo'}
-                </Text>
+                <Text style={dynamicStyles.sectionHeader}>Vehicle Photo</Text>
                 <View style={dynamicStyles.section}>
                     <View style={dynamicStyles.imageSection}>
                         <Image
@@ -431,12 +411,7 @@ export default function VehicleDriver() {
                             style={dynamicStyles.uploadButton}
                         >
                             <Ionicons name="camera" size={20} color={theme.text} />
-                            <Text style={dynamicStyles.uploadButtonText}>
-                                {currentLanguage === 'zu' ? 'Layisha Isithombe Semoto' :
-                                 currentLanguage === 'tn' ? 'Tsenya Setshwantsho sa Koloi' :
-                                 currentLanguage === 'af' ? 'Laai Voertuig Foto Op' :
-                                 'Upload Vehicle Photo'}
-                            </Text>
+                            <Text style={dynamicStyles.uploadButtonText}>Upload Vehicle Photo</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -447,10 +422,7 @@ export default function VehicleDriver() {
                     style={dynamicStyles.saveButton}
                 >
                     <Text style={dynamicStyles.saveButtonText}>
-                        {currentLanguage === 'zu' ? 'Gcina Izinguquko' :
-                         currentLanguage === 'tn' ? 'Boloka Diphetogo' :
-                         currentLanguage === 'af' ? 'Stoor Veranderinge' :
-                         'Save Changes'}
+                        {isNewTaxi ? 'Register Taxi' : 'Save Changes'}
                     </Text>
                 </Pressable>
             </ScrollView>
