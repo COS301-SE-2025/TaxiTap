@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/platform.yml'
+      - 'platform/**'
   pull_request:
     paths:
       - 'platform/**'
