@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run test:frontend)",
+      "Bash(git add \"app/(tabs)/SubmitFeedback.tsx\" \"tests/unit/frontend/Earnings.test.tsx\")",
+      "Bash(git commit -m \"Merge feature/fixes into feature/final-translations\n\n- Resolved conflicts in Payments.tsx, SubmitFeedback.tsx, PassengerPinEntry.tsx\n- Added translations for ride acceptance notification\n- Added translations for leg complete notifications\n- Fixed Earnings.test.tsx by adding useRouter mock\n- All frontend tests passing (23/23)\")",
+      "Bash(npm test)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
