@@ -985,13 +985,6 @@ export default function SeatReserved() {
 							},
 							style: 'default',
 						},
-						{
-							label: 'Skip Feedback',
-							onPress: () => {
-								router.push('/HomeScreen');
-							},
-							style: 'cancel',
-						}
 					],
 					position: 'top',
 					animation: 'slide-down',
