@@ -68,70 +68,84 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 
 ## Team: Git It Done
 
-<br>
-
-<table align="center" style="border: none;">
+<table>
   <tr>
-    <td align="center" width="25%" style="border: none;">
+    <td width="200">
       <a href="https://github.com/Ann-Mari-Oberholzer">
         <img src="assets/images/annie.png" width="180" height="180" alt="Ann-Marí Oberholzer"/>
       </a>
-      <br><br>
-      <img src="https://img.shields.io/badge/Ann--Marí_Oberholzer-FFD93D?style=for-the-badge&labelColor=FF9900"/>
-      <br>
-      <img src="https://img.shields.io/badge/Project_Manager-FFF8E1?style=flat&labelColor=FF9900"/>
-      <br>
-      <sub><i>Leadership & Full-stack Development</i></sub>
-      <br><br>
-      <a href="https://github.com/Ann-Mari-Oberholzer"><img src="https://img.shields.io/badge/GitHub-181717?style=social&logo=github"/></a>
-      <a href="https://linkedin.com/ann-mari-oberholzer-967982354/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=social&logo=linkedin"/></a>
     </td>
-    <td align="center" width="25%" style="border: none;">
+    <td>
+      <h3>Ann-Marí Oberholzer</h3>
+      <b>Project Manager</b><br>
+      <i>Leadership & Full-stack Development</i>
+      <br><br>
+      <a href="https://github.com/Ann-Mari-Oberholzer">
+        <img src="https://img.shields.io/badge/-Ann--Mari--Oberholzer-181717?style=flat-square&logo=github&logoColor=white"/>
+      </a>
+      <a href="https://linkedin.com/in/ann-mari-oberholzer-967982354/">
+        <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://github.com/un4thi">
         <img src="assets/images/unathi.png" width="180" height="180" alt="Unathi Dlamini"/>
       </a>
-      <br><br>
-      <img src="https://img.shields.io/badge/Unathi_Dlamini-FFD93D?style=for-the-badge&labelColor=F39C12"/>
-      <br>
-      <img src="https://img.shields.io/badge/Backend_Engineer-FFF8E1?style=flat&labelColor=F39C12"/>
-      <br>
-      <sub><i>Backend Systems & Cybersecurity</i></sub>
-      <br><br>
-      <a href="https://github.com/un4thi"><img src="https://img.shields.io/badge/GitHub-181717?style=social&logo=github"/></a>
-      <a href="https://linkedin.com/unathi-dlamini-237007224/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=social&logo=linkedin"/></a>
     </td>
-    <td align="center" width="25%" style="border: none;">
+    <td>
+      <h3>Unathi Dlamini</h3>
+      <b>Backend Engineer</b><br>
+      <i>Backend Systems & Cybersecurity</i>
+      <br><br>
+      <a href="https://github.com/un4thi">
+        <img src="https://img.shields.io/badge/-un4thi-181717?style=flat-square&logo=github&logoColor=white"/>
+      </a>
+      <a href="https://linkedin.com/in/unathi-dlamini-237007224/">
+        <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://github.com/habohamese">
         <img src="assets/images/tebogo.png" width="180" height="180" alt="Moyahabo Hamese"/>
       </a>
-      <br><br>
-      <img src="https://img.shields.io/badge/Moyahabo_Hamese-FFD93D?style=for-the-badge&labelColor=FFA500"/>
-      <br>
-      <img src="https://img.shields.io/badge/Frontend_Engineer-FFF8E1?style=flat&labelColor=FFA500"/>
-      <br>
-      <sub><i>UI/UX & Frontend Development</i></sub>
-      <br><br>
-      <a href="https://github.com/habohamese"><img src="https://img.shields.io/badge/GitHub-181717?style=social&logo=github"/></a>
-      <a href="https://www.linkedin.com/in/moyahabo-hamese/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=social&logo=linkedin"/></a>
     </td>
-    <td align="center" width="25%" style="border: none;">
+    <td>
+      <h3>Moyahabo Hamese</h3>
+      <b>Frontend Engineer</b><br>
+      <i>UI/UX & Frontend Development</i>
+      <br><br>
+      <a href="https://github.com/habohamese">
+        <img src="https://img.shields.io/badge/-habohamese-181717?style=flat-square&logo=github&logoColor=white"/>
+      </a>
+      <a href="https://www.linkedin.com/in/moyahabo-hamese/">
+        <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://github.com/rsnevan">
         <img src="assets/images/nev.png" width="180" height="180" alt="Nevan Rahman"/>
       </a>
+    </td>
+    <td>
+      <h3>Nevan Rahman</h3>
+      <b>Fullstack/Data Engineer</b><br>
+      <i>Full-stack & Data Science</i>
       <br><br>
-      <img src="https://img.shields.io/badge/Nevan_Rahman-FFD93D?style=for-the-badge&labelColor=FFB74D"/>
-      <br>
-      <img src="https://img.shields.io/badge/Fullstack/Data_Engineer-FFF8E1?style=flat&labelColor=FFB74D"/>
-      <br>
-      <sub><i>Full-stack, Data Science & ML</i></sub>
-      <br><br>
-      <a href="https://github.com/rsnevan"><img src="https://img.shields.io/badge/GitHub-181717?style=social&logo=github"/></a>
-      <a href="https://linkedin.com/in/nevanrahman"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=social&logo=linkedin"/></a>
+      <a href="https://github.com/rsnevan">
+        <img src="https://img.shields.io/badge/-rsnevan-181717?style=flat-square&logo=github&logoColor=white"/>
+      </a>
+      <a href="https://linkedin.com/in/nevanrahman">
+        <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white"/>
+      </a>
     </td>
   </tr>
 </table>
-
-<br>
 
 ---
 
