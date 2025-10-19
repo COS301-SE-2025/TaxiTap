@@ -82,30 +82,6 @@ These are the most current and comprehensive documents for the TaxiTap project:
 
 ## 📂 Previous Versions
 
-### Demo 3
-- [Taxi Tap User Manual (Demo 3).pdf](Taxi%20Tap%20User%20Manual%20(Demo%203).pdf)
-- [Arch Doc Demo 3.pdf](Arch%20Doc%20Demo%203.pdf)
-- [SRS.pdf](SRS.pdf)
-- [ServiceContracts.pdf](ServiceContracts.pdf)
-
-### Demo 2
-- [SRS Demo 2.pdf](SRS%20Demo%202.pdf)
-- [Taxi Tap User Manual.pdf](Taxi%20Tap%20User%20Manual.pdf)
-- [Architectural Requirements.pdf](Architectural%20Requirements.pdf)
-
----
-
-## 🔗 Quick Links
-
-- **[Live Deployment](http://gititdone2025.site)** - Production application
-- **[Demo Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link)** - Full demonstration
-- **[Project Board](https://github.com/orgs/COS301-SE-2025/projects/265)** - Development tracking
-- **[Main Repository](https://github.com/COS301-SE-2025/TaxiTap)** - Source code
-
----
-
-## 📋 Demo Deliverables
-
 <details>
 <summary><b>📦 Demo 1 Deliverables (May 2025)</b></summary>
 
@@ -176,6 +152,15 @@ These are the most current and comprehensive documents for the TaxiTap project:
 - Technical installation manual
 
 </details>
+
+---
+
+## 🔗 Quick Links
+
+- **[Live Deployment](http://gititdone2025.site)** - Production application
+- **[Demo Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link)** - Full demonstration
+- **[Project Board](https://github.com/orgs/COS301-SE-2025/projects/265)** - Development tracking
+- **[Main Repository](https://github.com/COS301-SE-2025/TaxiTap)** - Source code
 
 ---
 
