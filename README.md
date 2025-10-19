@@ -26,7 +26,10 @@
 
 TaxiTap transforms South Africa's minibus taxi industry through digital innovation. Features include real-time tracking, location-aware booking, flexible routing, digital communication (no hooting), and comprehensive rating systems.
 
-**[View All Documentation & Resources](docs/)** | **[Watch Full Demo Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link)** | **[Live Deployment](http://gititdone2025.site)** | **[Project Management](https://github.com/orgs/COS301-SE-2025/projects/265)**
+**[View All Documentation & Resources](docs/README.md)**
+**[Watch Full Demo Video](https://drive.google.com/file/d/1j6cgEbIcVMPQz39YkpTBoqsK4vrhV5Ag/view?usp=drive_link)**
+**[Live Deployment](http://gititdone2025.site)**
+**[Project Management](https://github.com/orgs/COS301-SE-2025/projects/265)**
 
 ### Latest Documentation (Demo 4)
 - **Requirements & Design:** [SRS Document](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/SRS_Demo4.pdf) • [Architecture](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architectural_Document_Demo4.pdf)
