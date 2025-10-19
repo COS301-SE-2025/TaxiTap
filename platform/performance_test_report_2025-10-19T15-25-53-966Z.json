@@ -1,0 +1,1779 @@
+{
+  "timestamp": "2025-10-19T15:25:53.965Z",
+  "target": "https://affable-goose-538.convex.cloud",
+  "totalTests": 24,
+  "summary": {
+    "responseTime": {
+      "min": 261.0013470000122,
+      "max": 1509.8802800000121,
+      "avg": 346.0178432032696,
+      "p50": 266.9046709999966,
+      "p95": 1107.3483809999889,
+      "p99": 1410.0553839999484
+    },
+    "averageThroughput": 1.69369225285824,
+    "averageErrorRate": null,
+    "totalRequests": 428,
+    "testDuration": 591009
+  },
+  "detailedResults": [
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "iterations": 100,
+      "stats": {
+        "min": 263.10127900000225,
+        "max": 1391.8725669999985,
+        "avg": 297.7036877999999,
+        "p50": 266.3653390000036,
+        "p95": 327.29484899999807,
+        "p99": 1391.8725669999985
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "error": "",
+          "iteration": 0,
+          "responseTime": 1028.368046
+        },
+        {
+          "error": "",
+          "iteration": 1,
+          "responseTime": 801.713276
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 794.5447280000003
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 789.143834
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 833.3146779999997
+        }
+      ],
+      "timestamp": "2025-10-19T15:16:02.955Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30511.81403,
+      "concurrency": 10,
+      "totalRequests": 181,
+      "requestsPerSecond": 5.93212844775588,
+      "errorRate": 274.03314917127074,
+      "stats": {
+        "min": 260.2872589999897,
+        "max": 1354.201789999992,
+        "avg": 282.69212080662953,
+        "p50": 265.49025200000324,
+        "p95": 282.2157600000064,
+        "p99": 1348.7182849999954
+      },
+      "errors": [
+        {
+          "statusCode": 404,
+          "responseTime": 284.84728700000414
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 278.0273129999987
+        },
+        {
+          "error": "",
+          "responseTime": 807.130833999996
+        },
+        {
+          "error": "",
+          "responseTime": 809.2665100000013
+        },
+        {
+          "error": "",
+          "responseTime": 810.0593149999986
+        },
+        {
+          "error": "",
+          "responseTime": 810.6661969999986
+        },
+        {
+          "error": "",
+          "responseTime": 812.188353000005
+        },
+        {
+          "error": "",
+          "responseTime": 813.8899539999984
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 266.2003839999961
+        },
+        {
+          "error": "",
+          "responseTime": 823.6986009999964
+        }
+      ],
+      "timestamp": "2025-10-19T15:16:31.577Z"
+    },
+    {
+      "endpoint": "/api/updateUserLocation",
+      "method": "POST",
+      "iterations": 100,
+      "stats": {
+        "min": 261.2714269999997,
+        "max": 288.7636599999969,
+        "avg": 266.72884227999964,
+        "p50": 265.23852199999965,
+        "p95": 276.60966299999563,
+        "p99": 288.7636599999969
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 265.1223939999909
+        },
+        {
+          "statusCode": 404,
+          "iteration": 1,
+          "responseTime": 274.8570309999923
+        },
+        {
+          "statusCode": 404,
+          "iteration": 2,
+          "responseTime": 264.9748360000085
+        },
+        {
+          "statusCode": 404,
+          "iteration": 3,
+          "responseTime": 266.96590200001083
+        },
+        {
+          "statusCode": 404,
+          "iteration": 4,
+          "responseTime": 288.7636599999969
+        }
+      ],
+      "timestamp": "2025-10-19T15:16:57.518Z"
+    },
+    {
+      "endpoint": "/api/updateUserLocation",
+      "method": "POST",
+      "duration": 30559.405364000006,
+      "concurrency": 10,
+      "totalRequests": 111,
+      "requestsPerSecond": 3.6322696295249806,
+      "errorRate": 400,
+      "stats": {
+        "min": 260.2433899999887,
+        "max": 377.2410269999964,
+        "avg": 270.89576908107966,
+        "p50": 266.3737049999909,
+        "p95": 300.5424110000022,
+        "p99": 334.7686429999885
+      },
+      "errors": [
+        {
+          "statusCode": 404,
+          "responseTime": 285.054925000004
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 262.87407999999414
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 263.6650640000007
+        },
+        {
+          "error": "",
+          "responseTime": 840.2752029999974
+        },
+        {
+          "error": "",
+          "responseTime": 841.5947679999954
+        },
+        {
+          "error": "",
+          "responseTime": 859.5856019999919
+        },
+        {
+          "error": "",
+          "responseTime": 860.6498989999964
+        },
+        {
+          "error": "",
+          "responseTime": 893.2441160000017
+        },
+        {
+          "error": "",
+          "responseTime": 895.4565099999891
+        },
+        {
+          "error": "",
+          "responseTime": 916.6950240000006
+        }
+      ],
+      "timestamp": "2025-10-19T15:17:26.113Z"
+    },
+    {
+      "endpoint": "/api/getNearbyDrivers",
+      "method": "GET",
+      "iterations": 100,
+      "stats": {
+        "min": 261.1024240000115,
+        "max": 1509.8802800000121,
+        "avg": 642.4046552272722,
+        "p50": 337.6545890000125,
+        "p95": 1381.2277469999972,
+        "p99": 1509.8802800000121
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 270.0976479999954
+        },
+        {
+          "statusCode": 400,
+          "iteration": 1,
+          "responseTime": 265.834342999995
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 779.4280290000024
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 826.5668270000024
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 814.9842790000257
+        }
+      ],
+      "timestamp": "2025-10-19T15:18:37.589Z"
+    },
+    {
+      "endpoint": "/api/getNearbyDrivers",
+      "method": "GET",
+      "duration": 30782.740684999997,
+      "concurrency": 10,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 843.5770090000005
+        },
+        {
+          "error": "",
+          "responseTime": 842.9264590000093
+        },
+        {
+          "error": "",
+          "responseTime": 842.1725250000018
+        },
+        {
+          "error": "",
+          "responseTime": 841.7128009999869
+        },
+        {
+          "error": "",
+          "responseTime": 841.3636879999831
+        },
+        {
+          "error": "",
+          "responseTime": 840.3329530000046
+        },
+        {
+          "error": "",
+          "responseTime": 840.7396379999991
+        },
+        {
+          "error": "",
+          "responseTime": 840.7787209999806
+        },
+        {
+          "error": "",
+          "responseTime": 837.7973200000124
+        },
+        {
+          "error": "",
+          "responseTime": 837.8450410000223
+        }
+      ],
+      "timestamp": "2025-10-19T15:19:06.473Z"
+    },
+    {
+      "endpoint": "/api/acceptRide",
+      "method": "POST",
+      "iterations": 100,
+      "stats": {
+        "min": 261.896459999989,
+        "max": 821.1753850000096,
+        "avg": 273.30838782652916,
+        "p50": 265.4584969999851,
+        "p95": 278.250577000028,
+        "p99": 821.1753850000096
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "error": "",
+          "iteration": 0,
+          "responseTime": 848.6399310000124
+        },
+        {
+          "error": "",
+          "iteration": 1,
+          "responseTime": 833.9757950000057
+        },
+        {
+          "statusCode": 404,
+          "iteration": 2,
+          "responseTime": 821.1753850000096
+        },
+        {
+          "statusCode": 404,
+          "iteration": 3,
+          "responseTime": 266.6345819999988
+        },
+        {
+          "statusCode": 404,
+          "iteration": 4,
+          "responseTime": 275.5493209999986
+        }
+      ],
+      "timestamp": "2025-10-19T15:19:34.089Z"
+    },
+    {
+      "endpoint": "/api/acceptRide",
+      "method": "POST",
+      "duration": 30544.343714000017,
+      "concurrency": 10,
+      "totalRequests": 95,
+      "requestsPerSecond": 3.1102321558952566,
+      "errorRate": 335.7894736842105,
+      "stats": {
+        "min": 260.633359999978,
+        "max": 4150.875085000007,
+        "avg": 317.55296354736936,
+        "p50": 267.90947099996265,
+        "p95": 291.7370060000103,
+        "p99": 4150.875085000007
+      },
+      "errors": [
+        {
+          "statusCode": 404,
+          "responseTime": 4150.875085000007
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 270.99361400003545
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 280.6858039999497
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 276.3654609999503
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 267.5792979999678
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 272.6810219999752
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 271.7871190000442
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 271.1129850000143
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 271.1473760000081
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 271.51880199997686
+        }
+      ],
+      "timestamp": "2025-10-19T15:20:02.760Z"
+    },
+    {
+      "endpoint": "/api/getUserProfile",
+      "method": "GET",
+      "iterations": 50,
+      "stats": {
+        "min": 263.78960600000573,
+        "max": 1426.178300999978,
+        "avg": 663.1986733999918,
+        "p50": 266.677212999959,
+        "p95": 1426.178300999978,
+        "p99": 1426.178300999978
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 265.26589600002626
+        },
+        {
+          "statusCode": 400,
+          "iteration": 1,
+          "responseTime": 265.1466520000249
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 826.3620460000238
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 841.5051199999871
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 917.8618760000099
+        }
+      ],
+      "timestamp": "2025-10-19T15:20:41.519Z"
+    },
+    {
+      "endpoint": "/api/getRideHistory",
+      "method": "GET",
+      "iterations": 50,
+      "stats": {
+        "min": 261.0013470000122,
+        "max": 1416.966425999999,
+        "avg": 706.1516987142802,
+        "p50": 818.6461939999717,
+        "p95": 1416.966425999999,
+        "p99": 1416.966425999999
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "error": "",
+          "iteration": 0,
+          "responseTime": 861.3330659999629
+        },
+        {
+          "error": "",
+          "iteration": 1,
+          "responseTime": 801.4624860000331
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 805.2876009999891
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 806.0021120000165
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 815.5577439999906
+        }
+      ],
+      "timestamp": "2025-10-19T15:21:18.158Z"
+    },
+    {
+      "endpoint": "/api/getNearbyDrivers",
+      "method": "GET",
+      "iterations": 50,
+      "stats": {
+        "min": 261.71759100002237,
+        "max": 1410.0553839999484,
+        "avg": 733.1976287499929,
+        "p50": 1107.9552450000192,
+        "p95": 1410.0553839999484,
+        "p99": 1410.0553839999484
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "error": "",
+          "iteration": 0,
+          "responseTime": 827.3134120000177
+        },
+        {
+          "error": "",
+          "iteration": 1,
+          "responseTime": 875.4264689999982
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 860.4398640000145
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 883.3985509999911
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 866.0005269999965
+        }
+      ],
+      "timestamp": "2025-10-19T15:21:59.329Z"
+    },
+    {
+      "endpoint": "/api/updateUserLocation",
+      "method": "POST",
+      "iterations": 50,
+      "stats": {
+        "min": 264.06541799998377,
+        "max": 1203.205895000021,
+        "avg": 292.47918622727525,
+        "p50": 271.15194000001065,
+        "p95": 282.7526899999939,
+        "p99": 1203.205895000021
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "error": "",
+          "iteration": 0,
+          "responseTime": 908.1316039999947
+        },
+        {
+          "error": "",
+          "iteration": 1,
+          "responseTime": 905.4857539999648
+        },
+        {
+          "error": "",
+          "iteration": 2,
+          "responseTime": 977.3542000000016
+        },
+        {
+          "error": "",
+          "iteration": 3,
+          "responseTime": 968.0464110000175
+        },
+        {
+          "error": "",
+          "iteration": 4,
+          "responseTime": 929.0967250000103
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:18.372Z"
+    },
+    {
+      "testType": "database_performance",
+      "operations": [
+        {
+          "operation": "User Lookup",
+          "endpoint": "/api/getUserProfile",
+          "method": "GET",
+          "iterations": 50,
+          "stats": {
+            "min": 263.78960600000573,
+            "max": 1426.178300999978,
+            "avg": 663.1986733999918,
+            "p50": 266.677212999959,
+            "p95": 1426.178300999978,
+            "p99": 1426.178300999978
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "statusCode": 404,
+              "iteration": 0,
+              "responseTime": 265.26589600002626
+            },
+            {
+              "statusCode": 400,
+              "iteration": 1,
+              "responseTime": 265.1466520000249
+            },
+            {
+              "error": "",
+              "iteration": 2,
+              "responseTime": 826.3620460000238
+            },
+            {
+              "error": "",
+              "iteration": 3,
+              "responseTime": 841.5051199999871
+            },
+            {
+              "error": "",
+              "iteration": 4,
+              "responseTime": 917.8618760000099
+            }
+          ],
+          "timestamp": "2025-10-19T15:20:41.519Z"
+        },
+        {
+          "operation": "Ride History",
+          "endpoint": "/api/getRideHistory",
+          "method": "GET",
+          "iterations": 50,
+          "stats": {
+            "min": 261.0013470000122,
+            "max": 1416.966425999999,
+            "avg": 706.1516987142802,
+            "p50": 818.6461939999717,
+            "p95": 1416.966425999999,
+            "p99": 1416.966425999999
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "error": "",
+              "iteration": 0,
+              "responseTime": 861.3330659999629
+            },
+            {
+              "error": "",
+              "iteration": 1,
+              "responseTime": 801.4624860000331
+            },
+            {
+              "error": "",
+              "iteration": 2,
+              "responseTime": 805.2876009999891
+            },
+            {
+              "error": "",
+              "iteration": 3,
+              "responseTime": 806.0021120000165
+            },
+            {
+              "error": "",
+              "iteration": 4,
+              "responseTime": 815.5577439999906
+            }
+          ],
+          "timestamp": "2025-10-19T15:21:18.158Z"
+        },
+        {
+          "operation": "Driver Search",
+          "endpoint": "/api/getNearbyDrivers",
+          "method": "GET",
+          "iterations": 50,
+          "stats": {
+            "min": 261.71759100002237,
+            "max": 1410.0553839999484,
+            "avg": 733.1976287499929,
+            "p50": 1107.9552450000192,
+            "p95": 1410.0553839999484,
+            "p99": 1410.0553839999484
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "error": "",
+              "iteration": 0,
+              "responseTime": 827.3134120000177
+            },
+            {
+              "error": "",
+              "iteration": 1,
+              "responseTime": 875.4264689999982
+            },
+            {
+              "error": "",
+              "iteration": 2,
+              "responseTime": 860.4398640000145
+            },
+            {
+              "error": "",
+              "iteration": 3,
+              "responseTime": 883.3985509999911
+            },
+            {
+              "error": "",
+              "iteration": 4,
+              "responseTime": 866.0005269999965
+            }
+          ],
+          "timestamp": "2025-10-19T15:21:59.329Z"
+        },
+        {
+          "operation": "Location Update",
+          "endpoint": "/api/updateUserLocation",
+          "method": "POST",
+          "iterations": 50,
+          "stats": {
+            "min": 264.06541799998377,
+            "max": 1203.205895000021,
+            "avg": 292.47918622727525,
+            "p50": 271.15194000001065,
+            "p95": 282.7526899999939,
+            "p99": 1203.205895000021
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "error": "",
+              "iteration": 0,
+              "responseTime": 908.1316039999947
+            },
+            {
+              "error": "",
+              "iteration": 1,
+              "responseTime": 905.4857539999648
+            },
+            {
+              "error": "",
+              "iteration": 2,
+              "responseTime": 977.3542000000016
+            },
+            {
+              "error": "",
+              "iteration": 3,
+              "responseTime": 968.0464110000175
+            },
+            {
+              "error": "",
+              "iteration": 4,
+              "responseTime": 929.0967250000103
+            }
+          ],
+          "timestamp": "2025-10-19T15:22:18.372Z"
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:18.372Z"
+    },
+    {
+      "endpoint": "/ws",
+      "method": "GET",
+      "iterations": 20,
+      "stats": {
+        "min": 263.6404980000225,
+        "max": 279.164179000014,
+        "avg": 269.8684238499933,
+        "p50": 270.05343799997354,
+        "p95": 279.164179000014,
+        "p99": 279.164179000014
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 264.2463759999955
+        },
+        {
+          "statusCode": 404,
+          "iteration": 1,
+          "responseTime": 268.55140900000697
+        },
+        {
+          "statusCode": 404,
+          "iteration": 2,
+          "responseTime": 264.21876099996734
+        },
+        {
+          "statusCode": 404,
+          "iteration": 3,
+          "responseTime": 274.840532000002
+        },
+        {
+          "statusCode": 404,
+          "iteration": 4,
+          "responseTime": 275.5844100000104
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:22.085Z"
+    },
+    {
+      "endpoint": "/api/streamLocation",
+      "method": "GET",
+      "iterations": 20,
+      "stats": {
+        "min": 262.3968199999654,
+        "max": 278.81243699998595,
+        "avg": 268.06174589999716,
+        "p50": 268.0224019999732,
+        "p95": 278.81243699998595,
+        "p99": 278.81243699998595
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 264.7744360000361
+        },
+        {
+          "statusCode": 404,
+          "iteration": 1,
+          "responseTime": 262.3968199999654
+        },
+        {
+          "statusCode": 404,
+          "iteration": 2,
+          "responseTime": 269.585253999976
+        },
+        {
+          "statusCode": 404,
+          "iteration": 3,
+          "responseTime": 267.2554830000154
+        },
+        {
+          "statusCode": 404,
+          "iteration": 4,
+          "responseTime": 268.36615299998084
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:27.678Z"
+    },
+    {
+      "endpoint": "/api/streamRideUpdates",
+      "method": "GET",
+      "iterations": 20,
+      "stats": {
+        "min": 264.4336900000344,
+        "max": 370.1083830000134,
+        "avg": 273.8081150499958,
+        "p50": 268.81753800000297,
+        "p95": 370.1083830000134,
+        "p99": 370.1083830000134
+      },
+      "errorRate": 100,
+      "errors": [
+        {
+          "statusCode": 404,
+          "iteration": 0,
+          "responseTime": 264.47960099997
+        },
+        {
+          "statusCode": 404,
+          "iteration": 1,
+          "responseTime": 370.1083830000134
+        },
+        {
+          "statusCode": 404,
+          "iteration": 2,
+          "responseTime": 267.3537939999951
+        },
+        {
+          "statusCode": 404,
+          "iteration": 3,
+          "responseTime": 264.4336900000344
+        },
+        {
+          "statusCode": 404,
+          "iteration": 4,
+          "responseTime": 268.0993000000017
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:33.387Z"
+    },
+    {
+      "testType": "realtime_performance",
+      "operations": [
+        {
+          "operation": "WebSocket Connection",
+          "endpoint": "/ws",
+          "method": "GET",
+          "iterations": 20,
+          "stats": {
+            "min": 263.6404980000225,
+            "max": 279.164179000014,
+            "avg": 269.8684238499933,
+            "p50": 270.05343799997354,
+            "p95": 279.164179000014,
+            "p99": 279.164179000014
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "statusCode": 404,
+              "iteration": 0,
+              "responseTime": 264.2463759999955
+            },
+            {
+              "statusCode": 404,
+              "iteration": 1,
+              "responseTime": 268.55140900000697
+            },
+            {
+              "statusCode": 404,
+              "iteration": 2,
+              "responseTime": 264.21876099996734
+            },
+            {
+              "statusCode": 404,
+              "iteration": 3,
+              "responseTime": 274.840532000002
+            },
+            {
+              "statusCode": 404,
+              "iteration": 4,
+              "responseTime": 275.5844100000104
+            }
+          ],
+          "timestamp": "2025-10-19T15:22:22.085Z"
+        },
+        {
+          "operation": "Location Streaming",
+          "endpoint": "/api/streamLocation",
+          "method": "GET",
+          "iterations": 20,
+          "stats": {
+            "min": 262.3968199999654,
+            "max": 278.81243699998595,
+            "avg": 268.06174589999716,
+            "p50": 268.0224019999732,
+            "p95": 278.81243699998595,
+            "p99": 278.81243699998595
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "statusCode": 404,
+              "iteration": 0,
+              "responseTime": 264.7744360000361
+            },
+            {
+              "statusCode": 404,
+              "iteration": 1,
+              "responseTime": 262.3968199999654
+            },
+            {
+              "statusCode": 404,
+              "iteration": 2,
+              "responseTime": 269.585253999976
+            },
+            {
+              "statusCode": 404,
+              "iteration": 3,
+              "responseTime": 267.2554830000154
+            },
+            {
+              "statusCode": 404,
+              "iteration": 4,
+              "responseTime": 268.36615299998084
+            }
+          ],
+          "timestamp": "2025-10-19T15:22:27.678Z"
+        },
+        {
+          "operation": "Ride Updates",
+          "endpoint": "/api/streamRideUpdates",
+          "method": "GET",
+          "iterations": 20,
+          "stats": {
+            "min": 264.4336900000344,
+            "max": 370.1083830000134,
+            "avg": 273.8081150499958,
+            "p50": 268.81753800000297,
+            "p95": 370.1083830000134,
+            "p99": 370.1083830000134
+          },
+          "errorRate": 100,
+          "errors": [
+            {
+              "statusCode": 404,
+              "iteration": 0,
+              "responseTime": 264.47960099997
+            },
+            {
+              "statusCode": 404,
+              "iteration": 1,
+              "responseTime": 370.1083830000134
+            },
+            {
+              "statusCode": 404,
+              "iteration": 2,
+              "responseTime": 267.3537939999951
+            },
+            {
+              "statusCode": 404,
+              "iteration": 3,
+              "responseTime": 264.4336900000344
+            },
+            {
+              "statusCode": 404,
+              "iteration": 4,
+              "responseTime": 268.0993000000017
+            }
+          ],
+          "timestamp": "2025-10-19T15:22:33.387Z"
+        }
+      ],
+      "timestamp": "2025-10-19T15:22:33.388Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30265.404402000015,
+      "concurrency": 5,
+      "totalRequests": 129,
+      "requestsPerSecond": 4.262292295406281,
+      "errorRate": 206.2015503875969,
+      "stats": {
+        "min": 261.7347009999794,
+        "max": 1095.1671659999993,
+        "avg": 278.18877001550834,
+        "p50": 266.57271199999377,
+        "p95": 278.2496960000135,
+        "p99": 767.3341689999797
+      },
+      "errors": [
+        {
+          "statusCode": 404,
+          "responseTime": 268.34057499998016
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 273.05608399998164
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 270.3211359999841
+        },
+        {
+          "error": "",
+          "responseTime": 812.963543000049
+        },
+        {
+          "error": "",
+          "responseTime": 813.3695970000117
+        },
+        {
+          "error": "",
+          "responseTime": 847.5406819999916
+        },
+        {
+          "error": "",
+          "responseTime": 850.3468589999829
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 266.0357579999836
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 265.15734299999895
+        },
+        {
+          "statusCode": 404,
+          "responseTime": 266.34065500000725
+        }
+      ],
+      "timestamp": "2025-10-19T15:23:01.735Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30604.93086199998,
+      "concurrency": 10,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 815.9283610000275
+        },
+        {
+          "error": "",
+          "responseTime": 816.7733180000214
+        },
+        {
+          "error": "",
+          "responseTime": 817.8410110000405
+        },
+        {
+          "error": "",
+          "responseTime": 818.6248480000068
+        },
+        {
+          "error": "",
+          "responseTime": 818.2399839999853
+        },
+        {
+          "error": "",
+          "responseTime": 821.4625510000042
+        },
+        {
+          "error": "",
+          "responseTime": 825.9535270000342
+        },
+        {
+          "error": "",
+          "responseTime": 829.7857390000136
+        },
+        {
+          "error": "",
+          "responseTime": 824.5994500000379
+        },
+        {
+          "error": "",
+          "responseTime": 834.9882470000302
+        }
+      ],
+      "timestamp": "2025-10-19T15:23:35.421Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30747.848262000014,
+      "concurrency": 15,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 854.6290030000964
+        },
+        {
+          "error": "",
+          "responseTime": 855.1140790000791
+        },
+        {
+          "error": "",
+          "responseTime": 921.5493750000605
+        },
+        {
+          "error": "",
+          "responseTime": 923.3135870000115
+        },
+        {
+          "error": "",
+          "responseTime": 994.1539820000762
+        },
+        {
+          "error": "",
+          "responseTime": 995.4954879999859
+        },
+        {
+          "error": "",
+          "responseTime": 1054.1912180000218
+        },
+        {
+          "error": "",
+          "responseTime": 1057.8872490000213
+        },
+        {
+          "error": "",
+          "responseTime": 1120.370533999987
+        },
+        {
+          "error": "",
+          "responseTime": 1133.4030490000732
+        }
+      ],
+      "timestamp": "2025-10-19T15:24:09.285Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30759.474734999938,
+      "concurrency": 20,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 818.7148029999807
+        },
+        {
+          "error": "",
+          "responseTime": 832.3206720000599
+        },
+        {
+          "error": "",
+          "responseTime": 846.8466590000317
+        },
+        {
+          "error": "",
+          "responseTime": 865.479159999988
+        },
+        {
+          "error": "",
+          "responseTime": 879.8871210000943
+        },
+        {
+          "error": "",
+          "responseTime": 887.1072469999781
+        },
+        {
+          "error": "",
+          "responseTime": 927.0965609999839
+        },
+        {
+          "error": "",
+          "responseTime": 932.222024000017
+        },
+        {
+          "error": "",
+          "responseTime": 941.0513229999924
+        },
+        {
+          "error": "",
+          "responseTime": 946.5405000000028
+        }
+      ],
+      "timestamp": "2025-10-19T15:24:43.099Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30825.90900600003,
+      "concurrency": 25,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 867.9658370000543
+        },
+        {
+          "error": "",
+          "responseTime": 866.8715660000453
+        },
+        {
+          "error": "",
+          "responseTime": 936.5487549999962
+        },
+        {
+          "error": "",
+          "responseTime": 937.5163389999652
+        },
+        {
+          "error": "",
+          "responseTime": 1018.5731489999453
+        },
+        {
+          "error": "",
+          "responseTime": 1025.1424099999713
+        },
+        {
+          "error": "",
+          "responseTime": 1109.5675630000187
+        },
+        {
+          "error": "",
+          "responseTime": 1111.0634640000062
+        },
+        {
+          "error": "",
+          "responseTime": 1185.5078020000365
+        },
+        {
+          "error": "",
+          "responseTime": 1187.827879999997
+        }
+      ],
+      "timestamp": "2025-10-19T15:25:16.986Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "duration": 30670.72900000005,
+      "concurrency": 30,
+      "totalRequests": 0,
+      "requestsPerSecond": 0,
+      "errorRate": null,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "errors": [
+        {
+          "error": "",
+          "responseTime": 801.3110730000772
+        },
+        {
+          "error": "",
+          "responseTime": 801.2604220000794
+        },
+        {
+          "error": "",
+          "responseTime": 803.1976380000124
+        },
+        {
+          "error": "",
+          "responseTime": 803.9716079999926
+        },
+        {
+          "error": "",
+          "responseTime": 815.0665789999766
+        },
+        {
+          "error": "",
+          "responseTime": 818.1626839999808
+        },
+        {
+          "error": "",
+          "responseTime": 826.177374000079
+        },
+        {
+          "error": "",
+          "responseTime": 826.5795539999381
+        },
+        {
+          "error": "",
+          "responseTime": 837.7215929999948
+        },
+        {
+          "error": "",
+          "responseTime": 837.8673320000526
+        }
+      ],
+      "timestamp": "2025-10-19T15:25:50.859Z"
+    },
+    {
+      "endpoint": "/api/requestRide",
+      "method": "POST",
+      "progressionResults": [
+        {
+          "concurrency": 5,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30265.404402000015,
+          "totalRequests": 129,
+          "requestsPerSecond": 4.262292295406281,
+          "errorRate": 206.2015503875969,
+          "stats": {
+            "min": 261.7347009999794,
+            "max": 1095.1671659999993,
+            "avg": 278.18877001550834,
+            "p50": 266.57271199999377,
+            "p95": 278.2496960000135,
+            "p99": 767.3341689999797
+          },
+          "errors": [
+            {
+              "statusCode": 404,
+              "responseTime": 268.34057499998016
+            },
+            {
+              "statusCode": 404,
+              "responseTime": 273.05608399998164
+            },
+            {
+              "statusCode": 404,
+              "responseTime": 270.3211359999841
+            },
+            {
+              "error": "",
+              "responseTime": 812.963543000049
+            },
+            {
+              "error": "",
+              "responseTime": 813.3695970000117
+            },
+            {
+              "error": "",
+              "responseTime": 847.5406819999916
+            },
+            {
+              "error": "",
+              "responseTime": 850.3468589999829
+            },
+            {
+              "statusCode": 404,
+              "responseTime": 266.0357579999836
+            },
+            {
+              "statusCode": 404,
+              "responseTime": 265.15734299999895
+            },
+            {
+              "statusCode": 404,
+              "responseTime": 266.34065500000725
+            }
+          ],
+          "timestamp": "2025-10-19T15:23:01.735Z"
+        },
+        {
+          "concurrency": 10,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30604.93086199998,
+          "totalRequests": 0,
+          "requestsPerSecond": 0,
+          "errorRate": null,
+          "stats": {
+            "min": 0,
+            "max": 0,
+            "avg": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0
+          },
+          "errors": [
+            {
+              "error": "",
+              "responseTime": 815.9283610000275
+            },
+            {
+              "error": "",
+              "responseTime": 816.7733180000214
+            },
+            {
+              "error": "",
+              "responseTime": 817.8410110000405
+            },
+            {
+              "error": "",
+              "responseTime": 818.6248480000068
+            },
+            {
+              "error": "",
+              "responseTime": 818.2399839999853
+            },
+            {
+              "error": "",
+              "responseTime": 821.4625510000042
+            },
+            {
+              "error": "",
+              "responseTime": 825.9535270000342
+            },
+            {
+              "error": "",
+              "responseTime": 829.7857390000136
+            },
+            {
+              "error": "",
+              "responseTime": 824.5994500000379
+            },
+            {
+              "error": "",
+              "responseTime": 834.9882470000302
+            }
+          ],
+          "timestamp": "2025-10-19T15:23:35.421Z"
+        },
+        {
+          "concurrency": 15,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30747.848262000014,
+          "totalRequests": 0,
+          "requestsPerSecond": 0,
+          "errorRate": null,
+          "stats": {
+            "min": 0,
+            "max": 0,
+            "avg": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0
+          },
+          "errors": [
+            {
+              "error": "",
+              "responseTime": 854.6290030000964
+            },
+            {
+              "error": "",
+              "responseTime": 855.1140790000791
+            },
+            {
+              "error": "",
+              "responseTime": 921.5493750000605
+            },
+            {
+              "error": "",
+              "responseTime": 923.3135870000115
+            },
+            {
+              "error": "",
+              "responseTime": 994.1539820000762
+            },
+            {
+              "error": "",
+              "responseTime": 995.4954879999859
+            },
+            {
+              "error": "",
+              "responseTime": 1054.1912180000218
+            },
+            {
+              "error": "",
+              "responseTime": 1057.8872490000213
+            },
+            {
+              "error": "",
+              "responseTime": 1120.370533999987
+            },
+            {
+              "error": "",
+              "responseTime": 1133.4030490000732
+            }
+          ],
+          "timestamp": "2025-10-19T15:24:09.285Z"
+        },
+        {
+          "concurrency": 20,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30759.474734999938,
+          "totalRequests": 0,
+          "requestsPerSecond": 0,
+          "errorRate": null,
+          "stats": {
+            "min": 0,
+            "max": 0,
+            "avg": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0
+          },
+          "errors": [
+            {
+              "error": "",
+              "responseTime": 818.7148029999807
+            },
+            {
+              "error": "",
+              "responseTime": 832.3206720000599
+            },
+            {
+              "error": "",
+              "responseTime": 846.8466590000317
+            },
+            {
+              "error": "",
+              "responseTime": 865.479159999988
+            },
+            {
+              "error": "",
+              "responseTime": 879.8871210000943
+            },
+            {
+              "error": "",
+              "responseTime": 887.1072469999781
+            },
+            {
+              "error": "",
+              "responseTime": 927.0965609999839
+            },
+            {
+              "error": "",
+              "responseTime": 932.222024000017
+            },
+            {
+              "error": "",
+              "responseTime": 941.0513229999924
+            },
+            {
+              "error": "",
+              "responseTime": 946.5405000000028
+            }
+          ],
+          "timestamp": "2025-10-19T15:24:43.099Z"
+        },
+        {
+          "concurrency": 25,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30825.90900600003,
+          "totalRequests": 0,
+          "requestsPerSecond": 0,
+          "errorRate": null,
+          "stats": {
+            "min": 0,
+            "max": 0,
+            "avg": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0
+          },
+          "errors": [
+            {
+              "error": "",
+              "responseTime": 867.9658370000543
+            },
+            {
+              "error": "",
+              "responseTime": 866.8715660000453
+            },
+            {
+              "error": "",
+              "responseTime": 936.5487549999962
+            },
+            {
+              "error": "",
+              "responseTime": 937.5163389999652
+            },
+            {
+              "error": "",
+              "responseTime": 1018.5731489999453
+            },
+            {
+              "error": "",
+              "responseTime": 1025.1424099999713
+            },
+            {
+              "error": "",
+              "responseTime": 1109.5675630000187
+            },
+            {
+              "error": "",
+              "responseTime": 1111.0634640000062
+            },
+            {
+              "error": "",
+              "responseTime": 1185.5078020000365
+            },
+            {
+              "error": "",
+              "responseTime": 1187.827879999997
+            }
+          ],
+          "timestamp": "2025-10-19T15:25:16.986Z"
+        },
+        {
+          "concurrency": 30,
+          "endpoint": "/api/requestRide",
+          "method": "POST",
+          "duration": 30670.72900000005,
+          "totalRequests": 0,
+          "requestsPerSecond": 0,
+          "errorRate": null,
+          "stats": {
+            "min": 0,
+            "max": 0,
+            "avg": 0,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0
+          },
+          "errors": [
+            {
+              "error": "",
+              "responseTime": 801.3110730000772
+            },
+            {
+              "error": "",
+              "responseTime": 801.2604220000794
+            },
+            {
+              "error": "",
+              "responseTime": 803.1976380000124
+            },
+            {
+              "error": "",
+              "responseTime": 803.9716079999926
+            },
+            {
+              "error": "",
+              "responseTime": 815.0665789999766
+            },
+            {
+              "error": "",
+              "responseTime": 818.1626839999808
+            },
+            {
+              "error": "",
+              "responseTime": 826.177374000079
+            },
+            {
+              "error": "",
+              "responseTime": 826.5795539999381
+            },
+            {
+              "error": "",
+              "responseTime": 837.7215929999948
+            },
+            {
+              "error": "",
+              "responseTime": 837.8673320000526
+            }
+          ],
+          "timestamp": "2025-10-19T15:25:50.859Z"
+        }
+      ],
+      "timestamp": "2025-10-19T15:25:53.964Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Throughput",
+      "priority": "MEDIUM",
+      "issue": "Low throughput detected",
+      "recommendation": "Scale infrastructure and optimize application performance",
+      "details": "Current throughput: 1.69 req/s"
+    },
+    {
+      "category": "Reliability",
+      "priority": "HIGH",
+      "issue": "High error rate detected",
+      "recommendation": "Investigate and fix error sources",
+      "details": "Current error rate: Infinity%"
+    }
+  ]
+}

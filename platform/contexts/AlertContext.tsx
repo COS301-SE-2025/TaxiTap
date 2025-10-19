@@ -129,7 +129,7 @@ export const AlertProvider: React.FC<{
     }
   }, [clearAlertTimeout]);
 
-  // Show global alert (replaces other global alerts)
+  // Show global alert (adds to queue instead of replacing)
   const showGlobalAlert = useCallback((alertData: Omit<Alert, "id" | "timestamp">) => {
     const id = generateAlertId();
     const newAlert: Alert = {
@@ -139,20 +139,16 @@ export const AlertProvider: React.FC<{
       isGlobal: true,
     };
 
-    // Replace existing global alerts (dismiss all current ones)
-    setGlobalAlerts(prev => {
-      // Clear timeouts for existing alerts
-      prev.forEach(existingAlert => clearAlertTimeout(existingAlert.id, true));
-      return [newAlert];
-    });
+    // Add to existing global alerts queue instead of replacing
+    setGlobalAlerts(prev => [...prev, newAlert]);
 
     // Set auto-dismiss timeout
     setAlertTimeout(newAlert, true);
 
     return id;
-  }, [generateAlertId, clearAlertTimeout, setAlertTimeout]);
+  }, [generateAlertId, setAlertTimeout]);
 
-  // Show local alert (replaces other local alerts)
+  // Show local alert (adds to queue instead of replacing)
   const showLocalAlert = useCallback((alertData: Omit<Alert, "id" | "timestamp">) => {
     const id = generateAlertId();
     const newAlert: Alert = {
@@ -162,18 +158,14 @@ export const AlertProvider: React.FC<{
       isGlobal: false,
     };
 
-    // Replace existing local alerts (dismiss all current ones)
-    setLocalAlerts(prev => {
-      // Clear timeouts for existing alerts
-      prev.forEach(existingAlert => clearAlertTimeout(existingAlert.id, false));
-      return [newAlert];
-    });
+    // Add to existing local alerts queue instead of replacing
+    setLocalAlerts(prev => [...prev, newAlert]);
 
     // Set auto-dismiss timeout
     setAlertTimeout(newAlert, false);
 
     return id;
-  }, [generateAlertId, clearAlertTimeout, setAlertTimeout]);
+  }, [generateAlertId, setAlertTimeout]);
 
   // Dismiss all global alerts
   const dismissAllGlobalAlerts = useCallback(() => {
