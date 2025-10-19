@@ -704,6 +704,8 @@ describe('Navigation Integration Tests', () => {
     );
 
     // Component structure changed - back navigation is now handled by the navigation header
+    // which is managed by the React Navigation system, not within the component itself.
+    // This test validates that the component renders correctly with navigation setup
     expect(root).toBeDefined();
     expect(mockNavigationMock.setOptions).toHaveBeenCalled();
   });

@@ -16,6 +16,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { isMultiLegJourney, getNextLeg } from '../../utils/multiLegJourneyHelpers';
 import { useMapContext } from '../../contexts/MapContext';
 import { useMultiLegJourney } from '../../contexts/MultiLegJourneyContext';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 export default function SubmitFeedbackScreen() {
   const navigation = useNavigation();
@@ -32,6 +33,8 @@ export default function SubmitFeedbackScreen() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const [isSkipping, setIsSkipping] = useState(false);
 
   const { theme, isDark } = useTheme();
   const { user } = useUser();
@@ -391,7 +394,6 @@ export default function SubmitFeedbackScreen() {
     headerSection: {
       alignItems: 'center',
       paddingVertical: 32,
-      marginBottom: 24,
     },
     profileImageContainer: {
       position: 'relative',
@@ -483,7 +485,6 @@ export default function SubmitFeedbackScreen() {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginBottom: 8,
-      marginTop: 8,
       paddingHorizontal: 4,
     },
     section: {
@@ -514,18 +515,8 @@ export default function SubmitFeedbackScreen() {
       padding: 8,
     },
     commentSection: {
-      padding: 20,
-    },
-    commentTitle: {
-      fontSize: 17,
-      fontWeight: '400',
-      color: theme.text,
-      marginBottom: 16,
     },
     commentInput: {
-      backgroundColor: isDark 
-        ? 'rgba(255,255,255,0.05)' 
-        : 'rgba(0,0,0,0.03)',
       color: theme.text,
       height: 120,
       borderRadius: 12,
@@ -534,7 +525,7 @@ export default function SubmitFeedbackScreen() {
       fontSize: 16,
       borderWidth: 1,
       borderColor: isDark 
-        ? 'rgba(255,255,255,0.1)' 
+        ? 'rgba(255,255,255,0)' 
         : 'rgba(0,0,0,0.08)',
     },
     buttonContainer: {
@@ -581,6 +572,8 @@ export default function SubmitFeedbackScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
+      {isSkipping && <LoadingSpinner size="large" />}
+    {!isSkipping && (
       <ScrollView 
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
@@ -724,79 +717,90 @@ export default function SubmitFeedbackScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={async () => {
-              // Check if this is a continue to next leg flow
-              if (continueToNext === 'true' && journeyId && legIndex) {
-                // Navigate to TaxiInformation for next leg
-                const nextLegIndex = parseInt(legIndex) + 1;
+  onPress={async () => {
+    setIsSkipping(true); // show spinner
 
-                // Get the next leg information from journey state
-                if (getJourneyState && getJourneyState.legs && getJourneyState.legs[nextLegIndex]) {
-                  const nextLeg = getJourneyState.legs[nextLegIndex];
+    try {
+      if (continueToNext === 'true' && journeyId && legIndex) {
+        const nextLegIndex = parseInt(legIndex) + 1;
+        if (getJourneyState && getJourneyState.legs && getJourneyState.legs[nextLegIndex]) {
+          const nextLeg = getJourneyState.legs[nextLegIndex];
 
-                  router.push({
-                    pathname: '/(tabs)/TaxiInformation',
-                    params: {
-                      destinationName: nextLeg.destination.address,
-                      destinationLat: nextLeg.destination.coordinates.latitude.toString(),
-                      destinationLng: nextLeg.destination.coordinates.longitude.toString(),
-                      currentName: nextLeg.origin.address,
-                      currentLat: nextLeg.origin.coordinates.latitude.toString(),
-                      currentLng: nextLeg.origin.coordinates.longitude.toString(),
-                      routeId: journeyId,
-                      estimatedFare: nextLeg.estimatedCost.toString(),
-                      isMultiLeg: 'true',
-                      journeyId,
-                      legIndex: nextLegIndex.toString(),
-                      totalLegs,
-                      routeName: nextLeg.routeName,
-                    },
-                  });
-                } else {
-                  showGlobalError('Navigation Error', 'Unable to get next leg information. Please try again.', {
-                    duration: 4000,
-                    position: 'top',
-                    animation: 'slide-down',
-                  });
-                }
-              } else {
-                // Standard skip feedback flow - clear states for multi-leg journeys
-                if (isMultiLegJourney && journeyId) {
-                  // For multi-leg journeys, always clear states to prevent loading screen hanging
-                  // This covers cases where the journey might be completed but state check fails
-                  console.log('🧹 Clearing multi-leg journey states on skip feedback');
-                  try {
-                    clearMapContext();
-                    if (clearJourneyCache) {
-                      await clearJourneyCache();
-                    }
-                    console.log('Multi-leg journey cache cleared successfully');
-                  } catch (error) {
-                    console.error('Error clearing journey states on skip:', error);
-                  }
+          router.push({
+            pathname: '/(tabs)/TaxiInformation',
+            params: {
+              destinationName: nextLeg.destination.address,
+              destinationLat: nextLeg.destination.coordinates.latitude.toString(),
+              destinationLng: nextLeg.destination.coordinates.longitude.toString(),
+              currentName: nextLeg.origin.address,
+              currentLat: nextLeg.origin.coordinates.latitude.toString(),
+              currentLng: nextLeg.origin.coordinates.longitude.toString(),
+              routeId: journeyId,
+              estimatedFare: nextLeg.estimatedCost.toString(),
+              isMultiLeg: 'true',
+              journeyId,
+              legIndex: nextLegIndex.toString(),
+              totalLegs,
+              routeName: nextLeg.routeName,
+            },
+          });
+        } else {
+          showGlobalError('Navigation Error', 'Unable to get next leg information. Please try again.', {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          });
+        }
+      } else {
+        if (isMultiLegJourney && journeyId) {
+          try {
+            console.log(`Completing leg ${currentLegIndex + 1} without feedback (skip)`);
+            const legResult = await completeLegWithPayment({
+              journeyId,
+              legIndex: currentLegIndex,
+              actualCost: actualFare ? parseFloat(actualFare) : 0,
+            });
 
-                  // Add a small delay to ensure cache clearing propagates before navigation
-                  setTimeout(() => {
-                    router.replace('/(tabs)/HomeScreen');
-                  }, 100);
-                } else {
-                  // For non-multi-leg journeys, navigate immediately
-                  router.replace('/(tabs)/HomeScreen');
-               }
-              }
-            }}
-            style={dynamicStyles.skipButton}
-            activeOpacity={0.8}
-          >
-            <Text style={dynamicStyles.skipButtonText}>
-              {currentLanguage === 'zu' ? 'Yeqa Ukuphawula' :
-               currentLanguage === 'tn' ? 'Tlola Maikutlo' :
-               currentLanguage === 'af' ? 'Slaan Terugvoer Oor' :
-               'Skip Feedback'}
-            </Text>
-          </TouchableOpacity>
+            console.log('🧹 Clearing multi-leg journey states on skip feedback');
+            clearMapContext();
+            if (clearJourneyCache) {
+              await clearJourneyCache();
+            }
+
+            // Add a small delay to ensure cache clearing propagates before navigation
+            setTimeout(() => {
+              router.replace('/(tabs)/HomeScreen');
+            }, 100);
+          } catch (error) {
+            console.error('Error completing leg on skip:', error);
+            clearMapContext();
+            if (clearJourneyCache) {
+              await clearJourneyCache();
+            }
+            router.replace('/(tabs)/HomeScreen');
+          }
+        } else {
+          // For non-multi-leg journeys, navigate immediately
+          router.replace('/(tabs)/HomeScreen');
+        }
+      }
+    } finally {
+      setIsSkipping(false); // hide spinner when done
+    }
+  }}
+  style={dynamicStyles.skipButton}
+  activeOpacity={0.8}
+>
+  <Text style={dynamicStyles.skipButtonText}>
+    {currentLanguage === 'zu' ? 'Yeqa Ukuphawula' :
+     currentLanguage === 'tn' ? 'Tlola Maikutlo' :
+     currentLanguage === 'af' ? 'Slaan Terugvoer Oor' :
+     'Skip Feedback'}
+  </Text>
+</TouchableOpacity>
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

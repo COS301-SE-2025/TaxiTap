@@ -2,9 +2,10 @@ import { MutationCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 
 /**
- * Updates the information for a driver's taxi.
+ * Creates or updates the information for a driver's taxi.
+ * If the driver doesn't have a taxi, one will be created.
+ * If they already have a taxi, it will be updated.
  * The driver must be authenticated.
- * All fields are optional, so only provided fields will be updated.
  */
 export async function updateTaxiInfoHandler(
   ctx: MutationCtx,
@@ -35,18 +36,60 @@ export async function updateTaxiInfoHandler(
   }
 
   // Find the taxi associated with this driver
-  const taxi = await ctx.db
+  const existingTaxi = await ctx.db
     .query("taxis")
     .withIndex("by_driver_id", (q: any) => q.eq("driverId", driverProfile._id))
     .unique();
 
-  if (!taxi) {
-    throw new Error("Could not find a taxi for this driver.");
+  const now = Date.now();
+
+  // If taxi exists, update it
+  if (existingTaxi) {
+    const { userId, ...taxiFields } = args;
+    
+    // Only update fields that were provided
+    const updateData: any = { updatedAt: now };
+    if (taxiFields.licensePlate !== undefined) updateData.licensePlate = taxiFields.licensePlate;
+    if (taxiFields.model !== undefined) updateData.model = taxiFields.model;
+    if (taxiFields.color !== undefined) updateData.color = taxiFields.color;
+    if (taxiFields.year !== undefined) updateData.year = taxiFields.year;
+    if (taxiFields.image !== undefined) updateData.image = taxiFields.image;
+    if (taxiFields.capacity !== undefined) updateData.capacity = taxiFields.capacity;
+    if (taxiFields.isAvailable !== undefined) updateData.isAvailable = taxiFields.isAvailable;
+
+    await ctx.db.patch(existingTaxi._id, updateData);
+
+    return { 
+      success: true, 
+      taxiId: existingTaxi._id, 
+      created: false,
+      message: "Taxi information updated successfully" 
+    };
   }
 
-  // Remove userId from the update object to match the taxis schema
-  const { userId, ...taxiFields } = args;
-  await ctx.db.patch(taxi._id, { ...taxiFields, updatedAt: Date.now() });
+  // If taxi doesn't exist, create a new one
+  // Require essential fields for creation
+  if (!args.licensePlate || !args.model || !args.color || !args.year || !args.capacity) {
+    throw new Error("License plate, model, color, year, and capacity are required to create a new taxi.");
+  }
 
-  return { success: true, taxiId: taxi._id };
-} 
+  const newTaxiId = await ctx.db.insert("taxis", {
+    driverId: driverProfile._id,
+    licensePlate: args.licensePlate,
+    model: args.model,
+    color: args.color,
+    year: args.year,
+    capacity: args.capacity,
+    image: args.image || "",
+    isAvailable: args.isAvailable ?? true,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return { 
+    success: true, 
+    taxiId: newTaxiId, 
+    created: true,
+    message: "Taxi created successfully" 
+  };
+}

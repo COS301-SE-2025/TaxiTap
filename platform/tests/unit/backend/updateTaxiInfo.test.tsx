@@ -41,7 +41,12 @@ describe('updateTaxiInfoHandler', () => {
     const args = { userId: mockUserId, model: 'Toyota', color: 'Blue' };
     const result = await updateTaxiInfoHandler(ctx as any, args);
     expect(ctx.db.patch).toHaveBeenCalledWith('taxi1', expect.objectContaining({ model: 'Toyota', color: 'Blue' }));
-    expect(result).toEqual({ success: true, taxiId: 'taxi1' });
+    expect(result).toEqual({
+      success: true,
+      taxiId: 'taxi1',
+      created: false,
+      message: "Taxi information updated successfully"
+    });
   });
 
   it('throws if driver profile not found', async () => {
@@ -64,7 +69,7 @@ describe('updateTaxiInfoHandler', () => {
     expect(ctx.db.query).toHaveBeenCalledWith('drivers');
   });
 
-  it('throws if taxi not found', async () => {
+  it('throws if taxi not found and required fields missing for creation', async () => {
     const ctx = {
       db: {
         query: jest.fn((table) => {
@@ -81,9 +86,55 @@ describe('updateTaxiInfoHandler', () => {
           return { withIndex: () => ({ unique: () => Promise.resolve(undefined) }) };
         }),
         patch: jest.fn(() => Promise.resolve()),
+        insert: jest.fn(() => Promise.resolve('newTaxi1')),
       }
     } as any;
     const args = { userId: mockUserId, model: 'Toyota' };
-    await expect(updateTaxiInfoHandler(ctx, args)).rejects.toThrow('Could not find a taxi for this driver.');
+    await expect(updateTaxiInfoHandler(ctx, args)).rejects.toThrow('License plate, model, color, year, and capacity are required to create a new taxi.');
+  });
+
+  it('creates a new taxi if taxi not found and all required fields provided', async () => {
+    const ctx = {
+      db: {
+        query: jest.fn((table) => {
+          if (table === 'drivers') {
+            return {
+              withIndex: () => ({ unique: () => Promise.resolve(driverProfile) })
+            };
+          }
+          if (table === 'taxis') {
+            return {
+              withIndex: () => ({ unique: () => Promise.resolve(undefined) })
+            };
+          }
+          return { withIndex: () => ({ unique: () => Promise.resolve(undefined) }) };
+        }),
+        patch: jest.fn(() => Promise.resolve()),
+        insert: jest.fn(() => Promise.resolve('newTaxi1')),
+      }
+    } as any;
+    const args = {
+      userId: mockUserId,
+      licensePlate: 'ABC123',
+      model: 'Toyota',
+      color: 'Blue',
+      year: 2023,
+      capacity: 4
+    };
+    const result = await updateTaxiInfoHandler(ctx, args);
+    expect(ctx.db.insert).toHaveBeenCalledWith('taxis', expect.objectContaining({
+      driverId: 'driver1',
+      licensePlate: 'ABC123',
+      model: 'Toyota',
+      color: 'Blue',
+      year: 2023,
+      capacity: 4,
+    }));
+    expect(result).toEqual({
+      success: true,
+      taxiId: 'newTaxi1',
+      created: true,
+      message: "Taxi created successfully"
+    });
   });
 }); 
