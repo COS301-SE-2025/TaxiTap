@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import { useNavigation, useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
@@ -75,6 +76,7 @@ export default function DriverOnline({
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   const userId = user?.id;
   const role: "passenger" | "driver" | "both" = (user?.role as "passenger" | "driver" | "both") || (user?.accountType as "passenger" | "driver" | "both") || 'driver';
   
@@ -272,7 +274,10 @@ export default function DriverOnline({
     if (rideRequest && !shownRequests.current.has(rideRequest._id)) {
       shownRequests.current.add(rideRequest._id);
       showGlobalAlert({
-        title: "New Ride Request",
+        title: currentLanguage === 'zu' ? 'Isicelo Sokugibela Esisha' :
+               currentLanguage === 'tn' ? 'Kopo e Ntšhwa ya Palamo' :
+               currentLanguage === 'af' ? 'Nuwe Rit Versoek' :
+               'New Ride Request',
         message: rideRequest.message,
         position: 'top',
         animation: 'slide-down',
@@ -280,37 +285,63 @@ export default function DriverOnline({
         type: 'info',
         actions: [
           {
-            label: 'Decline',
+            label: currentLanguage === 'zu' ? 'Yenqaba' :
+                   currentLanguage === 'tn' ? 'Gana' :
+                   currentLanguage === 'af' ? 'Weier' :
+                   'Decline',
             style: 'destructive',
             onPress: async () => {
               try {
                 await declineRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<'taxiTap_users'> });
               } catch (error) {
-                showGlobalError('Error', 'Failed to decline ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(
+                  currentLanguage === 'zu' ? 'Iphutha' :
+                  currentLanguage === 'tn' ? 'Phoso' :
+                  currentLanguage === 'af' ? 'Fout' :
+                  'Error',
+                  currentLanguage === 'zu' ? 'Kwehlulekile ukwenqaba ukugibela.' :
+                  currentLanguage === 'tn' ? 'Go paletse go gana palamo.' :
+                  currentLanguage === 'af' ? 'Kon nie rit weier nie.' :
+                  'Failed to decline ride.',
+                  { position: 'top', animation: 'slide-down', duration: 5000 }
+                );
               }
               markAsRead(rideRequest._id);
             },
           },
           {
-            label: 'Accept',
+            label: currentLanguage === 'zu' ? 'Yamukela' :
+                   currentLanguage === 'tn' ? 'Amogela' :
+                   currentLanguage === 'af' ? 'Aanvaar' :
+                   'Accept',
             style: 'default',
             onPress: async () => {
               try {
                 // Accept the ride first
                 await acceptRide({ rideId: rideRequest.metadata?.rideId, driverId: user.id as Id<"taxiTap_users"> });
-                
+
                 // Copy driver PIN to the ride
-                await copyDriverPinToRide({ 
-                  rideId: rideRequest.metadata?.rideId, 
-                  driverId: user.id as Id<"taxiTap_users"> 
+                await copyDriverPinToRide({
+                  rideId: rideRequest.metadata?.rideId,
+                  driverId: user.id as Id<"taxiTap_users">
                 });
-                
+
                 // Update taxi seat availability
                 await updateTaxiSeatAvailability({ rideId: rideRequest.metadata?.rideId, action: "decrease" });
-                
+
                 markAsRead(rideRequest._id);
               } catch (error) {
-                showGlobalError('Error', 'Failed to accept ride.', { position: 'top', animation: 'slide-down', duration: 5000 });
+                showGlobalError(
+                  currentLanguage === 'zu' ? 'Iphutha' :
+                  currentLanguage === 'tn' ? 'Phoso' :
+                  currentLanguage === 'af' ? 'Fout' :
+                  'Error',
+                  currentLanguage === 'zu' ? 'Kwehlulekile ukwamukela ukugibela.' :
+                  currentLanguage === 'tn' ? 'Go paletse go amogela palamo.' :
+                  currentLanguage === 'af' ? 'Kon nie rit aanvaar nie.' :
+                  'Failed to accept ride.',
+                  { position: 'top', animation: 'slide-down', duration: 5000 }
+                );
               }
             },
           },
@@ -321,21 +352,47 @@ export default function DriverOnline({
 
   const handleEmergency = () => {
     showGlobalAlert({
-      title: 'Emergency Alert',
-      message: 'This will contact emergency services (112)',
+      title: currentLanguage === 'zu' ? 'Isexwayiso Sesimo Esiphuthumayo' :
+             currentLanguage === 'tn' ? 'Tsiboso ya Tshoganetso' :
+             currentLanguage === 'af' ? 'Noodgeval Waarskuwing' :
+             'Emergency Alert',
+      message: currentLanguage === 'zu' ? 'Lokhu kuzoxhumana nezinsizakalo zesimo esiphuthumayo (112)' :
+               currentLanguage === 'tn' ? 'Se se tla ikgolaganya le ditirelo tsa tshoganetso (112)' :
+               currentLanguage === 'af' ? 'Dit sal nooddienste kontak (112)' :
+               'This will contact emergency services (112)',
       type: 'Emergency Alert' as AlertType,
       position: 'top',
       animation: 'slide-down',
       duration: 0,
       actions: [
         {
-          label: 'Yes, Get Help',
+          label: currentLanguage === 'zu' ? 'Yebo, Thola Usizo' :
+                 currentLanguage === 'tn' ? 'Ee, Bona Thuso' :
+                 currentLanguage === 'af' ? 'Ja, Kry Hulp' :
+                 'Yes, Get Help',
           style: 'destructive',
           onPress: () => {
-            showGlobalSuccess('Emergency Alert Sent', 'Emergency services contacted.', { position: 'top', animation: 'slide-down', duration: 3000 });
+            showGlobalSuccess(
+              currentLanguage === 'zu' ? 'Isexwayiso Sesimo Esiphuthumayo Sithunyelwe' :
+              currentLanguage === 'tn' ? 'Tsiboso ya Tshoganetso e Rometswe' :
+              currentLanguage === 'af' ? 'Noodgeval Waarskuwing Gestuur' :
+              'Emergency Alert Sent',
+              currentLanguage === 'zu' ? 'Izinsizakalo zesimo esiphuthumayo zixhumene.' :
+              currentLanguage === 'tn' ? 'Ditirelo tsa tshoganetso di ikgolagantse.' :
+              currentLanguage === 'af' ? 'Nooddienste gekontak.' :
+              'Emergency services contacted.',
+              { position: 'top', animation: 'slide-down', duration: 3000 }
+            );
           },
         },
-        { label: 'Cancel', style: 'cancel', onPress: () => {} },
+        {
+          label: currentLanguage === 'zu' ? 'Khansela' :
+                 currentLanguage === 'tn' ? 'Khansela' :
+                 currentLanguage === 'af' ? 'Kanselleer' :
+                 'Cancel',
+          style: 'cancel',
+          onPress: () => {}
+        },
       ],
     });
   };
@@ -359,10 +416,26 @@ export default function DriverOnline({
   };
 
   const menuItems = [
-    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
-    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
-    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
+    {
+      icon: "person",
+      title: currentLanguage === 'zu' ? 'Iphrofayela' : currentLanguage === 'tn' ? 'Profaele' : currentLanguage === 'af' ? 'Profiel' : 'Profile',
+      onPress: () => router.push('/DriverProfile')
+    },
+    {
+      icon: "time",
+      title: currentLanguage === 'zu' ? 'Okutholiwe' : currentLanguage === 'tn' ? 'Ditseno' : currentLanguage === 'af' ? 'Verdienste' : 'Earnings',
+      onPress: () => router.push('/EarningsPage')
+    },
+    {
+      icon: "star",
+      title: currentLanguage === 'zu' ? 'Impendulo' : currentLanguage === 'tn' ? 'Dikakanyo' : currentLanguage === 'af' ? 'Terugvoer' : 'Feedback',
+      onPress: () => router.push('/FeedbackHistoryScreen')
+    },
+    {
+      icon: "help-circle",
+      title: currentLanguage === 'zu' ? 'Usizo' : currentLanguage === 'tn' ? 'Thuso' : currentLanguage === 'af' ? 'Hulp' : 'Help',
+      onPress: () => navigation.navigate('HelpPage' as never)
+    },
   ];
 
   const activeTrips = useQuery(
@@ -551,7 +624,7 @@ export default function DriverOnline({
     },
     emergencyButtonText: {
       color: '#EF4444',
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: '600',
     },
     mapButton: {
@@ -561,7 +634,7 @@ export default function DriverOnline({
     },
     mapButtonText: {
       color: theme.primary,
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: '600',
     },
     primaryButton: {
@@ -667,7 +740,7 @@ export default function DriverOnline({
       alignItems: 'center',
     },
     pinModalTitle: {
-      fontSize: 18,
+      fontSize: 14,
       fontWeight: '600',
       color: theme.text,
       marginBottom: 20,
@@ -692,7 +765,7 @@ export default function DriverOnline({
       fontFamily: 'monospace',
     },
     pinInfo: {
-      fontSize: 14,
+      fontSize: 12,
       color: theme.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
@@ -706,7 +779,7 @@ export default function DriverOnline({
     },
     closeButtonText: {
       color: '#FFFFFF',
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: '600',
     },
     loadingContainer: {
@@ -741,7 +814,12 @@ export default function DriverOnline({
           <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)}>
             <Icon name="menu" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Driver Online</Text>
+          <Text style={styles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Umshayeli Ukuxhumene' :
+             currentLanguage === 'tn' ? 'Mokhanni o Tshwanetse' :
+             currentLanguage === 'af' ? 'Bestuurder Aanlyn' :
+             'Driver Online'}
+          </Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -758,25 +836,48 @@ export default function DriverOnline({
         {/* Stats */}
         <View style={styles.statsContainer}>
           <Pressable style={styles.statCard} onPress={() => router.push("/ActiveRides")}>
-            <Text style={styles.statLabel}>Active Rides</Text>
+            <Text style={styles.statLabel}>
+              {currentLanguage === 'zu' ? 'Izigibelo Ezisebenzayo' :
+               currentLanguage === 'tn' ? 'Dipalamo tse di Dirang' :
+               currentLanguage === 'af' ? 'Aktiewe Ritte' :
+               'Active Rides'}
+            </Text>
             <Text style={styles.statValue}>{activeTrips?.activeCount || 0}</Text>
           </Pressable>
 
           <Pressable style={styles.statCard} onPress={() => router.push("/UnpaidPayments")}>
-            <Text style={styles.statLabel}>Unpaid Accounts</Text>
+            <Text style={styles.statLabel}>
+              {currentLanguage === 'zu' ? 'Ama-Akhawunti Angakhokhelwanga' :
+               currentLanguage === 'tn' ? 'Diakhaonto tse di sa Duelwang' :
+               currentLanguage === 'af' ? 'Onbetaalde Rekeninge' :
+               'Unpaid Accounts'}
+            </Text>
             <Text style={styles.statValue}>{activeTrips?.unpaidCount || 0}</Text>
           </Pressable>
         </View>
         <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/StatsPage')}>
-          <Text style={styles.primaryButtonText}>View Statistics</Text>
+          <Text style={styles.primaryButtonText}>
+            {currentLanguage === 'zu' ? 'Buka Izibalo' :
+             currentLanguage === 'tn' ? 'Bona Dipalopalo' :
+             currentLanguage === 'af' ? 'Bekyk Statistieke' :
+             'View Statistics'}
+          </Text>
         </TouchableOpacity>
 
         {/* Seat Control */}
         <View style={styles.seatControlContainer}>
           <View style={styles.seatCard}>
-            <Text style={styles.seatTitle}>Seat Management</Text>
+            <Text style={styles.seatTitle}>
+              {currentLanguage === 'zu' ? 'Ukuphatha Izihlalo' :
+               currentLanguage === 'tn' ? 'Taolo ya Ditulo' :
+               currentLanguage === 'af' ? 'Sitplek Bestuur' :
+               'Seat Management'}
+            </Text>
             <Text style={styles.seatSubtitle}>
-              Adjust available seats for passengers
+              {currentLanguage === 'zu' ? 'Lungisa izihlalo ezitholakalayo zabagibeli' :
+               currentLanguage === 'tn' ? 'Fetola ditulo tse di teng bakeng sa bapalami' :
+               currentLanguage === 'af' ? 'Pas beskikbare sitplekke vir passasiers aan' :
+               'Adjust available seats for passengers'}
             </Text>
             
             <Text style={styles.seatDisplay}>
@@ -807,12 +908,22 @@ export default function DriverOnline({
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionButton, styles.emergencyButton]} onPress={handleEmergency}>
             <Icon name="warning" size={18} color="#EF4444" />
-            <Text style={styles.emergencyButtonText}>Emergency</Text>
+            <Text style={styles.emergencyButtonText}>
+              {currentLanguage === 'zu' ? 'Isimo Esiphuthumayo' :
+               currentLanguage === 'tn' ? 'Tshoganetso' :
+               currentLanguage === 'af' ? 'Noodgeval' :
+               'Emergency'}
+            </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={[styles.actionButton, styles.mapButton]} onPress={() => setShowMap(true)}>
             <Icon name="map" size={18} color={theme.primary} />
-            <Text style={styles.mapButtonText}>View Map</Text>
+            <Text style={styles.mapButtonText}>
+              {currentLanguage === 'zu' ? 'Buka Imephu' :
+               currentLanguage === 'tn' ? 'Bona Mmepe' :
+               currentLanguage === 'af' ? 'Bekyk Kaart' :
+               'View Map'}
+            </Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.offlineButton} onPress={onGoOffline}>
@@ -836,6 +947,7 @@ export default function DriverOnline({
             showsUserLocation={true}
             showsMyLocationButton={true}
             followsUserLocation={true}
+            customMapStyle={isDark ? darkMapStyle : []}
           >
             {/* Driver's current location marker */}
             <Marker
@@ -912,7 +1024,12 @@ export default function DriverOnline({
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.menuModal}>
               <View style={styles.menuHeader}>
-                <Text style={styles.menuHeaderText}>Menu</Text>
+                <Text style={styles.menuHeaderText}>
+                  {currentLanguage === 'zu' ? 'Imenyu' :
+                   currentLanguage === 'tn' ? 'Lenane' :
+                   currentLanguage === 'af' ? 'Spyskaart' :
+                   'Menu'}
+                </Text>
               </View>
               
               {menuItems.map((item, index) => (
@@ -944,8 +1061,13 @@ export default function DriverOnline({
         >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.pinModal}>
-              <Text style={styles.pinModalTitle}>Your Driver PIN</Text>
-              
+              <Text style={styles.pinModalTitle}>
+                {currentLanguage === 'zu' ? 'I-PIN Yakho Yomshayeli' :
+                 currentLanguage === 'tn' ? 'PIN ya Gago ya Mokhanni' :
+                 currentLanguage === 'af' ? 'Jou Bestuurder PIN' :
+                 'Your Driver PIN'}
+              </Text>
+
               <View style={styles.pinDisplay}>
                 {driverPin.split('').map((digit, index) => (
                   <View key={index} style={styles.pinDigit}>
@@ -953,14 +1075,25 @@ export default function DriverOnline({
                   </View>
                 ))}
               </View>
-              
+
               <Text style={styles.pinInfo}>
-                Show this PIN to passengers for secure verification.
-                {driverPinData?.isNew && " (PIN was just generated)"}
+                {currentLanguage === 'zu' ? 'Bonisa le PIN kubagibeli ukuze uqinisekise ngokuvikelekile.' :
+                 currentLanguage === 'tn' ? 'Bontsha PIN eno bapalami go netefatsa ka tshireletso.' :
+                 currentLanguage === 'af' ? 'Wys hierdie PIN aan passasiers vir veilige verifikasie.' :
+                 'Show this PIN to passengers for secure verification.'}
+                {driverPinData?.isNew && (currentLanguage === 'zu' ? ' (I-PIN isanda kudalwa)' :
+                                        currentLanguage === 'tn' ? ' (PIN e sa tswang go tlhagisiwa)' :
+                                        currentLanguage === 'af' ? ' (PIN is pas gegenereer)' :
+                                        ' (PIN was just generated)')}
               </Text>
-              
+
               <TouchableOpacity style={styles.closeButton} onPress={() => setShowPinModal(false)}>
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={styles.closeButtonText}>
+                  {currentLanguage === 'zu' ? 'Vala' :
+                   currentLanguage === 'tn' ? 'Tswala' :
+                   currentLanguage === 'af' ? 'Sluit' :
+                   'Close'}
+                </Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -969,3 +1102,190 @@ export default function DriverOnline({
     </SafeAreaView>
   );
 }
+
+const darkMapStyle = [
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.country",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#181818"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1b1b1b"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#2c2c2c"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#8a8a8a"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#373737"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#3c3c3c"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#4e4e4e"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#000000"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#3d3d3d"
+      }
+    ]
+  }
+];

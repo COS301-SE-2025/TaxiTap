@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import React, { useLayoutEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Platform, Dimensions } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
@@ -10,6 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Badge } from '../components/Badge';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
 
 // Define the passenger type based on your data structure
 interface Passenger {
@@ -32,9 +35,15 @@ interface Passenger {
 export default function WaitingPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -48,9 +57,27 @@ export default function WaitingPayments() {
     if (!user || activeTrips === undefined) {
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={dynamicStyles.header}>
+                    <View style={dynamicStyles.headerRow}>
+                        <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="arrow-back" size={20} color={theme.text} />
+                        </Pressable>
+                        <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Izinkokhelo Ezilindile' :
+                             currentLanguage === 'tn' ? 'Dituelo tse di Letileng' :
+                             currentLanguage === 'af' ? 'Hangende Betalings' :
+                             'Pending Payments'}
+                        </Text>
+                    </View>
+                </View>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+                        <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Iyalayisha...' :
+                             currentLanguage === 'tn' ? 'Ya Laisa...' :
+                             currentLanguage === 'af' ? 'Laai...' :
+                             'Loading...'}
+                        </Text>
                     </View>
                     <View style={[dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                         <LoadingSpinner size="large" />
@@ -65,13 +92,36 @@ export default function WaitingPayments() {
     if (!waitingPayments.length) {
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={dynamicStyles.header}>
+                    <View style={dynamicStyles.headerRow}>
+                        <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="arrow-back" size={20} color={theme.text} />
+                        </Pressable>
+                        <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Izinkokhelo Ezilindile' :
+                             currentLanguage === 'tn' ? 'Dituelo tse di Letileng' :
+                             currentLanguage === 'af' ? 'Hangende Betalings' :
+                             'Pending Payments'}
+                        </Text>
+                    </View>
+                </View>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>All users have responded</Text>
+                        <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Bonke abasebenzisi baphendulile' :
+                             currentLanguage === 'tn' ? 'Badirisi botlhe ba arabile' :
+                             currentLanguage === 'af' ? 'Alle gebruikers het geantwoord' :
+                             'All users have responded'}
+                        </Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No pending payments</Text>
+                        <Text style={[dynamicStyles.emptyStateText, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Azikho izinkokhelo ezilindile' :
+                             currentLanguage === 'tn' ? 'Ga go na dituelo tse di letileng' :
+                             currentLanguage === 'af' ? 'Geen hangende betalings nie' :
+                             'No pending payments'}
+                        </Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -80,13 +130,29 @@ export default function WaitingPayments() {
 
     return (
         <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-            <ScrollView 
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
+                    </Pressable>
+                    <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+                        {currentLanguage === 'zu' ? 'Izinkokhelo Ezilindile' :
+                         currentLanguage === 'tn' ? 'Dituelo tse di Letileng' :
+                         currentLanguage === 'af' ? 'Hangende Betalings' :
+                         'Pending Payments'}
+                    </Text>
+                </View>
+            </View>
+            <ScrollView
                 style={dynamicStyles.container}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerSubtitle}>
-                        {waitingPayments.length} payment{waitingPayments.length !== 1 ? 's' : ''} pending response
+                    <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+                        {currentLanguage === 'zu' ? `${waitingPayments.length} ${waitingPayments.length !== 1 ? 'izinkokhelo' : 'inkokhelo'} zilindele impendulo` :
+                         currentLanguage === 'tn' ? `${waitingPayments.length} ${waitingPayments.length !== 1 ? 'dituelo' : 'tuelo'} di emetse karabo` :
+                         currentLanguage === 'af' ? `${waitingPayments.length} ${waitingPayments.length !== 1 ? 'betalings' : 'betaling'} hang antwoord` :
+                         `${waitingPayments.length} payment${waitingPayments.length !== 1 ? 's' : ''} pending response`}
                     </Text>
                 </View>
 
@@ -117,15 +183,23 @@ export default function WaitingPayments() {
                                     )}
                                 </View>
                                 <View style={[dynamicStyles.statusBadge, dynamicStyles.statusWaiting]}>
-                                    <Text style={dynamicStyles.statusText}>Pending</Text>
+                                    <Text style={dynamicStyles.statusText}>
+                                        {currentLanguage === 'zu' ? 'Kulindile' :
+                                         currentLanguage === 'tn' ? 'E Emetse' :
+                                         currentLanguage === 'af' ? 'Hangende' :
+                                         'Pending'}
+                                    </Text>
                                 </View>
                             </View>
-                            
+
                             <View style={dynamicStyles.cardDetails}>
                                 <View style={dynamicStyles.detailRow}>
                                     <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                     <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
-                                        Fare: R{p.fare.toFixed(2)}
+                                        {currentLanguage === 'zu' ? `Intengo: R${p.fare.toFixed(2)}` :
+                                         currentLanguage === 'tn' ? `Tuelo: R${p.fare.toFixed(2)}` :
+                                         currentLanguage === 'af' ? `Tarief: R${p.fare.toFixed(2)}` :
+                                         `Fare: R${p.fare.toFixed(2)}`}
                                     </Text>
                                 </View>
                             </View>
@@ -142,21 +216,29 @@ const dynamicStyles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        paddingHorizontal: isSmallScreen ? 16 : 20,
+        paddingTop: Platform.OS === 'ios' ? 50 : 16,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(0,0,0,0.08)',
+        gap: 16,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: 'rgba(0,0,0,0.05)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        flex: 1,
     },
 
     container: {

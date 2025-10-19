@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
@@ -25,11 +25,22 @@ export default function DriverPersonalInfoEdit() {
     const [isLoading, setIsLoading] = useState(false);
     
     const router = useRouter();
+    const navigation = useNavigation();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
     const { currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
-    
+
+    // Screen dimensions for responsive design
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const isSmallScreen = screenWidth < 375;
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
+
     // Hardcoded translations
     const translations = {
         en: {
@@ -91,11 +102,71 @@ export default function DriverPersonalInfoEdit() {
             failedToSaveChanges: "Kuhlulekile ukulondoloza izinguquko",
             ok: "Kulungile",
             saving: "Kulondoloziwa..."
+        },
+        tn: {
+            driverPersonalInfo: "Tshedimosetso ya Mokgweetsi ya Gago",
+            editingDriverProfile: "Go Fetola Tshwantsho ya Mokgweetsi",
+            basicInformation: "Tshedimosetso ya Motheo",
+            fullName: "Leina le le Tletseng",
+            enterFullName: "Tsenya leina la gago le le tletseng",
+            phoneNumber: "Nomoro ya Mogala",
+            enterPhoneNumber: "Tsenya nomoro ya gago ya mogala",
+            email: "Imeile",
+            enterEmail: "Tsenya imeile ya gago",
+            emergencyContact: "Motho yo o Ikwang Naye mo Maemong a Kotsi",
+            emergencyContactName: "Leina la Motho yo o Ikwang Naye",
+            enterEmergencyContactName: "Tsenya leina la motho yo o ikwang naye mo maemong a kotsi",
+            emergencyContactPhone: "Nomoro ya Mogala ya Motho yo o Ikwang Naye",
+            enterEmergencyContactNumber: "Tsenya nomoro ya mogala ya motho yo o ikwang naye",
+            emergencyContactRelationship: "Kgolagano",
+            relationshipPlaceholder: "sekai., Molekane, Motsadi, Tsala",
+            changePhoto: "Fetola Setshwantsho",
+            saveChanges: "Boloka Diphetogo",
+            cancel: "Khansela",
+            loading: "Go tsaya...",
+            error: "Phoso",
+            userNotFound: "Modirisi ga a a fitlhelwa",
+            nameRequired: "Leina le a tlhokega",
+            phoneNumberRequired: "Nomoro ya mogala e a tlhokega",
+            changesSaved: "Diphetogo di bolokilwe ka katlego!",
+            failedToSaveChanges: "Go paletse go boloka diphetogo",
+            ok: "Go Siame",
+            saving: "Go boloka..."
+        },
+        af: {
+            driverPersonalInfo: "Bestuurder Persoonlike Inligting",
+            editingDriverProfile: "Redigeer Bestuurder Profiel",
+            basicInformation: "Basiese Inligting",
+            fullName: "Volle Naam",
+            enterFullName: "Voer jou volle naam in",
+            phoneNumber: "Telefoonnommer",
+            enterPhoneNumber: "Voer jou telefoonnommer in",
+            email: "E-pos",
+            enterEmail: "Voer jou e-pos in",
+            emergencyContact: "Noodkontak",
+            emergencyContactName: "Noodkontak Naam",
+            enterEmergencyContactName: "Voer noodkontak naam in",
+            emergencyContactPhone: "Noodkontak Telefoon",
+            enterEmergencyContactNumber: "Voer noodkontak nommer in",
+            emergencyContactRelationship: "Verhouding",
+            relationshipPlaceholder: "bv., Eggenoot, Ouer, Vriend",
+            changePhoto: "Verander Foto",
+            saveChanges: "Stoor Veranderinge",
+            cancel: "Kanselleer",
+            loading: "Laai...",
+            error: "Fout",
+            userNotFound: "Gebruiker nie gevind nie",
+            nameRequired: "Naam is vereis",
+            phoneNumberRequired: "Telefoonnommer is vereis",
+            changesSaved: "Veranderinge suksesvol gestoor!",
+            failedToSaveChanges: "Kon nie veranderinge stoor nie",
+            ok: "OK",
+            saving: "Stoor..."
         }
     };
     
     const t = (key: string) => {
-        const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+        const lang = currentLanguage === 'zu' ? 'zu' : currentLanguage === 'tn' ? 'tn' : currentLanguage === 'af' ? 'af' : 'en';
         return translations[lang][key as keyof typeof translations[typeof lang]] || key;
     };
 
@@ -213,13 +284,19 @@ export default function DriverPersonalInfoEdit() {
                 emergencyContact
             });
 
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess(
+                currentLanguage === 'zu' ? 'Impumelelo' :
+                currentLanguage === 'tn' ? 'Katlego' :
+                currentLanguage === 'af' ? 'Sukses' :
+                'Success',
+                t('changesSaved'),
+                {
                 duration: 4000,
                 position: 'top',
                 animation: 'slide-down',
                 actions: [
                     {
-                        label: 'OK',
+                        label: t('ok'),
                         onPress: () => router.push('../DriverProfile'),
                         style: 'default',
                     },
@@ -248,24 +325,38 @@ export default function DriverPersonalInfoEdit() {
             backgroundColor: theme.background,
             borderTopWidth: 0,
         },
+        header: {
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: Platform.OS === 'ios' ? 50 : 16,
+            paddingBottom: 20,
+            backgroundColor: theme.background,
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        },
+        headerRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        backButton: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
+        },
+        headerTitle: {
+            fontSize: 18,
+            fontWeight: '600',
+            color: theme.text,
+            flex: 1,
+        },
         container: {
             backgroundColor: theme.background,
             paddingHorizontal: 16,
             paddingTop: 20,
             paddingBottom: 40,
-        },
-        header: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 24,
-        },
-        backButton: {
-            marginRight: 15,
-        },
-        headerTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
-            color: theme.text,
         },
         photoSection: {
             alignItems: 'center',
@@ -360,6 +451,18 @@ export default function DriverPersonalInfoEdit() {
 
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
+            {/* Header */}
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
+                    </Pressable>
+                    <Text style={dynamicStyles.headerTitle}>
+                        {t('driverPersonalInfo')}
+                    </Text>
+                </View>
+            </View>
+
             <ScrollView contentContainerStyle={dynamicStyles.container}>
                 {/* Profile Photo Section */}
                 <View style={dynamicStyles.photoSection}>

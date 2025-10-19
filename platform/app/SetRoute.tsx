@@ -16,10 +16,16 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  Pressable,
+  Platform,
+  Dimensions
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
 import { useTheme } from '../contexts/ThemeContext';
 import { useRouteContext } from '../contexts/RouteContext';
 import { useQuery, useMutation } from 'convex/react';
@@ -73,9 +79,16 @@ function parseRouteName(routeName: string) {
  */
 export default function SetRoute({ onRouteSet }: SetRouteProps) {
   const navigation = useNavigation();
+  const router = useRouter();
   const { theme, isDark } = useTheme();
   const { setCurrentRoute } = useRouteContext();
   const { user } = useUser();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
@@ -103,6 +116,7 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       yourAssignedRoute: "Your Assigned Route",
       yourAssignedRouteMessage: "You already have a route assigned. Tap activate to start using it.",
       currentRoute: "Current Route",
+      route: "Route",
       activateRoute: "Activate Route",
       getYourRoute: "Get Your Route",
       routeAssignment: "Route Assignment",
@@ -121,12 +135,14 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       routeActivatedMessage: "Your route is now active:\n\n{route}",
       getMyRoute: "Get My Route",
       assigningRoute: "Assigning Route...",
-      ok: "OK"
+      ok: "OK",
+      taxiAssociation: "Taxi Association"
     },
     zu: {
       yourAssignedRoute: "Indlela Yakho Ebekelwe",
       yourAssignedRouteMessage: "Lena indlela yakho ebekelwe yaphelele. Yenza isebenze ukuze uqale ukuthola abagibeli.",
       currentRoute: "Indlela Yamanje",
+      route: "Indlela",
       activateRoute: "Yenza Indlela Isebenze",
       getYourRoute: "Thola Indlela Yakho",
       routeAssignment: "Ukubekwa Kwendlela",
@@ -145,12 +161,65 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       routeActivatedMessage: "Indlela yakho iyasebenza:\n\n{route}",
       getMyRoute: "Thola Indlela Yami",
       assigningRoute: "Kubekwa Indlela...",
-      ok: "Kulungile"
+      ok: "Kulungile",
+      taxiAssociation: "Inhlangano YamaTekisi"
+    },
+    tn: {
+      yourAssignedRoute: "Tsela ya Gago e e Abelwang",
+      yourAssignedRouteMessage: "O setse o na le tsela e e abelwang. Tobetsa go e dira gore e dire go simolola go e dirisa.",
+      currentRoute: "Tsela ya Jaanong",
+      route: "Tsela",
+      activateRoute: "Dira Tsela e Dire",
+      getYourRoute: "Bona Tsela ya Gago",
+      routeAssignment: "Go Abela Tsela",
+      selectTaxiAssociation: "Tlhopha Mokgatlho wa Ditaeksi",
+      selectTaxiAssociationMessage: "Tlhopha mokgatlho wa gago wa ditaeksi go abiwa tsela ya gompieno.",
+      selectTaxiAssociationFirst: "Tlhopha Mokgatlho wa Ditaeksi Pele",
+      selectTaxiAssociationFirstMessage: "Tsweetswee tlhopha mokgatlho wa gago wa ditaeksi pele.",
+      userNotFound: "Modirisi Ga a a Fitlhelwa",
+      userNotFoundMessage: "Tsweetswee tsena gape go tswelela pele.",
+      noRouteAssigned: "Ga go na tsela e e ka abelwang jaanong",
+      assignmentFailed: "Go Abela go Paletse",
+      assignmentFailedMessage: "Ga go kgonege go abela tsela. Tsweetswee leka gape.",
+      routeAssignedSuccessfully: "Tsela e Abelitswe ka Katlego!",
+      routeAssignedMessage: "O abelitswe go:\n\n{route}\n\nMokgatlho: {association}\n\nEno jaanong ke tsela ya gago e e dirang.",
+      routeActivated: "Tsela e Dirile!",
+      routeActivatedMessage: "Tsela ya gago jaanong e a dira:\n\n{route}",
+      getMyRoute: "Bona Tsela ya Me",
+      assigningRoute: "Go Abela Tsela...",
+      ok: "Go Siame",
+      taxiAssociation: "Mokgatlho wa Ditaeksi"
+    },
+    af: {
+      yourAssignedRoute: "Jou Toegewysde Roete",
+      yourAssignedRouteMessage: "Jy het reeds 'n roete toegewys. Tik aktiveer om dit te begin gebruik.",
+      currentRoute: "Huidige Roete",
+      route: "Roete",
+      activateRoute: "Aktiveer Roete",
+      getYourRoute: "Kry Jou Roete",
+      routeAssignment: "Roete Toekenning",
+      selectTaxiAssociation: "Kies Taxi Vereniging",
+      selectTaxiAssociationMessage: "Kies jou taxi vereniging om 'n roete vir vandag toegewys te kry.",
+      selectTaxiAssociationFirst: "Kies Eers Taxi Vereniging",
+      selectTaxiAssociationFirstMessage: "Kies asseblief eers jou taxi vereniging.",
+      userNotFound: "Gebruiker Nie Gevind nie",
+      userNotFoundMessage: "Meld asseblief weer aan om voort te gaan.",
+      noRouteAssigned: "Geen roete kon op hierdie tyd toegewys word nie",
+      assignmentFailed: "Toekenning Misluk",
+      assignmentFailedMessage: "Kan nie roete toewys nie. Probeer asseblief weer.",
+      routeAssignedSuccessfully: "Roete Suksesvol Toegewys!",
+      routeAssignedMessage: "Jy is toegewys aan:\n\n{route}\n\nVereniging: {association}\n\nDit is nou jou aktiewe roete.",
+      routeActivated: "Roete Geaktiveer!",
+      routeActivatedMessage: "Jou roete is nou aktief:\n\n{route}",
+      getMyRoute: "Kry My Roete",
+      assigningRoute: "Wys Roete Toe...",
+      ok: "OK",
+      taxiAssociation: "Taxi Vereniging"
     }
   };
   
   const t = (key: string, params?: any) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    const lang = currentLanguage === 'zu' ? 'zu' : currentLanguage === 'tn' ? 'tn' : currentLanguage === 'af' ? 'af' : 'en';
     const translation = translations[lang][key as keyof typeof translations[typeof lang]];
     if (translation && params) {
       return Object.keys(params).reduce((str, param) => {
@@ -238,22 +307,26 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
       const { start, destination } = parseRouteName(result.assignedRoute.name);
       const routeString = `${start} → ${destination}`;
-      
+
       setCurrentRoute(routeString);
       onRouteSet?.(routeString);
 
-      showGlobalSuccess('Route Assigned Successfully!', `You have been assigned to: ${routeString}`, {
-        duration: 0,
-        position: 'top',
-        animation: 'slide-down',
-        actions: [
-          {
-            label: 'OK',
-            onPress: () => navigation.goBack(),
-            style: 'default',
-          },
-        ],
-      });
+      showGlobalSuccess(
+        t('routeAssignedSuccessfully'),
+        t('routeAssignedMessage', { route: routeString, association: taxiAssociation }),
+        {
+          duration: 0,
+          position: 'top',
+          animation: 'slide-down',
+          actions: [
+            {
+              label: t('ok'),
+              onPress: () => navigation.goBack(),
+              style: 'default',
+            },
+          ],
+        }
+      );
     } catch (error) {
       console.error("Error assigning route:", error);
       const message = error instanceof Error ? error.message : 'Failed to assign route. Please try again.';
@@ -276,22 +349,26 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
 
     const { start, destination } = parseRouteName(assignedRoute.name);
     const routeString = `${start} → ${destination}`;
-    
+
     setCurrentRoute(routeString);
     onRouteSet?.(routeString);
 
-    showGlobalSuccess('Route Activated', `Route activated: ${routeString}`, {
-      duration: 0,
-      position: 'top',
-      animation: 'slide-down',
-      actions: [
-        {
-          label: 'OK',
-          onPress: () => navigation.goBack(),
-          style: 'default',
-        },
-      ],
-    });
+    showGlobalSuccess(
+      t('routeActivated'),
+      t('routeActivatedMessage', { route: routeString }),
+      {
+        duration: 0,
+        position: 'top',
+        animation: 'slide-down',
+        actions: [
+          {
+            label: t('ok'),
+            onPress: () => navigation.goBack(),
+            style: 'default',
+          },
+        ],
+      }
+    );
   };
 
   // ============================================================================
@@ -307,30 +384,31 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
       flex: 1,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 4,
-      backgroundColor: theme.surface,
-      shadowColor: theme.shadow,
-      shadowOpacity: isDark ? 0.3 : 0.15,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 4,
-      elevation: 4,
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: Platform.OS === 'ios' ? 50 : 16,
+      paddingBottom: 20,
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
     },
-    headerLeft: {
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 16,
     },
     backButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: isDark ? theme.primary : "#f5f5f5",
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.text,
+      flex: 1,
     },
     content: {
       flex: 1,
@@ -485,15 +563,25 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   // If driver already has an assigned route, show activation screen
   if (assignedRoute) {
     const { start, destination } = parseRouteName(assignedRoute.name);
-    
+
     return (
       <SafeAreaView style={dynamicStyles.safeArea}>
         <ScrollView>
-        <StatusBar 
-          barStyle={isDark ? "light-content" : "dark-content"} 
-          backgroundColor={theme.surface} 
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={theme.background}
         />
         <View style={dynamicStyles.container}>
+          {/* Header */}
+          <View style={dynamicStyles.header}>
+            <View style={dynamicStyles.headerRow}>
+              <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                <Icon name="arrow-back" size={20} color={theme.text} />
+              </Pressable>
+              <Text style={dynamicStyles.headerTitle}>{t('yourAssignedRoute')}</Text>
+            </View>
+          </View>
+
           {/* Content */}
           <View style={dynamicStyles.content}>
             <Text style={dynamicStyles.sectionSubtitle}>
@@ -508,12 +596,12 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                 <Icon name="navigate-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6, marginBottom: 7 }} />
-                <Text style={dynamicStyles.routeText}>Route</Text>
+                <Text style={dynamicStyles.routeText}>{t('route')}</Text>
               </View>
               <Text style={dynamicStyles.routeText2}>{start} → {destination}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4 }}>
                 <Icon name="people-outline" size={18} color={theme.textSecondary} style={{ marginRight: 6 }} />
-                <Text style={dynamicStyles.associationText2}>Taxi Association</Text>
+                <Text style={dynamicStyles.associationText2}>{t('taxiAssociation')}</Text>
               </View>
               <Text style={dynamicStyles.associationText}>{assignedRoute.taxiAssociation}</Text>
             </View>
@@ -536,27 +624,23 @@ export default function SetRoute({ onRouteSet }: SetRouteProps) {
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
       <ScrollView>
-      <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
-        backgroundColor={theme.surface} 
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={theme.background}
       />
       <View style={dynamicStyles.container}>
         {/* Header */}
         <View style={dynamicStyles.header}>
-          <View style={dynamicStyles.headerLeft}>
-            <TouchableOpacity 
-              style={dynamicStyles.backButton}
-              onPress={() => navigation.goBack()}
-              testID="back-button"
-            >
-              <Icon name="arrow-back" size={24} color={isDark ? "#121212" : "#FF9900"} />
-            </TouchableOpacity>
+          <View style={dynamicStyles.headerRow}>
+            <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+              <Icon name="arrow-back" size={20} color={theme.text} />
+            </Pressable>
+            <Text style={dynamicStyles.headerTitle}>{t('routeAssignment')}</Text>
           </View>
         </View>
 
         {/* Content */}
         <View style={dynamicStyles.content}>
-          <Text style={dynamicStyles.sectionTitle}>{t('routeAssignment')}</Text>
           <Text style={dynamicStyles.sectionSubtitle}>
             {t('selectTaxiAssociationMessage')}
           </Text>

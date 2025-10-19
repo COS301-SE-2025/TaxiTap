@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, SafeAreaView, Image, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useUser } from '../contexts/UserContext';
@@ -19,10 +19,21 @@ export default function DriverProfile() {
     const [imageUri, setImageUri] = useState<string | null>(null);
     
     const router = useRouter();
+    const navigation = useNavigation();
     const { user, loading, logout, updateUserRole, updateUserName, updateAccountType, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
+
+    // Screen dimensions for responsive design
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const isSmallScreen = screenWidth < 375;
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
 
     useEffect(() => {
         if (user) {
@@ -134,14 +145,23 @@ export default function DriverProfile() {
             else if ((convexUser?.accountType || user.accountType) === 'both') {
                 showGlobalAlert({
                     title: t('profile:switchProfile'),
-                    message: 'Are you sure you want to switch to the passenger profile?',
+                    message: currentLanguage === 'zu' ? 'Uqinisekile ukuthi ufuna ukushintshela kuphrofayela yomgibeli?' :
+                            currentLanguage === 'tn' ? 'A o tlhomamisegile gore o batla go fetogela profaele ya mopalami?' :
+                            currentLanguage === 'af' ? 'Is jy seker jy wil oorskakel na die passasier profiel?' :
+                            'Are you sure you want to switch to the passenger profile?',
                     type: 'info',
                     duration: 0,
                     position: 'top',
                     animation: 'slide-down',
                     actions: [
-                        { label: 'Cancel', onPress: () => {}, style: 'cancel' },
-                        { label: 'Yes', onPress: async () => {
+                        { label: currentLanguage === 'zu' ? 'Khansela' :
+                                currentLanguage === 'tn' ? 'Khansela' :
+                                currentLanguage === 'af' ? 'Kanselleer' :
+                                'Cancel', onPress: () => {}, style: 'cancel' },
+                        { label: currentLanguage === 'zu' ? 'Yebo' :
+                                currentLanguage === 'tn' ? 'Ee' :
+                                currentLanguage === 'af' ? 'Ja' :
+                                'Yes', onPress: async () => {
                             try {
                                 // Switch active role to passenger
                                 await switchActiveRole({ 
@@ -151,8 +171,17 @@ export default function DriverProfile() {
                                 
                                 // Update context
                                 await updateUserRole('passenger');
-                                
-                                showGlobalSuccess('Success', 'Switched to passenger mode!');
+
+                                showGlobalSuccess(
+                                    currentLanguage === 'zu' ? 'Impumelelo' :
+                                    currentLanguage === 'tn' ? 'Katlego' :
+                                    currentLanguage === 'af' ? 'Sukses' :
+                                    'Success',
+                                    currentLanguage === 'zu' ? 'Kushintshele kumodi yomgibeli!' :
+                                    currentLanguage === 'tn' ? 'Go fetogetswe go mokgwa wa mopalami!' :
+                                    currentLanguage === 'af' ? 'Oorgeskakel na passasier modus!' :
+                                    'Switched to passenger mode!'
+                                );
                                 router.push('../HomeScreen');
                             } catch (error: any) {
                                 showGlobalError('Error', error.message || 'Failed to switch to passenger mode');
@@ -227,6 +256,33 @@ export default function DriverProfile() {
         safeArea: {
             flex: 1,
             backgroundColor: theme.background,
+        },
+        header: {
+            paddingHorizontal: isSmallScreen ? 16 : 20,
+            paddingTop: Platform.OS === 'ios' ? 50 : 16,
+            paddingBottom: 20,
+            backgroundColor: theme.background,
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        },
+        headerRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        backButton: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
+        },
+        headerTitle: {
+            fontSize: 18,
+            fontWeight: '600',
+            color: theme.text,
+            flex: 1,
         },
         container: {
             backgroundColor: theme.background,
@@ -362,7 +418,22 @@ export default function DriverProfile() {
 
     return (
         <SafeAreaView style={dynamicStyles.safeArea}>
-            <ScrollView 
+            {/* Header */}
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
+                    </Pressable>
+                    <Text style={dynamicStyles.headerTitle}>
+                        {currentLanguage === 'zu' ? 'Iphrofayela' :
+                         currentLanguage === 'tn' ? 'Profaele' :
+                         currentLanguage === 'af' ? 'Profiel' :
+                         'Profile'}
+                    </Text>
+                </View>
+            </View>
+
+            <ScrollView
                 contentContainerStyle={dynamicStyles.container}
                 showsVerticalScrollIndicator={false}
             >
@@ -389,7 +460,12 @@ export default function DriverProfile() {
                 </View>
 
                 {/* Account Section */}
-                <Text style={dynamicStyles.sectionHeader}>Account</Text>
+                <Text style={dynamicStyles.sectionHeader}>
+                    {currentLanguage === 'zu' ? 'I-akhawunti' :
+                     currentLanguage === 'tn' ? 'Akhaonto' :
+                     currentLanguage === 'af' ? 'Rekening' :
+                     'Account'}
+                </Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="person-outline"
@@ -410,7 +486,12 @@ export default function DriverProfile() {
                 </View>
 
                 {/* Driver Services Section */}
-                <Text style={dynamicStyles.sectionHeader}>Driver Services</Text>
+                <Text style={dynamicStyles.sectionHeader}>
+                    {currentLanguage === 'zu' ? 'Izinsizakalo Zomshayeli' :
+                     currentLanguage === 'tn' ? 'Ditirelo tsa Mokhanni' :
+                     currentLanguage === 'af' ? 'Bestuurder Dienste' :
+                     'Driver Services'}
+                </Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="car-outline"
@@ -427,7 +508,12 @@ export default function DriverProfile() {
                 {/* Driver Badges */}
                 {driverBadges && driverBadges.length > 0 && (
                     <>
-                        <Text style={dynamicStyles.sectionHeader}>Achievements</Text>
+                        <Text style={dynamicStyles.sectionHeader}>
+                            {currentLanguage === 'zu' ? 'Izinhloso Ezifezekile' :
+                             currentLanguage === 'tn' ? 'Diphitlhelelo' :
+                             currentLanguage === 'af' ? 'Prestasies' :
+                             'Achievements'}
+                        </Text>
                         <View style={dynamicStyles.section}>
                             <View style={dynamicStyles.badgesContainer}>
                                 <View style={dynamicStyles.badgesRow}>
@@ -450,7 +536,12 @@ export default function DriverProfile() {
                 )}
 
                 {/* Settings Section */}
-                <Text style={dynamicStyles.sectionHeader}>Settings</Text>
+                <Text style={dynamicStyles.sectionHeader}>
+                    {currentLanguage === 'zu' ? 'Izilungiselelo' :
+                     currentLanguage === 'tn' ? 'Dithulaganyo' :
+                     currentLanguage === 'af' ? 'Instellings' :
+                     'Settings'}
+                </Text>
                 <View style={dynamicStyles.section}>
                     <MenuItemComponent
                         icon="log-out-outline"

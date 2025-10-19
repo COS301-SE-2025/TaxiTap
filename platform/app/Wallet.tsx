@@ -6,11 +6,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Id } from "../convex/_generated/dataModel";
 import { useTheme } from "../contexts/ThemeContext";
+import { useUser } from "../contexts/UserContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const TransactionHistoryScreen = () => {
   const { passengerId } = useLocalSearchParams<{ passengerId?: string }>();
   const router = useRouter();
   const { theme, isDark } = useTheme();
+  const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   
   // Screen dimensions for responsive design
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -23,7 +27,22 @@ const TransactionHistoryScreen = () => {
     passengerId ? { passengerId: passengerId as Id<"taxiTap_users">} : "skip"
   );
 
-  const paymentTypeLabels: Record<string, string> = {
+  const paymentTypeLabels: Record<string, string> = currentLanguage === 'zu' ? {
+    overpaid: "Uhambo Lweqile Imali",
+    exact: "Inkokhelo Echanekile",
+    underpaid: "Uhambo Alweqanga Imali",
+    not_paid: "Ayikhokhelwanga",
+  } : currentLanguage === 'tn' ? {
+    overpaid: "Loeto lo le Duelweng Thata",
+    exact: "Tuelo e e Nepahetseng",
+    underpaid: "Loeto lo le sa Duelwang Sentle",
+    not_paid: "Ga e a Duelwa",
+  } : currentLanguage === 'af' ? {
+    overpaid: "Oorbetaalde Rit",
+    exact: "Presiese Betaling",
+    underpaid: "Onderbetaalde Rit",
+    not_paid: "Nie Betaal",
+  } : {
     overpaid: "Overpaid Trip",
     exact: "Exact Payment",
     underpaid: "Underpaid Trip",
@@ -171,12 +190,22 @@ const TransactionHistoryScreen = () => {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+            <Text style={dynamicStyles.headerTitle}>
+              {currentLanguage === 'zu' ? 'Isikhwama Sami' :
+               currentLanguage === 'tn' ? 'Mokotlana wa Me' :
+               currentLanguage === 'af' ? 'My Beursie' :
+               'My Wallet'}
+            </Text>
           </View>
         </View>
         
         <View style={dynamicStyles.center}>
-          <Text style={dynamicStyles.centerText}>No passenger ID provided</Text>
+          <Text style={dynamicStyles.centerText}>
+            {currentLanguage === 'zu' ? 'Akukho ID yomgibeli enikeziwe' :
+             currentLanguage === 'tn' ? 'Ga go na ID ya mopalami e e filweng' :
+             currentLanguage === 'af' ? 'Geen passasier ID verskaf nie' :
+             'No passenger ID provided'}
+          </Text>
         </View>
       </View>
     );
@@ -191,12 +220,22 @@ const TransactionHistoryScreen = () => {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+            <Text style={dynamicStyles.headerTitle}>
+              {currentLanguage === 'zu' ? 'Isikhwama Sami' :
+               currentLanguage === 'tn' ? 'Mokotlana wa Me' :
+               currentLanguage === 'af' ? 'My Beursie' :
+               'My Wallet'}
+            </Text>
           </View>
         </View>
         
         <View style={dynamicStyles.center}>
-          <Text style={dynamicStyles.centerText}>Loading transactions...</Text>
+          <Text style={dynamicStyles.centerText}>
+            {currentLanguage === 'zu' ? 'Layisha ukuhweba...' :
+             currentLanguage === 'tn' ? 'Go laisa ditransekeshene...' :
+             currentLanguage === 'af' ? 'Laai transaksies...' :
+             'Loading transactions...'}
+          </Text>
         </View>
       </View>
     );
@@ -210,7 +249,12 @@ const TransactionHistoryScreen = () => {
           <Pressable style={dynamicStyles.backButton} onPress={() => router.push('/(tabs)/PassengerProfile')}>
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </Pressable>
-          <Text style={dynamicStyles.headerTitle}>My Wallet</Text>
+          <Text style={dynamicStyles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Isikhwama Sami' :
+             currentLanguage === 'tn' ? 'Mokotlana wa Me' :
+             currentLanguage === 'af' ? 'My Beursie' :
+             'My Wallet'}
+          </Text>
         </View>
       </View>
 
@@ -224,7 +268,12 @@ const TransactionHistoryScreen = () => {
         >
 
       {transactions.length === 0 && (
-        <Text style={dynamicStyles.empty}>No recent transactions</Text>
+        <Text style={dynamicStyles.empty}>
+          {currentLanguage === 'zu' ? 'Akukho ukuhweba kwakamuva' :
+           currentLanguage === 'tn' ? 'Ga go na ditransekeshene tsa bosheng' :
+           currentLanguage === 'af' ? 'Geen onlangse transaksies nie' :
+           'No recent transactions'}
+        </Text>
       )}
 
       {transactions.map((tx) => (
@@ -243,7 +292,13 @@ const TransactionHistoryScreen = () => {
                 tx.paymentStatus === "paid" ? dynamicStyles.paid : dynamicStyles.unpaid,
               ]}
             >
-              {tx.paymentStatus.toUpperCase()}
+              {currentLanguage === 'zu'
+                ? (tx.paymentStatus === "paid" ? "KUKHOKHIWE" : "AKUKHOKHWANGA")
+                : currentLanguage === 'tn'
+                ? (tx.paymentStatus === "paid" ? "E DUELETSWE" : "GA E A DUELWA")
+                : currentLanguage === 'af'
+                ? (tx.paymentStatus === "paid" ? "BETAAL" : "ONBETAAL")
+                : tx.paymentStatus.toUpperCase()}
             </Text>
           </View>
 
@@ -267,17 +322,32 @@ const TransactionHistoryScreen = () => {
           
           {tx.driver && (
             <View style={[dynamicStyles.row, { marginTop: 8 }]}>
-              <Text style={dynamicStyles.driver}>Driver: {tx.driver.name}</Text>
+              <Text style={dynamicStyles.driver}>
+                {currentLanguage === 'zu' ? `Umshayeli: ${tx.driver.name}` :
+                 currentLanguage === 'tn' ? `Mokgweetsi: ${tx.driver.name}` :
+                 currentLanguage === 'af' ? `Bestuurder: ${tx.driver.name}` :
+                 `Driver: ${tx.driver.name}`}
+              </Text>
             </View>
           )}
 
           {(tx.amountOwed > 0 || tx.changeDue > 0) && (
             <View style={{ marginTop: 8 }}>
               {tx.amountOwed > 0 && (
-                <Text style={dynamicStyles.owed}>Owes: R {tx.amountOwed.toFixed(2)}</Text>
+                <Text style={dynamicStyles.owed}>
+                  {currentLanguage === 'zu' ? `Isikweletu: R ${tx.amountOwed.toFixed(2)}` :
+                   currentLanguage === 'tn' ? `Sekoloto: R ${tx.amountOwed.toFixed(2)}` :
+                   currentLanguage === 'af' ? `Skuld: R ${tx.amountOwed.toFixed(2)}` :
+                   `Owes: R ${tx.amountOwed.toFixed(2)}`}
+                </Text>
               )}
               {tx.changeDue > 0 && (
-                <Text style={dynamicStyles.change}>Change Due: R {tx.changeDue.toFixed(2)}</Text>
+                <Text style={dynamicStyles.change}>
+                  {currentLanguage === 'zu' ? `Ushintshi: R ${tx.changeDue.toFixed(2)}` :
+                   currentLanguage === 'tn' ? `Tshelete e e Buselwang: R ${tx.changeDue.toFixed(2)}` :
+                   currentLanguage === 'af' ? `Kleingeld Verskuldig: R ${tx.changeDue.toFixed(2)}` :
+                   `Change Due: R ${tx.changeDue.toFixed(2)}`}
+                </Text>
               )}
             </View>
           )}

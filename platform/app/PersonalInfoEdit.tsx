@@ -25,7 +25,7 @@ export default function PersonalInfoEdit() {
     const router = useRouter();
     const { user, updateUserName, updateNumber } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage();
     const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
     
     // Screen dimensions for responsive design
@@ -136,13 +136,25 @@ export default function PersonalInfoEdit() {
             if (phoneNumber !== user.phoneNumber) {
                 await updateNumber(phoneNumber);
             }
-            showGlobalSuccess('Success', 'Changes saved successfully', {
+            showGlobalSuccess(
+              currentLanguage === 'zu' ? 'Impumelelo' :
+              currentLanguage === 'tn' ? 'Katlego' :
+              currentLanguage === 'af' ? 'Sukses' :
+              'Success',
+              currentLanguage === 'zu' ? 'Izinguquko zigciniwe ngempumelelo' :
+              currentLanguage === 'tn' ? 'Diphetogo di bolokilwe ka katlego' :
+              currentLanguage === 'af' ? 'Veranderinge suksesvol gestoor' :
+              'Changes saved successfully',
+              {
               duration: 4000,
               position: 'top',
               animation: 'slide-down',
               actions: [
                 {
-                  label: 'OK',
+                  label: currentLanguage === 'zu' ? 'KULUNGILE' :
+                        currentLanguage === 'tn' ? 'GO SIAME' :
+                        currentLanguage === 'af' ? 'OK' :
+                        'OK',
                   onPress: () => router.back(),
                   style: 'default',
                 },

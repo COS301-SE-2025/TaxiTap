@@ -23,7 +23,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 export default function PassengerPinEntry() {
   const { user } = useUser();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const params = useLocalSearchParams();
   
   const [pin, setPin] = useState(['', '', '', '']);
@@ -132,13 +132,31 @@ export default function PassengerPinEntry() {
   // Verify PIN
   const handleVerifyPin = async (enteredPin: string) => {
     if (!user || !rideId || !driverId) {
-      Alert.alert('Error', 'Missing ride or user information.');
+      Alert.alert(
+        currentLanguage === 'zu' ? 'Iphutha' :
+        currentLanguage === 'tn' ? 'Phoso' :
+        currentLanguage === 'af' ? 'Fout' :
+        'Error',
+        currentLanguage === 'zu' ? 'Ulwazi lohambo noma lomsebenzisi alutholakali.' :
+        currentLanguage === 'tn' ? 'Tshedimosetso ya loeto kgotsa ya modirisi ga e yo.' :
+        currentLanguage === 'af' ? 'Rit of gebruiker inligting ontbreek.' :
+        'Missing ride or user information.'
+      );
       return;
     }
 
     // Validate PIN format
     if (!enteredPin || enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
+      Alert.alert(
+        currentLanguage === 'zu' ? 'I-PIN Engavumelekile' :
+        currentLanguage === 'tn' ? 'PIN e e sa Siamang' :
+        currentLanguage === 'af' ? 'Ongeldige PIN' :
+        'Invalid PIN',
+        currentLanguage === 'zu' ? 'Sicela ufake i-PIN yezinombolo ezi-4 evumelekile.' :
+        currentLanguage === 'tn' ? 'Tsweetswee tsenya PIN ya dinomoro tse 4 e e siameng.' :
+        currentLanguage === 'af' ? 'Voer asseblief \'n geldige 4-syfer PIN in.' :
+        'Please enter a valid 4-digit PIN.'
+      );
       return;
     }
 
@@ -181,15 +199,44 @@ export default function PassengerPinEntry() {
           });
         } catch (navError) {
           console.error('Navigation error:', navError);
-          Alert.alert('Navigation Error', 'Failed to navigate to payments. Please try again.');
+          Alert.alert(
+            currentLanguage === 'zu' ? 'Iphutha Lokuhamba' :
+            currentLanguage === 'tn' ? 'Phoso ya go Tsamaya' :
+            currentLanguage === 'af' ? 'Navigasie Fout' :
+            'Navigation Error',
+            currentLanguage === 'zu' ? 'Kuhlulekile ukuhamba kuya ezinkokhelo. Sicela uzame futhi.' :
+            currentLanguage === 'tn' ? 'Go paletse go ya kwa dituelelong. Tsweet swee leka gape.' :
+            currentLanguage === 'af' ? 'Kon nie na betalings navigeer nie. Probeer asseblief weer.' :
+            'Failed to navigate to payments. Please try again.'
+          );
         }
       } else {
-        Alert.alert('Invalid PIN', 'Please check with the driver and try again.');
+        Alert.alert(
+          currentLanguage === 'zu' ? 'I-PIN Engavumelekile' :
+          currentLanguage === 'tn' ? 'PIN e e sa Siamang' :
+          currentLanguage === 'af' ? 'Ongeldige PIN' :
+          'Invalid PIN',
+          currentLanguage === 'zu' ? 'Sicela uhlole nomshayeli futhi uzame futhi.' :
+          currentLanguage === 'tn' ? 'Tsweetswee tlhatlhoba le mokgweetsi gape o leke gape.' :
+          currentLanguage === 'af' ? 'Kontroleer asseblief by die bestuurder en probeer weer.' :
+          'Please check with the driver and try again.'
+        );
         setPin(['', '', '', '']);
       }
     } catch (error: any) {
       console.error('PIN verification error:', error);
-      Alert.alert('Error', error?.message || 'Failed to verify PIN. Please try again.');
+      Alert.alert(
+        currentLanguage === 'zu' ? 'Iphutha' :
+        currentLanguage === 'tn' ? 'Phoso' :
+        currentLanguage === 'af' ? 'Fout' :
+        'Error',
+        error?.message || (
+          currentLanguage === 'zu' ? 'Kuhlulekile ukuqinisekisa i-PIN. Sicela uzame futhi.' :
+          currentLanguage === 'tn' ? 'Go paletse go netefatsa PIN. Tsweetswee leka gape.' :
+          currentLanguage === 'af' ? 'Kon nie PIN verifieer nie. Probeer asseblief weer.' :
+          'Failed to verify PIN. Please try again.'
+        )
+      );
       setPin(['', '', '', '']);
     } finally {
       setIsVerifying(false);
@@ -264,13 +311,21 @@ export default function PassengerPinEntry() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme?.background || '#FFFFFF' }]}>
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>Missing ride information. Please go back and try again.</Text>
-          <TouchableOpacity 
+          <Text style={[styles.loadingText, { color: theme?.text || '#000000' }]}>
+            {currentLanguage === 'zu' ? 'Ulwazi lohambo alutholakali. Sicela ubuyele emuva futhi uzame futhi.' :
+             currentLanguage === 'tn' ? 'Tshedimosetso ya loeto ga e yo. Tsweetswee boela morago o leke gape.' :
+             currentLanguage === 'af' ? 'Rit inligting ontbreek. Gaan asseblief terug en probeer weer.' :
+             'Missing ride information. Please go back and try again.'}
+          </Text>
+          <TouchableOpacity
             style={[styles.cancelButton, { marginTop: 20 }]}
             onPress={() => router.back()}
           >
             <Text style={[styles.cancelButtonText, { color: theme?.text || '#000000' }]}>
-              Go Back
+              {currentLanguage === 'zu' ? 'Buyela Emuva' :
+               currentLanguage === 'tn' ? 'Boela Morago' :
+               currentLanguage === 'af' ? 'Gaan Terug' :
+               'Go Back'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -296,7 +351,10 @@ export default function PassengerPinEntry() {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingSpinner size="large" />
           <Text style={{ marginTop: 20, color: theme.text, fontSize: 16 }}>
-            Verifying PIN...
+            {currentLanguage === 'zu' ? 'Iyaqinisekisa i-PIN...' :
+             currentLanguage === 'tn' ? 'E netefatsa PIN...' :
+             currentLanguage === 'af' ? 'Verifieer PIN...' :
+             'Verifying PIN...'}
           </Text>
         </View>
       </SafeAreaView>
@@ -332,10 +390,16 @@ export default function PassengerPinEntry() {
           <View style={styles.infoSection}>
             <Icon name="shield-checkmark" size={60} color={theme.primary} />
             <Text style={[styles.title, { color: theme.text }]}>
-              Enter Driver's PIN
+              {currentLanguage === 'zu' ? 'Faka i-PIN Yomshayeli' :
+               currentLanguage === 'tn' ? 'Tsenya PIN ya Mokgweetsi' :
+               currentLanguage === 'af' ? 'Voer Bestuurder se PIN in' :
+               'Enter Driver\'s PIN'}
             </Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Ask the driver to show you their verification PIN to start the ride
+              {currentLanguage === 'zu' ? 'Cela umshayeli akubonise i-PIN yabo yokuqinisekisa ukuze uqale uhambo' :
+               currentLanguage === 'tn' ? 'Kopa mokgweetsi go go bontsha PIN ya bone ya netefatso go simolola loeto' :
+               currentLanguage === 'af' ? 'Vra die bestuurder om hul verifikasie PIN te wys om die rit te begin' :
+               'Ask the driver to show you their verification PIN to start the ride'}
             </Text>
           </View>
 

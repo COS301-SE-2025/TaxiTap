@@ -103,6 +103,9 @@ import type * as functions_taxis_updateTaxiInfo from "../functions/taxis/updateT
 import type * as functions_taxis_updateTaxiInfoHandler from "../functions/taxis/updateTaxiInfoHandler.js";
 import type * as functions_taxis_viewTaxiInfo from "../functions/taxis/viewTaxiInfo.js";
 import type * as functions_taxis_viewTaxiInfoHandler from "../functions/taxis/viewTaxiInfoHandler.js";
+import type * as functions_users_UserManagement_cleanupDriversByDate from "../functions/users/UserManagement/cleanupDriversByDate.js";
+import type * as functions_users_UserManagement_cleanupSeededDrivers from "../functions/users/UserManagement/cleanupSeededDrivers.js";
+import type * as functions_users_UserManagement_cleanupTaxisByDate from "../functions/users/UserManagement/cleanupTaxisByDate.js";
 import type * as functions_users_UserManagement_getLoyalMemberStatus from "../functions/users/UserManagement/getLoyalMemberStatus.js";
 import type * as functions_users_UserManagement_getUserById from "../functions/users/UserManagement/getUserById.js";
 import type * as functions_users_UserManagement_logInWithSMS from "../functions/users/UserManagement/logInWithSMS.js";
@@ -221,6 +224,9 @@ declare const fullApi: ApiFromModules<{
   "functions/taxis/updateTaxiInfoHandler": typeof functions_taxis_updateTaxiInfoHandler;
   "functions/taxis/viewTaxiInfo": typeof functions_taxis_viewTaxiInfo;
   "functions/taxis/viewTaxiInfoHandler": typeof functions_taxis_viewTaxiInfoHandler;
+  "functions/users/UserManagement/cleanupDriversByDate": typeof functions_users_UserManagement_cleanupDriversByDate;
+  "functions/users/UserManagement/cleanupSeededDrivers": typeof functions_users_UserManagement_cleanupSeededDrivers;
+  "functions/users/UserManagement/cleanupTaxisByDate": typeof functions_users_UserManagement_cleanupTaxisByDate;
   "functions/users/UserManagement/getLoyalMemberStatus": typeof functions_users_UserManagement_getLoyalMemberStatus;
   "functions/users/UserManagement/getUserById": typeof functions_users_UserManagement_getUserById;
   "functions/users/UserManagement/logInWithSMS": typeof functions_users_UserManagement_logInWithSMS;

@@ -9,10 +9,16 @@ jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
 // Mock expo-router navigation
 const mockGoBack = jest.fn();
 const mockSetOptions = jest.fn();
+const mockRouterBack = jest.fn();
 jest.mock('expo-router', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
     setOptions: mockSetOptions,
+  }),
+  useRouter: () => ({
+    back: mockRouterBack,
+    push: jest.fn(),
+    replace: jest.fn(),
   }),
   useLocalSearchParams: () => ({}),
 }));
