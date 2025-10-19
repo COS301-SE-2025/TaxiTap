@@ -106,11 +106,13 @@ common: {
   passwordMismatch: "Passwords do not match",
   phoneNumberInUse: "This phone number is already registered. Try logging in or use a different number.",
   phoneNumberOrPasswordIncorrect: "Phone number or password is incorrect",
-  currentLocation: "Current Location",
-  availableSeats: "Available Seats",
-  noSeatsAvailable: "No Seats Available",
-  ok: "OK",
-  continue: "Continue",
+    currentLocation: "Current Location",
+    availableSeats: "Available Seats",
+    noSeatsAvailable: "No Seats Available",
+    seats: "Seats",
+    ok: "OK",
+    continue: "Continue",
+    pageOf: "Page {current} of {total}",
 },
 
   // Home Screen
@@ -183,6 +185,7 @@ common: {
     searchRoutes: "Search routes or destinations...",
     availableRoutes: "Available Routes",
     noRoutesFound: "No routes available",
+    noRoutesFoundMessage: "No direct route or multi-leg options are available for your selected origin and destination. Please try different locations.",
     noRoutesMatching: "No routes found matching your criteria",
     reserveSeat: "Reserve Seat",
     page: "Page",
@@ -199,6 +202,7 @@ common: {
     searchingForTaxis: "Searching for available taxis...",
     taxisAvailable: "{count} taxis available",
     noTaxisAvailable: "No taxis available",
+    frontPassengerAccess: "Front Passenger Access",
   },
 
   // Navigation & Tabs
@@ -234,6 +238,12 @@ common: {
     rideDeclinedMessage: "Your ride request was declined.",
     rideAcceptedMessage: "Your ride request was accepted.",
     rideCancelledMessage: "Your ride has been cancelled.",
+    rideEndedSuccessfully: "Ride Ended Successfully",
+    rideEndedSuccessfullyMessage: "Your ride has ended successfully. We hope you had a pleasant journey.",
+    continueToFeedback: "Continue to Feedback",
+    skipFeedback: "Skip Feedback",
+    continueToNextLeg: "Continue to Next Leg",
+    continueToNextLegMessage: "Your current leg has ended. Please proceed to the next leg of your journey.",
     ok: "OK",
   },
 
@@ -241,6 +251,7 @@ common: {
   // Taxi Information
   taxiInfo: {
     availableTaxis: "Available Taxis",
+    availableTaxisCount: "{count} taxi available",
     from: "From",
     to: "to",
     findingAvailableTaxis: "Finding available taxis...",
@@ -275,6 +286,7 @@ common: {
     phoneNotSupported: "Phone calls are not supported on this device",
     couldNotOpenPhone: "Could not open phone app",
     km: "km",
+    selectYourDriver: "Select Your Driver",
   },
    // Passenger specific
    passenger: {
@@ -328,8 +340,18 @@ common: {
     cannotSubmitFeedback: "Cannot submit feedback: Missing ride/user information.",
     somethingWentWrong: "Something went wrong.",
     feedbackHistory: "Feedback History",
+    yourRideReviews: "Your Ride Reviews",
+    reviewFor: "Review for",
     noFeedbackYet: "No feedback submitted yet",
     noFeedbackMessage: "Your feedback history will appear here when you submit feedback for your rides.",
+    from: "From",
+    to: "To",
+    pickupLocation: "Pickup Location",
+    rateYourDriver: "Rate Your Driver",
+    howWasYourDriver: "How was your driver?",
+    shareFeedback: "Share Your Feedback",
+    tellUsAboutDriver: "Tell us about your driver",
+    shareThoughtsAboutDriver: "Share your thoughts about the driver",
   },
 
 
@@ -467,6 +489,8 @@ common: {
     markAllAsRead: "Mark All as Read",
     noNotifications: "No Notifications",
     allNotifications: "All Notifications",
+    seatsAvailable: "Seats Available",
+    taxiFull: "Taxi Full",
   },
 
  // Earnings page
@@ -490,6 +514,8 @@ earningsPage: {
     logOut: "Log Out",
     passenger: "Passenger",
     yourName: "Your Name",
+    wallet: "Wallet",
+    myWallet: "My Wallet",
     loadingUserData: "Loading user data...",
     firstTimeSwitching: "First Time Switching",
     firstTimeSwitchingMessage: "This is your first time switching to driver mode. Your account will be upgraded to support both passenger and driver roles.",
@@ -805,15 +831,25 @@ const zuluTranslations: TranslationStructure = {
     missingInfo: "Ulwazi Olusilele",
     cannotSubmitFeedback: "Akukwazi ukuthumela impendulo: Ulwazi lwemoto/omsebenzisi olusilele.",
     somethingWentWrong: "Kukhona okuhambile.",
-    
+    from: "Kusuka",
+    to: "Kuya",
+    pickupLocation: "Indawo Yokuthatha",
+    rateYourDriver: "Linganisa Umshayeli Wakho",
+    howWasYourDriver: "Umshayeli wakho waba njani?",
+    shareFeedback: "Yabelana Ngempendulo Yakho",
+    tellUsAboutDriver: "Sitshele ngomshayeli wakho",
+    shareThoughtsAboutDriver: "Yabelana ngemicabango yakho ngomshayeli",
+
     // Add passenger-specific translations here
     welcome: "Siyakwamukela UmGibeli",
     bookRide: "Bhukha Uhambo",
     myRides: "Amahambo Ami",
     rideHistory: "Umlando Wamahambo",
-    
+
     // Feedback History
     feedbackHistory: "Umlando Wempendulo",
+    yourRideReviews: "Ukubuyekeza Kwakho Kwemahambo",
+    reviewFor: "Ukubuyekeza kwe",
     noFeedbackYet: "Akukho impendulo ethunyelwe okwamanje",
     noFeedbackMessage: "Umlando wempendulo yakho uzobonakala lapha uma uthumela impendulo yemoto yakho.",
     
@@ -1020,6 +1056,8 @@ const zuluTranslations: TranslationStructure = {
     markAllAsRead: "Maka Konke Njengokufundile",
     noNotifications: "Akukho Izaziso",
     allNotifications: "Zonke Izaziso",
+    seatsAvailable: "Izihlalo Ezitholakalayo",
+    taxiFull: "Itekisi Igcwele",
   },
   // Common UI elements
   common: {
@@ -1046,8 +1084,10 @@ const zuluTranslations: TranslationStructure = {
     currentLocation: "Indawo Yamanje",
     availableSeats: "Izihlalo Ezitholakalayo",
     noSeatsAvailable: "Akukho Izihlalo Ezitholakalayo",
+    seats: "Izihlalo",
     ok: "Kulungile",
     continue: "Qhubeka",
+    pageOf: "Ikhasi {current} lika-{total}",
   },
   
   // Booking flow
@@ -1069,6 +1109,7 @@ const zuluTranslations: TranslationStructure = {
     searchRoutes: "Sesha izindlela noma izindawo...",
     availableRoutes: "Izindlela Ezitholakalayo",
     noRoutesFound: "Akukho izindlela ezitholakali",
+    noRoutesFoundMessage: "Akukho ndlela eqondile noma izinketho zezigaba eziningi ezitholakalayo ukusuka lapho uqala kuya lapho uya khona. Sicela uzame izindawo ezahlukile.",
     noRoutesMatching: "Akukho izindlela ezitholakali ezifanayo nezingcaciso zakho",
     reserveSeat: "Bheka Isihlalo",
     page: "Ikhasi",
@@ -1085,6 +1126,7 @@ const zuluTranslations: TranslationStructure = {
     searchingForTaxis: "Kuseshwa amatekisi atholakalayo...",
     taxisAvailable: "{count} amatekisi atholakalayo",
     noTaxisAvailable: "Akukho amatekisi atholakalayo",
+    frontPassengerAccess: "Ukufinyelela Kwabagibeli Bangaphambili",
   },
 
   // Navigation & Tabs
@@ -1118,6 +1160,14 @@ const zuluTranslations: TranslationStructure = {
     rideAccepted: "Ukuya Kwamukelwe",
     rideCancelled: "Ukuya Kukhanselwe",
     rideDeclinedMessage: "Isicelo sakho sokuya senqatshelwe.",
+    rideAcceptedMessage: "Isicelo sakho sokuya samukelwe.",
+    rideCancelledMessage: "Uhambo lwakho lukhanseliwe.",
+    rideEndedSuccessfully: "Uhambo Luphelile Ngempumelelo",
+    rideEndedSuccessfullyMessage: "Uhambo lwakho luphelile ngempumelelo. Siyethemba ukuthi uhambe kahle.",
+    continueToFeedback: "Qhubeka Nokunikeza Impendulo",
+    skipFeedback: "Yeqa Impendulo",
+    continueToNextLeg: "Qhubeka Nesigaba Esilandelayo",
+    continueToNextLegMessage: "Isigaba sakho samanje siphelile. Sicela uqhubeke nesigaba esilandelayo sohambo lwakho.",
     ok: "Kulungile",
   },
 
@@ -1177,6 +1227,7 @@ const zuluTranslations: TranslationStructure = {
   // TaxiInformation translations
   taxiInfo: {
     availableTaxis: "AmaTekisi Atholakalayo",
+    availableTaxisCount: "{count} itekisi itholakalayo",
     from: "Kusuka",
     to: "kuya",
     findingAvailableTaxis: "Kutholakala amatekisi atholakalayo...",
@@ -1211,6 +1262,7 @@ const zuluTranslations: TranslationStructure = {
     phoneNotSupported: "Ucingo alusekelwa kule divayisi",
     couldNotOpenPhone: "Akukwazi ukuvula uhlelo lwefoni",
     km: "km",
+    selectYourDriver: "Khetha UmShayeli Wakho",
   },
 
   // PassengerReservation translations
@@ -1294,12 +1346,12 @@ const zuluTranslations: TranslationStructure = {
     deleteWorkAddress: "Susa Ikheli Lasebenza",
     deleteAddressConfirm: "Are you sure you want to delete your address?",
     cancel: "Cancel",
-    success: "Success",
+    success: "Impumelelo",
     homeAddressSaved: "Ikheli lasekhaya lalondoloziwe ngempumelelo!",
     workAddressSaved: "Ikheli lasebenza lalondoloziwe ngempumelelo!",
     homeAddressDeleted: "Ikheli lasekhaya lasuswa ngempumelelo!",
     workAddressDeleted: "Ikheli lasebenza lasuswa ngempumelelo!",
-    error: "Error",
+    error: "Iphutha",
     userNotLoaded: "User not loaded",
     addressRequired: "Please enter an address",
     nicknameRequired: "Please enter a home name",
@@ -1367,6 +1419,8 @@ const zuluTranslations: TranslationStructure = {
     logOut: "Phuma",
     passenger: "UmGibeli",
     yourName: "Igama Lakho",
+    wallet: "Iwalethi",
+    myWallet: "Iwalethi Yami",
     loadingUserData: "Kulayishwa ulwazi lomsebenzisi...",
     firstTimeSwitching: "Ukushintsha Okokuqala",
     firstTimeSwitchingMessage: "Lokhu ukushintsha kwakho kokuqala kuya kumodi yomshayeli. I-akhawunti yakho izokuthuthukiswa ukuze isekele izindima zombili zomgibeli nomshayeli.",
@@ -1480,8 +1534,10 @@ const tswanaTranslations: TranslationStructure = {
     currentLocation: "Lefelo la Jaanong",
     availableSeats: "Ditulo Tse di Leng Teng",
     noSeatsAvailable: "Ga go na Ditulo Tse di Leng Teng",
+    seats: "Ditulo",
     ok: "Go siame",
     continue: "Tswela Pele",
+    pageOf: "Tsebe {current} ya {total}",
   },
 
   // HomeScreen translations
@@ -1555,6 +1611,7 @@ const tswanaTranslations: TranslationStructure = {
     searchRoutes: "Batla ditsela kgotsa mafelo a ba yang teng...",
     availableRoutes: "Ditsela Tse di Leng Teng",
     noRoutesFound: "Ga go na ditsela tse di leng teng",
+    noRoutesFoundMessage: "Ga go na tsela e e tshwanang kgotsa dikgetho tsa maeto a mantsi tse di leng teng go tswa mo o simololang teng go ya kwa o yang teng. Tshwanelo, leka mafelo a a farologaneng.",
     noRoutesMatching: "Ga go na ditsela tse di bonweng tse di tshwanang le dintlha tsa gago",
     reserveSeat: "Bea Setulo",
     page: "Tsebe",
@@ -1571,6 +1628,7 @@ const tswanaTranslations: TranslationStructure = {
     searchingForTaxis: "Re batla diteksi tse di leng teng...",
     taxisAvailable: "{count} diteksi di a teng",
     noTaxisAvailable: "Ga go na diteksi tse di leng teng",
+    frontPassengerAccess: "Phitlhelelo ya Mopalami wa Pele",
   },
 
   // Navigation & Tabs
@@ -1604,12 +1662,21 @@ const tswanaTranslations: TranslationStructure = {
     rideAccepted: "Loeto lo Amogetse",
     rideCancelled: "Loeto lo Khanseletswe",
     rideDeclinedMessage: "Isicelo sakho sokuya senqatshelwe.",
+    rideAcceptedMessage: "Kopo ya gago ya loeto e amogetse.",
+    rideCancelledMessage: "Loeto la gago le khanseletswe.",
+    rideEndedSuccessfully: "Loeto lo Fedile ka Katlego",
+    rideEndedSuccessfullyMessage: "Loeto la gago le fedile ka katlego. Re solofela gore o bile le loeto le le itumedisang.",
+    continueToFeedback: "Tswelela go Dikakanyo",
+    skipFeedback: "Tlola Dikakanyo",
+    continueToNextLeg: "Tswelela go Kgato e e Latelang",
+    continueToNextLegMessage: "Kgato ya gago ya jaana e fedile. Tswelela ka kgato e e latelang ya loeto la gago.",
     ok: "Kulungile",
   },
 
   // TaxiInformation translations
   taxiInfo: {
     availableTaxis: "Diteksi Tse di Leng Teng",
+    availableTaxisCount: "{count} tekisi e leng teng",
     fromTo: "Go tswa go {origin} go ya {destination}",
     findingAvailableTaxis: "Re batla diteksi tse di leng teng...",
     foundTaxisOnRoutes: "Re bonye diteksi di le {count} tse di Leng Teng",
@@ -1643,6 +1710,7 @@ const tswanaTranslations: TranslationStructure = {
     phoneNotSupported: "Megala ga e a tshegediwa mo sesebedisweng seno",
     couldNotOpenPhone: "Akukwazi ukuvula uhlelo lwefoni",
     km: "km",
+    selectYourDriver: "Tlhopa Mokgweetsi wa Gago",
   },
 
   // Profile page translations
@@ -1654,6 +1722,8 @@ const tswanaTranslations: TranslationStructure = {
     logOut: "Tswa",
     passenger: "Mopalami",
     yourName: "Leina la Gago",
+    wallet: "Mokotla wa Madi",
+    myWallet: "Mokotla wa Madi wa Me",
     loadingUserData: "Go tsaya tshedimosetso ya modirisi...",
     firstTimeSwitching: "Go Fetola ga Gago ga Pele",
     firstTimeSwitchingMessage: "Seno ke go fetola ga gago ga pele go ya go mokgwa wa mokgweetsi. Akhaonte ya gago e tla tokafadiwa gore e tshegele ditho tse pedi tsa mopalami le mokgweetsi.",
@@ -1937,6 +2007,8 @@ const tswanaTranslations: TranslationStructure = {
     markAllAsRead: "Tshwaya Tsotlhe jaaka di Balilwe",
     noNotifications: "Ga go na Dikitsiso",
     allNotifications: "Dikitsiso Tsotlhe",
+    seatsAvailable: "Ditulo Tse di Leng Teng",
+    taxiFull: "Tekisi e Tletse",
   },
 
   // Passenger section - UPDATE THIS SECTION  
@@ -1990,7 +2062,17 @@ const tswanaTranslations: TranslationStructure = {
     missingInfo: "Tshedimosetso e e Siamang",
     cannotSubmitFeedback: "Ga ke kgone go romela dikakanyo: Tshedimosetso ya loeto/modirisi e a siama.",
     somethingWentWrong: "Go utlwile sengwe.",
+    from: "Go tswa",
+    to: "Go ya",
+    pickupLocation: "Lefelo la go Tsewa",
+    rateYourDriver: "Lekanya Mokgweetsi wa Gago",
+    howWasYourDriver: "Mokgweetsi wa gago o ne a le jang?",
+    shareFeedback: "Abelana ka Dikakanyo tsa Gago",
+    tellUsAboutDriver: "Re bolelele ka mokgweetsi wa gago",
+    shareThoughtsAboutDriver: "Abelana ka dikgopolo tsa gago ka mokgweetsi",
     feedbackHistory: "Histori ya Dikakanyo",
+    yourRideReviews: "Dikakanyo tsa Dimalo tsa Gago",
+    reviewFor: "Kakanyo ya",
     noFeedbackYet: "Ga go ise go nne le dikakanyo tse di romilweng",
     noFeedbackMessage: "Histori ya dikakanyo tsa gago e tla bonala fa o romela dikakanyo tsa dimalo tsa gago.",
   },
@@ -2100,8 +2182,10 @@ const afrikaansTranslations: TranslationStructure = {
     currentLocation: "Huidige Ligging",
     availableSeats: "Beskikbare Sitplekke",
     noSeatsAvailable: "Geen Sitplekke Beskikbaar",
+    seats: "Sitplekke",
     ok: "OK",
     continue: "Gaan Voort",
+    pageOf: "Bladsy {current} van {total}",
   },
 
   // Home Screen
@@ -2175,6 +2259,7 @@ const afrikaansTranslations: TranslationStructure = {
     searchRoutes: "Soek roetes of bestemmings...",
     availableRoutes: "Beskikbare Roetes",
     noRoutesFound: "Geen roetes beskikbaar",
+    noRoutesFoundMessage: "Geen direkte roete of multi-been opsies is beskikbaar vir jou gekose oorsprong en bestemming nie. Probeer asseblief verskillende liggings.",
     noRoutesMatching: "Geen roetes gevind wat by jou kriteria pas nie",
     reserveSeat: "Bespreek Sitplek",
     page: "Bladsy",
@@ -2191,6 +2276,7 @@ const afrikaansTranslations: TranslationStructure = {
     searchingForTaxis: "Soek beskikbare taxi's...",
     taxisAvailable: "{count} taxi's beskikbaar",
     noTaxisAvailable: "Geen taxi's beskikbaar",
+    frontPassengerAccess: "Voorpassasier Toegang",
   },
 
   // Navigation & Tabs
@@ -2226,6 +2312,12 @@ const afrikaansTranslations: TranslationStructure = {
     rideDeclinedMessage: "Jou ritversoek is geweier.",
     rideAcceptedMessage: "Jou ritversoek is aanvaar.",
     rideCancelledMessage: "Jou rit is gekanselleer.",
+    rideEndedSuccessfully: "Rit Suksesvol Beëindig",
+    rideEndedSuccessfullyMessage: "Jou rit is suksesvol beëindig. Ons hoop jy het 'n aangename reis gehad.",
+    continueToFeedback: "Gaan Voort na Terugvoer",
+    skipFeedback: "Slaan Terugvoer Oor",
+    continueToNextLeg: "Gaan Voort na Volgende Been",
+    continueToNextLegMessage: "Jou huidige been is beëindig. Gaan asseblief voort na die volgende been van jou reis.",
     ok: "OK",
   },
 
@@ -2266,6 +2358,7 @@ const afrikaansTranslations: TranslationStructure = {
     phoneNotSupported: "Telefoonoproepe word nie op hierdie toestel ondersteun nie",
     couldNotOpenPhone: "Kon nie telefoon toepassing oopmaak nie",
     km: "km",
+    selectYourDriver: "Kies Jou Bestuurder",
   },
 
   // Passenger specific
@@ -2319,6 +2412,14 @@ const afrikaansTranslations: TranslationStructure = {
     missingInfo: "Ontbrekende Inligting",
     cannotSubmitFeedback: "Kan nie terugvoer stuur nie: Ontbrekende rit/gebruiker inligting.",
     somethingWentWrong: "Iets het verkeerd geloop.",
+    from: "Van",
+    to: "Na",
+    pickupLocation: "Optel Plek",
+    rateYourDriver: "Gradeer Jou Bestuurder",
+    howWasYourDriver: "Hoe was jou bestuurder?",
+    shareFeedback: "Deel Jou Terugvoer",
+    tellUsAboutDriver: "Vertel ons van jou bestuurder",
+    shareThoughtsAboutDriver: "Deel jou gedagtes oor die bestuurder",
     feedbackHistory: "Terugvoer Geskiedenis",
     noFeedbackYet: "Nog geen terugvoer gestuur nie",
     noFeedbackMessage: "Jou terugvoer geskiedenis sal hier verskyn wanneer jy terugvoer vir jou ritte stuur.",
@@ -2458,6 +2559,8 @@ const afrikaansTranslations: TranslationStructure = {
     markAllAsRead: "Merk Alles as Gelees",
     noNotifications: "Geen Kennisgewings",
     allNotifications: "Alle Kennisgewings",
+    seatsAvailable: "Sitplekke Beskikbaar",
+    taxiFull: "Taxi Vol",
   },
 
   // Earnings page
@@ -2481,6 +2584,8 @@ const afrikaansTranslations: TranslationStructure = {
     logOut: "Teken Uit",
     passenger: "Passasier",
     yourName: "Jou Naam",
+    wallet: "Beursie",
+    myWallet: "My Beursie",
     loadingUserData: "Laai gebruiker data...",
     firstTimeSwitching: "Eerste Keer Skakel",
     firstTimeSwitchingMessage: "Dit is jou eerste keer om na bestuurder modus te skakel. Jou rekening sal opgegradeer word om beide passasier en bestuurder rolle te ondersteun.",

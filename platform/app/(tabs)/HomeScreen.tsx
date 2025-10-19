@@ -53,7 +53,7 @@ export default function HomeScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const role = user?.role || user?.accountType || 'passenger';
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
   const createMultiLegJourney = useMutation(api.functions.journeys.journeyStateManager.createMultiLegJourney);
@@ -1996,7 +1996,10 @@ export default function HomeScreen() {
         {!keyboardVisible && (!routeLoaded || (routeLoaded && availableTaxis.length === 0 && !isSearchingTaxis && !isSearchingMultiLeg)) && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
-              Recently Used Routes
+              {currentLanguage === 'zu' ? 'Izindlela Ezisetshenzisiwe Kamuva' :
+               currentLanguage === 'tn' ? 'Ditsela tse di Dirisitsweng Bosheng' :
+               currentLanguage === 'af' ? 'Onlangs Gebruikte Roetes' :
+               'Recently Used Routes'}
             </Text>
             <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (

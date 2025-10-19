@@ -265,7 +265,7 @@ export default function SeatReserved() {
 	}, [params.isMultiLeg, params.totalLegs, params.legIndex, params.journeyId, params.rideId]);
 	const { theme, isDark } = useTheme();
 	const { user } = useUser();
-	const { t } = useLanguage();
+	const { t, currentLanguage } = useLanguage();
 	const { 
 		currentLocation,
 		destination,
@@ -724,7 +724,10 @@ export default function SeatReserved() {
 		if (rideStatus === 'requested') {
 			return t('home:waitingForDriver');
 		} else if (rideStatus === 'accepted') {
-			return 'Driver assigned';
+			return currentLanguage === 'zu' ? 'Umshayeli ubekelwe' :
+			       currentLanguage === 'tn' ? 'Mokgweetsi o beetilwe' :
+			       currentLanguage === 'af' ? 'Bestuurder toegeken' :
+			       'Driver assigned';
 		} else {
 			return t('home:calculating');
 		}
@@ -1070,7 +1073,10 @@ export default function SeatReserved() {
 			await cancelRide({ rideId: taxiInfo.rideId, userId: user.id as Id<'taxiTap_users'> });
 			await updateTaxiSeatAvailability({ rideId: taxiInfo.rideId, action: "increase" });
 			showGlobalAlert({
-				title: 'Success',
+				title: currentLanguage === 'zu' ? 'Impumelelo' :
+				       currentLanguage === 'tn' ? 'Katlego' :
+				       currentLanguage === 'af' ? 'Sukses' :
+				       'Success',
 				message: t('home:rideCancelled'),
 				type: 'success',
 				duration: 3000,
@@ -1235,20 +1241,44 @@ export default function SeatReserved() {
 	// Get current location text based on map mode and live location
 	const getCurrentLocationText = () => {
 		if (mapMode === 'to_driver') {
-			return streamedLocation ? "Your Location" : (currentLocation?.name || "Current Location");
+			return streamedLocation ?
+				(currentLanguage === 'zu' ? 'Indawo Yakho' :
+				 currentLanguage === 'tn' ? 'Lefelo la Gago' :
+				 currentLanguage === 'af' ? 'Jou Ligging' :
+				 'Your Location') :
+				(currentLocation?.name ||
+				 (currentLanguage === 'zu' ? 'Indawo Yamanje' :
+				  currentLanguage === 'tn' ? 'Lefelo la Jaana' :
+				  currentLanguage === 'af' ? 'Huidige Ligging' :
+				  'Current Location'));
 		}
 		if (mapMode === 'to_destination' && streamedLocation) {
-			return "Your Location";
+			return currentLanguage === 'zu' ? 'Indawo Yakho' :
+			       currentLanguage === 'tn' ? 'Lefelo la Gago' :
+			       currentLanguage === 'af' ? 'Jou Ligging' :
+			       'Your Location';
 		}
-		return currentLocation?.name || "Current Location";
+		return currentLocation?.name ||
+		       (currentLanguage === 'zu' ? 'Indawo Yamanje' :
+		        currentLanguage === 'tn' ? 'Lefelo la Jaana' :
+		        currentLanguage === 'af' ? 'Huidige Ligging' :
+		        'Current Location');
 	};
 
 	// Get destination text based on map mode
 	const getDestinationText = () => {
 		if (mapMode === 'to_driver') {
-			return 'Driver Location';
+			return currentLanguage === 'zu' ? 'Indawo Yomshayeli' :
+			       currentLanguage === 'tn' ? 'Lefelo la Mokgweetsi' :
+			       currentLanguage === 'af' ? 'Bestuurder Ligging' :
+			       'Driver Location';
 		}
-		return destination?.name || "Destination";
+		return destination?.name || (
+			currentLanguage === 'zu' ? 'Indawo Yokugcina' :
+			currentLanguage === 'tn' ? 'Lefelo la Pheletso' :
+			currentLanguage === 'af' ? 'Bestemming' :
+			'Destination'
+		);
 	};
 
 	// Get map markers based on mode - CORRECTED MARKER LOGIC
@@ -1335,11 +1365,20 @@ export default function SeatReserved() {
 	const getMapModeText = () => {
 		switch (mapMode) {
 			case 'initial':
-				return 'To Destination';
+				return currentLanguage === 'zu' ? 'Uya Endaweni Yokugcina' :
+				       currentLanguage === 'tn' ? 'Ya Kwa Felong la Pheletso' :
+				       currentLanguage === 'af' ? 'Na Bestemming' :
+				       'To Destination';
 			case 'to_driver':
-				return 'To Driver';
+				return currentLanguage === 'zu' ? 'Uya Kumshayeli' :
+				       currentLanguage === 'tn' ? 'Ya Kwa Mokgweetsi' :
+				       currentLanguage === 'af' ? 'Na Bestuurder' :
+				       'To Driver';
 			case 'to_destination':
-				return 'To Destination';
+				return currentLanguage === 'zu' ? 'Uya Endaweni Yokugcina' :
+				       currentLanguage === 'tn' ? 'Ya Kwa Felong la Pheletso' :
+				       currentLanguage === 'af' ? 'Na Bestemming' :
+				       'To Destination';
 			default:
 				return '';
 		}
@@ -1752,7 +1791,10 @@ export default function SeatReserved() {
 										<Text style={dynamicStyles.ratingText}>
 											{typeof driverRating === "number" && driverRating > 0
 											? driverRating.toFixed(1)
-											: "No ratings"}
+											: (currentLanguage === 'zu' ? 'Azikho izilinganiso' :
+											   currentLanguage === 'tn' ? 'Ga go na dikelo' :
+											   currentLanguage === 'af' ? 'Geen graderings nie' :
+											   'No ratings')}
 										</Text>
 										<View style={{ flexDirection: 'row' }}>
 											{typeof driverRating === "number" && driverRating > 0

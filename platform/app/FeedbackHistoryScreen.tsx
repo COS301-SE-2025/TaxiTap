@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
@@ -12,6 +13,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 export default function FeedbackHistoryScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const navigation = useNavigation();
   
@@ -314,7 +316,12 @@ export default function FeedbackHistoryScreen() {
           <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </Pressable>
-          <Text style={dynamicStyles.headerTitle}>Feedback History</Text>
+          <Text style={dynamicStyles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Umlando Wempendulo' :
+             currentLanguage === 'tn' ? 'Hisitori ya Dikakanyo' :
+             currentLanguage === 'af' ? 'Terugvoer Geskiedenis' :
+             'Feedback History'}
+          </Text>
         </View>
       </View>
 
@@ -330,7 +337,12 @@ export default function FeedbackHistoryScreen() {
           {!feedbackList ? (
             <View style={dynamicStyles.loadingContainer}>
               <LoadingSpinner size="large" />
-              <Text style={dynamicStyles.loadingText}>Loading feedback...</Text>
+              <Text style={dynamicStyles.loadingText}>
+                {currentLanguage === 'zu' ? 'Layisha impendulo...' :
+                 currentLanguage === 'tn' ? 'Go laisa dikakanyo...' :
+                 currentLanguage === 'af' ? 'Laai terugvoer...' :
+                 'Loading feedback...'}
+              </Text>
             </View>
           ) : feedbackList.length === 0 ? (
             <View style={dynamicStyles.emptyState}>
@@ -342,22 +354,40 @@ export default function FeedbackHistoryScreen() {
                 />
               </View>
               <Text style={dynamicStyles.emptyStateText}>
-                {user.role === 'driver' 
-                  ? "No Feedback Yet" 
-                  : "No Reviews Yet"
+                {user.role === 'driver'
+                  ? (currentLanguage === 'zu' ? 'Ayikho Impendulo Okwamanje' :
+                     currentLanguage === 'tn' ? 'Ga Go Dikakanyo Jaanong' :
+                     currentLanguage === 'af' ? 'Nog Geen Terugvoer Nie' :
+                     'No Feedback Yet')
+                  : (currentLanguage === 'zu' ? 'Azikho Izibuyekezo Okwamanje' :
+                     currentLanguage === 'tn' ? 'Ga Go Ditlhatlhobo Jaanong' :
+                     currentLanguage === 'af' ? 'Nog Geen Resensies Nie' :
+                     'No Reviews Yet')
                 }
               </Text>
               <Text style={dynamicStyles.emptyStateSubtext}>
-                {user.role === 'driver' 
-                  ? "Passenger feedback will appear here once you complete rides. Great service leads to better ratings!" 
-                  : "Your ride reviews will appear here. Share your experience to help improve our service!"
+                {user.role === 'driver'
+                  ? (currentLanguage === 'zu' ? 'Impendulo yabagibeli izovela lapha uma usugcwalisile uhambo. Inkonzo enhle iholela ekuhlolweni okungcono!' :
+                     currentLanguage === 'tn' ? 'Dikakanyo tsa bapalami di tla bonala fa o wetsa maeto. Tirelo e e siameng e dira gore o fiweng ditlhatlhobo tse di botoka!' :
+                     currentLanguage === 'af' ? 'Passasier terugvoer sal hier verskyn sodra jy ritte voltooi. Goeie diens lei tot beter graderings!' :
+                     'Passenger feedback will appear here once you complete rides. Great service leads to better ratings!')
+                  : (currentLanguage === 'zu' ? 'Ukubuyekezwa kwakho kohambo kuzovela lapha. Yabelana ngolwazi lwakho ukusiza ukwenza ngcono isevisi yethu!' :
+                     currentLanguage === 'tn' ? 'Ditlhatlhobo tsa gago tsa loeto di tla bonala fa. Abelana ka maitemogelo a gago go thusa go tokafatsa tirelo ya rona!' :
+                     currentLanguage === 'af' ? 'Jou rit resensies sal hier verskyn. Deel jou ervaring om ons diens te help verbeter!' :
+                     'Your ride reviews will appear here. Share your experience to help improve our service!')
                 }
               </Text>
             </View>
           ) : (
             <>
               <Text style={dynamicStyles.sectionTitle}>
-                Your {user.role === 'driver' ? 'Passenger Feedback' : 'Ride Reviews'}
+                {currentLanguage === 'zu'
+                  ? (user.role === 'driver' ? 'Impendulo Yomgibeli' : 'Ukubuyekezwa Kweuhambo')
+                  : currentLanguage === 'tn'
+                  ? (user.role === 'driver' ? 'Dikakanyo tsa Mopalami' : 'Ditlhatlhobo tsa Loeto')
+                  : currentLanguage === 'af'
+                  ? (user.role === 'driver' ? 'Passasier Terugvoer' : 'Rit Resensies')
+                  : `Your ${user.role === 'driver' ? 'Passenger Feedback' : 'Ride Reviews'}`}
               </Text>
               
               {paginatedFeedback.map((entry: any, index: number) => (
@@ -365,9 +395,25 @@ export default function FeedbackHistoryScreen() {
                    {/* Header */}
                    <View style={dynamicStyles.feedbackHeader}>
                      <Text style={dynamicStyles.feedbackTitle}>
-                       {user.role === 'driver' 
-                         ? (entry.passengerName ? `Feedback from ${entry.passengerName}` : 'Passenger Feedback')
-                         : (entry.driverName ? `Review for ${entry.driverName}` : 'Driver Review')
+                       {user.role === 'driver'
+                         ? (entry.passengerName
+                           ? (currentLanguage === 'zu' ? `Impendulo evela ku-${entry.passengerName}` :
+                              currentLanguage === 'tn' ? `Dikakanyo tse di tswang go ${entry.passengerName}` :
+                              currentLanguage === 'af' ? `Terugvoer van ${entry.passengerName}` :
+                              `Feedback from ${entry.passengerName}`)
+                           : (currentLanguage === 'zu' ? 'Impendulo Yomgibeli' :
+                              currentLanguage === 'tn' ? 'Dikakanyo tsa Mopalami' :
+                              currentLanguage === 'af' ? 'Passasier Terugvoer' :
+                              'Passenger Feedback'))
+                         : (entry.driverName
+                           ? (currentLanguage === 'zu' ? `Ukubuyekezwa kwe-${entry.driverName}` :
+                              currentLanguage === 'tn' ? `Tlhatlhobo ya ${entry.driverName}` :
+                              currentLanguage === 'af' ? `Resensie vir ${entry.driverName}` :
+                              `Review for ${entry.driverName}`)
+                           : (currentLanguage === 'zu' ? 'Ukubuyekezwa Komshayeli' :
+                              currentLanguage === 'tn' ? 'Tlhatlhobo ya Motsamaisi' :
+                              currentLanguage === 'af' ? 'Bestuurder Resensie' :
+                              'Driver Review'))
                        }
                      </Text>
                      <Text style={dynamicStyles.feedbackSubtitle}>
@@ -450,7 +496,10 @@ export default function FeedbackHistoryScreen() {
                           style={dynamicStyles.detailIcon}
                         />
                         <Text style={dynamicStyles.detailText}>
-                          Comment
+                          {currentLanguage === 'zu' ? 'Amazwana' :
+                           currentLanguage === 'tn' ? 'Tlhaloso' :
+                           currentLanguage === 'af' ? 'Kommentaar' :
+                           'Comment'}
                         </Text>
                       </View>
                     )}
@@ -477,7 +526,10 @@ export default function FeedbackHistoryScreen() {
           </Pressable>
           
           <Text style={dynamicStyles.paginationInfo}>
-            Page {currentPage} of {totalPages}
+            {currentLanguage === 'zu' ? `Ikhasi ${currentPage} kwali-${totalPages}` :
+             currentLanguage === 'tn' ? `Tsebe ${currentPage} ya ${totalPages}` :
+             currentLanguage === 'af' ? `Bladsy ${currentPage} van ${totalPages}` :
+             `Page ${currentPage} of ${totalPages}`}
           </Text>
           
           <Pressable

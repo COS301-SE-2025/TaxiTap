@@ -6,6 +6,7 @@ import {
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery } from 'convex/react';
@@ -34,6 +35,7 @@ export default function SubmitFeedbackScreen() {
 
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const { clearMapContext } = useMapContext();
   const { showGlobalError, showGlobalSuccess } = useAlertHelpers();
@@ -328,21 +330,34 @@ export default function SubmitFeedbackScreen() {
       // Standard single ride completion
       setRating(0);
       setComment('');
-      showGlobalSuccess('Success', 'Feedback submitted successfully!', {
-        duration: 0,
-        position: 'top',
-        animation: 'slide-down',
-        actions: [
-          {
-            label: 'OK',
-            onPress: () => {
-              clearMapContext();
-              router.replace('/(tabs)/HomeScreen');
+      showGlobalSuccess(
+        currentLanguage === 'zu' ? 'Impumelelo' :
+        currentLanguage === 'tn' ? 'Katlego' :
+        currentLanguage === 'af' ? 'Sukses' :
+        'Success',
+        currentLanguage === 'zu' ? 'Ukuphawula kuthunyelwe ngempumelelo!' :
+        currentLanguage === 'tn' ? 'Maikutlo a rometse ka katlego!' :
+        currentLanguage === 'af' ? 'Terugvoer suksesvol ingedien!' :
+        'Feedback submitted successfully!',
+        {
+          duration: 0,
+          position: 'top',
+          animation: 'slide-down',
+          actions: [
+            {
+              label: currentLanguage === 'zu' ? 'KULUNGILE' :
+                     currentLanguage === 'tn' ? 'GO SIAME' :
+                     currentLanguage === 'af' ? 'OK' :
+                     'OK',
+              onPress: () => {
+                clearMapContext();
+                router.replace('/(tabs)/HomeScreen');
+              },
+              style: 'default'
             },
-            style: 'default'
-          },
-        ],
-      });
+          ],
+        }
+      );
     } catch (err: any) {
       showGlobalError('Error', err.message || 'Something went wrong.', { duration: 5000, position: 'top', animation: 'slide-down' });
     }
@@ -599,7 +614,12 @@ export default function SubmitFeedbackScreen() {
                 <Ionicons name="location-outline" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
-                <Text style={dynamicStyles.rideInfoLabel}>From</Text>
+                <Text style={dynamicStyles.rideInfoLabel}>
+                  {currentLanguage === 'zu' ? 'Kusuka' :
+                   currentLanguage === 'tn' ? 'Go tswa' :
+                   currentLanguage === 'af' ? 'Van' :
+                   'From'}
+                </Text>
                 <Text style={dynamicStyles.rideInfoText}>{startName ?? 'N/A'}</Text>
               </View>
             </View>
@@ -608,7 +628,12 @@ export default function SubmitFeedbackScreen() {
                 <Ionicons name="location" size={20} color={theme.text} />
               </View>
               <View style={dynamicStyles.rideInfoContent}>
-                <Text style={dynamicStyles.rideInfoLabel}>To</Text>
+                <Text style={dynamicStyles.rideInfoLabel}>
+                  {currentLanguage === 'zu' ? 'Kuya' :
+                   currentLanguage === 'tn' ? 'Go ya' :
+                   currentLanguage === 'af' ? 'Na' :
+                   'To'}
+                </Text>
                 <Text style={dynamicStyles.rideInfoText}>{endName ?? 'N/A'}</Text>
               </View>
             </View>
@@ -616,10 +641,20 @@ export default function SubmitFeedbackScreen() {
         </View>
 
         {/* Driver Feedback Section */}
-        <Text style={dynamicStyles.sectionHeader}>Rate Your Driver</Text>
+        <Text style={dynamicStyles.sectionHeader}>
+          {currentLanguage === 'zu' ? 'Linganisa Umshayeli Wakho' :
+           currentLanguage === 'tn' ? 'Lekanya Mokgweetsi wa Gago' :
+           currentLanguage === 'af' ? 'Gradeer Jou Bestuurder' :
+           'Rate Your Driver'}
+        </Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.ratingSection}>
-            <Text style={dynamicStyles.ratingTitle}>How was your driver?</Text>
+            <Text style={dynamicStyles.ratingTitle}>
+              {currentLanguage === 'zu' ? 'Ubunjani umshayeli wakho?' :
+               currentLanguage === 'tn' ? 'Mokgweetsi wa gago o ne a le jang?' :
+               currentLanguage === 'af' ? 'Hoe was jou bestuurder?' :
+               'How was your driver?'}
+            </Text>
             <View style={dynamicStyles.starsContainer}>
               {[1, 2, 3, 4, 5].map(star => (
                 <TouchableOpacity 
@@ -640,14 +675,29 @@ export default function SubmitFeedbackScreen() {
         </View>
 
         {/* Comment Section */}
-        <Text style={dynamicStyles.sectionHeader}>Share Your Feedback</Text>
+        <Text style={dynamicStyles.sectionHeader}>
+          {currentLanguage === 'zu' ? 'Yabelana Ngokuphawula Kwakho' :
+           currentLanguage === 'tn' ? 'Abelana ka Maikutlo a Gago' :
+           currentLanguage === 'af' ? 'Deel Jou Terugvoer' :
+           'Share Your Feedback'}
+        </Text>
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.commentSection}>
-            <Text style={dynamicStyles.commentTitle}>Tell us about your driver</Text>
+            <Text style={dynamicStyles.commentTitle}>
+              {currentLanguage === 'zu' ? 'Sitshele ngomshayeli wakho' :
+               currentLanguage === 'tn' ? 'Re bolelele ka mokgweetsi wa gago' :
+               currentLanguage === 'af' ? 'Vertel ons van jou bestuurder' :
+               'Tell us about your driver'}
+            </Text>
             <TextInput
               value={comment}
               onChangeText={setComment}
-              placeholder="Share your thoughts about the driver..."
+              placeholder={
+                currentLanguage === 'zu' ? 'Yabelana ngemicabango yakho ngomshayeli...' :
+                currentLanguage === 'tn' ? 'Abelana ka dikakanyo tsa gago ka mokgweetsi...' :
+                currentLanguage === 'af' ? 'Deel jou gedagtes oor die bestuurder...' :
+                'Share your thoughts about the driver...'
+              }
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               style={dynamicStyles.commentInput}
               multiline
@@ -660,12 +710,17 @@ export default function SubmitFeedbackScreen() {
 
         {/* Action Buttons */}
         <View style={dynamicStyles.buttonContainer}>
-          <TouchableOpacity 
-            onPress={handleSubmit} 
+          <TouchableOpacity
+            onPress={handleSubmit}
             style={dynamicStyles.submitButton}
             activeOpacity={0.9}
           >
-            <Text style={dynamicStyles.submitButtonText}>Submit Feedback</Text>
+            <Text style={dynamicStyles.submitButtonText}>
+              {currentLanguage === 'zu' ? 'Thumela Ukuphawula' :
+               currentLanguage === 'tn' ? 'Romela Maikutlo' :
+               currentLanguage === 'af' ? 'Dien Terugvoer In' :
+               'Submit Feedback'}
+            </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -734,7 +789,10 @@ export default function SubmitFeedbackScreen() {
             activeOpacity={0.8}
           >
             <Text style={dynamicStyles.skipButtonText}>
-              Skip Feedback
+              {currentLanguage === 'zu' ? 'Yeqa Ukuphawula' :
+               currentLanguage === 'tn' ? 'Tlola Maikutlo' :
+               currentLanguage === 'af' ? 'Slaan Terugvoer Oor' :
+               'Skip Feedback'}
             </Text>
           </TouchableOpacity>
         </View>

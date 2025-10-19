@@ -66,7 +66,7 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
   onClose,
 }) => {
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
   // Screen dimensions for responsive design
@@ -323,14 +323,22 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.headerTitle}>Finding Multi-Leg Routes</Text>
+            <Text style={dynamicStyles.headerTitle}>
+              {currentLanguage === 'zu' ? 'Ithola Izindlela Ezisezigabeni Eziningi' :
+               currentLanguage === 'tn' ? 'Go Batla Ditsela tsa Dikgato tse Dintsi' :
+               currentLanguage === 'af' ? 'Vind Multi-Been Roetes' :
+               'Finding Multi-Leg Routes'}
+            </Text>
           </View>
         </View>
         <View style={dynamicStyles.content}>
           <View style={dynamicStyles.loadingContainer}>
             <LoadingSpinner size="large" />
             <Text style={dynamicStyles.loadingText}>
-              Calculating transfer points and route options...
+              {currentLanguage === 'zu' ? 'Sibala amaphuzu okudlulisa nezinketho zendlela...' :
+               currentLanguage === 'tn' ? 'Go bala mafelo a phetiso le dikgetho tsa tsela...' :
+               currentLanguage === 'af' ? 'Bereken oordrags punte en roete opsies...' :
+               'Calculating transfer points and route options...'}
             </Text>
           </View>
         </View>
@@ -346,7 +354,12 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.headerTitle}>No Multi-Leg Options</Text>
+            <Text style={dynamicStyles.headerTitle}>
+              {currentLanguage === 'zu' ? 'Azikho Izinketho Zezigaba Eziningi' :
+               currentLanguage === 'tn' ? 'Ga Go Dikgetho tsa Dikgato tse Dintsi' :
+               currentLanguage === 'af' ? 'Geen Multi-Been Opsies' :
+               'No Multi-Leg Options'}
+            </Text>
           </View>
         </View>
         <View style={dynamicStyles.content}>
@@ -358,12 +371,19 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
               style={dynamicStyles.noOptionsIcon}
             />
             <Text style={dynamicStyles.noOptionsTitle}>
-              No Multi-Leg Routes Available
+              {currentLanguage === 'zu' ? 'Azikho Izindlela Zezigaba Eziningi Ezitholakalayo' :
+               currentLanguage === 'tn' ? 'Ga Go Ditsela tsa Dikgato tse Dintsi tse di Leng Teng' :
+               currentLanguage === 'af' ? 'Geen Multi-Been Roetes Beskikbaar' :
+               'No Multi-Leg Routes Available'}
             </Text>
             <Text style={dynamicStyles.noOptionsText}>
-              No multi-leg journey options are available between your origin and destination.
-              {'\n\n'}
-              Try selecting different locations or check direct routes instead.
+              {currentLanguage === 'zu'
+                ? 'Azikho izinketho zohambo lwezigaba eziningi phakathi kwendawo yokuqala neyokufika.\n\nZama ukukhetha izindawo ezahlukile noma uhlole izindlela eziqondile kunalokho.'
+                : currentLanguage === 'tn'
+                ? 'Ga go dikgetho tsa loeto la dikgato tse dintsi magareng ga tshimologo le kwa o yang teng.\n\nLeka go tlhopha mafelo a a farologaneng kgotsa tlhatlhoba ditsela tse di tshwanang.'
+                : currentLanguage === 'af'
+                ? 'Geen multi-been reis opsies is beskikbaar tussen jou oorsprong en bestemming nie.\n\nProbeer om verskillende liggings te kies of kyk na direkte roetes.'
+                : 'No multi-leg journey options are available between your origin and destination.\n\nTry selecting different locations or check direct routes instead.'}
             </Text>
           </View>
         </View>
@@ -378,13 +398,21 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
           <TouchableOpacity style={dynamicStyles.backButton} onPress={onClose}>
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={dynamicStyles.headerTitle}>Multi-Leg Journey Options</Text>
+          <Text style={dynamicStyles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Izinketho Zohambo Lwezigaba Eziningi' :
+             currentLanguage === 'tn' ? 'Dikgetho tsa Loeto la Dikgato tse Dintsi' :
+             currentLanguage === 'af' ? 'Multi-Been Reis Opsies' :
+             'Multi-Leg Journey Options'}
+          </Text>
         </View>
       </View>
 
       <View style={dynamicStyles.content}>
         <Text style={dynamicStyles.sectionTitle}>
-          Available Journey Options
+          {currentLanguage === 'zu' ? 'Izinketho Zohambo Ezitholakalayo' :
+           currentLanguage === 'tn' ? 'Dikgetho tsa Loeto tse di Leng Teng' :
+           currentLanguage === 'af' ? 'Beskikbare Reis Opsies' :
+           'Available Journey Options'}
         </Text>
         <ScrollView
           style={dynamicStyles.scrollContainer}
@@ -402,7 +430,12 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
             >
               <View style={dynamicStyles.optionHeader}>
                 <View style={dynamicStyles.totalCostContainer}>
-                  <Text style={dynamicStyles.totalCostLabel}>Total:</Text>
+                  <Text style={dynamicStyles.totalCostLabel}>
+                    {currentLanguage === 'zu' ? 'Isamba:' :
+                     currentLanguage === 'tn' ? 'Kakaretso:' :
+                     currentLanguage === 'af' ? 'Totaal:' :
+                     'Total:'}
+                  </Text>
                   <Text style={dynamicStyles.totalCost}>
                     R{option.totalEstimatedCost.toFixed(2)}
                   </Text>
@@ -434,10 +467,21 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
               <View style={dynamicStyles.transferContainer}>
                 <View style={dynamicStyles.transferHeader}>
                   <Ionicons name="walk" size={16} color={theme.primary} />
-                  <Text style={dynamicStyles.transferTitle}>Transfer Required</Text>
+                  <Text style={dynamicStyles.transferTitle}>
+                    {currentLanguage === 'zu' ? 'Ukudlulisa Kuyadingeka' :
+                     currentLanguage === 'tn' ? 'Go Tlhokega Phetiso' :
+                     currentLanguage === 'af' ? 'Oordrag Vereis' :
+                     'Transfer Required'}
+                  </Text>
                 </View>
                 <Text style={dynamicStyles.transferDetails}>
-                  Walk {formatDistance(option.transferPoint.walkingDistance)} • {formatWalkingTime(option.transferPoint.estimatedWalkingTime)}
+                  {currentLanguage === 'zu'
+                    ? `Hamba ${formatDistance(option.transferPoint.walkingDistance)} • ${formatWalkingTime(option.transferPoint.estimatedWalkingTime)}`
+                    : currentLanguage === 'tn'
+                    ? `Tsamaya ${formatDistance(option.transferPoint.walkingDistance)} • ${formatWalkingTime(option.transferPoint.estimatedWalkingTime)}`
+                    : currentLanguage === 'af'
+                    ? `Loop ${formatDistance(option.transferPoint.walkingDistance)} • ${formatWalkingTime(option.transferPoint.estimatedWalkingTime)}`
+                    : `Walk ${formatDistance(option.transferPoint.walkingDistance)} • ${formatWalkingTime(option.transferPoint.estimatedWalkingTime)}`}
                 </Text>
               </View>
 
@@ -465,7 +509,10 @@ export const MultiLegJourneyPreview: React.FC<MultiLegJourneyPreviewProps> = ({
                 activeOpacity={0.8}
               >
                 <Text style={dynamicStyles.selectButtonText}>
-                  Select This Route
+                  {currentLanguage === 'zu' ? 'Khetha Lesi Ndlela' :
+                   currentLanguage === 'tn' ? 'Tlhopha Tsela Eno' :
+                   currentLanguage === 'af' ? 'Kies Hierdie Roete' :
+                   'Select This Route'}
                 </Text>
               </TouchableOpacity>
             </TouchableOpacity>

@@ -144,7 +144,7 @@ export default function RouteSelectionScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { showGlobalError } = useAlertHelpers();
   
   // Screen dimensions for responsive design
@@ -394,11 +394,12 @@ export default function RouteSelectionScreen() {
     }
 
     // If we get here, the search took too long
-    showGlobalError("Error", "Taxi search is taking longer than expected. Please try again.", {
-      duration: 4000,
-      position: 'top',
-      animation: 'slide-down',
-    });
+    // Error message hidden per user request
+    // showGlobalError("Error", "Taxi search is taking longer than expected. Please try again.", {
+    //   duration: 4000,
+    //   position: 'top',
+    //   animation: 'slide-down',
+    // });
   };
 
   /**
@@ -1119,7 +1120,10 @@ export default function RouteSelectionScreen() {
           </Pressable>
           
           <Text style={dynamicStyles.paginationInfo}>
-            Page {currentPage} of {totalPages}
+            {currentLanguage === 'zu' ? `Ikhasi ${currentPage} kwali-${totalPages}` :
+             currentLanguage === 'tn' ? `Tsebe ${currentPage} ya ${totalPages}` :
+             currentLanguage === 'af' ? `Bladsy ${currentPage} van ${totalPages}` :
+             `Page ${currentPage} of ${totalPages}`}
           </Text>
           
           <Pressable

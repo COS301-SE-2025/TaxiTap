@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Id } from '../convex/_generated/dataModel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -30,6 +31,7 @@ interface Notification {
 
 export default function NotificationsScreen() {
   const { theme, isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const navigation = useNavigation();
   const { notifications, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
@@ -342,11 +344,21 @@ export default function NotificationsScreen() {
             <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </Pressable>
-            <Text style={dynamicStyles.headerTitle}>Notifications</Text>
+            <Text style={dynamicStyles.headerTitle}>
+              {currentLanguage === 'zu' ? 'Izaziso' :
+               currentLanguage === 'tn' ? 'Dikitsiso' :
+               currentLanguage === 'af' ? 'Kennisgewings' :
+               'Notifications'}
+            </Text>
           </View>
           {notifications.length > 0 && (
             <Pressable style={dynamicStyles.markAllButton} onPress={markAllAsRead}>
-              <Text style={dynamicStyles.markAllButtonText}>Mark All Read</Text>
+              <Text style={dynamicStyles.markAllButtonText}>
+                {currentLanguage === 'zu' ? 'Maka Konke Kufundiwe' :
+                 currentLanguage === 'tn' ? 'Tshwaya Tsotlhe di Balilwe' :
+                 currentLanguage === 'af' ? 'Merk Alles Gelees' :
+                 'Mark All Read'}
+              </Text>
             </Pressable>
           )}
         </View>
@@ -367,23 +379,32 @@ export default function NotificationsScreen() {
           {notifications.length === 0 ? (
             <View style={dynamicStyles.emptyState}>
               <View style={dynamicStyles.emptyStateIcon}>
-                <Ionicons 
-                  name="notifications-outline" 
-                  size={36} 
-                  color={isDark ? 'rgba(156, 163, 175, 0.6)' : 'rgba(156, 163, 175, 0.8)'} 
+                <Ionicons
+                  name="notifications-outline"
+                  size={36}
+                  color={isDark ? 'rgba(156, 163, 175, 0.6)' : 'rgba(156, 163, 175, 0.8)'}
                 />
               </View>
               <Text style={dynamicStyles.emptyStateText}>
-                No Notifications Yet
+                {currentLanguage === 'zu' ? 'Azikho Izaziso Okwamanje' :
+                 currentLanguage === 'tn' ? 'Ga go na Dikitsiso Jaanong' :
+                 currentLanguage === 'af' ? 'Nog Geen Kennisgewings Nie' :
+                 'No Notifications Yet'}
               </Text>
               <Text style={dynamicStyles.emptyStateSubtext}>
-                You'll receive notifications here when there are updates about your rides, bookings, and account activity.
+                {currentLanguage === 'zu' ? 'Uzothola izaziso lapha uma kunezibuyekezo mayelana nohambo lwakho, ukubhukha, nomsebenzi we-akhawunti yakho.' :
+                 currentLanguage === 'tn' ? 'O tla amogela dikitsiso fano fa go na le dimpshafatso ka ga loeto lwa gago, ditshupiso le tiro ya akhaonto ya gago.' :
+                 currentLanguage === 'af' ? 'Jy sal hier kennisgewings ontvang wanneer daar opdaterings is oor jou ritte, besprekings en rekeningaktiwiteit.' :
+                 'You\'ll receive notifications here when there are updates about your rides, bookings, and account activity.'}
               </Text>
             </View>
           ) : (
             <>
               <Text style={dynamicStyles.sectionTitle}>
-                Your Notifications ({notifications.length})
+                {currentLanguage === 'zu' ? `Izaziso Zakho (${notifications.length})` :
+                 currentLanguage === 'tn' ? `Dikitsiso Tsa Gago (${notifications.length})` :
+                 currentLanguage === 'af' ? `Jou Kennisgewings (${notifications.length})` :
+                 `Your Notifications (${notifications.length})`}
               </Text>
               
               {paginatedNotifications.map((notification: any, index: number) => (

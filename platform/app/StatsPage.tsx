@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Pressable, Platform, Dimensions } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "convex/react";
@@ -11,12 +11,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect } from "react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+
 export default function StatsPage() {
   const router = useRouter();
   const navigation = useNavigation();
   const { user } = useUser();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
   
   const activeTrips = useQuery(
     api.functions.rides.getActiveTrips.getActiveTrips,
@@ -38,10 +47,27 @@ export default function StatsPage() {
   if (!user || activeTrips === undefined || changeDueData === undefined) {
     return (
       <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
+        <View style={[dynamicStyles.header, { backgroundColor: theme.background, borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+          <View style={dynamicStyles.headerRow}>
+            <Pressable style={[dynamicStyles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+            </Pressable>
+            <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+              {currentLanguage === 'zu' ? 'Ibhodi Lomsebenzi' :
+               currentLanguage === 'tn' ? 'Boto ya Tiro' :
+               currentLanguage === 'af' ? 'Dashboard' :
+               'Dashboard'}
+            </Text>
+          </View>
+        </View>
         <View style={dynamicStyles.container}>
           <View style={dynamicStyles.headerSection}>
-            <Text style={dynamicStyles.headerTitle}>Dashboard</Text>
-            <Text style={dynamicStyles.headerSubtitle}>Loading...</Text>
+            <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? 'Iyalayisha...' :
+               currentLanguage === 'tn' ? 'Ya Laisa...' :
+               currentLanguage === 'af' ? 'Laai...' :
+               'Loading...'}
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -50,21 +76,47 @@ export default function StatsPage() {
 
   return (
     <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-      <ScrollView 
+      <View style={[dynamicStyles.header, { backgroundColor: theme.background, borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+        <View style={dynamicStyles.headerRow}>
+          <Pressable style={[dynamicStyles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+            {currentLanguage === 'zu' ? 'Ibhodi Lomsebenzi' :
+             currentLanguage === 'tn' ? 'Boto ya Tiro' :
+             currentLanguage === 'af' ? 'Dashboard' :
+             'Dashboard'}
+          </Text>
+        </View>
+      </View>
+      <ScrollView
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
         <View style={dynamicStyles.headerSection}>
-          <Text style={dynamicStyles.headerSubtitle}>Ride and payment overview</Text>
+          <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+            {currentLanguage === 'zu' ? 'Ukubuka Izigibelo Nokukhokha' :
+             currentLanguage === 'tn' ? 'Kakaretso ya Dipalamo le Dituelo' :
+             currentLanguage === 'af' ? 'Rit en betaling oorsig' :
+             'Ride and payment overview'}
+          </Text>
         </View>
 
         {/* Summary Section */}
-        <View style={dynamicStyles.summarySection}>
-          <Text style={dynamicStyles.summaryTitle}>Quick Summary</Text>
+        <View style={[dynamicStyles.summarySection, { backgroundColor: theme.card, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#f0f0f0' }]}>
+          <Text style={[dynamicStyles.summaryTitle, { color: theme.text }]}>
+            {currentLanguage === 'zu' ? 'Isifinyezo Esisheshayo' :
+             currentLanguage === 'tn' ? 'Kakaretso e Khutshwane' :
+             currentLanguage === 'af' ? 'Vinnige Opsomming' :
+             'Quick Summary'}
+          </Text>
           <View style={dynamicStyles.summaryContent}>
-            <Text style={dynamicStyles.summaryText}>
-              You have {activeTrips?.activeCount || 0} active rides and {activeTrips?.noResponseCount || 0} payments pending.
+            <Text style={[dynamicStyles.summaryText, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? `Unezigibelo ezisebenzayo ezingu-${activeTrips?.activeCount || 0} nezinkokhelo ezilindile ezingu-${activeTrips?.noResponseCount || 0}.` :
+               currentLanguage === 'tn' ? `O na le dipalamo tse ${activeTrips?.activeCount || 0} tse di dirang le dituelo tse ${activeTrips?.noResponseCount || 0} tse di letileng.` :
+               currentLanguage === 'af' ? `Jy het ${activeTrips?.activeCount || 0} aktiewe ritte en ${activeTrips?.noResponseCount || 0} betalings hangend.` :
+               `You have ${activeTrips?.activeCount || 0} active rides and ${activeTrips?.noResponseCount || 0} payments pending.`}
             </Text>
           </View>
         </View>
@@ -72,35 +124,55 @@ export default function StatsPage() {
         {/* Stats Grid */}
         <View style={dynamicStyles.statsGrid}>
           <TouchableOpacity
-            style={[dynamicStyles.statCard, dynamicStyles.activeRidesCard]}
+            style={[dynamicStyles.statCard, dynamicStyles.activeRidesCard, { backgroundColor: theme.card, borderColor: isDark ? 'rgba(34, 197, 94, 0.3)' : '#22C55E' }]}
             onPress={() => router.push("/ActiveRides")}
           >
-            <Text style={dynamicStyles.statNumber}>{activeTrips?.activeCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Active Rides</Text>
+            <Text style={[dynamicStyles.statNumber, { color: theme.text }]}>{activeTrips?.activeCount || 0}</Text>
+            <Text style={[dynamicStyles.statLabel, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? 'Izigibelo Ezisebenzayo' :
+               currentLanguage === 'tn' ? 'Dipalamo tse di Dirang' :
+               currentLanguage === 'af' ? 'Aktiewe Ritte' :
+               'Active Rides'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[dynamicStyles.statCard4, dynamicStyles.changeDueCard]}
+            style={[dynamicStyles.statCard4, dynamicStyles.changeDueCard, { backgroundColor: theme.card, borderColor: isDark ? 'rgba(255, 255, 0, 0.3)' : '#FFFF00' }]}
             onPress={() => router.push("/ChangePage")}
           >
-            <Text style={dynamicStyles.statNumber}>{changeDueCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Change Due and Money Owed</Text>
+            <Text style={[dynamicStyles.statNumber, { color: theme.text }]}>{changeDueCount || 0}</Text>
+            <Text style={[dynamicStyles.statLabel, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? 'Ushintshi Oselekelwe Nemali Ekhokhelwayo' :
+               currentLanguage === 'tn' ? 'Tshelete e e Tshwanetsweng le Dikadimo' :
+               currentLanguage === 'af' ? 'Wisselgeld en Geld Verskuldig' :
+               'Change Due and Money Owed'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[dynamicStyles.statCard2, dynamicStyles.waitingPaymentsCard]}
+            style={[dynamicStyles.statCard2, dynamicStyles.waitingPaymentsCard, { backgroundColor: theme.card, borderColor: isDark ? 'rgba(255, 153, 0, 0.3)' : '#FF9900' }]}
             onPress={() => router.push("/WaitingPayments")}
           >
-            <Text style={dynamicStyles.statNumber}>{activeTrips?.noResponseCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Pending Payments</Text>
+            <Text style={[dynamicStyles.statNumber, { color: theme.text }]}>{activeTrips?.noResponseCount || 0}</Text>
+            <Text style={[dynamicStyles.statLabel, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? 'Izinkokhelo Ezilindile' :
+               currentLanguage === 'tn' ? 'Dituelo tse di Letileng' :
+               currentLanguage === 'af' ? 'Hangende Betalings' :
+               'Pending Payments'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[dynamicStyles.statCard3, dynamicStyles.unpaidAccountsCard]}
+            style={[dynamicStyles.statCard3, dynamicStyles.unpaidAccountsCard, { backgroundColor: theme.card, borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#EF4444' }]}
             onPress={() => router.push("/UnpaidPayments")}
           >
-            <Text style={dynamicStyles.statNumber}>{activeTrips?.unpaidCount || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Unpaid Accounts</Text>
+            <Text style={[dynamicStyles.statNumber, { color: theme.text }]}>{activeTrips?.unpaidCount || 0}</Text>
+            <Text style={[dynamicStyles.statLabel, { color: theme.textSecondary }]}>
+              {currentLanguage === 'zu' ? 'Ama-Akhawunti Angakhokhelwanga' :
+               currentLanguage === 'tn' ? 'Diakhaonto tse di sa Duelwang' :
+               currentLanguage === 'af' ? 'Onbetaalde Rekeninge' :
+               'Unpaid Accounts'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -113,29 +185,27 @@ const dynamicStyles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingHorizontal: isSmallScreen ? 16 : 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.08)',
+    gap: 16,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontSize: 20,
+    fontWeight: '700',
     flex: 1,
-    textAlign: 'center',
-    marginRight: 52, // Compensate for back button width to center title
   },
   container: {
     backgroundColor: 'transparent',

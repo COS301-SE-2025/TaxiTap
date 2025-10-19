@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native";
 import { useUser } from '../../contexts/UserContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useNavigation, useRouter } from "expo-router";
 import { Id } from '../../convex/_generated/dataModel';
 import { useLocalSearchParams } from 'expo-router';
@@ -19,6 +20,7 @@ export default function PaymentConfirmation() {
   }, [navigation]);
 
   const { user } = useUser();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const userId = user?.id;
   const [amountPaid, setAmountPaid] = useState("");
@@ -140,19 +142,37 @@ export default function PaymentConfirmation() {
     return (
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.heading}>Enter Payment Amount</Text>
+          <Text style={styles.heading}>
+            {currentLanguage === 'zu' ? 'Faka Inani Lokukhokha' :
+             currentLanguage === 'tn' ? 'Tsenya Tuelo ya Madi' :
+             currentLanguage === 'af' ? 'Voer Betalingsbedrag In' :
+             'Enter Payment Amount'}
+          </Text>
           
           <View style={styles.fareInfo}>
-            <Text style={styles.fareLabel}>Trip Fare:</Text>
+            <Text style={styles.fareLabel}>
+              {currentLanguage === 'zu' ? 'Inani Lohambo' :
+               currentLanguage === 'tn' ? 'Tuelo ya Loeto' :
+               currentLanguage === 'af' ? 'Rit Tarief' :
+               'Trip Fare'}:
+            </Text>
             <Text style={styles.fareAmount}>R{fare}</Text>
           </View>
 
           <Text style={styles.instructionText}>
-            How much did you pay the driver?
+            {currentLanguage === 'zu' ? 'Ukhokhe malini umshayeli?' :
+             currentLanguage === 'tn' ? 'O duela mokgweetsi bokae?' :
+             currentLanguage === 'af' ? 'Hoeveel het jy die bestuurder betaal?' :
+             'How much did you pay the driver?'}
           </Text>
 
           <TextInput
-            placeholder="Enter amount paid"
+            placeholder={
+              currentLanguage === 'zu' ? 'Faka inani elikhokhelwe' :
+              currentLanguage === 'tn' ? 'Tsenya madi a a dueditsweng' :
+              currentLanguage === 'af' ? 'Voer bedrag betaal in' :
+              'Enter amount paid'
+            }
             keyboardType="numeric"
             style={styles.amountInput}
             value={amountPaid}
@@ -162,22 +182,35 @@ export default function PaymentConfirmation() {
           />
 
           <View style={styles.buttonRow}>
-            <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]} 
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
               onPress={cancelAmountInput}
               disabled={processing}
             >
               <Ionicons name="arrow-back" size={20} color="#666" />
-              <Text style={[styles.buttonText, { color: "#666" }]}>Back</Text>
+              <Text style={[styles.buttonText, { color: "#666" }]}>
+                {currentLanguage === 'zu' ? 'Buyela' :
+                 currentLanguage === 'tn' ? 'Boela' :
+                 currentLanguage === 'af' ? 'Terug' :
+                 'Back'}
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.button, styles.confirmButton]} 
+            <TouchableOpacity
+              style={[styles.button, styles.confirmButton]}
               onPress={confirmPayment}
               disabled={processing}
             >
               <Text style={styles.buttonText}>
-                {processing ? "Processing..." : "Confirm Payment"}
+                {processing ?
+                  (currentLanguage === 'zu' ? 'Kuyacutshungulwa...' :
+                   currentLanguage === 'tn' ? 'E a Tswelela...' :
+                   currentLanguage === 'af' ? 'Verwerk...' :
+                   'Processing...') :
+                  (currentLanguage === 'zu' ? 'Qinisekisa Inkokhelo' :
+                   currentLanguage === 'tn' ? 'Netefatsa Tuelo' :
+                   currentLanguage === 'af' ? 'Bevestig Betaling' :
+                   'Confirm Payment')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -189,49 +222,90 @@ export default function PaymentConfirmation() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.heading}>Trip Payment</Text>
+        <Text style={styles.heading}>
+          {currentLanguage === 'zu' ? 'Ukukhokha Uhambo' :
+           currentLanguage === 'tn' ? 'Tuelo ya Loeto' :
+           currentLanguage === 'af' ? 'Rit Betaling' :
+           'Trip Payment'}
+        </Text>
 
         <View style={styles.tripDetails}>
           <View style={styles.infoRow}>
             <Ionicons name="person" size={20} color="#2B2B2B" />
-            <Text style={styles.infoText}>Driver: {driverName}</Text>
+            <Text style={styles.infoText}>
+              {currentLanguage === 'zu' ? 'Umshayeli' :
+               currentLanguage === 'tn' ? 'Mokgweetsi' :
+               currentLanguage === 'af' ? 'Bestuurder' :
+               'Driver'}: {driverName}
+            </Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons name="car-outline" size={20} color="#2B2B2B" />
-            <Text style={styles.infoText}>License: {licensePlate}</Text>
+            <Text style={styles.infoText}>
+              {currentLanguage === 'zu' ? 'Inombolo Yemoto' :
+               currentLanguage === 'tn' ? 'Laesense' :
+               currentLanguage === 'af' ? 'Lisensie' :
+               'License'}: {licensePlate}
+            </Text>
           </View>
           <View style={styles.fareDisplay}>
-            <Text style={styles.fareLabel}>Total Fare:</Text>
+            <Text style={styles.fareLabel}>
+              {currentLanguage === 'zu' ? 'Inani Eliphelele' :
+               currentLanguage === 'tn' ? 'Tuelo e e Feletseng' :
+               currentLanguage === 'af' ? 'Totale Tarief' :
+               'Total Fare'}:
+            </Text>
             <Text style={styles.fareAmount}>R{fare}</Text>
           </View>
         </View>
 
         <Text style={styles.questionText}>
-          Did you pay the driver for this trip?
+          {currentLanguage === 'zu' ? 'Ingabe ukhokhe umshayeli ngalolu hambo?' :
+           currentLanguage === 'tn' ? 'A o duelela mokgweetsi loeto leno?' :
+           currentLanguage === 'af' ? 'Het jy die bestuurder vir hierdie rit betaal?' :
+           'Did you pay the driver for this trip?'}
         </Text>
 
         <View style={styles.paymentButtons}>
-          <TouchableOpacity 
-            style={[styles.button, styles.notPaidButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.notPaidButton]}
             onPress={handleNotPaid}
             disabled={processing}
           >
             <Ionicons name="close-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Not Paid</Text>
+            <Text style={styles.buttonText}>
+              {currentLanguage === 'zu' ? 'Akukhokhelwe' :
+               currentLanguage === 'tn' ? 'Ga e a Duelwa' :
+               currentLanguage === 'af' ? 'Nie Betaal' :
+               'Not Paid'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.button, styles.paidButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.paidButton]}
             onPress={handlePaidClick}
             disabled={processing}
           >
             <Ionicons name="checkmark-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Paid</Text>
+            <Text style={styles.buttonText}>
+              {currentLanguage === 'zu' ? 'Kukhokhelwe' :
+               currentLanguage === 'tn' ? 'E Dueletswe' :
+               currentLanguage === 'af' ? 'Betaal' :
+               'Paid'}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.noteText}>
-          {processing ? "Processing..." : "Select your payment status to continue"}
+          {processing ?
+            (currentLanguage === 'zu' ? 'Kuyacutshungulwa...' :
+             currentLanguage === 'tn' ? 'E a Tswelela...' :
+             currentLanguage === 'af' ? 'Verwerk...' :
+             'Processing...') :
+            (currentLanguage === 'zu' ? 'Khetha isimo sokukhokha sakho ukuze uqhubeke' :
+             currentLanguage === 'tn' ? 'Tlhopha maemo a tuelo ya gago go tswelela' :
+             currentLanguage === 'af' ? 'Kies jou betalingstatus om voort te gaan' :
+             'Select your payment status to continue')}
         </Text>
       </View>
     </View>

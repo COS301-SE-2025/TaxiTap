@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import React, { useLayoutEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Pressable, Platform, Dimensions } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Id } from '../convex/_generated/dataModel';
@@ -10,6 +10,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { Badge } from '../components/Badge';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
 
 interface Passenger {
     rideId: string;
@@ -33,10 +36,16 @@ interface Passenger {
 export default function ActiveRides() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
     const [loadingFrontPassenger, setLoadingFrontPassenger] = useState<string | null>(null);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
     
     const activeTrips = useQuery(
         api.functions.rides.getActiveTrips.getActiveTrips,
@@ -78,13 +87,36 @@ export default function ActiveRides() {
     if (!activeTrips || !activeTrips.passengers.length) {
         return (
             <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={dynamicStyles.header}>
+                    <View style={dynamicStyles.headerRow}>
+                        <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="arrow-back" size={20} color={theme.text} />
+                        </Pressable>
+                        <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Izigibelo Ezisebenzayo' :
+                             currentLanguage === 'tn' ? 'Dipalamo tse di Dirang' :
+                             currentLanguage === 'af' ? 'Aktiewe Ritte' :
+                             'Active Rides'}
+                        </Text>
+                    </View>
+                </View>
                 <View style={dynamicStyles.container}>
                     <View style={dynamicStyles.headerSection}>
-                        <Text style={dynamicStyles.headerSubtitle}>No active trips found</Text>
+                        <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Azikho izigibelo ezisebenzayo ezitholiwe' :
+                             currentLanguage === 'tn' ? 'Ga go na dipalamo tse di dirang tse di fitlhetsweng' :
+                             currentLanguage === 'af' ? 'Geen aktiewe ritte gevind nie' :
+                             'No active trips found'}
+                        </Text>
                     </View>
                     <View style={dynamicStyles.emptyState}>
                         <Ionicons name="car-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={dynamicStyles.emptyStateText}>No active rides at the moment</Text>
+                        <Text style={[dynamicStyles.emptyStateText, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Azikho izigibelo ezisebenzayo ngalesi sikhathi' :
+                             currentLanguage === 'tn' ? 'Ga go na dipalamo tse di dirang jaanong' :
+                             currentLanguage === 'af' ? 'Geen aktiewe ritte op die oomblik nie' :
+                             'No active rides at the moment'}
+                        </Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -93,13 +125,29 @@ export default function ActiveRides() {
 
     return (
         <SafeAreaView style={[dynamicStyles.safeArea, { backgroundColor: theme.background }]}>
-            <ScrollView 
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerRow}>
+                    <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
+                    </Pressable>
+                    <Text style={[dynamicStyles.headerTitle, { color: theme.text }]}>
+                        {currentLanguage === 'zu' ? 'Izigibelo Ezisebenzayo' :
+                         currentLanguage === 'tn' ? 'Dipalamo tse di Dirang' :
+                         currentLanguage === 'af' ? 'Aktiewe Ritte' :
+                         'Active Rides'}
+                    </Text>
+                </View>
+            </View>
+            <ScrollView
                 style={dynamicStyles.container}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={dynamicStyles.headerSection}>
-                    <Text style={dynamicStyles.headerSubtitle}>
-                        {activeTrips.passengers.length} passenger{activeTrips.passengers.length !== 1 ? 's' : ''} on trip
+                    <Text style={[dynamicStyles.headerSubtitle, { color: theme.textSecondary }]}>
+                        {currentLanguage === 'zu' ? `${activeTrips.passengers.length} ${activeTrips.passengers.length !== 1 ? 'abagibeli' : 'umgibeli'} osigibelo` :
+                         currentLanguage === 'tn' ? `${activeTrips.passengers.length} ${activeTrips.passengers.length !== 1 ? 'bapalami' : 'mopalami'} mo leelong` :
+                         currentLanguage === 'af' ? `${activeTrips.passengers.length} ${activeTrips.passengers.length !== 1 ? 'passasiers' : 'passasier'} op rit` :
+                         `${activeTrips.passengers.length} passenger${activeTrips.passengers.length !== 1 ? 's' : ''} on trip`}
                     </Text>
                 </View>
 
@@ -137,14 +185,30 @@ export default function ActiveRides() {
                                         dynamicStyles.statusWaiting
                                     ]}>
                                         <Text style={dynamicStyles.statusText}>
-                                            {p.tripPaid === true ? "Paid" :
-                                             p.tripPaid === false ? "Unpaid" :
-                                             "Pending"}
+                                            {p.tripPaid === true ?
+                                                (currentLanguage === 'zu' ? 'Kukhokhiwe' :
+                                                 currentLanguage === 'tn' ? 'E Dueletswe' :
+                                                 currentLanguage === 'af' ? 'Betaal' :
+                                                 'Paid') :
+                                             p.tripPaid === false ?
+                                                (currentLanguage === 'zu' ? 'Akukhokhwanga' :
+                                                 currentLanguage === 'tn' ? 'Ga e a Duelwa' :
+                                                 currentLanguage === 'af' ? 'Onbetaald' :
+                                                 'Unpaid') :
+                                                (currentLanguage === 'zu' ? 'Kulindile' :
+                                                 currentLanguage === 'tn' ? 'E Emetse' :
+                                                 currentLanguage === 'af' ? 'Hangende' :
+                                                 'Pending')}
                                         </Text>
                                     </View>
                                     {p.isFrontPassenger && (
                                         <View style={dynamicStyles.frontPassengerBadge}>
-                                            <Text style={dynamicStyles.frontPassengerText}>Front</Text>
+                                            <Text style={dynamicStyles.frontPassengerText}>
+                                                {currentLanguage === 'zu' ? 'Ngaphambili' :
+                                                 currentLanguage === 'tn' ? 'Kwa Pele' :
+                                                 currentLanguage === 'af' ? 'Voor' :
+                                                 'Front'}
+                                            </Text>
                                         </View>
                                     )}
                                 </View>
@@ -154,7 +218,10 @@ export default function ActiveRides() {
                                 <View style={dynamicStyles.detailRow}>
                                     <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                     <Text style={[dynamicStyles.detailText, { color: theme.text }]}>
-                                        Fare: R{p.fare.toFixed(2)}
+                                        {currentLanguage === 'zu' ? `Intengo: R${p.fare.toFixed(2)}` :
+                                         currentLanguage === 'tn' ? `Tuelo: R${p.fare.toFixed(2)}` :
+                                         currentLanguage === 'af' ? `Tarief: R${p.fare.toFixed(2)}` :
+                                         `Fare: R${p.fare.toFixed(2)}`}
                                     </Text>
                                 </View>
                             </View>
@@ -173,20 +240,33 @@ export default function ActiveRides() {
                                             <Text style={[
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
-                                            ]}>Loading...</Text>
+                                            ]}>
+                                                {currentLanguage === 'zu' ? 'Iyalayisha...' :
+                                                 currentLanguage === 'tn' ? 'Ya Laisa...' :
+                                                 currentLanguage === 'af' ? 'Laai...' :
+                                                 'Loading...'}
+                                            </Text>
                                         </View>
                                     ) : (
                                         <View style={dynamicStyles.buttonContent}>
-                                            <Ionicons 
-                                                name={p.isFrontPassenger ? "person" : "person-outline"} 
-                                                size={16} 
-                                                color={p.isFrontPassenger ? '#fff' : '#007AFF'} 
+                                            <Ionicons
+                                                name={p.isFrontPassenger ? "person" : "person-outline"}
+                                                size={16}
+                                                color={p.isFrontPassenger ? '#fff' : '#007AFF'}
                                             />
                                             <Text style={[
                                                 dynamicStyles.frontPassengerButtonText,
                                                 { color: p.isFrontPassenger ? '#fff' : '#007AFF' }
                                             ]}>
-                                                {p.isFrontPassenger ? 'Remove Front' : 'Set as Front'}
+                                                {p.isFrontPassenger ?
+                                                    (currentLanguage === 'zu' ? 'Susa Phambili' :
+                                                     currentLanguage === 'tn' ? 'Tlosa Pele' :
+                                                     currentLanguage === 'af' ? 'Verwyder Voor' :
+                                                     'Remove Front') :
+                                                    (currentLanguage === 'zu' ? 'Beka Njengophambili' :
+                                                     currentLanguage === 'tn' ? 'Beya Jaaka Pele' :
+                                                     currentLanguage === 'af' ? 'Stel as Voor' :
+                                                     'Set as Front')}
                                             </Text>
                                         </View>
                                     )}
@@ -205,29 +285,29 @@ const dynamicStyles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        paddingHorizontal: isSmallScreen ? 16 : 20,
+        paddingTop: Platform.OS === 'ios' ? 50 : 16,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(0,0,0,0.08)',
+        gap: 16,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: 'rgba(0,0,0,0.05)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1a1a1a',
         flex: 1,
-        textAlign: 'center',
-        marginRight: 52, // Compensate for back button width to center title
     },
     container: {
         flex: 1,

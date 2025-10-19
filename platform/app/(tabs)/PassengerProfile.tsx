@@ -433,7 +433,7 @@ export default function PassengerProfile() {
             <View style={dynamicStyles.section}>
                 <MenuItemComponent
                     icon="wallet-outline"
-                    title={t('profile:My Wallet')}
+                    title={t('profile:myWallet')}
                     onPress={handleWallet}
                 />
             </View>
