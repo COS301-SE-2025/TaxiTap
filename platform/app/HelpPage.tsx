@@ -1,5 +1,5 @@
 import React, { useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView, Linking, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
@@ -10,8 +10,18 @@ export default function HelpPage() {
   const router = useRouter();
   const navigation = useNavigation();
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { showInfo } = useAlertHelpers();
+
+  // Screen dimensions for responsive design
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
 
   const handleContactSupport = () => {
     showInfo(t('help:support'), t('help:supportEmail'));
@@ -74,29 +84,31 @@ export default function HelpPage() {
       backgroundColor: theme.background,
     },
     header: {
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: Platform.OS === 'ios' ? 50 : 16,
+      paddingBottom: 20,
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
-    navigationHeaderTitle: {
+    headerTitle: {
       fontSize: 18,
       fontWeight: '600',
       color: theme.text,
       flex: 1,
-      textAlign: 'center',
-      marginRight: 52, // Compensate for back button width to center title
     },
     container: {
       backgroundColor: theme.background,
@@ -108,12 +120,6 @@ export default function HelpPage() {
       alignItems: 'center',
       // paddingVertical: 32,
       marginBottom: 24,
-    },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '600',
-      color: theme.text,
-      textAlign: 'center',
     },
     sectionHeader: {
       fontSize: 13,
@@ -177,7 +183,22 @@ export default function HelpPage() {
 
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
-      <ScrollView 
+      {/* Header */}
+      <View style={dynamicStyles.header}>
+        <View style={dynamicStyles.headerRow}>
+          <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={dynamicStyles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Usizo' :
+             currentLanguage === 'tn' ? 'Thuso' :
+             currentLanguage === 'af' ? 'Hulp' :
+             'Help'}
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView
         contentContainerStyle={dynamicStyles.container}
         showsVerticalScrollIndicator={false}
       >

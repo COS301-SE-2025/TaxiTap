@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import React, { useLayoutEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Platform, Dimensions } from "react-native";
 import { useUser } from '../contexts/UserContext';
 import { Id } from '../convex/_generated/dataModel';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,12 +9,21 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+
 export default function UnpaidPayments() {
     const { user } = useUser();
     const { theme, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage();
     const router = useRouter();
     const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
     
     const activeTrips = useQuery(
       api.functions.rides.getActiveTrips.getActiveTrips,
@@ -28,9 +37,27 @@ export default function UnpaidPayments() {
     if (!user || activeTrips === undefined) {
         return (
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={styles.header}>
+                    <View style={styles.headerRow}>
+                        <Pressable style={styles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="arrow-back" size={20} color={theme.text} />
+                        </Pressable>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Ama-Akhawunti Angakhokhelwanga' :
+                             currentLanguage === 'tn' ? 'Diakhaonto tse di sa Duelwang' :
+                             currentLanguage === 'af' ? 'Onbetaalde Rekeninge' :
+                             'Unpaid Accounts'}
+                        </Text>
+                    </View>
+                </View>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>Loading...</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Iyalayisha...' :
+                             currentLanguage === 'tn' ? 'Ya Laisa...' :
+                             currentLanguage === 'af' ? 'Laai...' :
+                             'Loading...'}
+                        </Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -42,13 +69,36 @@ export default function UnpaidPayments() {
     if (!unpaid.length) {
         return (
             <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+                <View style={styles.header}>
+                    <View style={styles.headerRow}>
+                        <Pressable style={styles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="arrow-back" size={20} color={theme.text} />
+                        </Pressable>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Ama-Akhawunti Angakhokhelwanga' :
+                             currentLanguage === 'tn' ? 'Diakhaonto tse di sa Duelwang' :
+                             currentLanguage === 'af' ? 'Onbetaalde Rekeninge' :
+                             'Unpaid Accounts'}
+                        </Text>
+                    </View>
+                </View>
                 <View style={styles.container}>
                     <View style={styles.headerSection}>
-                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>All users have paid</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.text }]}>
+                            {currentLanguage === 'zu' ? 'Bonke abasebenzisi bakhokhelwe' :
+                             currentLanguage === 'tn' ? 'Badirisi botlhe ba dueletswe' :
+                             currentLanguage === 'af' ? 'Alle gebruikers het betaal' :
+                             'All users have paid'}
+                        </Text>
                     </View>
                     <View style={styles.emptyState}>
                         <Ionicons name="checkmark-circle-outline" size={64} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} />
-                        <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No unpaid accounts</Text>
+                        <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
+                            {currentLanguage === 'zu' ? 'Awekho ama-akhawunti angakhokhelwanga' :
+                             currentLanguage === 'tn' ? 'Ga go na diakhaonto tse di sa duelwang' :
+                             currentLanguage === 'af' ? 'Geen onbetaalde rekeninge nie' :
+                             'No unpaid accounts'}
+                        </Text>
                     </View>
                 </View>
             </SafeAreaView>
@@ -57,13 +107,29 @@ export default function UnpaidPayments() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-            <ScrollView 
+            <View style={styles.header}>
+                <View style={styles.headerRow}>
+                    <Pressable style={styles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={20} color={theme.text} />
+                    </Pressable>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>
+                        {currentLanguage === 'zu' ? 'Ama-Akhawunti Angakhokhelwanga' :
+                         currentLanguage === 'tn' ? 'Diakhaonto tse di sa Duelwang' :
+                         currentLanguage === 'af' ? 'Onbetaalde Rekeninge' :
+                         'Unpaid Accounts'}
+                    </Text>
+                </View>
+            </View>
+            <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.headerSection}>
                     <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                        {unpaid.length} unpaid account{unpaid.length !== 1 ? 's' : ''}
+                        {currentLanguage === 'zu' ? `${unpaid.length} ${unpaid.length !== 1 ? 'ama-akhawunti' : 'i-akhawunti'} angakhokhelwanga` :
+                         currentLanguage === 'tn' ? `${unpaid.length} ${unpaid.length !== 1 ? 'diakhaonto' : 'akhaonto'} tse di sa duelwang` :
+                         currentLanguage === 'af' ? `${unpaid.length} onbetaalde ${unpaid.length !== 1 ? 'rekeninge' : 'rekening'}` :
+                         `${unpaid.length} unpaid account${unpaid.length !== 1 ? 's' : ''}`}
                     </Text>
                 </View>
 
@@ -81,21 +147,32 @@ export default function UnpaidPayments() {
                                         </Text>
                                     </View>
                                     <View style={[styles.statusBadge, styles.statusUnpaid]}>
-                                        <Text style={styles.statusText}>Unpaid</Text>
+                                        <Text style={styles.statusText}>
+                                            {currentLanguage === 'zu' ? 'Akukhokhwanga' :
+                                             currentLanguage === 'tn' ? 'Ga e a Duelwa' :
+                                             currentLanguage === 'af' ? 'Onbetaald' :
+                                             'Unpaid'}
+                                        </Text>
                                     </View>
                                 </View>
-                                
+
                                 <View style={[styles.cardDetails, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#f0f0f0' }]}>
                                     <View style={styles.detailRow}>
                                         <Ionicons name="cash-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                         <Text style={[styles.detailText, { color: theme.text }]}>
-                                            Fare: R{p.fare.toFixed(2)}
+                                            {currentLanguage === 'zu' ? `Intengo: R${p.fare.toFixed(2)}` :
+                                             currentLanguage === 'tn' ? `Tuelo: R${p.fare.toFixed(2)}` :
+                                             currentLanguage === 'af' ? `Tarief: R${p.fare.toFixed(2)}` :
+                                             `Fare: R${p.fare.toFixed(2)}`}
                                         </Text>
                                     </View>
                                     <View style={styles.detailRow}>
                                         <Ionicons name="time-outline" size={16} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
                                         <Text style={[styles.detailText, { color: theme.text }]}>
-                                            Requested: {dateString}
+                                            {currentLanguage === 'zu' ? `Kuceliwe: ${dateString}` :
+                                             currentLanguage === 'tn' ? `Go Kopilwe: ${dateString}` :
+                                             currentLanguage === 'af' ? `Versoek: ${dateString}` :
+                                             `Requested: ${dateString}`}
                                         </Text>
                                     </View>
                                 </View>
@@ -113,21 +190,32 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        paddingHorizontal: isSmallScreen ? 16 : 20,
+        paddingTop: Platform.OS === 'ios' ? 50 : 16,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(0,0,0,0.08)',
+        alignItems: 'flex-start',
+        gap: 16,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: 'rgba(0,0,0,0.05)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginTop: 2,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        flex: 1,
+        flexWrap: 'wrap',
+        flexShrink: 1,
     },
     container: {
         flex: 1,
@@ -139,13 +227,14 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     headerTitle: {
-        fontSize: 32,
-        fontWeight: '700',
+        fontSize: 22,
+        fontWeight: '600',
         marginBottom: 8,
     },
     headerSubtitle: {
         fontSize: 16,
         fontWeight: '400',
+        flexWrap: 'wrap',
     },
     contentSection: {
         paddingHorizontal: 20,
@@ -171,15 +260,19 @@ const styles = StyleSheet.create({
     },
     passengerInfo: {
         flex: 1,
+        flexShrink: 1,
+        marginRight: 8,
     },
     name: {
         fontSize: 20,
         fontWeight: '600',
         marginBottom: 4,
+        flexWrap: 'wrap',
     },
     phoneNumber: {
         fontSize: 15,
         fontWeight: '400',
+        flexWrap: 'wrap',
     },
     statusBadge: {
         paddingHorizontal: 12,
@@ -206,11 +299,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
+        flexWrap: 'wrap',
     },
     detailText: {
         fontSize: 15,
         fontWeight: '500',
         marginLeft: 8,
+        flex: 1,
+        flexWrap: 'wrap',
     },
     emptyState: {
         alignItems: 'center',

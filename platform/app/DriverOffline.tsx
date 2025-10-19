@@ -59,7 +59,7 @@ export default function DriverOffline({
   const { user } = useUser();
   const router = useRouter();
   const { setCurrentRoute } = useRouteContext();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [showMenu, setShowMenu] = useState(false);
   const [showSafetyMenu, setShowSafetyMenu] = useState(false);
@@ -156,10 +156,26 @@ export default function DriverOffline({
   };
 
    const menuItems = [
-    { icon: "person", title: "Profile", onPress: () => router.push('/DriverProfile') },
-    { icon: "time", title: "Earnings", onPress: () => router.push('/EarningsPage') },
-    { icon: "star", title: "Feedback", onPress: () => router.push('/FeedbackHistoryScreen') },
-    { icon: "help-circle", title: "Help", onPress: () => navigation.navigate('HelpPage' as never) },
+    {
+      icon: "person",
+      title: currentLanguage === 'zu' ? 'Iphrofayela' : currentLanguage === 'tn' ? 'Profaele' : currentLanguage === 'af' ? 'Profiel' : 'Profile',
+      onPress: () => router.push('/DriverProfile')
+    },
+    {
+      icon: "time",
+      title: currentLanguage === 'zu' ? 'Okutholiwe' : currentLanguage === 'tn' ? 'Ditseno' : currentLanguage === 'af' ? 'Verdienste' : 'Earnings',
+      onPress: () => router.push('/EarningsPage')
+    },
+    {
+      icon: "star",
+      title: currentLanguage === 'zu' ? 'Impendulo' : currentLanguage === 'tn' ? 'Dikakanyo' : currentLanguage === 'af' ? 'Terugvoer' : 'Feedback',
+      onPress: () => router.push('/FeedbackHistoryScreen')
+    },
+    {
+      icon: "help-circle",
+      title: currentLanguage === 'zu' ? 'Usizo' : currentLanguage === 'tn' ? 'Thuso' : currentLanguage === 'af' ? 'Hulp' : 'Help',
+      onPress: () => navigation.navigate('HelpPage' as never)
+    },
   ];
 
   const getRouteDisplayString = () => {
@@ -748,7 +764,12 @@ export default function DriverOffline({
             <TouchableOpacity style={dynamicStyles.modalOverlay} onPress={() => setShowMenu(false)}>
               <View style={dynamicStyles.menuModal}>
                 <View style={dynamicStyles.menuHeader}>
-                  <Text style={dynamicStyles.menuHeaderText}>Menu</Text>
+                  <Text style={dynamicStyles.menuHeaderText}>
+                    {currentLanguage === 'zu' ? 'Imenyu' :
+                     currentLanguage === 'tn' ? 'Lenane' :
+                     currentLanguage === 'af' ? 'Spyskaart' :
+                     'Menu'}
+                  </Text>
                 </View>
                 
                 {menuItems.map((item, index) => (

@@ -37,7 +37,7 @@ export default function TaxiInformation() {
     });
   }, [navigation]);
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { showGlobalError, showGlobalSuccess, showGlobalAlert } = useAlertHelpers();
 
   // Screen dimensions for responsive design
@@ -290,20 +290,28 @@ export default function TaxiInformation() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          showGlobalError('Error', 'Phone calls are not supported on this device', {
-            duration: 4000,
-            position: 'top',
-            animation: 'slide-down',
-          });
+          showGlobalError(
+            currentLanguage === 'zu' ? 'Iphutha' : currentLanguage === 'tn' ? 'Phoso' : currentLanguage === 'af' ? 'Fout' : 'Error',
+            currentLanguage === 'zu' ? 'Izingcingo azisekelwa kule divayisi' : currentLanguage === 'tn' ? 'Megala ga e a tshegediwa mo sesebedisweng seno' : currentLanguage === 'af' ? 'Telefoonoproepe word nie op hierdie toestel ondersteun nie' : 'Phone calls are not supported on this device',
+            {
+              duration: 4000,
+              position: 'top',
+              animation: 'slide-down',
+            }
+          );
         }
       })
       .catch((err) => {
         console.error('Error opening phone app:', err);
-        showGlobalError('Error', 'Could not open phone app', {
-          duration: 4000,
-          position: 'top',
-          animation: 'slide-down',
-        });
+        showGlobalError(
+          currentLanguage === 'zu' ? 'Iphutha' : currentLanguage === 'tn' ? 'Phoso' : currentLanguage === 'af' ? 'Fout' : 'Error',
+          currentLanguage === 'zu' ? 'Akukwazanga ukuvula uhlelo lwefoni' : currentLanguage === 'tn' ? 'Ga go a kgonagala go bula aplikhesene ya mogala' : currentLanguage === 'af' ? 'Kon nie telefoon toepassing oopmaak nie' : 'Could not open phone app',
+          {
+            duration: 4000,
+            position: 'top',
+            animation: 'slide-down',
+          }
+        );
       });
   };
 
@@ -312,12 +320,12 @@ export default function TaxiInformation() {
     
     // Show success notification
     showGlobalSuccess(
-      'Journey Cancelled',
-      'Your multi-leg journey has been cancelled. You can start a new journey from the home screen.',
-      { 
-        duration: 3000, 
-        position: 'top', 
-        animation: 'slide-down' 
+      currentLanguage === 'zu' ? 'Uhambo Lukhanshelwe' : currentLanguage === 'tn' ? 'Loeto lo Khansetswe' : currentLanguage === 'af' ? 'Reis Gekanselleer' : 'Journey Cancelled',
+      currentLanguage === 'zu' ? 'Uhambo lwakho lwezigaba eziningi lukhanshelwe. Ungaqala uhambo olusha kusuka esikrini sasekhaya.' : currentLanguage === 'tn' ? 'Loeto lwa gago la dikgato tse dintsi lo khanseditswe. O ka simolola loeto lo losha go tswa mo skirining sa gae.' : currentLanguage === 'af' ? 'Jou multi-been reis is gekanselleer. Jy kan \'n nuwe reis begin vanaf die tuisskerm.' : 'Your multi-leg journey has been cancelled. You can start a new journey from the home screen.',
+      {
+        duration: 3000,
+        position: 'top',
+        animation: 'slide-down'
       }
     );
     
@@ -330,11 +338,15 @@ export default function TaxiInformation() {
   // Handle ride booking
   const handleBookRide = async () => {
     if (!selectedTaxi || !user?.id) {
-      showGlobalError('Error', 'Please select a taxi and ensure you are logged in', {
-        duration: 4000,
-        position: 'top',
-        animation: 'slide-down',
-      });
+      showGlobalError(
+        currentLanguage === 'zu' ? 'Iphutha' : currentLanguage === 'tn' ? 'Phoso' : currentLanguage === 'af' ? 'Fout' : 'Error',
+        currentLanguage === 'zu' ? 'Sicela ukhethe itekisi uqinisekise ukuthi ungene ngemvume' : currentLanguage === 'tn' ? 'Tsweetswee tlhopha teksi mme o netefatse gore o tsenye' : currentLanguage === 'af' ? 'Kies asseblief \'n taxi en maak seker jy is aangemeld' : 'Please select a taxi and ensure you are logged in',
+        {
+          duration: 4000,
+          position: 'top',
+          animation: 'slide-down',
+        }
+      );
       return;
     }
 
@@ -378,10 +390,22 @@ export default function TaxiInformation() {
 
         showGlobalSuccess(
           isMultiLegJourney
-            ? `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`
+            ? (currentLanguage === 'zu'
+                ? `Isigaba ${currentLegIndex + 1}/${totalLegsCount} Sibhukiwe!`
+                : currentLanguage === 'tn'
+                ? `Kgato ${currentLegIndex + 1}/${totalLegsCount} e Beilwe!`
+                : currentLanguage === 'af'
+                ? `Been ${currentLegIndex + 1}/${totalLegsCount} Bespreek!`
+                : `Leg ${currentLegIndex + 1}/${totalLegsCount} Booked!`)
             : t('taxiInfo:rideRequestSent'),
           isMultiLegJourney
-            ? `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`
+            ? (currentLanguage === 'zu'
+                ? `I-${routeName || 'tekisi'} yakho yesigaba ${currentLegIndex + 1} ibhukwe no-${selectedTaxi.name}.`
+                : currentLanguage === 'tn'
+                ? `${routeName || 'Teksi'} ya gago ya kgato ${currentLegIndex + 1} e beilwe le ${selectedTaxi.name}.`
+                : currentLanguage === 'af'
+                ? `Jou ${routeName || 'taxi'} vir been ${currentLegIndex + 1} is bespreek by ${selectedTaxi.name}.`
+                : `Your ${routeName || 'taxi'} for leg ${currentLegIndex + 1} has been booked with ${selectedTaxi.name}.`)
             : t('taxiInfo:rideRequestMessage').replace('{name}', selectedTaxi.name),
           {
             duration: 0,
@@ -427,8 +451,8 @@ export default function TaxiInformation() {
     } catch (error) {
       console.error('Error creating ride request:', error);
       showGlobalError(
-        'Booking Error',
-        'Failed to send ride request. Please try again.',
+        currentLanguage === 'zu' ? 'Iphutha Lokubhuka' : currentLanguage === 'tn' ? 'Phoso ya Peelo' : currentLanguage === 'af' ? 'Besprekings Fout' : 'Booking Error',
+        currentLanguage === 'zu' ? 'Kwehlulekile ukuthumela isicelo sohambo. Sicela uzame futhi.' : currentLanguage === 'tn' ? 'Go paletse go romela kopo ya loeto. Tsweetswee leka gape.' : currentLanguage === 'af' ? 'Kon nie rit versoek stuur nie. Probeer asseblief weer.' : 'Failed to send ride request. Please try again.',
         {
           duration: 0,
           actions: [
@@ -483,7 +507,12 @@ export default function TaxiInformation() {
                   />
                 );
               }) : (
-                <Text style={{ fontSize: 12, color: theme.textSecondary }}>No ratings</Text>
+                <Text style={{ fontSize: 12, color: theme.textSecondary }}>
+                  {currentLanguage === 'zu' ? 'Azikho izilinganiso' :
+                   currentLanguage === 'tn' ? 'Ga go na dikelo' :
+                   currentLanguage === 'af' ? 'Geen graderings nie' :
+                   'No ratings'}
+                </Text>
               )}
             </View>
 
@@ -899,8 +928,17 @@ export default function TaxiInformation() {
           </Pressable>
           <Text style={dynamicStyles.headerTitle}>
             {isMultiLegJourney
-              ? `Multi-Leg Journey: Leg ${currentLegIndex + 1} of ${totalLegsCount}`
-              : 'Available Taxis'
+              ? (currentLanguage === 'zu'
+                  ? `Uhambo Lwezigaba Eziningi: Isigaba ${currentLegIndex + 1} kwali-${totalLegsCount}`
+                  : currentLanguage === 'tn'
+                  ? `Loeto la Dikgato tse Dintsi: Kgato ${currentLegIndex + 1} ya ${totalLegsCount}`
+                  : currentLanguage === 'af'
+                  ? `Multi-Been Reis: Been ${currentLegIndex + 1} van ${totalLegsCount}`
+                  : `Multi-Leg Journey: Leg ${currentLegIndex + 1} of ${totalLegsCount}`)
+              : (currentLanguage === 'zu' ? 'Amataxi Atholakalayo' :
+                 currentLanguage === 'tn' ? 'Diteksi tse di Leng Teng' :
+                 currentLanguage === 'af' ? 'Beskikbare Taxis' :
+                 'Available Taxis')
             }
           </Text>
         </View>
@@ -948,7 +986,13 @@ export default function TaxiInformation() {
               <View style={dynamicStyles.statItem}>
                 <Ionicons name="car-outline" size={16} color={theme.primary} />
                 <Text style={dynamicStyles.statText}>
-                  {nearbyTaxis.length} taxi{nearbyTaxis.length !== 1 ? 's' : ''} available
+                  {currentLanguage === 'zu'
+                    ? `${nearbyTaxis.length} ${nearbyTaxis.length !== 1 ? 'amataxi' : 'itekisi'} ${nearbyTaxis.length !== 1 ? 'atholakalayo' : 'litholakala'}`
+                    : currentLanguage === 'tn'
+                    ? `${nearbyTaxis.length} ${nearbyTaxis.length !== 1 ? 'diteksi' : 'teksi'} ${nearbyTaxis.length !== 1 ? 'di a fumaneha' : 'e a fumaneha'}`
+                    : currentLanguage === 'af'
+                    ? `${nearbyTaxis.length} taxi${nearbyTaxis.length !== 1 ? 's' : ''} beskikbaar`
+                    : `${nearbyTaxis.length} taxi${nearbyTaxis.length !== 1 ? 's' : ''} available`}
                 </Text>
               </View>
               {nearbyTaxis[0]?.routeInfo?.calculatedFare && (

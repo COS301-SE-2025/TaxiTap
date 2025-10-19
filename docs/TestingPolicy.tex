@@ -137,10 +137,17 @@ Performance tests cover the following critical user journeys:
 \subsubsection{Acceptance Criteria}
 Performance tests must demonstrate:
 \begin{itemize}
-    \item P95 response time ≤ 300ms for all API endpoints
+    \item P95 response time less than or equal to 300ms for all API endpoints
     \item Sustained throughput of 4+ requests per second per endpoint
     \item System stability under concurrent load
     \item No memory leaks or resource exhaustion
+\end{itemize}
+
+\subsubsection{Testing tools and reports}
+\begin{itemize}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/performance/performance_tester.js}{Our Custom JavaScript Performance Tester}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/performance/performance_profiler.py}{Our Custom Python Performance Profiler}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/08edee8eb80ad621eb2870fe2278270e8f335274/platform/performance_test_report_2025-10-19T15-25-53-966Z.json}{Performance Test Results}
 \end{itemize}
 
 \subsection{Scalability}
@@ -166,6 +173,7 @@ We employ K6 load testing framework for scalability validation:
     \item \textbf{Geographic Distribution}: Tests across multiple South African cities
 \end{itemize}
 
+
 \subsubsection{Load Testing Scenarios}
 Scalability tests simulate realistic user behavior:
 \begin{itemize}
@@ -183,6 +191,14 @@ Scalability tests must demonstrate:
     \item No system crashes or complete failures
     \item Successful completion of 1,500+ iterations over 5 minutes
     \item Graceful handling of connection timeouts and retries
+\end{itemize}
+
+\subsubsection{Testing tools and reports}
+\begin{itemize}
+ \item \href{https://k6.io/}{K6 Testing Tool}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/k6/taxi_tap_stress_test.js}{Stress Test}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/k6/taxi_tap_load_test.js}{Load Test}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/021738a91c927c882667497c58980bd63b813954/testing/k6/summary.json}{K6 Testing Results JSON file}
 \end{itemize}
 
 \subsection{Security}
@@ -241,6 +257,12 @@ Continuous security monitoring includes:
     \item Vulnerability assessment reports
     \item Security metrics tracking
     \item Incident response procedures
+\end{itemize}
+
+\subsubsection{Testing tools and reports}
+\begin{itemize}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/security/security_tester.py}{Our Custom Python Security Tester}
+ \item \href{https://github.com/COS301-SE-2025/TaxiTap/blob/00164c31e7b00acd4b7aab6527f9ad9b59471b28/testing/security_test_report_20250924_133026.json}{Our Security Test Report}
 \end{itemize}
 
 \section{Convex API Testing Constraints}

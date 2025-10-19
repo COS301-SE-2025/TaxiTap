@@ -7,9 +7,12 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
+  Pressable,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
@@ -17,6 +20,7 @@ import { Id } from '../convex/_generated/dataModel';
 import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Ionicons } from '@expo/vector-icons';
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -43,10 +47,15 @@ type EarningsPageProps = {
 
 export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
   const navigation = useNavigation();
+  const router = useRouter();
   const { theme, isDark } = useTheme();
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { currentLanguage } = useLanguage();
+
+  // Screen dimensions for responsive design
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
   
   // Hardcoded translations
   const translations = {
@@ -69,11 +78,31 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
       reservations: "Izibhukho",
       avgPerHour: "Isilinganiso Ngehora",
       loadingEarnings: "Kulayishwa imali..."
+    },
+    tn: {
+      weeklySummary: "Kakaretso ya Beke",
+      weeklyEarnings: "Ditseno tsa Beke",
+      dailyBreakdown: "Kakaretso ya Letsatsi le Letsatsi",
+      summary: "Kakaretso",
+      hoursOnline: "Diura Tsa Go Dira",
+      reservations: "Dikgatiso",
+      avgPerHour: "Palogare ka Ura",
+      loadingEarnings: "E laisa ditseno..."
+    },
+    af: {
+      weeklySummary: "Weeklikse Opsomming",
+      weeklyEarnings: "Weeklikse Verdienste",
+      dailyBreakdown: "Daaglikse Uiteensetting",
+      summary: "Opsomming",
+      hoursOnline: "Ure Aanlyn",
+      reservations: "Besprekings",
+      avgPerHour: "Gemiddeld per Uur",
+      loadingEarnings: "Laai verdienste..."
     }
   };
   
   const t = (key: string) => {
-    const lang = currentLanguage === 'zu' ? 'zu' : 'en';
+    const lang = currentLanguage === 'zu' ? 'zu' : currentLanguage === 'tn' ? 'tn' : currentLanguage === 'af' ? 'af' : 'en';
     return translations[lang][key as keyof typeof translations[typeof lang]] || key;
   };
 
@@ -107,6 +136,12 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
   const currentWeek = weeklyData[selectedWeek] ?? weeklyData[0];
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
   const handleGoBack = useCallback(() => navigation.goBack(), [navigation]);
   const handleWeekSelect = useCallback((index: number) => {
     setSelectedWeek(index);
@@ -124,19 +159,32 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
     safeArea: { flex: 1, backgroundColor: theme.background },
     container: { flex: 1, backgroundColor: theme.background },
     header: {
+      paddingHorizontal: isSmallScreen ? 16 : 20,
+      paddingTop: Platform.OS === 'ios' ? 50 : 16,
+      paddingBottom: 20,
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    },
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 16,
-      backgroundColor: theme.surface,
-      elevation: 4,
     },
     backButton: {
-      padding: 8,
-      borderRadius: 24,
-      backgroundColor: isDark ? theme.primary : '#f5f5f5',
-      marginRight: 12,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
     },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.text,
+      flex: 1,
+    },
     content: { padding: 20 },
     dropdownContainer: { marginBottom: 20 },
     dropdownButton: {
@@ -219,7 +267,23 @@ export default function EarningsPage({ todaysEarnings }: EarningsPageProps) {
 
   return (
     <SafeAreaView style={dynamicStyles.safeArea}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.surface} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
+
+      {/* Header */}
+      <View style={dynamicStyles.header}>
+        <View style={dynamicStyles.headerRow}>
+          <Pressable style={dynamicStyles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={dynamicStyles.headerTitle}>
+            {currentLanguage === 'zu' ? 'Okutholiwe' :
+             currentLanguage === 'tn' ? 'Ditseno' :
+             currentLanguage === 'af' ? 'Verdienste' :
+             'Earnings'}
+          </Text>
+        </View>
+      </View>
+
       <View style={dynamicStyles.container}>
         <ScrollView style={dynamicStyles.content} contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Week Dropdown */}

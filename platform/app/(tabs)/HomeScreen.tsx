@@ -31,10 +31,10 @@ import { useThrottledLocationStreaming } from '../hooks/useLocationStreaming';
 import { Id } from "../../convex/_generated/dataModel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlertHelpers } from '../../components/AlertHelpers';
-
-const GOOGLE_MAPS_API_KEY = Platform.OS === 'ios'
-  ? 'AIzaSyAZyWdfPWLscdCqG7ur4USKKDcn7b8hxYg'
-  : 'AIzaSyAy5V8wsxjiKrK-Qv9Zt_stGvHwRSGmLBA';
+// Use Web API key for HTTP fetch calls (Places, Directions, Geocoding)
+// The Android native key is configured in app.config.js for MapView
+// NOTE: Hardcoded due to EAS build environment variable issues
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCGyNPeaSv5jKBVMXJ9YeOYY0gHq6jz8ns';
 
 
 
@@ -53,7 +53,7 @@ export default function HomeScreen() {
   const { userId: navId } = useLocalSearchParams<{ userId?: string }>();
   const userId = user?.id || navId || '';
   const role = user?.role || user?.accountType || 'passenger';
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   const storeRouteForPassenger = useMutation(api.functions.routes.storeRecentRoutes.storeRouteForPassenger);
   const createMultiLegJourney = useMutation(api.functions.journeys.journeyStateManager.createMultiLegJourney);
@@ -1284,11 +1284,6 @@ export default function HomeScreen() {
     },
     bottomSheet: {
       flex: 1,
-      backgroundColor: isDark 
-        ? 'rgba(30, 41, 59, 0.95)' 
-        : 'rgba(255, 255, 255, 0.95)',
-      borderTopLeftRadius: 25,
-      borderTopRightRadius: 25,
       padding: 24,
       paddingTop: 32,
       paddingBottom: keyboardVisible ? Math.max(keyboardHeight - 100, 24) : 24,
@@ -1996,7 +1991,10 @@ export default function HomeScreen() {
         {!keyboardVisible && (!routeLoaded || (routeLoaded && availableTaxis.length === 0 && !isSearchingTaxis && !isSearchingMultiLeg)) && (
           <>
             <Text style={dynamicStyles.savedRoutesTitle}>
-              Recently Used Routes
+              {currentLanguage === 'zu' ? 'Izindlela Ezisetshenzisiwe Kamuva' :
+               currentLanguage === 'tn' ? 'Ditsela tse di Dirisitsweng Bosheng' :
+               currentLanguage === 'af' ? 'Onlangs Gebruikte Roetes' :
+               'Recently Used Routes'}
             </Text>
             <View style={{ marginTop: 16 }}>
               {displayRoutes.length > 0 ? (
