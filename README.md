@@ -35,7 +35,7 @@ TaxiTap transforms South Africa's minibus taxi industry through digital innovati
 - **Requirements & Design:** [SRS Document](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/SRS_Demo4.pdf) • [Architecture](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Architectural_Document_Demo4.pdf)
 - **Standards & Testing:** [Coding Standards](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Coding%20Standards.pdf) • [Testing Policy](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/TestingPolicy.pdf)
 - **Manuals:** [User Manual](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Capstone_Demo_4_User_Manual.pdf) • [Installation Guide](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/COS%20301%20-%20Technical%20Installation.pdf)
-- **Additional Research:** [Research](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Research.tex)
+- **Additional Research:** [Research](https://github.com/COS301-SE-2025/TaxiTap/blob/dev/docs/Research.pdf)
 
 ---
 
